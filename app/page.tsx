@@ -288,7 +288,7 @@ export default function HomePage() {
       "Ce document n'est ni un devis, ni une validation technique, ni une promesse de réalisation.",
     ];
     try {
-      await navigator.clipboard.writeText(lines.join("\\n"));
+      await navigator.clipboard.writeText(lines.join("\n"));
       setAuthError("");
       setAuthNotice("La synthèse du dossier a été copiée. Vous pouvez la coller dans un document ou un message.");
     } catch {
