@@ -12,12 +12,15 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 - Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
 - Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
 - Intégration du moteur d’analyse IA via Vercel AI Gateway, avec propositions modifiables et validation manuelle avant application au dossier.
-- Activation IA désactivée par défaut pour éviter les appels potentiellement facturables sans accord et configuration du budget.
+- Activation IA désactivée par défaut; quand elle est inactive, une pré-analyse locale gratuite reste disponible sans appel de modèle.
+- Pistes de solution modifiables, supprimables et ajoutables manuellement avant application explicite au dossier.
+- Pistes d’amélioration avec priorité, bénéfice attendu, effort indicatif et hypothèses à vérifier.
+- Analyse concurrentielle prudente : comparaison préparée à partir des sources saisies par l’utilisateur; aucune prétention de recherche web en direct.
 - Stockage local compatible avec la clé existante `merkora-gdj-projects-v1`.
 
 ## Limites importantes
 
-Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions locales fonctionnent sans IA. Le code d’intégration IA est présent, mais le moteur reste désactivé tant que `MERKORA_AI_ENABLED=true` n’a pas été configuré explicitement côté serveur. Aucun appel de modèle n’est effectué par défaut. Les propositions IA restent à relire et modifier; elles ne constituent ni un devis officiel, ni une promesse de réalisation.
+Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions locales fonctionnent sans IA. Le panneau propose une pré-analyse locale gratuite lorsque le moteur réel est désactivé. Le code d’intégration IA est présent, mais le moteur reste désactivé tant que `MERKORA_AI_ENABLED=true` n’a pas été configuré explicitement côté serveur. Aucun appel de modèle n’est effectué par défaut. Les propositions IA restent à relire et modifier; elles ne constituent ni un devis officiel, ni une promesse de réalisation.
 
 La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements restent à développer.
 
@@ -37,7 +40,9 @@ Variables côté serveur :
 - `MERKORA_AI_MODEL`: identifiant `provider/model` vérifié dans le catalogue.
 - `AI_GATEWAY_API_KEY`: optionnelle si l’environnement Vercel fournit l’authentification OIDC; ne jamais exposer cette variable côté client.
 
-L’interface permet de relire, modifier ou retirer les pistes proposées avant de les appliquer au dossier. L’application des pistes remplace seulement la liste des recommandations de ce dossier; aucune autre donnée n’est modifiée.
+L’interface permet de relire, modifier, retirer ou ajouter des pistes et des améliorations avant toute application explicite. Une amélioration peut être ajoutée à la liste des pistes par une action distincte. L’application des pistes remplace seulement la liste des recommandations de ce dossier; aucune autre donnée n’est modifiée.
+
+L’analyse concurrentielle accepte jusqu’à cinq entrées fournies par l’utilisateur (nom, URL/source, offre observée, prix et notes). En mode local, MerKora n’effectue aucune recherche web, ne vérifie pas les prix et ne prétend pas connaître les offres actuelles. Les informations manquantes doivent être vérifiées à partir de sources publiques datées.
 
 ## Stack
 
