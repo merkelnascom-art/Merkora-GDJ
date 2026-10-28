@@ -7,6 +7,14 @@
 - [ ] Les routes de compte et de projets ne journalisent ni mot de passe ni jeton.
 - [ ] Les routes de mutation refusent une requête dont l’en-tête Origin n’est pas celui de l’application.
 
+## Configuration Supabase Auth requise avant le test
+
+Dans **Supabase > Authentication > URL Configuration**, ajouter à la liste des Redirect URLs :
+- `https://merkoragdj-git-feature-merkora-rebuild-foundation-wall-trade.vercel.app/auth/callback` (aperçu stable de la branche, si ce domaine est toujours celui attribué par Vercel);
+- `https://merkoragdj.vercel.app/auth/callback` (site principal, à utiliser uniquement quand l’URL principale est confirmée).
+
+Le flux d’inscription transmet maintenant explicitement `/auth/callback` sur le domaine qui sert le formulaire. Supabase n’acceptera ce retour que si l’URL correspond à la liste autorisée. Ne pas utiliser `localhost:3000` pour tester l’aperçu en ligne.
+
 ## Tests manuels à faire sur l’aperçu
 - [ ] Charger la page sans session : le prototype local reste accessible.
 - [ ] Créer un compte de test avec une adresse e-mail contrôlée par le testeur.
