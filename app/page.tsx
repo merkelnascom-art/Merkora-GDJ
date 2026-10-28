@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { LandingPage } from "@/components/marketing/landing-page";
 import { CloudAccountPanel } from "@/components/account/cloud-account-panel";
+import { AiProposalPanel } from "@/components/ai/ai-proposal-panel";
 import type { Project } from "@/lib/project-types";
 import { analyzeNeed } from "@/lib/discovery";
 import {
@@ -128,6 +129,10 @@ export default function HomePage() {
     setShowLanding(false);
   }
 
+  function updateProjectRecommendations(id: string, recommendations: Project["recommendations"]) {
+    setProjects((current) => current.map((project) => project.id === id ? { ...project, recommendations } : project));
+  }
+
   function deleteProject(id: string) {
     const confirmed = window.confirm("Supprimer ce projet enregistré dans ce navigateur ?");
     if (!confirmed) return;
@@ -220,6 +225,7 @@ export default function HomePage() {
               <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
               <div className="recommendation-list">{activeProject.recommendations.map((recommendation, index) => <article className="recommendation-card" key={recommendation.title}><span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span><div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div></article>)}</div>
               <div className="notice"><span>ⓘ</span><p>Ces pistes reposent sur des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation. Les points incertains doivent être confirmés.</p></div>
+              <AiProposalPanel key={activeProject.id} project={activeProject} onApply={(recommendations) => updateProjectRecommendations(activeProject.id, recommendations)} />
               <div className="detail-actions"><button className="button button-quiet" onClick={() => { setForm({ title: activeProject.title, category: activeProject.category, problem: activeProject.problem, desiredOutcome: activeProject.desiredOutcome, budget: activeProject.budget, urgency: activeProject.urgency }); setShowForm(true); setActiveProjectId(null); }}>Modifier le besoin</button><button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button></div>
             </section>
           ) : (
