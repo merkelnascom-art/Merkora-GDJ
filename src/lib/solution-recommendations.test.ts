@@ -26,6 +26,43 @@ describe("buildRecommendations", () => {
     expect(recommendations.some((item) => item.title === "Structurer le fonctionnement")).toBe(true);
   });
 
+  it("does not recommend shop or team management for career orientation", () => {
+    const recommendations = buildRecommendations({
+      ...validNeed,
+      title: "Student Vision",
+      category: "other",
+      problem: "Les élèves après le bac ne savent pas quels métiers choisir selon leurs relevés et leurs résultats.",
+      desiredOutcome: "Proposer des métiers adaptés après des tests d'orientation.",
+    });
+    const titles = recommendations.map((item) => item.title);
+    expect(titles).toContain("Explorer l’orientation scolaire et professionnelle");
+    expect(titles).not.toContain("Structurer le fonctionnement");
+  });
+
+  it("suggests commerce and staff operations for a shop-management need", () => {
+    const recommendations = buildRecommendations({
+      ...validNeed,
+      title: "Suivi de ma boutique",
+      category: "business",
+      problem: "Je ne maîtrise pas les ventes, les stocks et les retards de mon personnel.",
+      desiredOutcome: "Suivre la caisse, les stocks, les ventes et les présences.",
+    });
+    const titles = recommendations.map((item) => item.title);
+    expect(titles).toContain("Organiser les opérations commerciales");
+    expect(titles).not.toContain("Explorer l’orientation scolaire et professionnelle");
+  });
+
+  it("keeps vague descriptions exploratory instead of asserting a domain", () => {
+    const recommendations = buildRecommendations({
+      ...validNeed,
+      title: "Mon projet",
+      category: "other",
+      problem: "Je veux améliorer quelque chose mais je ne sais pas encore quoi.",
+      desiredOutcome: "Trouver une meilleure direction.",
+    });
+    expect(recommendations.some((item) => /préciser|clarifier/i.test(item.title))).toBe(true);
+  });
+
   it("always starts by clarifying the need and never returns more than four items", () => {
     const recommendations = buildRecommendations({ ...validNeed, category: "other", problem: "Je veux un objectif général sans domaine précis." });
     expect(recommendations[0].title).toBe("Clarifier le besoin");
