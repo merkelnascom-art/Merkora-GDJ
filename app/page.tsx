@@ -570,6 +570,46 @@ export default function HomePage() {
                 ))}
               </div>
               {activeProject.recommendations.some((item) => item.selected) && (
+                <section className="solution-preview">
+                  <div className="solution-preview-heading">
+                    <div>
+                      <div className="eyebrow">ÉTAPE 04 · APERÇU CONCEPTUEL</div>
+                      <h3>Imaginez votre futur espace de travail.</h3>
+                      <p>Voici une première représentation visuelle, construite à partir des fonctions que vous avez retenues.</p>
+                    </div>
+                    <span className="preview-status">Maquette indicative</span>
+                  </div>
+                  <div className="preview-window">
+                    <aside className="preview-sidebar">
+                      <div className="preview-brand"><span>MK</span><div><strong>MerKora</strong><small>ESPACE PROJET</small></div></div>
+                      <div className="preview-nav-item active"><span>▦</span> Vue d’ensemble</div>
+                      {Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).slice(0, 5).map((feature) => (
+                        <div className="preview-nav-item" key={feature}><span>◇</span>{feature}</div>
+                      ))}
+                      <div className="preview-sidebar-footer">APERÇU NON CONNECTÉ</div>
+                    </aside>
+                    <div className="preview-main">
+                      <div className="preview-topbar"><div><small>ESPACE DE TRAVAIL</small><strong>{activeProject.title}</strong></div><span className="preview-avatar">P</span></div>
+                      <div className="preview-welcome"><div><small>VOTRE ESPACE PERSONNALISÉ</small><h4>Bonjour, préparons votre activité.</h4><p>Les informations et indicateurs seront définis pendant le cadrage.</p></div><span>✦</span></div>
+                      <div className="preview-metrics">
+                        <article><span>Suivi d’activité</span><strong>À définir</strong><small>Selon vos objectifs</small></article>
+                        <article><span>Équipe & accès</span><strong>{activeProject.recommendations.some((item) => item.selected && (item.requestedFeatures ?? []).includes("Comptes et rôles utilisateurs")) ? "À configurer" : "Optionnel"}</strong><small>Selon les rôles retenus</small></article>
+                        <article><span>Alertes</span><strong>{activeProject.recommendations.some((item) => item.selected && (item.requestedFeatures ?? []).includes("Alertes et notifications")) ? "À paramétrer" : "Optionnel"}</strong><small>Seuils à convenir</small></article>
+                      </div>
+                      <div className="preview-bottom">
+                        <article className="preview-module-card"><div className="preview-module-title"><strong>Fonctions à étudier</strong><span>{Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).length}</span></div>
+                          {Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).length > 0
+                            ? Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).slice(0, 4).map((feature) => <div className="preview-feature-row" key={feature}><span>✓</span>{feature}<small>À cadrer</small></div>)
+                            : <p className="preview-empty">Les fonctions seront précisées avec vous.</p>}
+                        </article>
+                        <article className="preview-module-card"><div className="preview-module-title"><strong>Prochaines étapes</strong><span>3</span></div><div className="preview-step"><span>01</span><div><strong>Confirmer le besoin</strong><small>Valider les priorités</small></div></div><div className="preview-step"><span>02</span><div><strong>Définir les écrans</strong><small>Préparer la maquette détaillée</small></div></div><div className="preview-step"><span>03</span><div><strong>Étudier le budget</strong><small>Après validation du périmètre</small></div></div></article>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="preview-disclaimer">Cette maquette est illustrative : aucune donnée réelle, automatisation ou fonctionnalité n’est encore activée dans cet aperçu.</p>
+                </section>
+              )}
+              {activeProject.recommendations.some((item) => item.selected) && (
                 <div className="project-brief-panel">
                   <div>
                     <div className="eyebrow">ÉTAPE 03 · SYNTHÈSE</div>
