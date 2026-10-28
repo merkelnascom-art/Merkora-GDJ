@@ -30,6 +30,7 @@ export type Recommendation = {
   approach?: "simple" | "existing_tool" | "custom";
   tradeoff?: string;
   nextStep?: string;
+  selected?: boolean;
 };
 
 export function getCategoryLabel(category: NeedCategory): string {
