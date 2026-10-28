@@ -398,7 +398,13 @@ export default function HomePage() {
                 {activeProject.recommendations.map((recommendation, index) => (
                   <article className="recommendation-card" key={recommendation.title}>
                     <span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span>
-                    <div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div>
+                    <div>
+                      <h4>{recommendation.title}</h4>
+                      <p>{recommendation.description}</p>
+                      <small>{recommendation.reason}</small>
+                      {recommendation.tradeoff && <p className="recommendation-tradeoff"><strong>À prendre en compte :</strong> {recommendation.tradeoff}</p>}
+                      {recommendation.nextStep && <p className="recommendation-next-step"><strong>Prochaine action :</strong> {recommendation.nextStep}</p>}
+                    </div>
                   </article>
                 ))}
               </div>
