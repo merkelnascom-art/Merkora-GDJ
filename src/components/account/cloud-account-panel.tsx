@@ -46,7 +46,7 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
       if (data.authenticated === true && nextUser) {
         try {
           const count = await loadCloudProjects();
-          setMessage(\`Compte connecté · \${count} dossier(s) en ligne trouvé(s).\`);
+          setMessage(`Compte connecté · ${count} dossier(s) en ligne trouvé(s).`);
         } catch (caught) {
           setError(caught instanceof Error ? caught.message : "Chargement des dossiers impossible.");
         }
@@ -65,7 +65,7 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
     setError("");
     setMessage("");
     try {
-      const response = await fetch(\`/api/auth/\${mode}\`, {
+      const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, fullName }),
@@ -102,7 +102,7 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
       const data = await readJson(response);
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "La synchronisation a échoué.");
       const count = await loadCloudProjects();
-      setMessage(\`Synchronisation terminée. \${count} dossier(s) disponibles en ligne.\`);
+      setMessage(`Synchronisation terminée. ${count} dossier(s) disponibles en ligne.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "La synchronisation a échoué. Les dossiers locaux sont conservés.");
     } finally {
@@ -129,7 +129,7 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
   return (
     <section className="cloud-account" aria-label="Compte et sauvegarde en ligne">
       <div className="cloud-account-summary">
-        <span className={\`cloud-status-dot \${user ? "online" : ""}\`} />
+        <span className={`cloud-status-dot ${user ? "online" : ""}`} />
         <div className="cloud-account-label">
           <strong>{user ? (user.fullName || user.email || "Compte connecté") : configured === false ? "Compte en ligne indisponible" : "Sauvegarde en ligne"}</strong>
           <span>{user ? "Dossiers privés liés à votre compte" : configured === false ? "Configuration requise" : "Connectez-vous pour retrouver vos projets"}</span>
