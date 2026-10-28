@@ -4,7 +4,7 @@ import { fromCloudProjectRow, toCloudProjectRow, type CloudProjectRow, type Proj
 const localProject: Project = {
   id: "MK-ABC-1234",
   title: "Student Vision",
-  category: "education" as Project["category"],
+  category: "other",
   problem: "Les élèves après le bac ne savent pas quels métiers choisir selon leurs résultats.",
   desiredOutcome: "Explorer des métiers et des formations adaptés.",
   budget: "À définir",
