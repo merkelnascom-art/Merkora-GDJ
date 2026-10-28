@@ -1,18 +1,21 @@
 # MerKora GDJ
 
-Plateforme centrale destinée à transformer un besoin exprimé en langage naturel en pistes de solutions, puis en projet structuré.
+MerKora GDJ est une plateforme de découverte de besoins : elle commence par la situation réelle d’une personne ou d’une organisation, clarifie ce qui manque, puis propose des directions adaptées à examiner avant de construire une solution.
 
-## Ce que contient cette première version
+## Cette version de travail
 
-- Interface responsive en français.
-- Formulaire de description d'un besoin, avec validation.
-- Dossiers de projet enregistrés dans le stockage local du navigateur.
-- Pré-analyse par règles locales et pistes de réflexion adaptées aux mots-clés et à la catégorie.
-- Tests unitaires et workflow CI de typecheck, tests et build.
+- Page d’accueil en français, responsive, avec accès à la découverte sans création de compte.
+- Espace de travail conservé pour créer, consulter et modifier les dossiers locaux.
+- Pré-analyse contextuelle pour l’orientation scolaire et professionnelle, le commerce et la gestion d’équipe, la création/communication et certains besoins numériques.
+- Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
+- Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
+- Stockage local compatible avec la clé existante `merkora-gdj-projects-v1`.
 
 ## Limites importantes
 
-Cette version est un prototype de travail. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni avec un compte utilisateur. Les suggestions sont déterministes et locales : aucun modèle d'IA n'est encore connecté. Il n'y a pas encore d'authentification, de devis contractuel, de paiement ou de création automatique de logiciel.
+Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions proviennent de règles locales déterministes : aucun modèle d’IA n’est connecté. Les résultats ne constituent ni un diagnostic, ni un devis officiel, ni une promesse de réalisation.
+
+L’authentification, la sauvegarde cloud, les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements seront développés dans des phases distinctes après validation de la base.
 
 ## Stack
 
@@ -40,11 +43,12 @@ npm run build
 ## Sécurité et déploiement
 
 - Ne jamais committer de secret ni de fichier `.env.local`.
-- Configurer Supabase uniquement après vérification du projet cible et des politiques RLS.
-- Garder les clés privées IA côté serveur.
+- Les clés privées d’un fournisseur IA doivent rester côté serveur.
 - Ne pas supprimer ni réinitialiser les données Supabase existantes.
-- Distinguer clairement prototype, prévisualisation et production.
+- Ne pas modifier les autres projets, notamment WALL Trade.
+- Développer et vérifier sur `feature/merkora-rebuild-foundation`.
+- Aucun changement ne doit être fusionné dans `main` ni promu en production sans autorisation explicite.
 
-## Vercel
+## Aperçu Vercel
 
-Le projet Vercel est configuré pour détecter Next.js et son répertoire de sortie automatiquement. Les branches de travail doivent être vérifiées en prévisualisation avant de promouvoir un changement en production.
+Vérifier l’aperçu de la branche ou de la pull request avant toute promotion. La présence d’un aperçu ne signifie pas que les fonctions reportées (IA connectée, synchronisation cloud, devis et paiements) sont actives.
