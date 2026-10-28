@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { toProjectRecord, toSupabaseProjectRow, type SupabaseProjectRow } from "@/lib/supabase/project-record";
 import {
   buildRecommendations,
   getCategoryLabel,
@@ -57,29 +59,83 @@ export default function HomePage() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
+  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed: unknown = JSON.parse(saved);
-        if (Array.isArray(parsed)) setProjects(parsed as Project[]);
+    let active = true;
+    if (!supabase) {
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed: unknown = JSON.parse(saved);
+          if (Array.isArray(parsed)) setProjects(parsed as Project[]);
+        }
+      } catch {
+        // A corrupted local cache must not prevent the workspace from opening.
+      } finally {
+        setStorageReady(true);
       }
-    } catch {
-      // A corrupted local cache must not prevent the workspace from opening.
-    } finally {
-      setStorageReady(true);
+      return;
     }
+
+    void supabase.auth.getSession().then(async ({ data, error }: { data: { session: import("@supabase/supabase-js").Session | null }; error: Error | null }) => {
+      if (!active) return;
+      if (error) setAuthError("Impossible de vérifier la session. Réessayez.");
+      const user = data.session?.user;
+      setCurrentUser(user ? { id: user.id, email: user.email } : null);
+      if (user) {
+        const { data: rows, error: queryError } = await supabase
+          .from("user_projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false });
+        if (!active) return;
+        if (queryError) setAuthError("Connexion réussie, mais les dossiers n'ont pas pu être chargés. Vérifiez la configuration de la base.");
+        else setProjects((rows ?? []).map((row: SupabaseProjectRow) => toProjectRecord(row) as Project));
+      }
+      setStorageReady(true);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: import("@supabase/supabase-js").AuthChangeEvent, session: import("@supabase/supabase-js").Session | null) => {
+      if (!active) return;
+      const user = session?.user;
+      setCurrentUser(user ? { id: user.id, email: user.email } : null);
+      if (!user) setProjects([]);
+      if (user) {
+        window.setTimeout(() => {
+          void supabase.from("user_projects").select("*").eq("user_id", user.id)
+            .order("updated_at", { ascending: false })
+            .then(({ data: rows, error: queryError }: { data: SupabaseProjectRow[] | null; error: Error | null }) => {
+              if (!active) return;
+              if (queryError) setAuthError("Impossible de charger vos dossiers depuis la base.");
+              else setProjects((rows ?? []).map((row: SupabaseProjectRow) => toProjectRecord(row) as Project));
+            });
+        }, 0);
+      }
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  // The client is a module-level singleton.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!storageReady) return;
+    if (!storageReady || supabase) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
     } catch {
       // Storage can be unavailable in private browsing or restricted contexts.
     }
-  }, [projects, storageReady]);
+  }, [projects, storageReady, supabase]);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
@@ -108,6 +164,12 @@ export default function HomePage() {
     };
 
     setProjects((current) => [project, ...current]);
+    if (supabase && currentUser) {
+      void supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id))
+        .then(({ error }: { error: Error | null }) => {
+          if (error) setAuthError("Le dossier s'affiche, mais sa sauvegarde en ligne a échoué. Vérifiez votre connexion puis réessayez.");
+        });
+    }
     setActiveProjectId(project.id);
     setForm(initialForm);
     setErrors([]);
@@ -118,7 +180,80 @@ export default function HomePage() {
     const confirmed = window.confirm("Supprimer ce projet enregistré dans ce navigateur ?");
     if (!confirmed) return;
     setProjects((current) => current.filter((project) => project.id !== id));
+    if (supabase && currentUser) {
+      void supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id)
+        .then(({ error }: { error: Error | null }) => { if (error) setAuthError("La suppression en ligne a échoué. Réessayez."); });
+    }
     if (activeProjectId === id) setActiveProjectId(null);
+  }
+
+  async function handleAuth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+    setAuthNotice("");
+    try {
+      if (!supabase) {
+        setAuthError("La connexion en ligne n'est pas configurée. Réessayez après configuration de Supabase.");
+        return;
+      }
+      const result = authMode === "signup"
+        ? await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword })
+        : await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
+      if (result.error) throw result.error;
+      if (authMode === "signup" && !result.data.session) {
+        setAuthNotice("Compte créé. Consultez votre boîte mail pour confirmer l'adresse, puis connectez-vous.");
+        setAuthMode("signin");
+      } else if (result.data.user) {
+        setCurrentUser({ id: result.data.user.id, email: result.data.user.email });
+        setAuthNotice("Connexion réussie. Chargement de votre espace…");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Une erreur inattendue est survenue.";
+      setAuthError(message);
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleSignOut() {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) setAuthError("La déconnexion n'a pas abouti. Réessayez.");
+    else {
+      setCurrentUser(null);
+      setProjects([]);
+      setActiveProjectId(null);
+      setAuthNotice("Vous êtes déconnecté.");
+    }
+  }
+
+  if (supabase && !currentUser) {
+    return (
+      <main className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "24px" }}>
+        <section className="panel form-panel" style={{ width: "min(100%, 520px)", margin: "0 auto" }}>
+          <a className="brand" href="#accueil" aria-label="MerKora GDJ accueil">
+            <span className="brand-mark">M</span><span className="brand-name">MerKora <b>GDJ</b></span>
+          </a>
+          <div className="panel-heading" style={{ marginTop: "32px" }}>
+            <div><div className="eyebrow">VOTRE ESPACE PERSONNEL</div><h2>{authMode === "signup" ? "Créons votre espace." : "Ravi de vous revoir."}</h2><p>Vos projets seront associés à votre compte et sauvegardés en ligne.</p></div>
+          </div>
+          <form className="need-form" onSubmit={handleAuth}>
+            <label>Adresse e-mail <span>*</span><input type="email" required autoComplete="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="vous@exemple.com" /></label>
+            <label>Mot de passe <span>*</span><input type="password" required minLength={8} autoComplete={authMode === "signup" ? "new-password" : "current-password"} value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="8 caractères minimum" /></label>
+            {authError && <div className="form-errors" role="alert"><p>{authError}</p></div>}
+            {authNotice && <p role="status">{authNotice}</p>}
+            <div className="form-footer"><button className="button button-primary" type="submit" disabled={authBusy}>{authBusy ? "Patientez…" : authMode === "signup" ? "Créer mon compte →" : "Me connecter →"}</button></div>
+          </form>
+          <p style={{ marginTop: "20px" }}>{authMode === "signup" ? "Vous avez déjà un compte ?" : "Vous découvrez MerKora ?"}{" "}
+            <button className="button button-quiet" type="button" onClick={() => { setAuthMode(authMode === "signup" ? "signin" : "signup"); setAuthError(""); setAuthNotice(""); }}>
+              {authMode === "signup" ? "Se connecter" : "Créer un compte"}
+            </button>
+          </p>
+          <p style={{ color: "var(--muted, #6b7280)", fontSize: "13px" }}>Connexion sécurisée par Supabase. Ne partagez jamais votre mot de passe.</p>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -151,12 +286,14 @@ export default function HomePage() {
             <p className="topbar-subtitle">Donnez une forme concrète à vos idées.</p>
           </div>
           <div className="topbar-right">
-            <span className="local-indicator"><i /> Données locales</span>
-            <button className="avatar" aria-label="Profil de démonstration">M</button>
+            <span className="local-indicator"><i /> {supabase ? "Sauvegarde en ligne" : "Données locales"}</span>
+            {currentUser && <span style={{ fontSize: "13px" }}>{currentUser.email}</span>}
+            {currentUser ? <button className="button button-quiet" onClick={handleSignOut}>Déconnexion</button> : <button className="avatar" aria-label="Profil de démonstration">M</button>}
           </div>
         </header>
 
         <div className="content-wrap">
+          {authError && <div className="notice" role="status" style={{ marginBottom: "18px" }}><span>ⓘ</span><p>{authError}</p><button className="button button-quiet" onClick={() => setAuthError("")}>Fermer</button></div>}
           <section className="welcome-row">
             <div>
               <div className="eyebrow"><span className="eyebrow-star">✳</span> VOTRE ESPACE POUR CONSTRUIRE</div>
@@ -215,7 +352,7 @@ export default function HomePage() {
                 </label>
                 <label>Priorité
                   <select value={form.urgency} onChange={(event) => updateForm("urgency", event.target.value)}>
-                    <option value="normal">Normale</option><option value="soon">À traiter bientôt</option><option value="urgent">Urgente</option>
+                    <option value="normal">Normale</option><option value="high">À traiter bientôt</option><option value="urgent">Urgente</option>
                   </select>
                 </label>
                 {errors.length > 0 && <div className="form-errors" role="alert">{errors.map((error) => <p key={error}>• {error}</p>)}</div>}
@@ -233,7 +370,7 @@ export default function HomePage() {
                 <article><span className="detail-label">LA SITUATION</span><p>{activeProject.problem}</p></article>
                 <article><span className="detail-label">LE RÉSULTAT SOUHAITÉ</span><p>{activeProject.desiredOutcome}</p></article>
                 <article><span className="detail-label">BUDGET ENVISAGÉ</span><p>{activeProject.budget}</p></article>
-                <article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "soon" ? "À traiter bientôt" : "Normale"}</p></article>
+                <article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "high" ? "À traiter bientôt" : "Normale"}</p></article>
               </div>
               <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
               <div className="recommendation-list">
