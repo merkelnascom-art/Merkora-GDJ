@@ -30,6 +30,17 @@ const initialForm: NeedInput = {
   urgency: "normal",
 };
 
+const featureOptions = [
+  "Comptes et rôles utilisateurs",
+  "Tableau de bord et indicateurs",
+  "Historique et rapports",
+  "Alertes et notifications",
+  "Gestion depuis un téléphone",
+  "Export PDF / Excel",
+  "Validation par un responsable",
+  "Automatisation de tâches",
+];
+
 const statusLabels: Record<ProjectStatus, string> = {
   discovery: "À clarifier",
   design: "À concevoir",
@@ -212,6 +223,37 @@ export default function HomePage() {
       project.id === updatedProject.id ? updatedProject : project,
     ));
     setAuthNotice(supabase ? "Votre sélection est enregistrée dans votre espace en ligne." : "Votre sélection est enregistrée sur cet appareil.");
+  }
+
+  async function updateRecommendationDetails(
+    title: string,
+    patch: Partial<Pick<Recommendation, "requestedFeatures" | "clientNotes">>,
+  ) {
+    if (!activeProject) return;
+    const nextRecommendations = activeProject.recommendations.map((recommendation) =>
+      recommendation.title === title ? { ...recommendation, ...patch } : recommendation,
+    );
+    const updatedProject = { ...activeProject, recommendations: nextRecommendations };
+
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour conserver ces précisions en ligne.");
+        return;
+      }
+      setAuthError("");
+      const { error } = await supabase
+        .from("user_projects")
+        .upsert(toSupabaseProjectRow(updatedProject, currentUser.id));
+      if (error) {
+        setAuthError("Ces précisions n'ont pas été enregistrées en ligne. Réessayez.");
+        return;
+      }
+    }
+
+    setProjects((current) => current.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    ));
+    setAuthNotice(supabase ? "Précisions enregistrées dans votre espace en ligne." : "Précisions enregistrées sur cet appareil.");
   }
 
   async function deleteProject(id: string) {
@@ -442,6 +484,47 @@ export default function HomePage() {
                       >
                         {recommendation.selected ? "✓ Piste retenue" : "＋ Retenir cette piste"}
                       </button>
+                      {recommendation.selected && (
+                        <div className="requirements-panel">
+                          <h5>Précisez ce que vous aimeriez avoir</h5>
+                          <p>Choisissez les fonctions utiles à cette piste. Ce sont des besoins à étudier, pas encore des engagements de réalisation.</p>
+                          <div className="feature-checklist">
+                            {featureOptions.map((feature) => (
+                              <label key={feature} className="feature-option">
+                                <input
+                                  type="checkbox"
+                                  checked={(recommendation.requestedFeatures ?? []).includes(feature)}
+                                  onChange={(event) => {
+                                    const current = recommendation.requestedFeatures ?? [];
+                                    const next = event.target.checked
+                                      ? [...current, feature]
+                                      : current.filter((item) => item !== feature);
+                                    void updateRecommendationDetails(recommendation.title, { requestedFeatures: next });
+                                  }}
+                                />
+                                <span>{feature}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <label className="requirements-notes">
+                            Autres précisions
+                            <textarea
+                              key={`${activeProject.id}-${recommendation.title}-notes`}
+                              defaultValue={recommendation.clientNotes ?? ""}
+                              maxLength={1200}
+                              rows={3}
+                              placeholder="Ex. les employés enregistrent les entrées, seul le responsable valide les dépenses…"
+                              onBlur={(event) => {
+                                const value = event.currentTarget.value.trim();
+                                if (value !== (recommendation.clientNotes ?? "")) {
+                                  void updateRecommendationDetails(recommendation.title, { clientNotes: value });
+                                }
+                              }}
+                            />
+                            <small>Les notes sont enregistrées lorsque vous quittez le champ.</small>
+                          </label>
+                        </div>
+                      )}
                     </div>
                   </article>
                 ))}
