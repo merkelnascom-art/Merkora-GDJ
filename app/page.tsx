@@ -256,6 +256,46 @@ export default function HomePage() {
     setAuthNotice(supabase ? "Précisions enregistrées dans votre espace en ligne." : "Précisions enregistrées sur cet appareil.");
   }
 
+  async function copyProjectBrief() {
+    if (!activeProject) return;
+    const selected = activeProject.recommendations.filter((item) => item.selected);
+    const lines = [
+      "MERKORA GDJ — SYNTHÈSE DE CADRAGE",
+      `Projet : ${activeProject.title}`,
+      `Catégorie : ${getCategoryLabel(activeProject.category)}`,
+      `Date : ${new Date(activeProject.createdAt).toLocaleDateString("fr-FR")}`,
+      "",
+      "SITUATION ACTUELLE",
+      activeProject.problem,
+      "",
+      "RÉSULTAT SOUHAITÉ",
+      activeProject.desiredOutcome,
+      "",
+      `BUDGET ENVISAGÉ : ${activeProject.budget}`,
+      `PRIORITÉ : ${activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "high" ? "À traiter bientôt" : "Normale"}`,
+      "",
+      "PISTES RETENUES",
+      ...(selected.length
+        ? selected.flatMap((item, index) => [
+            `${index + 1}. ${item.title}`,
+            item.description,
+            `Fonctions souhaitées : ${(item.requestedFeatures ?? []).length ? item.requestedFeatures.join(", ") : "À préciser"}`,
+            `Autres précisions : ${item.clientNotes?.trim() || "Aucune"}`,
+            "",
+          ])
+        : ["Aucune piste retenue pour le moment."]),
+      "STATUT : document de cadrage préliminaire, à confirmer avec le client.",
+      "Ce document n'est ni un devis, ni une validation technique, ni une promesse de réalisation.",
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\\n"));
+      setAuthError("");
+      setAuthNotice("La synthèse du dossier a été copiée. Vous pouvez la coller dans un document ou un message.");
+    } catch {
+      setAuthError("La copie automatique n'a pas fonctionné sur cet appareil. Vous pouvez sélectionner et copier les informations manuellement.");
+    }
+  }
+
   async function deleteProject(id: string) {
     const confirmed = window.confirm(supabase
       ? "Supprimer définitivement ce dossier de votre espace en ligne ?"
@@ -529,6 +569,22 @@ export default function HomePage() {
                   </article>
                 ))}
               </div>
+              {activeProject.recommendations.some((item) => item.selected) && (
+                <div className="project-brief-panel">
+                  <div>
+                    <div className="eyebrow">ÉTAPE 03 · SYNTHÈSE</div>
+                    <h4>Votre demande prend forme.</h4>
+                    <p>Rassemblez la situation, le résultat attendu et vos choix dans un résumé facile à partager pour préparer l’échange de cadrage.</p>
+                  </div>
+                  <div className="project-brief-count">
+                    <strong>{activeProject.recommendations.filter((item) => item.selected).length}</strong>
+                    <span>piste(s) retenue(s)</span>
+                  </div>
+                  <button type="button" className="button button-primary" onClick={() => { void copyProjectBrief(); }}>
+                    Copier la synthèse <span>↗</span>
+                  </button>
+                </div>
+              )}
               {activeProject.recommendations.some((item) => item.selected) && (
                 <div className="notice selection-summary">
                   <span>✓</span>
