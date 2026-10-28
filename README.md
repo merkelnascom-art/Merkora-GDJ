@@ -1,14 +1,50 @@
 # MerKora GDJ
 
-Plateforme centrale de solutions numériques assistée par IA.
+Plateforme centrale destinée à transformer un besoin exprimé en langage naturel en pistes de solutions, puis en projet structuré.
 
-## Objectif
-Comprendre les besoins exprimés par une personne ou une organisation, structurer le problème, proposer des solutions adaptées, puis préparer une proposition claire avant toute réalisation.
+## Ce que contient cette première version
 
-## État du projet
-Dépôt initialisé. Le socle applicatif sera ajouté et vérifié progressivement. Aucun déploiement de production n'est autorisé sans validation explicite.
+- Interface responsive en français.
+- Formulaire de description d'un besoin, avec validation.
+- Dossiers de projet enregistrés dans le stockage local du navigateur.
+- Pré-analyse par règles locales et pistes de réflexion adaptées aux mots-clés et à la catégorie.
+- Tests unitaires et workflow CI de typecheck, tests et build.
 
-## Principes
-- Ne pas toucher au projet WALL Trade.
-- Ne pas supprimer ni réinitialiser de données existantes.
-- Vérifier les changements avant de les considérer comme terminés.
+## Limites importantes
+
+Cette version est un prototype de travail. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni avec un compte utilisateur. Les suggestions sont déterministes et locales : aucun modèle d'IA n'est encore connecté. Il n'y a pas encore d'authentification, de devis contractuel, de paiement ou de création automatique de logiciel.
+
+## Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Vitest
+- CSS responsive
+
+## Développement local
+
+```bash
+npm install
+npm run dev
+```
+
+## Vérifications
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Sécurité et déploiement
+
+- Ne jamais committer de secret ni de fichier `.env.local`.
+- Configurer Supabase uniquement après vérification du projet cible et des politiques RLS.
+- Garder les clés privées IA côté serveur.
+- Ne pas supprimer ni réinitialiser les données Supabase existantes.
+- Distinguer clairement prototype, prévisualisation et production.
+
+## Vercel
+
+Le projet Vercel est configuré pour détecter Next.js et son répertoire de sortie automatiquement. Les branches de travail doivent être vérifiées en prévisualisation avant de promouvoir un changement en production.
