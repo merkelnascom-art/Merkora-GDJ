@@ -6,6 +6,8 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 
 - Page d’accueil en français, responsive, avec accès à la découverte sans création de compte.
 - Espace de travail conservé pour créer, consulter et modifier les dossiers locaux.
+- Inscription et connexion par e-mail/mot de passe via routes serveur; jetons de session conservés dans des cookies HttpOnly.
+- Synchronisation manuelle des dossiers avec la table `public.user_projects`, protégée par les politiques RLS existantes.
 - Pré-analyse contextuelle pour l’orientation scolaire et professionnelle, le commerce et la gestion d’équipe, la création/communication et certains besoins numériques.
 - Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
 - Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
@@ -15,7 +17,7 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 
 Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions proviennent de règles locales déterministes : aucun modèle d’IA n’est connecté. Les résultats ne constituent ni un diagnostic, ni un devis officiel, ni une promesse de réalisation.
 
-L’authentification, la sauvegarde cloud, les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements seront développés dans des phases distinctes après validation de la base.
+La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements restent à développer.
 
 ## Stack
 
@@ -51,4 +53,4 @@ npm run build
 
 ## Aperçu Vercel
 
-Vérifier l’aperçu de la branche ou de la pull request avant toute promotion. La présence d’un aperçu ne signifie pas que les fonctions reportées (IA connectée, synchronisation cloud, devis et paiements) sont actives.
+Vérifier l’aperçu de la branche ou de la pull request avant toute promotion. La présence d’un aperçu ne signifie pas que les fonctions reportées (IA connectée, devis officiels et paiements) sont actives. Vérifier l’inscription, la connexion, la confirmation e-mail selon les paramètres Auth, la synchronisation et les règles RLS avant toute mise en production.
