@@ -7,6 +7,7 @@ Relier les dossiers locaux à un compte et permettre une synchronisation explici
 ## Réalisé dans la branche de travail
 
 - Routes serveur d’inscription, connexion, état de session et déconnexion.
+- Redirection explicite des e-mails de confirmation vers `/auth/callback`, écran de confirmation, validation du jeton auprès de Supabase avant de créer les cookies HttpOnly.
 - Jetons conservés dans des cookies HttpOnly, SameSite=Lax, Secure en production; aucun jeton renvoyé au code client.
 - Vérification de l’origine des requêtes POST.
 - Routes de lecture et de synchronisation manuelle pour `public.user_projects`, utilisant le jeton de l’utilisateur et les politiques RLS existantes.
@@ -30,7 +31,7 @@ Projet vérifié : `tvwkickjtqjqwoiidmxj` (Merkora GDJ). Table `public.user_proj
 ## Limites et décisions encore nécessaires
 
 - L’advisor Supabase signale que la protection contre les mots de passe compromis est désactivée. Aucun paramètre Auth n’a été modifié.
-- Vérifier le flux de confirmation d’e-mail avec la configuration Auth réelle.
+- Le code de retour e-mail est intégré; il reste à autoriser l’URL exacte `/auth/callback` dans Supabase Auth, puis à vérifier le flux réel avec un nouveau lien de confirmation. Un ancien lien peut déjà avoir expiré.
 - La synchronisation est manuelle et envoie les dossiers locaux vers le compte connecté après confirmation. Elle ne supprime pas les dossiers locaux.
 - L’IA connectée, les maquettes personnalisées, les devis officiels et le suivi de réalisation ne sont pas encore livrés.
 - Aucun merge vers `main`, aucune promotion production.
