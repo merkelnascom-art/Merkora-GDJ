@@ -171,7 +171,7 @@ export default function HomePage() {
           <div className="topbar-right"><span className="local-indicator"><i /> Données locales</span><button className="button button-quiet workspace-home" onClick={() => { setShowLanding(true); setShowForm(false); setActiveProjectId(null); }}>Accueil MerKora ↗</button></div>
         </header>
 
-        <div className="account-panel-wrap"><CloudAccountPanel localProjects={projects} onCloudProjectsLoaded={mergeCloudProjects} /></div>
+        <div className="account-panel-wrap"><CloudAccountPanel localProjects={projects} onCloudProjectsLoaded={mergeCloudProjects} storageReady={storageReady} /></div>
 
         <div className="content-wrap">
           <section className="welcome-row">
