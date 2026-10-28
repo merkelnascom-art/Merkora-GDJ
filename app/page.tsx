@@ -85,7 +85,7 @@ export default function HomePage() {
       return;
     }
 
-    void supabase.auth.getSession().then(async ({ data, error }) => {
+    void supabase.auth.getSession().then(async ({ data, error }: { data: { session: import("@supabase/supabase-js").Session | null }; error: Error | null }) => {
       if (!active) return;
       if (error) setAuthError("Impossible de vérifier la session. Réessayez.");
       const user = data.session?.user;
@@ -103,7 +103,7 @@ export default function HomePage() {
       setStorageReady(true);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: import("@supabase/supabase-js").AuthChangeEvent, session: import("@supabase/supabase-js").Session | null) => {
       if (!active) return;
       const user = session?.user;
       setCurrentUser(user ? { id: user.id, email: user.email } : null);
@@ -112,7 +112,7 @@ export default function HomePage() {
         window.setTimeout(() => {
           void supabase.from("user_projects").select("*").eq("user_id", user.id)
             .order("updated_at", { ascending: false })
-            .then(({ data: rows, error: queryError }) => {
+            .then(({ data: rows, error: queryError }: { data: SupabaseProjectRow[] | null; error: Error | null }) => {
               if (!active) return;
               if (queryError) setAuthError("Impossible de charger vos dossiers depuis la base.");
               else setProjects((rows ?? []).map((row: SupabaseProjectRow) => toProjectRecord(row) as Project));
