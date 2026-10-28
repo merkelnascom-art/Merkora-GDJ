@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Project } from "@/lib/project-types";
 import type { Recommendation } from "@/lib/solution-recommendations";
 import type { CompetitiveAnalysis, CompetitorInput } from "@/lib/competitive-analysis";
+import { buildLocalAnalysis } from "@/lib/local-analysis";
 
 type Improvement = {
   title: string;
@@ -56,6 +57,14 @@ export function AiProposalPanel({ project, onApply }: Props) {
     setError("");
     setMessage("");
     try {
+      if (!status?.enabled) {
+        const local = buildLocalAnalysis(project, competitors.filter((item) => Object.values(item).some((value) => value.trim())));
+        setAnalysis(local);
+        setEdited(local.recommendations.map((item) => ({ ...item })));
+        setImprovements(local.improvements.map((item) => ({ ...item, assumptions: [...item.assumptions] })));
+        setMessage("Pré-analyse locale gratuite préparée. Aucun appel à un modèle IA n’a été effectué.");
+        return;
+      }
       const response = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,14 +172,14 @@ export function AiProposalPanel({ project, onApply }: Props) {
             <label>Notes et date de vérification<textarea value={item.notes} maxLength={500} rows={2} onChange={(event) => updateCompetitor(index, "notes", event.target.value)} /></label>
           </article>
         ))}
-        <button type="button" className="button button-secondary" onClick={() => setCompetitors((current) => current.length >= 5 ? current : [...current, { ...emptyCompetitor }])} disabled={competitors.length >= 5}>Ajouter une source ({competitors.length}/5)</button>
+        <button type="button" className="button button-quiet" onClick={() => setCompetitors((current) => current.length >= 5 ? current : [...current, { ...emptyCompetitor }])} disabled={competitors.length >= 5}>Ajouter une source ({competitors.length}/5)</button>
       </div>
 
       <div className="ai-proposal-actions">
-        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || !status?.enabled}>
-          {busy ? "Analyse en cours…" : analysis ? "Recommencer l’analyse" : "Analyser ce besoin"}
+        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null}>
+          {busy ? "Analyse en cours…" : status?.enabled ? (analysis ? "Recommencer l’analyse IA" : "Analyser avec l’IA") : "Préparer une analyse locale gratuite"}
         </button>
-        {!status?.enabled && <span>L’analyse réelle reste désactivée pour éviter tout appel facturable avant configuration explicite.</span>}
+        {!status?.enabled && <span>Mode local sans frais : aucune requête n’est envoyée à un fournisseur IA. Les résultats restent préliminaires.</span>}
       </div>
 
       {error && <p className="ai-feedback is-error" role="alert">{error}</p>}
@@ -190,7 +199,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
 
           <div className="ai-edit-heading">
             <div><strong>Choisir, modifier ou ajouter des pistes</strong><p>Tu peux modifier les propositions de l’analyse, en retirer ou ajouter les tiennes.</p></div>
-            <button type="button" className="button button-secondary" onClick={addRecommendation}>Ajouter une piste</button>
+            <button type="button" className="button button-quiet" onClick={addRecommendation}>Ajouter une piste</button>
           </div>
           <div className="ai-edit-list">
             {edited.map((item, index) => (
@@ -203,7 +212,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
             ))}
           </div>
 
-          <div className="ai-edit-heading"><div><strong>Pistes d’amélioration du projet</strong><p>Priorité, bénéfice attendu, effort et hypothèses. Une estimation inconnue reste indiquée comme telle.</p></div><button type="button" className="button button-secondary" onClick={addImprovement}>Ajouter une amélioration</button></div>
+          <div className="ai-edit-heading"><div><strong>Pistes d’amélioration du projet</strong><p>Priorité, bénéfice attendu, effort et hypothèses. Une estimation inconnue reste indiquée comme telle.</p></div><button type="button" className="button button-quiet" onClick={addImprovement}>Ajouter une amélioration</button></div>
           <div className="ai-edit-list">
             {improvements.map((item, index) => (
               <article className="ai-edit-card" key={index}>
@@ -212,7 +221,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
                 <label>Description<textarea value={item.description} maxLength={500} rows={3} onChange={(event) => editImprovement(index, "description", event.target.value)} /></label>
                 <label>Bénéfice attendu<textarea value={item.expectedBenefit} maxLength={260} rows={2} onChange={(event) => editImprovement(index, "expectedBenefit", event.target.value)} /></label>
                 <p>Effort estimé : {effortLabel[item.effort]}. Hypothèses : {item.assumptions.length ? item.assumptions.join(" · ") : "Aucune précision fournie."}</p>
-                <button type="button" className="button button-secondary" onClick={() => addImprovementToRecommendations(item)}>Ajouter aux pistes du dossier</button>
+                <button type="button" className="button button-quiet" onClick={() => addImprovementToRecommendations(item)}>Ajouter aux pistes du dossier</button>
               </article>
             ))}
           </div>
