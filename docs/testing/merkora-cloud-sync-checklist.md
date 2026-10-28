@@ -1,0 +1,31 @@
+# Vérification — comptes et synchronisation cloud
+
+## Automatisé
+- [ ] TypeScript, Vitest et build Next.js passent sur le dernier commit de la branche.
+- [ ] Les conversions local/cloud conservent les champs du projet.
+- [ ] La priorité locale `soon` est convertie en valeur autorisée `high` pour la base.
+- [ ] Les routes de compte et de projets ne journalisent ni mot de passe ni jeton.
+- [ ] Les routes de mutation refusent une requête dont l’en-tête Origin n’est pas celui de l’application.
+
+## Tests manuels à faire sur l’aperçu
+- [ ] Charger la page sans session : le prototype local reste accessible.
+- [ ] Créer un compte de test avec une adresse e-mail contrôlée par le testeur.
+- [ ] Si la confirmation e-mail est activée, confirmer l’adresse puis se connecter.
+- [ ] Se connecter et vérifier que seuls les dossiers du compte sont listés par la route protégée.
+- [ ] Synchroniser un dossier local et vérifier sa présence dans `public.user_projects` sous le compte attendu.
+- [ ] Synchroniser à nouveau et vérifier qu’il n’y a pas de doublons.
+- [ ] Se déconnecter : les cookies de session sont effacés, les dossiers locaux restent.
+- [ ] Tester un compte distinct : il ne doit pas pouvoir lire les dossiers du premier compte.
+- [ ] Vérifier la confirmation avant de copier les dossiers de ce navigateur vers un compte.
+- [ ] Tester mobile et desktop, les erreurs de réseau et l’absence de configuration.
+
+## Données et sécurité
+- [ ] Les opérations cloud utilisent le JWT de l’utilisateur connecté et la clé publishable, jamais la clé service_role.
+- [ ] Les politiques RLS limitent SELECT/INSERT/UPDATE/DELETE à `auth.uid() = user_id`.
+- [ ] Aucune table n’a été supprimée, réinitialisée ou migrée.
+- [ ] Aucun dossier local n’est supprimé par une synchronisation.
+- [ ] Pas de fusion vers `main` et pas de promotion en production sans autorisation.
+- [ ] Vérifier les paramètres de confirmation d’e-mail et le mot de passe dans Supabase Auth avant la production.
+
+## Avertissement de sécurité Supabase relevé
+L’advisor de sécurité signale que la protection contre les mots de passe compromis est désactivée. Ce paramètre n’a pas été modifié. L’activer nécessite une décision et une vérification dans les paramètres Auth du projet.
