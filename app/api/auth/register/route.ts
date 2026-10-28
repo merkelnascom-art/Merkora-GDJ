@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       setSessionCookies(await cookies(), session as { access_token: string; refresh_token: string; expires_in?: number });
       return NextResponse.json({ authenticated: true, confirmationRequired: false });
     }
-    return NextResponse.json({ authenticated: false, confirmationRequired: true, message: "Compte créé. Consultez votre boîte e-mail, ouvrez le lien de confirmation, puis revenez sur MerKora pour vous connecter." });
+    return NextResponse.json({ authenticated: false, confirmationRequired: true, message: "Compte créé. Ouvrez le lien de confirmation reçu par e-mail; votre espace MerKora s’ouvrira ensuite automatiquement." });
   } catch (error) {
     const message = error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED" ? "La connexion au service de compte n’est pas encore configurée." : "Le service de compte est momentanément indisponible.";
     return NextResponse.json({ error: message }, { status: error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED" ? 503 : 502 });
