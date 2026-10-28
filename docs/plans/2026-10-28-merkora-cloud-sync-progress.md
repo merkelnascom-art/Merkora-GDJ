@@ -35,3 +35,13 @@ Projet vérifié : `tvwkickjtqjqwoiidmxj` (Merkora GDJ). Table `public.user_proj
 - La synchronisation est manuelle et envoie les dossiers locaux vers le compte connecté après confirmation. Elle ne supprime pas les dossiers locaux.
 - L’IA connectée, les maquettes personnalisées, les devis officiels et le suivi de réalisation ne sont pas encore livrés.
 - Aucun merge vers `main`, aucune promotion production.
+
+
+## Phase suivante — propositions IA modifiables
+
+- Route `GET /api/ai/status` : expose uniquement l’état de configuration, jamais les secrets.
+- Route `POST /api/ai/analyze` : envoie le besoin à Vercel AI Gateway, valide et limite la forme de la réponse, renvoie une synthèse, les questions, hypothèses, pistes et prochaines étapes.
+- Panneau d’analyse dans le détail du dossier : l’utilisateur peut modifier ou retirer chaque piste, puis décider explicitement de les appliquer.
+- L’application des pistes ne modifie que les recommandations du dossier courant; les autres dossiers et la base restent inchangés.
+- Garde-fou de coût : `MERKORA_AI_ENABLED` doit être explicitement défini à `true`; sinon aucune requête modèle n’est effectuée. Le modèle par défaut prévu est `deepseek/deepseek-v4.1-flash`, configurable par `MERKORA_AI_MODEL`.
+- L’intégration est câblée côté code, mais ne doit pas être déclarée active avant configuration de l’accès Gateway, d’un budget/limite de dépenses et d’un test live autorisé.
