@@ -22,20 +22,23 @@ function boundedText(value: unknown, max: number): string {
 export function parseCompetitorInputs(value: unknown): CompetitorInput[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
-  return value.slice(0, 5).flatMap((raw) => {
-    if (!raw || typeof raw !== "object") return [];
+  const result: CompetitorInput[] = [];
+  for (const raw of value) {
+    if (result.length >= 5) break;
+    if (!raw || typeof raw !== "object") continue;
     const item = raw as Record<string, unknown>;
     const name = boundedText(item.name, 100);
     const url = boundedText(item.url, 240);
     const offer = boundedText(item.offer, 500);
     const price = boundedText(item.price, 120);
     const notes = boundedText(item.notes, 500);
-    if (!name && !url && !offer && !price && !notes) return [];
+    if (!name && !url && !offer && !price && !notes) continue;
     const identity = (url || name).toLocaleLowerCase("fr");
-    if (identity && seen.has(identity)) return [];
+    if (identity && seen.has(identity)) continue;
     if (identity) seen.add(identity);
-    return [{ name, url, offer, price, notes }];
-  });
+    result.push({ name, url, offer, price, notes });
+  }
+  return result;
 }
 
 export function parseCompetitiveAnalysis(value: unknown, hasSuppliedCompetitors: boolean): CompetitiveAnalysis {
