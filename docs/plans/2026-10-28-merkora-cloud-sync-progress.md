@@ -33,9 +33,21 @@ Projet vérifié : `tvwkickjtqjqwoiidmxj` (Merkora GDJ). Table `public.user_proj
 - L’advisor Supabase signale que la protection contre les mots de passe compromis est désactivée. Aucun paramètre Auth n’a été modifié.
 - Le code de retour e-mail est intégré; il reste à autoriser l’URL exacte `/auth/callback` dans Supabase Auth, puis à vérifier le flux réel avec un nouveau lien de confirmation. Un ancien lien peut déjà avoir expiré.
 - La synchronisation est manuelle et envoie les dossiers locaux vers le compte connecté après confirmation. Elle ne supprime pas les dossiers locaux.
-- L’IA connectée, les maquettes personnalisées, les devis officiels et le suivi de réalisation ne sont pas encore livrés.
+- Le modèle IA réel reste désactivé; l’analyse locale gratuite est disponible dans le panneau de proposition.
+- Les maquettes personnalisées, les devis officiels et le suivi de réalisation ne sont pas encore livrés.
 - Aucun merge vers `main`, aucune promotion production.
 
+
+## Phase précédente — fondations IA, mode local, améliorations et concurrence
+
+- Couche de transport Gateway isolée dans `src/lib/ai-provider.ts`; la route reste responsable de la validation et des garde-fous.
+- La vérification `MERKORA_AI_ENABLED` reste prioritaire avant tout appel fournisseur; aucun appel réel n’est prévu dans les tests.
+- Pré-analyse locale gratuite dans `src/lib/local-analysis.ts` lorsque le fournisseur est désactivé; l’interface indique clairement que ce résultat n’est pas une réponse IA.
+- Le panneau permet de modifier, retirer ou ajouter des pistes; les améliorations peuvent être ajoutées aux pistes par une action distincte.
+- Le diagnostic peut proposer des améliorations avec bénéfice attendu, priorité, effort et hypothèses.
+- Le formulaire concurrentiel accepte jusqu’à cinq entrées saisies par l’utilisateur. Sans source, l’état reste `not_verified`; pas de recherche web, scraping ou prix inventés.
+- Tests ajoutés pour le transport mocké, le garde-fou de coût, le mode local et les entrées concurrentielles. Les résultats CI/build doivent être confirmés sur le commit le plus récent avant de déclarer la phase vérifiée.
+- Checklist détaillée: `docs/testing/merkora-ai-checklist.md`.
 
 ## Phase suivante — propositions IA modifiables
 
