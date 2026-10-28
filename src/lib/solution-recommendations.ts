@@ -31,6 +31,8 @@ export type Recommendation = {
   tradeoff?: string;
   nextStep?: string;
   selected?: boolean;
+  requestedFeatures?: string[];
+  clientNotes?: string;
 };
 
 export function getCategoryLabel(category: NeedCategory): string {
