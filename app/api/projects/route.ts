@@ -20,7 +20,14 @@ function validProject(value: unknown): value is Record<string, unknown> {
     && typeof row.budget === "string" && row.budget.length <= 100
     && typeof row.urgency === "string" && ["normal", "soon", "urgent", "low", "high"].includes(row.urgency)
     && typeof row.status === "string" && statuses.has(row.status)
-    && Array.isArray(row.recommendations) && row.recommendations.length <= 20;
+    && Array.isArray(row.recommendations) && row.recommendations.length <= 20
+    && row.recommendations.every((item) => {
+      if (!item || typeof item !== "object") return false;
+      const recommendation = item as Record<string, unknown>;
+      return typeof recommendation.title === "string" && recommendation.title.length <= 120
+        && typeof recommendation.description === "string" && recommendation.description.length <= 600
+        && typeof recommendation.reason === "string" && recommendation.reason.length <= 600;
+    });
 }
 
 export async function GET() {
