@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { LandingPage } from "@/components/marketing/landing-page";
-import { analyzeNeed, type DiscoveryResult } from "@/lib/discovery";
+import { CloudAccountPanel } from "@/components/account/cloud-account-panel";
+import type { Project } from "@/lib/project-types";
+import { analyzeNeed } from "@/lib/discovery";
 import {
   buildRecommendations,
   getCategoryLabel,
@@ -10,16 +12,7 @@ import {
   type NeedCategory,
   type NeedInput,
   type ProjectStatus,
-  type Recommendation,
 } from "@/lib/solution-recommendations";
-
-type Project = NeedInput & {
-  id: string;
-  createdAt: string;
-  status: ProjectStatus;
-  recommendations: Recommendation[];
-  discovery?: DiscoveryResult;
-};
 
 const STORAGE_KEY = "merkora-gdj-projects-v1";
 const initialForm: NeedInput = {
@@ -61,6 +54,13 @@ export default function HomePage() {
   const [storageReady, setStorageReady] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
+
+  const mergeCloudProjects = useCallback((cloudProjects: Project[]) => {
+    setProjects((current) => {
+      const localIds = new Set(current.map((project) => project.id));
+      return [...current, ...cloudProjects.filter((project) => !localIds.has(project.id))];
+    });
+  }, []);
 
   useEffect(() => {
     try {
@@ -170,6 +170,8 @@ export default function HomePage() {
           <div><div className="breadcrumb">MerKora GDJ <span>/</span> Espace de travail</div><p className="topbar-subtitle">Donnez une forme concrète à vos idées.</p></div>
           <div className="topbar-right"><span className="local-indicator"><i /> Données locales</span><button className="button button-quiet workspace-home" onClick={() => { setShowLanding(true); setShowForm(false); setActiveProjectId(null); }}>Accueil MerKora ↗</button></div>
         </header>
+
+        <div className="account-panel-wrap"><CloudAccountPanel localProjects={projects} onCloudProjectsLoaded={mergeCloudProjects} /></div>
 
         <div className="content-wrap">
           <section className="welcome-row">
