@@ -13,3 +13,8 @@
 .recommendation-card .recommendation-next-step{background:#f2f8f5;color:#32664d}
 .recommendation-card .recommendation-tradeoff strong,
 .recommendation-card .recommendation-next-step strong{font-weight:800}
+
+.recommendation-select{margin-top:12px;font-size:11px;padding:9px 12px}
+.recommendation-select.is-selected{background:#276b52;color:#fff}
+.recommendation-heading p{font-size:11px;line-height:1.6;color:var(--muted);margin:7px 0 0;max-width:560px}
+.selection-summary{background:#f0f8f3;border-color:#d7eadc;color:#32664d}
