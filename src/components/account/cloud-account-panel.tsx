@@ -90,6 +90,8 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
   }
 
   async function syncProjects() {
+    const confirmed = window.confirm(`Copier les ${localProjects.length} dossier(s) de ce navigateur vers le compte ${user?.email ?? "connecté"} ? Les dossiers locaux resteront sur cet appareil. Vérifiez que ce navigateur n’est pas partagé avec une autre personne.`);
+    if (!confirmed) return;
     setBusy(true);
     setError("");
     setMessage("");
