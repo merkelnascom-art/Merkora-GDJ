@@ -166,7 +166,7 @@ export default function HomePage() {
     setProjects((current) => [project, ...current]);
     if (supabase && currentUser) {
       void supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id))
-        .then(({ error }) => {
+        .then(({ error }: { error: Error | null }) => {
           if (error) setAuthError("Le dossier s'affiche, mais sa sauvegarde en ligne a échoué. Vérifiez votre connexion puis réessayez.");
         });
     }
