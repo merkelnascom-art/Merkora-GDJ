@@ -57,7 +57,7 @@ function classifyDomain(input: NeedInput): DiscoveryDomain {
 
 function isVague(input: NeedInput): boolean {
   const text = `${input.problem} ${input.desiredOutcome}`.toLocaleLowerCase("fr");
-  return text.length < 35 || /quelque chose|je ne sais pas encore quoi|pas encore précis|pas encore precis|à définir|a definir|je ne sais pas/.test(text);
+  return text.length < 35 || /quelque chose|je ne sais pas encore quoi|pas encore précis|pas encore precis|à définir|a definir/.test(text);
 }
 
 export function analyzeNeed(input: NeedInput): DiscoveryResult {
