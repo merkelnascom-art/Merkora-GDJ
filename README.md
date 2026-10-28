@@ -44,3 +44,7 @@ npm run build
 - Garder les clés privées IA côté serveur.
 - Ne pas supprimer ni réinitialiser les données Supabase existantes.
 - Distinguer clairement prototype, prévisualisation et production.
+
+## Vercel
+
+Le projet Vercel est configuré pour détecter Next.js et son répertoire de sortie automatiquement. Les branches de travail doivent être vérifiées en prévisualisation avant de promouvoir un changement en production.
