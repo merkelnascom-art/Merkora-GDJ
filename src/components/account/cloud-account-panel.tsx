@@ -5,13 +5,13 @@ import { analyzeNeed } from "@/lib/discovery";
 import { fromCloudProjectRow, type CloudProjectRow, type Project } from "@/lib/project-types";
 
 type SafeUser = { id: string; email: string | null; fullName: string | null };
-type Props = { localProjects: Project[]; onCloudProjectsLoaded: (projects: Project[]) => void };
+type Props = { localProjects: Project[]; onCloudProjectsLoaded: (projects: Project[]) => void; storageReady: boolean };
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   return await response.json().catch(() => ({})) as Record<string, unknown>;
 }
 
-export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded }: Props) {
+export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storageReady }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -57,7 +57,7 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded }: Prop
     }
   }, [loadCloudProjects]);
 
-  useEffect(() => { void refreshSession(); }, [refreshSession]);
+  useEffect(() => { if (storageReady) void refreshSession(); }, [refreshSession, storageReady]);
 
   async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
