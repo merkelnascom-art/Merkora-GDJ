@@ -184,6 +184,36 @@ export default function HomePage() {
     setAuthNotice(supabase ? "Dossier enregistré dans votre espace en ligne." : "Dossier enregistré dans ce navigateur.");
   }
 
+  async function toggleRecommendation(title: string) {
+    if (!activeProject) return;
+    const nextRecommendations = activeProject.recommendations.map((recommendation) =>
+      recommendation.title === title
+        ? { ...recommendation, selected: !recommendation.selected }
+        : recommendation,
+    );
+    const updatedProject = { ...activeProject, recommendations: nextRecommendations };
+
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour conserver vos choix en ligne.");
+        return;
+      }
+      setAuthError("");
+      const { error } = await supabase
+        .from("user_projects")
+        .upsert(toSupabaseProjectRow(updatedProject, currentUser.id));
+      if (error) {
+        setAuthError("Votre choix n'a pas été enregistré en ligne. Réessayez ; le choix précédent est conservé.");
+        return;
+      }
+    }
+
+    setProjects((current) => current.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    ));
+    setAuthNotice(supabase ? "Votre sélection est enregistrée dans votre espace en ligne." : "Votre sélection est enregistrée sur cet appareil.");
+  }
+
   async function deleteProject(id: string) {
     const confirmed = window.confirm(supabase
       ? "Supprimer définitivement ce dossier de votre espace en ligne ?"
@@ -393,7 +423,7 @@ export default function HomePage() {
                 <article><span className="detail-label">BUDGET ENVISAGÉ</span><p>{activeProject.budget}</p></article>
                 <article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "high" ? "À traiter bientôt" : "Normale"}</p></article>
               </div>
-              <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
+              <div className="recommendation-heading"><div><div className="eyebrow">ÉTAPE 02 · VOTRE CHOIX</div><h3>Quelles pistes souhaitez-vous retenir ?</h3><p>Sélectionnez les directions que vous voulez approfondir. Vous pourrez les modifier plus tard.</p></div><span className="local-tag">{activeProject.recommendations.filter((item) => item.selected).length} retenue(s)</span></div>
               <div className="recommendation-list">
                 {activeProject.recommendations.map((recommendation, index) => (
                   <article className="recommendation-card" key={recommendation.title}>
@@ -404,10 +434,24 @@ export default function HomePage() {
                       <small>{recommendation.reason}</small>
                       {recommendation.tradeoff && <p className="recommendation-tradeoff"><strong>À prendre en compte :</strong> {recommendation.tradeoff}</p>}
                       {recommendation.nextStep && <p className="recommendation-next-step"><strong>Prochaine action :</strong> {recommendation.nextStep}</p>}
+                      <button
+                        type="button"
+                        className={recommendation.selected ? "button button-primary recommendation-select is-selected" : "button button-quiet recommendation-select"}
+                        aria-pressed={Boolean(recommendation.selected)}
+                        onClick={() => { void toggleRecommendation(recommendation.title); }}
+                      >
+                        {recommendation.selected ? "✓ Piste retenue" : "＋ Retenir cette piste"}
+                      </button>
                     </div>
                   </article>
                 ))}
               </div>
+              {activeProject.recommendations.some((item) => item.selected) && (
+                <div className="notice selection-summary">
+                  <span>✓</span>
+                  <p><strong>Votre sélection est enregistrée.</strong> {activeProject.recommendations.filter((item) => item.selected).length} piste(s) retenue(s). Cette sélection servira à préparer la prochaine étape de cadrage ; aucun devis n'est encore calculé.</p>
+                </div>
+              )}
               <div className="notice"><span>ⓘ</span><p>Ces pistes sont générées par des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation.</p></div>
               <button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button>
             </section>
