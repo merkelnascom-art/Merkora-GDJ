@@ -145,3 +145,12 @@ export async function callUserData(path: string, method: "GET" | "POST" | "PATCH
   const data: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   return { ok: response.ok, status: response.status, data };
 }
+
+export async function validateSessionAccessToken(accessToken: string): Promise<boolean> {
+  const { url, key } = config();
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  return response.ok;
+}
