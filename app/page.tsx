@@ -146,10 +146,11 @@ export default function HomePage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function submitNeed(event: FormEvent<HTMLFormElement>) {
+  async function submitNeed(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validation = validateNeed(form);
     setErrors(validation);
+    setAuthError("");
     if (validation.length > 0) return;
 
     const project: Project = {
@@ -163,28 +164,44 @@ export default function HomePage() {
       recommendations: buildRecommendations(form),
     };
 
-    setProjects((current) => [project, ...current]);
-    if (supabase && currentUser) {
-      void supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id))
-        .then(({ error }: { error: Error | null }) => {
-          if (error) setAuthError("Le dossier s'affiche, mais sa sauvegarde en ligne a échoué. Vérifiez votre connexion puis réessayez.");
-        });
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour enregistrer ce dossier en ligne.");
+        return;
+      }
+      const { error } = await supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id));
+      if (error) {
+        setAuthError("Le dossier n'a pas été enregistré en ligne. Vérifiez votre connexion et réessayez ; vos informations sont toujours dans le formulaire.");
+        return;
+      }
     }
+
+    setProjects((current) => [project, ...current]);
     setActiveProjectId(project.id);
     setForm(initialForm);
     setErrors([]);
     setShowForm(false);
+    setAuthNotice(supabase ? "Dossier enregistré dans votre espace en ligne." : "Dossier enregistré dans ce navigateur.");
   }
 
-  function deleteProject(id: string) {
-    const confirmed = window.confirm("Supprimer ce projet enregistré dans ce navigateur ?");
+  async function deleteProject(id: string) {
+    const confirmed = window.confirm(supabase
+      ? "Supprimer définitivement ce dossier de votre espace en ligne ?"
+      : "Supprimer ce projet enregistré dans ce navigateur ?");
     if (!confirmed) return;
-    setProjects((current) => current.filter((project) => project.id !== id));
+    setAuthError("");
+
     if (supabase && currentUser) {
-      void supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id)
-        .then(({ error }: { error: Error | null }) => { if (error) setAuthError("La suppression en ligne a échoué. Réessayez."); });
+      const { error } = await supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id);
+      if (error) {
+        setAuthError("La suppression en ligne a échoué. Le dossier a été conservé ; réessayez.");
+        return;
+      }
     }
+
+    setProjects((current) => current.filter((project) => project.id !== id));
     if (activeProjectId === id) setActiveProjectId(null);
+    setAuthNotice("Dossier supprimé.");
   }
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
@@ -198,7 +215,11 @@ export default function HomePage() {
         return;
       }
       const result = authMode === "signup"
-        ? await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword })
+        ? await supabase.auth.signUp({
+            email: authEmail.trim(),
+            password: authPassword,
+            options: { emailRedirectTo: window.location.origin },
+          })
         : await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
       if (result.error) throw result.error;
       if (authMode === "signup" && !result.data.session) {
@@ -309,7 +330,7 @@ export default function HomePage() {
             <article className="metric-card">
               <span className="metric-icon violet">◈</span><span className="metric-label">MES PROJETS</span>
               <strong>{projects.length.toString().padStart(2, "0")}</strong>
-              <small>Enregistrés sur cet appareil</small>
+              <small>{supabase ? "Dossiers synchronisés avec votre compte" : "Enregistrés sur cet appareil"}</small>
             </article>
             <article className="metric-card">
               <span className="metric-icon green">✳</span><span className="metric-label">BESOINS À CLARIFIER</span>
@@ -356,7 +377,7 @@ export default function HomePage() {
                   </select>
                 </label>
                 {errors.length > 0 && <div className="form-errors" role="alert">{errors.map((error) => <p key={error}>• {error}</p>)}</div>}
-                <div className="form-footer"><p>Vos informations restent dans ce navigateur pour cette première version.</p><button className="button button-primary" type="submit">Analyser mon besoin <span>→</span></button></div>
+                <div className="form-footer"><p>{supabase ? "Votre dossier sera enregistré dans votre espace en ligne après validation." : "Votre dossier sera enregistré dans ce navigateur."}</p><button className="button button-primary" type="submit">Analyser mon besoin <span>→</span></button></div>
               </form>
             </section>
           ) : activeProject ? (
