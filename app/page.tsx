@@ -30,6 +30,17 @@ const initialForm: NeedInput = {
   urgency: "normal",
 };
 
+const featureOptions = [
+  "Comptes et rôles utilisateurs",
+  "Tableau de bord et indicateurs",
+  "Historique et rapports",
+  "Alertes et notifications",
+  "Gestion depuis un téléphone",
+  "Export PDF / Excel",
+  "Validation par un responsable",
+  "Automatisation de tâches",
+];
+
 const statusLabels: Record<ProjectStatus, string> = {
   discovery: "À clarifier",
   design: "À concevoir",
@@ -146,10 +157,11 @@ export default function HomePage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function submitNeed(event: FormEvent<HTMLFormElement>) {
+  async function submitNeed(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validation = validateNeed(form);
     setErrors(validation);
+    setAuthError("");
     if (validation.length > 0) return;
 
     const project: Project = {
@@ -163,28 +175,145 @@ export default function HomePage() {
       recommendations: buildRecommendations(form),
     };
 
-    setProjects((current) => [project, ...current]);
-    if (supabase && currentUser) {
-      void supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id))
-        .then(({ error }: { error: Error | null }) => {
-          if (error) setAuthError("Le dossier s'affiche, mais sa sauvegarde en ligne a échoué. Vérifiez votre connexion puis réessayez.");
-        });
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour enregistrer ce dossier en ligne.");
+        return;
+      }
+      const { error } = await supabase.from("user_projects").upsert(toSupabaseProjectRow(project, currentUser.id));
+      if (error) {
+        setAuthError("Le dossier n'a pas été enregistré en ligne. Vérifiez votre connexion et réessayez ; vos informations sont toujours dans le formulaire.");
+        return;
+      }
     }
+
+    setProjects((current) => [project, ...current]);
     setActiveProjectId(project.id);
     setForm(initialForm);
     setErrors([]);
     setShowForm(false);
+    setAuthNotice(supabase ? "Dossier enregistré dans votre espace en ligne." : "Dossier enregistré dans ce navigateur.");
   }
 
-  function deleteProject(id: string) {
-    const confirmed = window.confirm("Supprimer ce projet enregistré dans ce navigateur ?");
-    if (!confirmed) return;
-    setProjects((current) => current.filter((project) => project.id !== id));
-    if (supabase && currentUser) {
-      void supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id)
-        .then(({ error }: { error: Error | null }) => { if (error) setAuthError("La suppression en ligne a échoué. Réessayez."); });
+  async function toggleRecommendation(title: string) {
+    if (!activeProject) return;
+    const nextRecommendations = activeProject.recommendations.map((recommendation) =>
+      recommendation.title === title
+        ? { ...recommendation, selected: !recommendation.selected }
+        : recommendation,
+    );
+    const updatedProject = { ...activeProject, recommendations: nextRecommendations };
+
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour conserver vos choix en ligne.");
+        return;
+      }
+      setAuthError("");
+      const { error } = await supabase
+        .from("user_projects")
+        .upsert(toSupabaseProjectRow(updatedProject, currentUser.id));
+      if (error) {
+        setAuthError("Votre choix n'a pas été enregistré en ligne. Réessayez ; le choix précédent est conservé.");
+        return;
+      }
     }
+
+    setProjects((current) => current.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    ));
+    setAuthNotice(supabase ? "Votre sélection est enregistrée dans votre espace en ligne." : "Votre sélection est enregistrée sur cet appareil.");
+  }
+
+  async function updateRecommendationDetails(
+    title: string,
+    patch: Partial<Pick<Recommendation, "requestedFeatures" | "clientNotes">>,
+  ) {
+    if (!activeProject) return;
+    const nextRecommendations = activeProject.recommendations.map((recommendation) =>
+      recommendation.title === title ? { ...recommendation, ...patch } : recommendation,
+    );
+    const updatedProject = { ...activeProject, recommendations: nextRecommendations };
+
+    if (supabase) {
+      if (!currentUser) {
+        setAuthError("Connectez-vous pour conserver ces précisions en ligne.");
+        return;
+      }
+      setAuthError("");
+      const { error } = await supabase
+        .from("user_projects")
+        .upsert(toSupabaseProjectRow(updatedProject, currentUser.id));
+      if (error) {
+        setAuthError("Ces précisions n'ont pas été enregistrées en ligne. Réessayez.");
+        return;
+      }
+    }
+
+    setProjects((current) => current.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    ));
+    setAuthNotice(supabase ? "Précisions enregistrées dans votre espace en ligne." : "Précisions enregistrées sur cet appareil.");
+  }
+
+  async function copyProjectBrief() {
+    if (!activeProject) return;
+    const selected = activeProject.recommendations.filter((item) => item.selected);
+    const lines = [
+      "MERKORA GDJ — SYNTHÈSE DE CADRAGE",
+      `Projet : ${activeProject.title}`,
+      `Catégorie : ${getCategoryLabel(activeProject.category)}`,
+      `Date : ${new Date(activeProject.createdAt).toLocaleDateString("fr-FR")}`,
+      "",
+      "SITUATION ACTUELLE",
+      activeProject.problem,
+      "",
+      "RÉSULTAT SOUHAITÉ",
+      activeProject.desiredOutcome,
+      "",
+      `BUDGET ENVISAGÉ : ${activeProject.budget}`,
+      `PRIORITÉ : ${activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "high" ? "À traiter bientôt" : "Normale"}`,
+      "",
+      "PISTES RETENUES",
+      ...(selected.length
+        ? selected.flatMap((item, index) => [
+            `${index + 1}. ${item.title}`,
+            item.description,
+            `Fonctions souhaitées : ${(item.requestedFeatures ?? []).length ? (item.requestedFeatures ?? []).join(", ") : "À préciser"}`,
+            `Autres précisions : ${item.clientNotes?.trim() || "Aucune"}`,
+            "",
+          ])
+        : ["Aucune piste retenue pour le moment."]),
+      "STATUT : document de cadrage préliminaire, à confirmer avec le client.",
+      "Ce document n'est ni un devis, ni une validation technique, ni une promesse de réalisation.",
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setAuthError("");
+      setAuthNotice("La synthèse du dossier a été copiée. Vous pouvez la coller dans un document ou un message.");
+    } catch {
+      setAuthError("La copie automatique n'a pas fonctionné sur cet appareil. Vous pouvez sélectionner et copier les informations manuellement.");
+    }
+  }
+
+  async function deleteProject(id: string) {
+    const confirmed = window.confirm(supabase
+      ? "Supprimer définitivement ce dossier de votre espace en ligne ?"
+      : "Supprimer ce projet enregistré dans ce navigateur ?");
+    if (!confirmed) return;
+    setAuthError("");
+
+    if (supabase && currentUser) {
+      const { error } = await supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id);
+      if (error) {
+        setAuthError("La suppression en ligne a échoué. Le dossier a été conservé ; réessayez.");
+        return;
+      }
+    }
+
+    setProjects((current) => current.filter((project) => project.id !== id));
     if (activeProjectId === id) setActiveProjectId(null);
+    setAuthNotice("Dossier supprimé.");
   }
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
@@ -198,7 +327,11 @@ export default function HomePage() {
         return;
       }
       const result = authMode === "signup"
-        ? await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword })
+        ? await supabase.auth.signUp({
+            email: authEmail.trim(),
+            password: authPassword,
+            options: { emailRedirectTo: window.location.origin },
+          })
         : await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
       if (result.error) throw result.error;
       if (authMode === "signup" && !result.data.session) {
@@ -309,7 +442,7 @@ export default function HomePage() {
             <article className="metric-card">
               <span className="metric-icon violet">◈</span><span className="metric-label">MES PROJETS</span>
               <strong>{projects.length.toString().padStart(2, "0")}</strong>
-              <small>Enregistrés sur cet appareil</small>
+              <small>{supabase ? "Dossiers synchronisés avec votre compte" : "Enregistrés sur cet appareil"}</small>
             </article>
             <article className="metric-card">
               <span className="metric-icon green">✳</span><span className="metric-label">BESOINS À CLARIFIER</span>
@@ -356,7 +489,7 @@ export default function HomePage() {
                   </select>
                 </label>
                 {errors.length > 0 && <div className="form-errors" role="alert">{errors.map((error) => <p key={error}>• {error}</p>)}</div>}
-                <div className="form-footer"><p>Vos informations restent dans ce navigateur pour cette première version.</p><button className="button button-primary" type="submit">Analyser mon besoin <span>→</span></button></div>
+                <div className="form-footer"><p>{supabase ? "Votre dossier sera enregistré dans votre espace en ligne après validation." : "Votre dossier sera enregistré dans ce navigateur."}</p><button className="button button-primary" type="submit">Analyser mon besoin <span>→</span></button></div>
               </form>
             </section>
           ) : activeProject ? (
@@ -372,15 +505,132 @@ export default function HomePage() {
                 <article><span className="detail-label">BUDGET ENVISAGÉ</span><p>{activeProject.budget}</p></article>
                 <article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "high" ? "À traiter bientôt" : "Normale"}</p></article>
               </div>
-              <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
+              <div className="recommendation-heading"><div><div className="eyebrow">ÉTAPE 02 · VOTRE CHOIX</div><h3>Quelles pistes souhaitez-vous retenir ?</h3><p>Sélectionnez les directions que vous voulez approfondir. Vous pourrez les modifier plus tard.</p></div><span className="local-tag">{activeProject.recommendations.filter((item) => item.selected).length} retenue(s)</span></div>
               <div className="recommendation-list">
                 {activeProject.recommendations.map((recommendation, index) => (
                   <article className="recommendation-card" key={recommendation.title}>
                     <span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span>
-                    <div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div>
+                    <div>
+                      <h4>{recommendation.title}</h4>
+                      <p>{recommendation.description}</p>
+                      <small>{recommendation.reason}</small>
+                      {recommendation.tradeoff && <p className="recommendation-tradeoff"><strong>À prendre en compte :</strong> {recommendation.tradeoff}</p>}
+                      {recommendation.nextStep && <p className="recommendation-next-step"><strong>Prochaine action :</strong> {recommendation.nextStep}</p>}
+                      <button
+                        type="button"
+                        className={recommendation.selected ? "button button-primary recommendation-select is-selected" : "button button-quiet recommendation-select"}
+                        aria-pressed={Boolean(recommendation.selected)}
+                        onClick={() => { void toggleRecommendation(recommendation.title); }}
+                      >
+                        {recommendation.selected ? "✓ Piste retenue" : "＋ Retenir cette piste"}
+                      </button>
+                      {recommendation.selected && (
+                        <div className="requirements-panel">
+                          <h5>Précisez ce que vous aimeriez avoir</h5>
+                          <p>Choisissez les fonctions utiles à cette piste. Ce sont des besoins à étudier, pas encore des engagements de réalisation.</p>
+                          <div className="feature-checklist">
+                            {featureOptions.map((feature) => (
+                              <label key={feature} className="feature-option">
+                                <input
+                                  type="checkbox"
+                                  checked={(recommendation.requestedFeatures ?? []).includes(feature)}
+                                  onChange={(event) => {
+                                    const current = recommendation.requestedFeatures ?? [];
+                                    const next = event.target.checked
+                                      ? [...current, feature]
+                                      : current.filter((item) => item !== feature);
+                                    void updateRecommendationDetails(recommendation.title, { requestedFeatures: next });
+                                  }}
+                                />
+                                <span>{feature}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <label className="requirements-notes">
+                            Autres précisions
+                            <textarea
+                              key={`${activeProject.id}-${recommendation.title}-notes`}
+                              defaultValue={recommendation.clientNotes ?? ""}
+                              maxLength={1200}
+                              rows={3}
+                              placeholder="Ex. les employés enregistrent les entrées, seul le responsable valide les dépenses…"
+                              onBlur={(event) => {
+                                const value = event.currentTarget.value.trim();
+                                if (value !== (recommendation.clientNotes ?? "")) {
+                                  void updateRecommendationDetails(recommendation.title, { clientNotes: value });
+                                }
+                              }}
+                            />
+                            <small>Les notes sont enregistrées lorsque vous quittez le champ.</small>
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </article>
                 ))}
               </div>
+              {activeProject.recommendations.some((item) => item.selected) && (
+                <section className="solution-preview">
+                  <div className="solution-preview-heading">
+                    <div>
+                      <div className="eyebrow">ÉTAPE 04 · APERÇU CONCEPTUEL</div>
+                      <h3>Imaginez votre futur espace de travail.</h3>
+                      <p>Voici une première représentation visuelle, construite à partir des fonctions que vous avez retenues.</p>
+                    </div>
+                    <span className="preview-status">Maquette indicative</span>
+                  </div>
+                  <div className="preview-window">
+                    <aside className="preview-sidebar">
+                      <div className="preview-brand"><span>MK</span><div><strong>MerKora</strong><small>ESPACE PROJET</small></div></div>
+                      <div className="preview-nav-item active"><span>▦</span> Vue d’ensemble</div>
+                      {Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).slice(0, 5).map((feature) => (
+                        <div className="preview-nav-item" key={feature}><span>◇</span>{feature}</div>
+                      ))}
+                      <div className="preview-sidebar-footer">APERÇU NON CONNECTÉ</div>
+                    </aside>
+                    <div className="preview-main">
+                      <div className="preview-topbar"><div><small>ESPACE DE TRAVAIL</small><strong>{activeProject.title}</strong></div><span className="preview-avatar">P</span></div>
+                      <div className="preview-welcome"><div><small>VOTRE ESPACE PERSONNALISÉ</small><h4>Bonjour, préparons votre activité.</h4><p>Les informations et indicateurs seront définis pendant le cadrage.</p></div><span>✦</span></div>
+                      <div className="preview-metrics">
+                        <article><span>Suivi d’activité</span><strong>À définir</strong><small>Selon vos objectifs</small></article>
+                        <article><span>Équipe & accès</span><strong>{activeProject.recommendations.some((item) => item.selected && (item.requestedFeatures ?? []).includes("Comptes et rôles utilisateurs")) ? "À configurer" : "Optionnel"}</strong><small>Selon les rôles retenus</small></article>
+                        <article><span>Alertes</span><strong>{activeProject.recommendations.some((item) => item.selected && (item.requestedFeatures ?? []).includes("Alertes et notifications")) ? "À paramétrer" : "Optionnel"}</strong><small>Seuils à convenir</small></article>
+                      </div>
+                      <div className="preview-bottom">
+                        <article className="preview-module-card"><div className="preview-module-title"><strong>Fonctions à étudier</strong><span>{Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).length}</span></div>
+                          {Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).length > 0
+                            ? Array.from(new Set(activeProject.recommendations.filter((item) => item.selected).flatMap((item) => item.requestedFeatures ?? []))).slice(0, 4).map((feature) => <div className="preview-feature-row" key={feature}><span>✓</span>{feature}<small>À cadrer</small></div>)
+                            : <p className="preview-empty">Les fonctions seront précisées avec vous.</p>}
+                        </article>
+                        <article className="preview-module-card"><div className="preview-module-title"><strong>Prochaines étapes</strong><span>3</span></div><div className="preview-step"><span>01</span><div><strong>Confirmer le besoin</strong><small>Valider les priorités</small></div></div><div className="preview-step"><span>02</span><div><strong>Définir les écrans</strong><small>Préparer la maquette détaillée</small></div></div><div className="preview-step"><span>03</span><div><strong>Étudier le budget</strong><small>Après validation du périmètre</small></div></div></article>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="preview-disclaimer">Cette maquette est illustrative : aucune donnée réelle, automatisation ou fonctionnalité n’est encore activée dans cet aperçu.</p>
+                </section>
+              )}
+              {activeProject.recommendations.some((item) => item.selected) && (
+                <div className="project-brief-panel">
+                  <div>
+                    <div className="eyebrow">ÉTAPE 03 · SYNTHÈSE</div>
+                    <h4>Votre demande prend forme.</h4>
+                    <p>Rassemblez la situation, le résultat attendu et vos choix dans un résumé facile à partager pour préparer l’échange de cadrage.</p>
+                  </div>
+                  <div className="project-brief-count">
+                    <strong>{activeProject.recommendations.filter((item) => item.selected).length}</strong>
+                    <span>piste(s) retenue(s)</span>
+                  </div>
+                  <button type="button" className="button button-primary" onClick={() => { void copyProjectBrief(); }}>
+                    Copier la synthèse <span>↗</span>
+                  </button>
+                </div>
+              )}
+              {activeProject.recommendations.some((item) => item.selected) && (
+                <div className="notice selection-summary">
+                  <span>✓</span>
+                  <p><strong>Votre sélection est enregistrée.</strong> {activeProject.recommendations.filter((item) => item.selected).length} piste(s) retenue(s). Cette sélection servira à préparer la prochaine étape de cadrage ; aucun devis n'est encore calculé.</p>
+                </div>
+              )}
               <div className="notice"><span>ⓘ</span><p>Ces pistes sont générées par des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation.</p></div>
               <button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button>
             </section>
