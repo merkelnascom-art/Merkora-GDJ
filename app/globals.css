@@ -182,3 +182,12 @@ button:disabled{opacity:.6;cursor:not-allowed}
   .cloud-auth-actions .button{width:100%}
   .cloud-auth-signed-in{align-items:stretch;flex-direction:column}
 }
+
+
+.auth-callback-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0%,#f0edff 0,transparent 42%),#faf9fd}
+.auth-callback-card{width:min(100%,520px);padding:clamp(24px,5vw,44px);border:1px solid #e8e6f2;border-radius:20px;background:#fff;box-shadow:0 24px 80px #28204b0c;text-align:center}
+.auth-callback-mark{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 22px;border-radius:15px;background:#292344;color:#fff;font-weight:900;font-size:18px}
+.auth-callback-mark.is-error{background:#fff0f1;color:#a93c4b}
+.auth-callback-card h1{margin:12px 0;font-size:clamp(24px,5vw,34px);letter-spacing:-1px;color:#292344}
+.auth-callback-card>p:not(.eyebrow){margin:0 auto 24px;max-width:380px;color:#77758c;font-size:14px;line-height:1.8}
+.auth-callback-card .button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
