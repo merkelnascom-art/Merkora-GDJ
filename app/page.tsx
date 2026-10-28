@@ -279,7 +279,7 @@ export default function HomePage() {
         ? selected.flatMap((item, index) => [
             `${index + 1}. ${item.title}`,
             item.description,
-            `Fonctions souhaitées : ${(item.requestedFeatures ?? []).length ? item.requestedFeatures.join(", ") : "À préciser"}`,
+            `Fonctions souhaitées : ${(item.requestedFeatures ?? []).length ? (item.requestedFeatures ?? []).join(", ") : "À préciser"}`,
             `Autres précisions : ${item.clientNotes?.trim() || "Aucune"}`,
             "",
           ])
