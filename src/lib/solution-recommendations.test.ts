@@ -23,7 +23,7 @@ describe("validateNeed", () => {
 describe("buildRecommendations", () => {
   it("suggests organization steps for a team-management need", () => {
     const recommendations = buildRecommendations(validNeed);
-    expect(recommendations.some((item) => item.title === "Structurer le fonctionnement")).toBe(true);
+    expect(recommendations.some((item) => item.title === "Organiser les opérations commerciales")).toBe(true);
   });
 
   it("does not recommend shop or team management for career orientation", () => {
