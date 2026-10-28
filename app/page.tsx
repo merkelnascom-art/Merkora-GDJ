@@ -182,7 +182,7 @@ export default function HomePage() {
     setProjects((current) => current.filter((project) => project.id !== id));
     if (supabase && currentUser) {
       void supabase.from("user_projects").delete().eq("id", id).eq("user_id", currentUser.id)
-        .then(({ error }) => { if (error) setAuthError("La suppression en ligne a échoué. Réessayez."); });
+        .then(({ error }: { error: Error | null }) => { if (error) setAuthError("La suppression en ligne a échoué. Réessayez."); });
     }
     if (activeProjectId === id) setActiveProjectId(null);
   }
