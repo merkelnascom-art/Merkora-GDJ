@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callAuth, getAuthErrorMessage, isSameOrigin, setSessionCookies } from "@/lib/server/supabase-rest";
+import { callAuth, isSameOrigin, setSessionCookies } from "@/lib/server/supabase-rest";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await callAuth("signup", { email, password, data: fullName ? { full_name: fullName } : {} });
-    if (!result.ok) return NextResponse.json({ error: getAuthErrorMessage(result.data, "Impossible de créer ce compte pour le moment.") }, { status: result.status >= 400 && result.status < 500 ? result.status : 502 });
+    if (!result.ok) return NextResponse.json({ error: "Impossible de créer ce compte. Vérifiez les informations ou essayez de vous connecter si vous avez déjà un compte." }, { status: result.status >= 400 && result.status < 500 ? result.status : 502 });
     const data = result.data as Record<string, unknown>;
     const session = (data.session && typeof data.session === "object" ? data.session : data) as { access_token?: string; refresh_token?: string; expires_in?: number };
     if (session.access_token && session.refresh_token) {
