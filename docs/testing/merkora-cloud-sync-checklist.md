@@ -51,3 +51,10 @@ L’advisor de sécurité signale que la protection contre les mots de passe com
 - [ ] Vérifier que seules les recommandations du dossier courant changent et qu’elles restent présentes après rechargement.
 - [ ] Vérifier les réponses d’erreur pour authentification refusée, budget insuffisant, limite de requêtes et réponse JSON invalide.
 - [ ] Confirmer que l’IA ne produit pas de devis officiel ni ne promet une fonctionnalité qui n’a pas été validée.
+
+
+## Analyse IA, mode local et concurrence
+- [ ] Vérifier la checklist complète `docs/testing/merkora-ai-checklist.md`.
+- [ ] Lorsque le moteur IA est désactivé, la pré-analyse locale gratuite fonctionne sans appel à un fournisseur.
+- [ ] L’utilisateur peut ajouter, modifier et retirer des pistes avant de les appliquer.
+- [ ] L’analyse concurrentielle distingue les informations saisies par l’utilisateur des informations vérifiées; aucune recherche web en direct n’est prétendue.
