@@ -11,13 +11,33 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 - Pré-analyse contextuelle pour l’orientation scolaire et professionnelle, le commerce et la gestion d’équipe, la création/communication et certains besoins numériques.
 - Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
 - Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
+- Intégration du moteur d’analyse IA via Vercel AI Gateway, avec propositions modifiables et validation manuelle avant application au dossier.
+- Activation IA désactivée par défaut pour éviter les appels potentiellement facturables sans accord et configuration du budget.
 - Stockage local compatible avec la clé existante `merkora-gdj-projects-v1`.
 
 ## Limites importantes
 
-Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions proviennent de règles locales déterministes : aucun modèle d’IA n’est connecté. Les résultats ne constituent ni un diagnostic, ni un devis officiel, ni une promesse de réalisation.
+Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions locales fonctionnent sans IA. Le code d’intégration IA est présent, mais le moteur reste désactivé tant que `MERKORA_AI_ENABLED=true` n’a pas été configuré explicitement côté serveur. Aucun appel de modèle n’est effectué par défaut. Les propositions IA restent à relire et modifier; elles ne constituent ni un devis officiel, ni une promesse de réalisation.
 
 La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements restent à développer.
+
+## Intégration IA (désactivée par défaut)
+
+L’analyse utilise l’API compatible Chat Completions de Vercel AI Gateway. La clé est lue uniquement côté serveur depuis `AI_GATEWAY_API_KEY` ou le jeton OIDC Vercel. Le modèle est configurable via `MERKORA_AI_MODEL`; valeur par défaut prévue : `deepseek/deepseek-v4.1-flash`.
+
+Avant d’activer le moteur :
+1. Vérifier le modèle et son prix actuel dans le catalogue Vercel AI Gateway.
+2. Configurer une limite de dépenses/budget dans Vercel AI Gateway.
+3. Ajouter `MERKORA_AI_ENABLED=true` dans les variables d’environnement du seul projet MerKora GDJ.
+4. Vérifier l’authentification du Gateway dans l’environnement de déploiement.
+5. Effectuer un test contrôlé et consulter l’usage/coût avant d’ouvrir l’accès aux clients.
+
+Variables côté serveur :
+- `MERKORA_AI_ENABLED`: uniquement `true` pour autoriser les appels.
+- `MERKORA_AI_MODEL`: identifiant `provider/model` vérifié dans le catalogue.
+- `AI_GATEWAY_API_KEY`: optionnelle si l’environnement Vercel fournit l’authentification OIDC; ne jamais exposer cette variable côté client.
+
+L’interface permet de relire, modifier ou retirer les pistes proposées avant de les appliquer au dossier. L’application des pistes remplace seulement la liste des recommandations de ce dossier; aucune autre donnée n’est modifiée.
 
 ## Stack
 
