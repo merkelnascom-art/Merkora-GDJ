@@ -224,7 +224,7 @@ export function ClientResponseImportPanel() {
             Choisir un fichier JSON
             <input type="file" accept=".json,application/json" onChange={handleFileChange} style={styles.fileInput} />
           </label>
-          <button type="button" onClick={downloadLocalBackup} disabled={items.length === 0} style={styles.secondaryButton}>Sauvegarder le suivi (.json)</button>
+          <button type="button" onClick={downloadLocalBackup} disabled={items.length === 0} style={styles.secondaryButton}>Exporter le suivi complet (.json)</button>
         </div>
       </div>
       <p role="status" style={styles.status}>{message}</p>
@@ -243,6 +243,7 @@ export function ClientResponseImportPanel() {
         </label>
         <span style={styles.resultCount}>{visibleItems.length} / {items.length} dossier(s)</span>
       </div>}
+      {items.length > 0 && visibleItems.length === 0 && <div style={styles.empty}>Aucun dossier ne correspond à ces filtres.</div>}
       <div style={styles.list}>
         {visibleItems.map((item) => (
           <article key={item.localImportId} style={styles.item}>
