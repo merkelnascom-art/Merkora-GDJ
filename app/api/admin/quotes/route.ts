@@ -13,13 +13,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function cleanText(value: unknown, max: number): value is string {
   return typeof value === "string" && value.length <= max;
 }
-function lineFrom(value: unknown, id: string, description: string, amount: unknown): QuoteLine | null {
-  if (!isRecord(value)) return null;
-  const text = typeof value.description === "string" ? value.description.trim() : description;
-  const price = typeof value.amount === "number" ? value.amount : Number(amount);
-  if (!text || !Number.isSafeInteger(price) || price < 0) return null;
-  return { id, description: text, quantity: 1, unit: "forfait", unitPriceMinor: price };
-}
 
 export async function GET() {
   const access = await getAdminAccess();
@@ -97,7 +90,7 @@ export async function POST(request: Request) {
     if (!token) return NextResponse.json({ error: "Session expirée. Reconnectez-vous." }, { status: 401 });
 
     const requestResult = await callUserData(
-      `client_requests?select=id,user_id,user_email,project_id,project_title& id=eq.${encodeURIComponent(body.requestId)}`.replace("& ", "&"),
+      `client_requests?select=id,user_id,user_email,project_id,project_title&id=eq.${encodeURIComponent(body.requestId)}`,
       "GET", token,
     );
     if (!requestResult.ok || !Array.isArray(requestResult.data) || !requestResult.data.length) {
