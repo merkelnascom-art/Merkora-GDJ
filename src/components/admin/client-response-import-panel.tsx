@@ -162,11 +162,11 @@ export function ClientResponseImportPanel() {
   }
 
   function updateAdminReview(localImportId: string, changes: Partial<Pick<ImportedItem, "adminStatus" | "adminNote">>) {
-    setItems((current) => {
-      const next = current.map((item) => item.localImportId === localImportId ? { ...item, ...changes } : item);
-      if (saveItemsLocally(next)) setMessage("Suivi administratif enregistré sur cet appareil uniquement.");
-      return next;
-    });
+    const next = items.map((item) => item.localImportId === localImportId ? { ...item, ...changes } : item);
+    setItems(next);
+    setMessage(saveItemsLocally(next)
+      ? "Suivi administratif enregistré sur cet appareil uniquement."
+      : "Suivi modifié dans cette session, mais non enregistré durablement par le navigateur.");
   }
 
   function downloadReviewSheet(item: ImportedItem) {
