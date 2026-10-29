@@ -32,8 +32,19 @@ describe("parseClientResponseFile", () => {
     expect(() => parseClientResponseFile(JSON.stringify({ ...valid, exportedAt: "hier" }))).toThrow(/date d'export/);
   });
 
+  it("accepts digit-only FCFA amounts and day estimates", () => {
+    const result = parseClientResponseFile(JSON.stringify({
+      ...valid,
+      quote: { ...valid.quote, amountFcfa: "150000", estimatedDays: "14" },
+    }));
+    expect(result.quote.amountFcfa).toBe("150000");
+    expect(result.quote.estimatedDays).toBe("14");
+  });
+
   it("rejects non-numeric quote amounts and delays", () => {
-    expect(() => parseClientResponseFile(JSON.stringify({ ...valid, quote: { ...valid.quote, amountFcfa: "150000 FCFA" } }))).toThrow(/informations de proposition/);
+    for (const amountFcfa of ["150000 FCFA", "1,5", "150000.50", "-100"]) {
+      expect(() => parseClientResponseFile(JSON.stringify({ ...valid, quote: { ...valid.quote, amountFcfa } }))).toThrow(/informations de proposition/);
+    }
     expect(() => parseClientResponseFile(JSON.stringify({ ...valid, quote: { ...valid.quote, estimatedDays: "deux semaines" } }))).toThrow(/informations de proposition/);
   });
 
