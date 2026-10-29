@@ -84,14 +84,16 @@ export function ClientResponseImportPanel() {
     try {
       const rawJson = await file.text();
       const response = parseClientResponseFile(rawJson);
+      const localImportId = response.project.id + ":" + response.exportedAt + ":" + response.response.choice;
+      const previous = items.find((entry) => entry.localImportId === localImportId);
       const item: ImportedItem = {
         ...response,
-        importedAt: new Date().toISOString(),
-        localImportId: response.project.id + ":" + response.exportedAt + ":" + response.response.choice,
-        adminStatus: "to_review",
-        adminNote: "",
+        importedAt: previous?.importedAt ?? new Date().toISOString(),
+        localImportId,
+        adminStatus: previous?.adminStatus ?? "to_review",
+        adminNote: previous?.adminNote ?? "",
       };
-      const next = [item, ...items.filter((old) => old.localImportId !== item.localImportId)].slice(0, 50);
+      const next = [item, ...items.filter((entry) => entry.localImportId !== item.localImportId)].slice(0, 50);
       setItems(next);
       setMessage(saveItemsLocally(next)
         ? "Fichier vérifié et ajouté à la liste locale. Vérifiez manuellement l’identité de l’expéditeur et le dossier concerné."
