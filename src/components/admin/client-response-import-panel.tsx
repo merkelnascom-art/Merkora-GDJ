@@ -91,6 +91,38 @@ export function ClientResponseImportPanel() {
     }
   }
 
+  function downloadReviewSheet(item: ImportedItem) {
+    const content = [
+      "MERKORA GDJ — FICHE DE RÉCEPTION D’UN RETOUR CLIENT",
+      "",
+      "Référence du projet : " + item.project.id,
+      "Projet : " + item.project.title,
+      "Décision déclarée : " + labels[item.response.choice],
+      "Montant du devis affiché : " + (item.quote.amountFcfa ? Number(item.quote.amountFcfa).toLocaleString("fr-FR") + " FCFA" : "Non renseigné"),
+      "Délai affiché : " + (item.quote.estimatedDays ? item.quote.estimatedDays + " jour(s)" : "Non renseigné"),
+      "Conditions affichées : " + (item.quote.paymentTerms || "À convenir"),
+      "Commentaire : " + (item.response.comment.trim() || "Aucun commentaire"),
+      "Fichier exporté le : " + new Date(item.exportedAt).toLocaleString("fr-FR"),
+      "Importé sur cet appareil le : " + new Date(item.importedAt).toLocaleString("fr-FR"),
+      "",
+      "CONTRÔLES ADMINISTRATIFS À EFFECTUER",
+      "[ ] Confirmer que la référence correspond au bon dossier.",
+      "[ ] Vérifier l’identité du client par un canal indépendant.",
+      "[ ] Vérifier le montant, le périmètre et les conditions du devis.",
+      "[ ] Contacter le client si une clarification est nécessaire.",
+      "[ ] Enregistrer la décision administrative dans le dossier officiel.",
+      "",
+      "ATTENTION : cette fiche est un relevé local généré depuis un fichier importé. Elle ne prouve pas l’identité de l’expéditeur et ne constitue pas un contrat ni une preuve de paiement.",
+    ].join("\\n");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "merkora-fiche-retour-" + item.project.id.replace(/[^a-zA-Z0-9_-]/g, "-") + ".txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   function removeItem(localImportId: string) {
     setItems((current) => {
       const next = current.filter((item) => item.localImportId !== localImportId);
@@ -146,7 +178,10 @@ export function ClientResponseImportPanel() {
             <div style={styles.comment}><strong>Commentaire du client</strong><p>{item.response.comment.trim() || "Aucun commentaire ajouté."}</p></div>
             <p style={styles.terms}><strong>Conditions affichées :</strong> {item.quote.paymentTerms || "À convenir"}</p>
             <p style={styles.warning}>{item.notice} L’import ne prouve pas l’identité de l’expéditeur. Comparez la référence avec le dossier avant toute décision.</p>
-            <button type="button" onClick={() => removeItem(item.localImportId)} style={styles.remove}>Retirer de cette liste locale</button>
+            <div style={styles.actions}>
+              <button type="button" onClick={() => downloadReviewSheet(item)} style={styles.download}>Télécharger la fiche de contrôle (.txt)</button>
+              <button type="button" onClick={() => removeItem(item.localImportId)} style={styles.remove}>Retirer de cette liste locale</button>
+            </div>
           </article>
         ))}
       </div>
@@ -177,6 +212,8 @@ const styles: Record<string, React.CSSProperties> = {
   comment: { padding: 14, background: "#f5f2fc", borderRadius: 12, whiteSpace: "pre-wrap" },
   terms: { color: "#514b61", fontSize: 13, lineHeight: 1.5 },
   warning: { color: "#746a82", fontSize: 12, lineHeight: 1.55 },
+  actions: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 },
+  download: { border: "1px solid #5e35b1", borderRadius: 9, padding: "8px 11px", background: "#5e35b1", color: "#fff", cursor: "pointer", fontWeight: 700 },
   remove: { border: "1px solid #ddd5e8", borderRadius: 9, padding: "8px 11px", background: "#fff", color: "#514b61", cursor: "pointer" },
   footer: { color: "#918ba0", fontSize: 11, lineHeight: 1.5, marginTop: 16 },
 };
