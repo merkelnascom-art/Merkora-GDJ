@@ -65,6 +65,7 @@ export function ClientRequestSubmitPanel({ project }: Props) {
       const data = await response.json().catch(() => ({})) as { error?: string; message?: string };
       if (!response.ok) throw new Error(data.error || "La demande n’a pas pu être envoyée.");
       setMessage(data.message || "Demande transmise à MerKora.");
+      window.dispatchEvent(new Event("merkora:request-sent"));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "La demande n’a pas pu être envoyée.");
     } finally {
