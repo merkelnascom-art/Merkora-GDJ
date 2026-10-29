@@ -156,7 +156,7 @@ export function ClientResponseImportPanel() {
       }))));
       return true;
     } catch {
-      setMessage("La liste est mise à jour dans cette session, mais le navigateur n’a pas permis de l’enregistrer durablement.");
+      
       return false;
     }
   }
