@@ -35,6 +35,26 @@ function validPayload(value: unknown): value is Record<string, unknown> {
   return JSON.stringify(p).length <= 100_000;
 }
 
+export async function GET() {
+  try {
+    const store = await cookies();
+    const user = await getCurrentUser(store);
+    const token = await getAccessToken(store);
+    if (!user || !token) return NextResponse.json({ error: "Connectez-vous pour consulter vos demandes." }, { status: 401 });
+    // Explicitly scope to the signed-in user even when the account is also on the admin allowlist.
+    // Never return admin_note here: it is an internal-only field.
+    const result = await callUserData(
+      `client_requests?select=id,project_id,project_title,admin_status,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=100`,
+      "GET",
+      token,
+    );
+    if (!result.ok) return NextResponse.json({ error: "Impossible de charger vos demandes en ligne pour le moment." }, { status: 502 });
+    return NextResponse.json({ requests: Array.isArray(result.data) ? result.data : [] });
+  } catch {
+    return NextResponse.json({ error: "Le suivi de vos demandes est momentanément indisponible." }, { status: 503 });
+  }
+}
+
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
   let body: unknown;
