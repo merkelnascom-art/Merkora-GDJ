@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/server/admin-access";
+import { isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
 const allowedStatuses = new Set(["to_review","verified","changes_requested","negotiation","accepted","in_progress","delivered","rejected"]);
@@ -45,6 +46,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  if (!isSameOrigin(request)) return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
   const access = await getAdminAccess();
   if (!access.ok) return NextResponse.json({ error: "Accès administrateur requis." }, { status: access.reason === "unauthenticated" ? 401 : 403 });
   let body: unknown;
