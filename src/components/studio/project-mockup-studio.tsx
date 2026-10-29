@@ -169,6 +169,31 @@ export function ProjectMockupStudio({ project }: Props) {
     URL.revokeObjectURL(url);
   }
 
+  function downloadClientResponseJson() {
+    const payload = {
+      schema: "merkora.client-response.v1",
+      project: { id: project.id, title: model.title },
+      quote: {
+        amountFcfa: quoteAmount.trim() || null,
+        estimatedDays: quoteDays.trim() || null,
+        paymentTerms: quotePaymentTerms.trim().slice(0, 500),
+      },
+      response: {
+        choice: clientQuoteResponse,
+        comment: clientQuoteNote.trim().slice(0, 1200),
+      },
+      exportedAt: new Date().toISOString(),
+      notice: "Export local uniquement. L'import administrateur ne vérifie pas l'identité de l'expéditeur et ne vaut pas acceptation contractuelle.",
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "merkora-retour-client-" + (model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet") + ".json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function copySummary() {
     const summary = [
       `Projet : ${model.title}`,
@@ -305,7 +330,11 @@ export function ProjectMockupStudio({ project }: Props) {
                 </div>
                 <label className="mockup-review-note-label" htmlFor={"mockup-client-response-note-" + project.id}>Message ou conditions proposés par le client</label>
                 <textarea id={"mockup-client-response-note-" + project.id} className="mockup-review-note" maxLength={1200} rows={3} value={clientQuoteNote} onChange={(event) => setClientQuoteNote(event.target.value)} placeholder="Ex. : je souhaite réduire le périmètre, préciser la livraison ou discuter d'un paiement en deux étapes…" />
-                <button type="button" className="button button-primary" onClick={downloadClientResponse} disabled={clientQuoteResponse === "undecided"}>Exporter le retour client (.txt) ↗</button>
+                <div className="mockup-client-response-actions">
+                  <button type="button" className="button button-quiet" onClick={downloadClientResponse} disabled={clientQuoteResponse === "undecided"}>Exporter le résumé (.txt) ↗</button>
+                  <button type="button" className="button button-primary" onClick={downloadClientResponseJson} disabled={clientQuoteResponse === "undecided"}>Exporter pour l’administration (.json) ↗</button>
+                </div>
+                <p className="mockup-local-note">Le fichier JSON peut être transmis manuellement à l’administrateur puis importé dans son espace. Il ne part pas automatiquement et doit être vérifié.</p>
               </div>
             </section>
           )}
