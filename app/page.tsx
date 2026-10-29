@@ -6,6 +6,7 @@ import { CloudAccountPanel } from "@/components/account/cloud-account-panel";
 import { AiProposalPanel } from "@/components/ai/ai-proposal-panel";
 import { ProjectMockupStudio } from "@/components/studio/project-mockup-studio";
 import { ClientRequestSubmitPanel } from "@/components/studio/client-request-submit-panel";
+import { ClientRequestTrackingPanel } from "@/components/account/client-request-tracking-panel";
 import type { Project } from "@/lib/project-types";
 import { analyzeNeed } from "@/lib/discovery";
 import {
@@ -180,6 +181,7 @@ export default function HomePage() {
         </header>
 
         <div className="account-panel-wrap"><CloudAccountPanel localProjects={projects} onCloudProjectsLoaded={mergeCloudProjects} storageReady={storageReady} /></div>
+        <ClientRequestTrackingPanel />
 
         <div className="content-wrap">
           <section className="welcome-row">
