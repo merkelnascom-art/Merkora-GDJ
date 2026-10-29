@@ -50,8 +50,8 @@ export function parseClientResponseFile(input: unknown): ClientResponseFile {
     throw new Error("Les informations de proposition sont absentes.");
   }
   const quote = data.quote as Record<string, unknown>;
-  if (!(quote.amountFcfa === null || boundedString(quote.amountFcfa, 40)) ||
-      !(quote.estimatedDays === null || boundedString(quote.estimatedDays, 20)) ||
+  if (!(quote.amountFcfa === null || (boundedString(quote.amountFcfa, 40) && (quote.amountFcfa === "" || /^\\d+(?:[.,]\\d{1,2})?$/.test(quote.amountFcfa)))) ||
+      !(quote.estimatedDays === null || (boundedString(quote.estimatedDays, 20) && (quote.estimatedDays === "" || /^\\d+$/.test(quote.estimatedDays)))) ||
       !boundedString(quote.paymentTerms, 500)) {
     throw new Error("Les informations de proposition sont invalides.");
   }
