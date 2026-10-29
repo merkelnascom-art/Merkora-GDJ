@@ -339,3 +339,19 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mockup-preview-disclaimer>span{color:var(--mockup-accent);font-size:14px}
 @media(max-width:980px){.mockup-studio-layout{grid-template-columns:1fr}.mockup-controls{order:2}.mockup-preview-wrap{order:1}.mockup-format-options{grid-template-columns:repeat(3,minmax(0,1fr))}.mockup-choice{justify-content:center;flex-direction:column;gap:5px;text-align:center}.mockup-demo-sidebar{flex-basis:125px}}
 @media(max-width:620px){.mockup-studio{padding:15px;margin:22px 0;border-radius:15px}.mockup-studio-heading{flex-direction:column;gap:12px}.mockup-concept-badge{align-self:flex-start}.mockup-browser{margin:10px;border-radius:9px}.mockup-demo-main{padding:0 12px 14px}.mockup-demo-nav{min-height:50px}.mockup-demo-nav>div:nth-child(2){display:none}.mockup-demo-nav>button{padding:7px 8px}.mockup-hero{min-height:160px;padding:17px}.mockup-hero h4{max-width:100%;font-size:22px}.mockup-hero>p{max-width:100%}.mockup-hero-orbit{right:-45px;top:10px;width:100px;height:100px;opacity:.5}.mockup-module-grid{grid-template-columns:1fr}.mockup-browser-body{min-height:400px}.mockup-demo-sidebar{display:none}.mockup-format-options{grid-template-columns:repeat(3,minmax(0,1fr))}.mockup-choice{font-size:9px}.mockup-section-counter{max-width:90px;text-align:right}.mockup-preview-toolbar{font-size:9px}.mockup-palette-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Local-only concept review: never imply a cloud approval or server-side submission. */
+.mockup-review-panel{display:grid;gap:12px;margin-top:18px;padding:16px;border:1px solid #e5e1f0;border-radius:14px;background:#fff}
+.mockup-review-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mockup-review-heading h4{margin:5px 0 0;color:#33304c;font-size:17px;letter-spacing:-.03em}
+.mockup-review-status{flex-shrink:0;padding:6px 9px;border:1px solid #e8e5f0;border-radius:999px;background:#f7f6fa;color:#69657d;font-size:10px;font-weight:800}
+.mockup-review-status.status-approved{border-color:#bfe8d4;background:#effbf5;color:#176b48}
+.mockup-review-status.status-changes_requested{border-color:#f1d7ae;background:#fff8ed;color:#8a5710}
+.mockup-review-note-label{color:#4b4761;font-size:11px;font-weight:800}
+.mockup-review-note{width:100%;min-height:92px;resize:vertical;padding:11px 12px;border:1px solid #e4e0ee;border-radius:9px;background:#fff;color:#37334f;font:inherit;font-size:12px;line-height:1.6}
+.mockup-review-note:focus{outline:2px solid #b8a8f2;outline-offset:1px}
+.mockup-review-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mockup-review-actions button{font-size:11px}
+.mockup-review-actions .button-primary{border:1px solid #5940bd;background:#5940bd;color:#fff}
+@media(max-width:620px){.mockup-review-panel{padding:12px}.mockup-review-heading{flex-direction:column}.mockup-review-actions{flex-direction:column}.mockup-review-actions button{width:100%}}
