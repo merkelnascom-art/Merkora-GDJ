@@ -1,6 +1,6 @@
 -- MerKora GDJ: additive, versioned quote storage.
 -- No existing table or row is altered or deleted.
--- Published versions and client decisions are append-only: application roles receive no UPDATE/DELETE grants.
+-- Quote snapshots and client decisions are append-only for application roles.
 
 create table public.client_quotes (
   id uuid primary key default gen_random_uuid(),
@@ -22,6 +22,8 @@ create table public.client_quote_versions (
   id uuid primary key default gen_random_uuid(),
   quote_id uuid not null
     references public.client_quotes(id) on delete restrict,
+  client_user_id uuid not null
+    references auth.users(id) on delete restrict,
   version_number integer not null check (version_number > 0),
   snapshot jsonb not null check (jsonb_typeof(snapshot) = 'object'),
   currency text not null default 'XOF'
@@ -38,8 +40,8 @@ create table public.client_quote_versions (
 
 create index client_quote_versions_quote_version_idx
   on public.client_quote_versions (quote_id, version_number desc);
-create index client_quote_versions_published_idx
-  on public.client_quote_versions (quote_id, published_at)
+create index client_quote_versions_client_published_idx
+  on public.client_quote_versions (client_user_id, published_at)
   where published_at is not null;
 
 create table public.client_quote_decisions (
@@ -83,8 +85,16 @@ create policy "Merkora admin can create client quotes"
   with check (
     (select auth.jwt() ->> 'email') = 'merkelnascom@gmail.com'
     and created_by = (select auth.uid())
+    and exists (
+      select 1
+      from public.client_requests r
+      where r.id = request_id
+        and r.user_id = client_user_id
+    )
   );
 
+-- Parent rows are visible to clients only after at least one version is published.
+-- Version RLS uses its own client_user_id column to avoid recursive RLS policy checks.
 create policy "Clients can read their published quotes"
   on public.client_quotes for select to authenticated
   using (
@@ -93,6 +103,7 @@ create policy "Clients can read their published quotes"
       select 1
       from public.client_quote_versions v
       where v.quote_id = client_quotes.id
+        and v.client_user_id = (select auth.uid())
         and v.published_at is not null
     )
   );
@@ -110,20 +121,15 @@ create policy "Merkora admin can create quote versions"
       select 1
       from public.client_quotes q
       where q.id = quote_id
-        and q.client_user_id is not null
+        and q.client_user_id = client_quote_versions.client_user_id
     )
   );
 
 create policy "Clients can read their published quote versions"
   on public.client_quote_versions for select to authenticated
   using (
-    published_at is not null
-    and exists (
-      select 1
-      from public.client_quotes q
-      where q.id = quote_id
-        and q.client_user_id = (select auth.uid())
-    )
+    client_user_id = (select auth.uid())
+    and published_at is not null
   );
 
 create policy "Merkora admin can read quote decisions"
@@ -141,17 +147,16 @@ create policy "Clients can submit decisions on their own published quotes"
     and exists (
       select 1
       from public.client_quote_versions v
-      join public.client_quotes q on q.id = v.quote_id
       where v.id = quote_version_id
+        and v.client_user_id = (select auth.uid())
         and v.published_at is not null
         and v.valid_until >= current_date
-        and q.client_user_id = (select auth.uid())
     )
   );
 
 comment on table public.client_quotes is
   'Quote group tied to one existing client request. Additive schema; request data remains unchanged.';
 comment on table public.client_quote_versions is
-  'Immutable quote snapshots. Drafts have published_at NULL; published versions are visible to the owning client.';
+  'Append-only quote snapshots. Draft snapshots have published_at NULL; published versions are visible to the owning client.';
 comment on table public.client_quote_decisions is
   'Append-only client decisions, each tied to the exact quote version shown to the client.';
