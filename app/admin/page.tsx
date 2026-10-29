@@ -3,13 +3,14 @@ import { redirect } from "next/navigation";
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { ClientResponseImportPanel } from "@/components/admin/client-response-import-panel";
 import { CloudClientRequestsPanel } from "@/components/admin/cloud-client-requests-panel";
+import { AdminQuotesPanel } from "@/components/admin/admin-quotes-panel";
 
 export const dynamic = "force-dynamic";
 
 const cards = [
   { title: "Dossiers clients", description: "Consulter les dossiers autorisés et leur statut.", value: "Lecture seule" },
   { title: "Studio & propositions", description: "Préparer la revue des maquettes et des choix clients.", value: "À connecter" },
-  { title: "Devis & validations", description: "Préparer le contrôle humain des périmètres et tarifs.", value: "Non activé" },
+  { title: "Devis & validations", description: "Créer des versions de devis, les publier au client et suivre ses décisions.", value: "Disponible en aperçu" },
   { title: "Réalisation & livraison", description: "Suivre les étapes après autorisation du devis.", value: "À construire" },
 ];
 
@@ -56,7 +57,7 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
-      <CloudClientRequestsPanel />
+      <AdminQuotesPanel />\n      <CloudClientRequestsPanel />
       <ClientResponseImportPanel />
       <footer style={styles.footer}>MerKora GDJ · Administration de prévisualisation · aucune action de production</footer>
     </main>
