@@ -39,31 +39,12 @@ describe("POST /api/ai/analyze cost and origin gates", () => {
   });
 
 
-  it("validates and returns improvements while marking unsourced competitor research as unverified", async () => {
+  it("keeps external analysis disabled even if environment flags and credentials are present", async () => {
     process.env.MERKORA_AI_ENABLED = "true";
     process.env.AI_GATEWAY_API_KEY = "test-only-secret";
-    vi.mocked(requestAiGatewayCompletion).mockResolvedValueOnce(new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify({
-        summary: "Analyse de test",
-        domain: "Organisation",
-        understood: ["Équipe à suivre"],
-        questions: [],
-        recommendations: [{ title: "Piste A", description: "Description A", reason: "Motif A" }],
-        improvements: [
-          { title: "Amélioration A", description: "Clarifier les rôles", expectedBenefit: "Réduire les oublis", effort: "unexpected", priority: "urgent", assumptions: ["À confirmer"] },
-          { title: "Incomplète", description: "", expectedBenefit: "Sans description" },
-        ],
-        competitiveAnalysis: {
-          summary: "Aucune recherche web réalisée",
-          comparisonCriteria: ["Prix"],
-          opportunities: [],
-          unknowns: ["Prix actuels à vérifier"],
-          nextSteps: ["Consulter les sites officiels"],
-        },
-        assumptions: [],
-        nextSteps: ["Confirmer le besoin"],
-      }) } }],
-    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    process.env.VERCEL_OIDC_TOKEN = "test-only-token";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await POST(new Request("https://merkora.test/api/ai/analyze", {
       method: "POST",
@@ -76,12 +57,13 @@ describe("POST /api/ai/analyze cost and origin gates", () => {
       }),
     }));
 
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.analysis.improvements).toHaveLength(1);
-    expect(data.analysis.improvements[0]).toMatchObject({ effort: "unknown", priority: "medium" });
-    expect(data.analysis.competitiveAnalysis.researchStatus).toBe("not_verified");
-    expect(requestAiGatewayCompletion).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      code: "ZERO_EXPENSE_MODE",
+      fallbackAvailable: true,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
   });
 
   it("rejects a cross-origin request before checking credentials or calling a provider", async () => {
