@@ -11,7 +11,8 @@ import {
 
 type Props = { project: Project };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
-type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string };
+type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
+type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -34,6 +35,8 @@ export function ProjectMockupStudio({ project }: Props) {
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDays, setQuoteDays] = useState("");
   const [quotePaymentTerms, setQuotePaymentTerms] = useState("À convenir après échange avec le client");
+  const [clientQuoteResponse, setClientQuoteResponse] = useState<ClientQuoteResponse>("undecided");
+  const [clientQuoteNote, setClientQuoteNote] = useState("");
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
@@ -49,6 +52,8 @@ export function ProjectMockupStudio({ project }: Props) {
         setQuoteAmount(typeof parsed.quoteAmount === "string" ? parsed.quoteAmount : "");
         setQuoteDays(typeof parsed.quoteDays === "string" ? parsed.quoteDays : "");
         setQuotePaymentTerms(typeof parsed.quotePaymentTerms === "string" ? parsed.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
+        setClientQuoteResponse(parsed.clientQuoteResponse === "accepted" || parsed.clientQuoteResponse === "changes_requested" || parsed.clientQuoteResponse === "negotiate" ? parsed.clientQuoteResponse : "undecided");
+        setClientQuoteNote(typeof parsed.clientQuoteNote === "string" ? parsed.clientQuoteNote.slice(0, 1200) : "");
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
@@ -68,11 +73,11 @@ export function ProjectMockupStudio({ project }: Props) {
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, ready, storageKey]);
+  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey]);
 
   function toggleModule(id: string) {
     setConfig((current) => {
@@ -130,6 +135,36 @@ export function ProjectMockupStudio({ project }: Props) {
     const link = document.createElement("a");
     link.href = url;
     link.download = `merkora-brouillon-devis-${model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet"}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadClientResponse() {
+    const responseLabels: Record<ClientQuoteResponse, string> = {
+      undecided: "Aucune décision sélectionnée",
+      accepted: "Le client indique accepter la proposition",
+      changes_requested: "Le client demande des modifications",
+      negotiate: "Le client souhaite discuter du prix ou des conditions",
+    };
+    const lines = [
+      "MERKORA GDJ — RETOUR CLIENT SUR UN BROUILLON DE DEVIS",
+      "",
+      "Projet : " + model.title,
+      "Référence locale : " + project.id,
+      "Montant présenté : " + (quoteAmount.trim() ? quoteAmount.trim() + " FCFA" : "Non renseigné"),
+      "Délai présenté : " + (quoteDays.trim() ? quoteDays.trim() + " jour(s)" : "Non renseigné"),
+      "Décision choisie : " + responseLabels[clientQuoteResponse],
+      "",
+      "Commentaire du client :",
+      clientQuoteNote.trim() || "Aucun commentaire ajouté.",
+      "",
+      "IMPORTANT : retour préparatoire exporté localement. Ce fichier n'a pas été envoyé à MerKora et ne vaut pas acceptation contractuelle ni preuve de transmission. L'administrateur doit vérifier et enregistrer la réponse par un canal convenu.",
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "merkora-retour-client-" + (model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet") + ".txt";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -257,6 +292,21 @@ export function ProjectMockupStudio({ project }: Props) {
               <textarea id={`mockup-quote-terms-${project.id}`} className="mockup-review-note" maxLength={500} value={quotePaymentTerms} onChange={(event) => setQuotePaymentTerms(event.target.value)} rows={2} />
               <button type="button" className="button button-primary" onClick={downloadQuoteDraft}>Exporter le brouillon de devis (.txt) ↗</button>
               <p className="mockup-local-note">L'export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel, ne facture personne et ne synchronise aucune donnée.</p>
+              <div className="mockup-client-response" aria-labelledby="mockup-client-response-title">
+                <div className="mockup-review-heading">
+                  <div><span className="mockup-control-title">Étape 05 · Réponse à la proposition</span><h4 id="mockup-client-response-title">Que répondrait le client ?</h4></div>
+                  <span className={"mockup-review-status " + (clientQuoteResponse === "accepted" ? "status-approved" : clientQuoteResponse === "undecided" ? "status-draft" : "status-changes_requested")}>{clientQuoteResponse === "accepted" ? "Acceptation choisie" : clientQuoteResponse === "changes_requested" ? "Modifications demandées" : clientQuoteResponse === "negotiate" ? "Discussion demandée" : "En attente"}</span>
+                </div>
+                <p className="mockup-local-note">Cette section prépare le parcours de réponse. Elle n'envoie pas de message : le client peut choisir une réponse, ajouter ses conditions, puis exporter son retour pour le transmettre manuellement.</p>
+                <div className="mockup-quote-response-options">
+                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "accepted"} onChange={() => setClientQuoteResponse("accepted")} /><span><strong>Accepter</strong><small>Le client indique être d'accord avec la proposition affichée.</small></span></label>
+                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "changes_requested"} onChange={() => setClientQuoteResponse("changes_requested")} /><span><strong>Demander des modifications</strong><small>Le périmètre, le délai ou les conditions doivent être revus.</small></span></label>
+                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "negotiate"} onChange={() => setClientQuoteResponse("negotiate")} /><span><strong>Discuter du prix ou des conditions</strong><small>Le client souhaite échanger avant de décider.</small></span></label>
+                </div>
+                <label className="mockup-review-note-label" htmlFor={"mockup-client-response-note-" + project.id}>Message ou conditions proposés par le client</label>
+                <textarea id={"mockup-client-response-note-" + project.id} className="mockup-review-note" maxLength={1200} rows={3} value={clientQuoteNote} onChange={(event) => setClientQuoteNote(event.target.value)} placeholder="Ex. : je souhaite réduire le périmètre, préciser la livraison ou discuter d'un paiement en deux étapes…" />
+                <button type="button" className="button button-primary" onClick={downloadClientResponse} disabled={clientQuoteResponse === "undecided"}>Exporter le retour client (.txt) ↗</button>
+              </div>
             </section>
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
