@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     const project = body.project as Record<string, unknown>;
     const result = await callUserData(
-      "client_requests?on_conflict=user_id,project_id",
+      "client_requests",
       "POST",
       token,
       {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         admin_note: "",
         updated_at: new Date().toISOString(),
       },
-      "resolution=merge-duplicates,return=representation",
+      "return=representation",
     );
     if (!result.ok) return NextResponse.json({
       error: result.status === 404 || result.status === 400
