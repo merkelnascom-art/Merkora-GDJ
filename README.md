@@ -16,13 +16,14 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 - Pistes de solution modifiables, supprimables et ajoutables manuellement avant application explicite au dossier.
 - Pistes d’amélioration avec priorité, bénéfice attendu, effort indicatif et hypothèses à vérifier.
 - Analyse concurrentielle prudente : comparaison préparée à partir des sources saisies par l’utilisateur; aucune prétention de recherche web en direct.
+- Studio de maquettes conceptuelles interactif : formats site web/mobile/tableau de bord, palettes et blocs adaptatifs selon le domaine, avec préférences locales distinctes par dossier.
 - Stockage local compatible avec la clé existante `merkora-gdj-projects-v1`.
 
 ## Limites importantes
 
 Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions locales fonctionnent sans IA. Le panneau propose une pré-analyse locale gratuite lorsque le moteur réel est désactivé. Le code d’intégration IA est présent, mais le moteur reste désactivé tant que `MERKORA_AI_ENABLED=true` n’a pas été configuré explicitement côté serveur. Aucun appel de modèle n’est effectué par défaut. Les propositions IA restent à relire et modifier; elles ne constituent ni un devis officiel, ni une promesse de réalisation.
 
-La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Les devis officiels et leur versionnement, la composition de maquettes personnalisées, le suivi de réalisation et les paiements restent à développer.
+La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Le Studio de maquettes conceptuelles est disponible dans le détail d’un dossier : il assemble localement un aperçu adaptatif (site web, mobile ou tableau de bord) à partir du domaine et des pistes, avec palettes et blocs modifiables. Les réglages restent locaux au navigateur, l’aperçu n’est pas une application fonctionnelle et aucune image IA n’est générée. Les validations client, le versionnement partagé des maquettes, les devis officiels, le suivi de réalisation et les paiements restent à développer.
 
 ## Intégration IA (désactivée par défaut)
 
