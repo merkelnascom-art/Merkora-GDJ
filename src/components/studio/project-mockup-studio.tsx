@@ -27,10 +27,6 @@ export function ProjectMockupStudio({ project }: Props) {
   const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [] });
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
-  const [generatedImage, setGeneratedImage] = useState<{ src: string; signature: string; model: string; persisted: boolean } | null>(null);
-
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const imageSignature = useMemo(() => JSON.stringify({
     title: project.title,
@@ -98,56 +94,6 @@ export function ProjectMockupStudio({ project }: Props) {
           : [...selected, id],
       };
     });
-  }
-
-  async function generateConceptImage() {
-    setImageLoading(true);
-    setImageError(null);
-    try {
-      const response = await fetch("/api/studio/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project: {
-            title: project.title,
-            category: project.category,
-            problem: project.problem,
-            desiredOutcome: project.desiredOutcome,
-            budget: project.budget,
-            urgency: project.urgency,
-            recommendations: project.recommendations,
-          },
-          config: {
-            ...config,
-            selectedRecommendationIds: config.selectedRecommendationIds ?? model.recommendations.map((item) => item.id),
-          },
-        }),
-      });
-      const payload = await response.json() as {
-        imageDataUrl?: unknown;
-        imageUrl?: unknown;
-        model?: unknown;
-        persisted?: unknown;
-        error?: unknown;
-      };
-      if (!response.ok) {
-        throw new Error(typeof payload.error === "string" ? payload.error : "La génération de l’image a échoué.");
-      }
-      const src = typeof payload.imageDataUrl === "string"
-        ? payload.imageDataUrl
-        : typeof payload.imageUrl === "string" ? payload.imageUrl : null;
-      if (!src) throw new Error("Le fournisseur n’a pas renvoyé d’image exploitable.");
-      setGeneratedImage({
-        src,
-        signature: imageSignature,
-        model: typeof payload.model === "string" ? payload.model : "Modèle image configuré",
-        persisted: payload.persisted === true,
-      });
-    } catch (error) {
-      setImageError(error instanceof Error ? error.message : "Le service image est momentanément indisponible.");
-    } finally {
-      setImageLoading(false);
-    }
   }
 
   async function copySummary() {
@@ -270,21 +216,12 @@ export function ProjectMockupStudio({ project }: Props) {
           <section className="mockup-image-studio" aria-labelledby="mockup-image-title">
             <div className="mockup-image-studio-heading">
               <div>
-                <span className="mockup-kicker">ILLUSTRATION IA</span>
+                <span className="mockup-kicker">MODE ZÉRO DÉPENSE</span>
                 <h4 id="mockup-image-title">Visualiser votre idée</h4>
-                <p>L’image sera créée à partir du dossier et des choix affichés dans cette maquette. La génération peut être facturable si elle est activée par l’administrateur.</p>
+                <p>La maquette interactive ci-dessus est générée directement par MerKora. Les appels à un fournisseur d’images IA externe restent désactivés pour garantir qu’aucun crédit ou paiement ne soit consommé.</p>
               </div>
-              <button type="button" className="button button-primary" onClick={() => void generateConceptImage()} disabled={imageLoading}>
-                {imageLoading ? "Génération en cours…" : imageIsCurrent ? "Régénérer l’image" : generatedImage ? "Actualiser l’image" : "Générer l’illustration IA"}
-              </button>
             </div>
-            {generatedImage && !imageIsCurrent && <p className="mockup-image-stale" role="status">Les choix du concept ont changé. Cette image correspond à une version précédente ; génère-en une nouvelle pour la synchroniser.</p>}
-            {imageError && <p className="mockup-image-error" role="alert">{imageError}</p>}
-            {generatedImage && <figure className="mockup-generated-image">
-              <img src={generatedImage.src} alt={`Illustration conceptuelle du projet ${model.title}`} />
-              <figcaption>{imageIsCurrent ? "Illustration correspondant aux choix actuels" : "Illustration d’une version antérieure"} · {generatedImage.model} · {generatedImage.persisted ? "Sauvegardée" : "Non sauvegardée dans le cloud"}</figcaption>
-            </figure>}
-            <p className="mockup-local-note">L’illustration est un concept visuel, pas une application fonctionnelle. Dans cette première version, elle n’est pas encore sauvegardée dans le cloud et peut disparaître au rechargement.</p>
+            <p className="mockup-local-note">Alternative gratuite disponible : personnalise le format, les couleurs, les blocs et les pistes retenues, puis copie le résumé du concept. Cette maquette est un aperçu, pas encore une application fonctionnelle.</p>
           </section>
         </div>
       </div>
