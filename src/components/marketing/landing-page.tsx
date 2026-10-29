@@ -59,7 +59,7 @@ export function LandingPage({ onStartDiscovery, onOpenWorkspace, projectCount }:
           <h1>Les besoins d’abord.<br /><span>Les solutions ensuite.</span></h1>
           <p className="hero-lead">Vous n’avez pas besoin de connaître la technologie à utiliser. Expliquez ce qui bloque, ce que vous voulez changer et pourquoi c’est important. On commence par comprendre.</p>
           <div className="hero-actions">
-            <button className="button button-primary hero-primary" onClick={onStartDiscovery}>
+            <button className="button button-primary hero-primary" onClick={() => onStartDiscovery()}>
               Décrire mon besoin <span aria-hidden="true">→</span>
             </button>
             <a className="hero-text-link" href="#methode">Découvrir la méthode <span aria-hidden="true">↓</span></a>
@@ -119,7 +119,7 @@ export function LandingPage({ onStartDiscovery, onOpenWorkspace, projectCount }:
 
       <section className="marketing-cta">
         <div><div className="eyebrow">VOTRE PROJET COMMENCE ICI</div><h2>Vous connaissez le problème.<br /><span>Commençons par là.</span></h2><p>Vous pouvez commencer sans créer de compte. Dans cette version, vos dossiers sont conservés dans le navigateur de cet appareil.</p></div>
-        <button className="button button-primary hero-primary" onClick={onStartDiscovery}>Décrire mon besoin <span aria-hidden="true">→</span></button>
+        <button className="button button-primary hero-primary" onClick={() => onStartDiscovery()}>Décrire mon besoin <span aria-hidden="true">→</span></button>
       </section>
 
       <footer className="marketing-footer">
