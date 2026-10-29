@@ -6,8 +6,11 @@ export type MockupConfig = {
   format: MockupFormat;
   palette: MockupPalette;
   enabledModules: string[];
+  /** Missing means legacy/default behavior: show every proposed solution track. */
+  selectedRecommendationIds?: string[];
 };
 export type MockupModule = { id: string; title: string; description: string };
+export type MockupRecommendation = MockupModule & { reason: string };
 export type MockupDomain = "education" | "operations" | "creative" | "digital" | "general";
 export type MockupModel = {
   title: string;
@@ -20,6 +23,8 @@ export type MockupModel = {
   palette: MockupPalette;
   modules: MockupModule[];
   visibleModules: MockupModule[];
+  recommendations: MockupRecommendation[];
+  visibleRecommendations: MockupRecommendation[];
   conceptNotice: string;
 };
 
@@ -79,6 +84,15 @@ function detectDomain(project: Pick<Project, "title" | "category" | "problem" | 
   return "general";
 }
 
+function recommendationId(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .toLocaleLowerCase("fr")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function modulesFor(domain: MockupDomain): MockupModule[] {
   switch (domain) {
     case "education": return educationModules;
@@ -105,6 +119,17 @@ export function buildMockupModel(
     ? modules.filter((item) => requested.includes(item.id))
     : modules;
 
+  const recommendations: MockupRecommendation[] = project.recommendations.map((item) => ({
+    id: recommendationId(item.title),
+    title: item.title,
+    description: item.description,
+    reason: item.reason,
+  }));
+  const selectedRecommendationIds = config.selectedRecommendationIds;
+  const visibleRecommendations = selectedRecommendationIds === undefined
+    ? recommendations
+    : recommendations.filter((item) => selectedRecommendationIds.includes(item.id));
+
   const title = project.title.trim() || "Votre projet";
   const supportingCopy = project.desiredOutcome.trim()
     || "Un aperçu de travail à préciser avec les besoins et les choix du client.";
@@ -119,6 +144,8 @@ export function buildMockupModel(
     palette: config.palette,
     modules,
     visibleModules,
+    recommendations,
+    visibleRecommendations,
     conceptNotice: "Maquette conceptuelle assemblée par MerKora à partir du dossier. Elle illustre une direction possible ; ce n’est pas encore un produit fonctionnel ni une image générée par IA.",
   };
 }
