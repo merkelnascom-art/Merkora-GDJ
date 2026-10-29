@@ -11,8 +11,7 @@ create table if not exists public.client_requests (
     check (admin_status in ('to_review','verified','changes_requested','negotiation','accepted','in_progress','delivered','rejected')),
   admin_note text not null default '' check (char_length(admin_note) <= 1200),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, project_id)
+  updated_at timestamptz not null default now()
 );
 
 alter table public.client_requests enable row level security;
@@ -25,12 +24,6 @@ create policy "Clients can read their own MerKora requests"
 drop policy if exists "Clients can submit their own MerKora requests" on public.client_requests;
 create policy "Clients can submit their own MerKora requests"
   on public.client_requests for insert to authenticated
-  with check ((select auth.uid()) = user_id);
-
-drop policy if exists "Clients can update their own MerKora requests" on public.client_requests;
-create policy "Clients can update their own MerKora requests"
-  on public.client_requests for update to authenticated
-  using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
 create index if not exists client_requests_created_at_idx on public.client_requests (created_at desc);
