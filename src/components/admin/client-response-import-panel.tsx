@@ -322,7 +322,7 @@ export function ClientResponseImportPanel() {
           <article key={item.localImportId} style={styles.item}>
             <div style={styles.itemHeader}>
               <div><span style={styles.projectId}>{item.project.id}</span><h3 style={styles.itemTitle}>{item.project.title}</h3></div>
-              <span style={styles.pending}>À vérifier manuellement</span>
+              <span style={styles.pending}>{workflowStatuses.find((status) => status.value === item.adminStatus)?.label || "À examiner"}</span>
             </div>
             <p style={styles.decision}>{labels[item.response.choice]}</p>
             <dl style={styles.details}>
