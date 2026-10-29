@@ -1,5 +1,5 @@
 -- MerKora GDJ: secure cross-account client request inbox.
--- This migration is committed to the preview branch only; it is not applied automatically.
+-- Additive table only; existing project records are untouched.
 create table if not exists public.client_requests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -15,7 +15,7 @@ create table if not exists public.client_requests (
 );
 
 alter table public.client_requests enable row level security;
-grant select, insert on public.client_requests to authenticated;
+grant select, insert, update on public.client_requests to authenticated;
 grant all on public.client_requests to service_role;
 
 drop policy if exists "Clients can read their own MerKora requests" on public.client_requests;
@@ -28,7 +28,20 @@ create policy "Clients can submit their own MerKora requests"
   on public.client_requests for insert to authenticated
   with check ((select auth.uid()) = user_id);
 
+-- Match the current server-side MerKora administrator allowlist.
+-- The server still checks MERKORA_ADMIN_EMAILS before reaching admin endpoints.
+drop policy if exists "Merkora admin can read all client requests" on public.client_requests;
+create policy "Merkora admin can read all client requests"
+  on public.client_requests for select to authenticated
+  using ((select auth.jwt() ->> 'email') = 'merkelnascom@gmail.com');
+
+drop policy if exists "Merkora admin can update client request tracking" on public.client_requests;
+create policy "Merkora admin can update client request tracking"
+  on public.client_requests for update to authenticated
+  using ((select auth.jwt() ->> 'email') = 'merkelnascom@gmail.com')
+  with check ((select auth.jwt() ->> 'email') = 'merkelnascom@gmail.com');
+
 create index if not exists client_requests_created_at_idx on public.client_requests (created_at desc);
 create index if not exists client_requests_admin_status_idx on public.client_requests (admin_status, updated_at desc);
 
-comment on table public.client_requests is 'Client-submitted MerKora project and quote responses; admin reads via server-only service-role API.';
+comment on table public.client_requests is 'Client-submitted MerKora project and quote responses; RLS restricts client access and administrative access to the configured admin identity.';
