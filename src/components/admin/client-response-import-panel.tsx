@@ -285,6 +285,25 @@ export function ClientResponseImportPanel() {
       {error && <p role="alert" style={styles.error}>{error}</p>}
       {!ready && <p style={styles.text}>Chargement des imports locaux…</p>}
       {ready && items.length === 0 && <div style={styles.empty}>Aucun retour importé pour le moment.</div>}
+      {items.length > 0 && <div style={styles.statusOverview} aria-label="Résumé des statuts administratifs">
+        {workflowStatuses.map((status) => {
+          const count = items.filter((item) => item.adminStatus === status.value).length;
+          return (
+            <button
+              key={status.value}
+              type="button"
+              onClick={() => setStatusFilter(status.value)}
+              aria-pressed={statusFilter === status.value}
+              style={{ ...styles.statusCount, ...(statusFilter === status.value ? styles.statusCountActive : {}) }}
+            >
+              <strong>{count}</strong><span>{status.label}</span>
+            </button>
+          );
+        })}
+        <button type="button" onClick={() => setStatusFilter("all")} aria-pressed={statusFilter === "all"} style={{ ...styles.statusCount, ...(statusFilter === "all" ? styles.statusCountActive : {}) }}>
+          <strong>{items.length}</strong><span>Tous les dossiers</span>
+        </button>
+      </div>}
       {items.length > 0 && <div style={styles.filters}>
         <label style={styles.filterField}>Rechercher un projet ou commentaire
           <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Référence, nom du projet…" style={styles.filterInput} />
@@ -345,6 +364,9 @@ const styles: Record<string, React.CSSProperties> = {
   upload: { position: "relative", display: "inline-block", padding: "12px 16px", background: "#5e35b1", color: "#fff", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer" },
   secondaryButton: { border: "1px solid #d8d0e7", borderRadius: 12, padding: "11px 14px", background: "#fff", color: "#514b61", fontWeight: 700, fontSize: 12, cursor: "pointer" },
   secondaryUpload: { position: "relative", display: "inline-block", border: "1px solid #d8d0e7", borderRadius: 12, padding: "11px 14px", background: "#fff", color: "#514b61", fontWeight: 700, fontSize: 12, cursor: "pointer" },
+  statusOverview: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))", gap: 8, margin: "18px 0" },
+  statusCount: { display: "flex", flexDirection: "column", alignItems: "start", gap: 5, minHeight: 68, padding: 12, border: "1px solid #e3dced", borderRadius: 12, background: "#fff", color: "#514b61", cursor: "pointer", textAlign: "left" },
+  statusCountActive: { border: "2px solid #6d4bb3", background: "#f5f2fc" },
   filters: { display: "flex", flexWrap: "wrap", alignItems: "end", gap: 12, margin: "16px 0" },
   filterField: { display: "grid", gap: 6, color: "#514b61", fontSize: 12, fontWeight: 700, minWidth: 200, flex: "1 1 220px" },
   filterInput: { width: "100%", border: "1px solid #d8d0e7", borderRadius: 9, padding: "10px 12px", background: "#fff", color: "#302840", font: "inherit", fontWeight: 400 },
