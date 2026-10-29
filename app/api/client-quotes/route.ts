@@ -49,6 +49,17 @@ export async function POST(request: Request) {
     const token = await getAccessToken(store);
     if (!user || !token) return NextResponse.json({ error: "Connectez-vous à votre compte client." }, { status: 401 });
 
+    // Match the UI rule server-side as well: one initial response per quote version.
+    // RLS ensures this lookup only returns decisions belonging to the authenticated client.
+    const prior = await callUserData(
+      `client_quote_decisions?select=id&quote_version_id=eq.${encodeURIComponent(value.versionId)}&client_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+      "GET", token,
+    );
+    if (!prior.ok) return NextResponse.json({ error: "Impossible de vérifier l’historique de réponse." }, { status: 502 });
+    if (Array.isArray(prior.data) && prior.data.length > 0) {
+      return NextResponse.json({ error: "Une réponse existe déjà pour cette version. Attendez une nouvelle version du devis." }, { status: 409 });
+    }
+
     const result = await callUserData("client_quote_decisions", "POST", token, {
       quote_version_id: value.versionId,
       client_user_id: user.id,
