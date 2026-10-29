@@ -14,8 +14,8 @@ const cards = [
 export default async function AdminPage() {
   const access = await getAdminAccess();
 
-  if (access.reason === "unauthenticated") redirect("/?connexion=requise");
-  if (access.reason === "not_allowed") {
+  if (!access.ok && access.reason === "unauthenticated") redirect("/?connexion=requise");
+  if (!access.ok && access.reason === "not_allowed") {
     return (
       <main style={styles.page}>
         <section style={styles.card}>
@@ -27,7 +27,7 @@ export default async function AdminPage() {
       </main>
     );
   }
-  if (access.reason === "not_configured") {
+  if (!access.ok && access.reason === "not_configured") {
     return (
       <main style={styles.page}>
         <section style={styles.card}>
@@ -39,6 +39,7 @@ export default async function AdminPage() {
       </main>
     );
   }
+  if (!access.ok) redirect("/");
 
   return (
     <main style={styles.page}>
