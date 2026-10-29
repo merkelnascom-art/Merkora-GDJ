@@ -42,6 +42,9 @@ export function ProjectMockupStudio({ project }: Props) {
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
           enabledModules: Array.isArray(parsed.enabledModules) ? parsed.enabledModules.filter((id): id is string => typeof id === "string") : [],
+          ...(Array.isArray(parsed.selectedRecommendationIds)
+            ? { selectedRecommendationIds: parsed.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
+            : {}),
         });
       }
     } catch {
@@ -71,6 +74,18 @@ export function ProjectMockupStudio({ project }: Props) {
     });
   }
 
+  function toggleRecommendation(id: string) {
+    setConfig((current) => {
+      const selected = current.selectedRecommendationIds ?? model.recommendations.map((item) => item.id);
+      return {
+        ...current,
+        selectedRecommendationIds: selected.includes(id)
+          ? selected.filter((item) => item !== id)
+          : [...selected, id],
+      };
+    });
+  }
+
   async function copySummary() {
     const summary = [
       `Projet : ${model.title}`,
@@ -78,7 +93,9 @@ export function ProjectMockupStudio({ project }: Props) {
       `Direction : ${model.domainLabel}`,
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
       "Blocs retenus :",
-      ...model.visibleModules.map((item) => `- ${item.title} : ${item.description}`),
+      ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
+      "Pistes de solution retenues :",
+      ...model.visibleRecommendations.map((item) => `- ${item.title} : ${item.description} (raison : ${item.reason})`),
       model.conceptNotice,
     ].join("\n");
     try {
@@ -139,6 +156,21 @@ export function ProjectMockupStudio({ project }: Props) {
             })}
           </div>
 
+          <div className="mockup-control-group">
+            <span className="mockup-control-title">Pistes de solution proposées</span>
+            <p className="mockup-control-hint">Sélectionne les pistes que le client veut réellement voir dans son concept. Les pistes décochées ne seront pas présentées comme retenues.</p>
+            {model.recommendations.map((item) => {
+              const selected = model.visibleRecommendations.some((visible) => visible.id === item.id);
+              return (
+                <label className="mockup-module-toggle" key={item.id}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleRecommendation(item.id)} />
+                  <span><strong>{item.title}</strong><small>{item.description}</small><small>Pourquoi : {item.reason}</small></span>
+                </label>
+              );
+            })}
+            {model.recommendations.length === 0 && <p className="mockup-control-hint">Aucune piste n’est disponible. Les pistes apparaîtront ici après l’analyse du besoin.</p>}
+          </div>
+
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
           <p className="mockup-local-note">Les préférences de présentation sont enregistrées dans ce navigateur uniquement. Elles ne sont pas encore synchronisées dans le cloud.</p>
         </aside>
@@ -151,6 +183,7 @@ export function ProjectMockupStudio({ project }: Props) {
               <div className="mockup-preview-brand"><span className="mockup-brand-mark">M</span><strong>{model.title}</strong><button type="button" aria-label="Menu conceptuel">☰</button></div>
               <div className="mockup-hero mockup-hero-mobile"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">Découvrir les pistes <span>→</span></button></div>
               <div className="mockup-module-stack">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><div><h5>{item.title}</h5><p>{item.description}</p></div><span className="mockup-card-arrow">↗</span></article>)}</div>
+              {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution retenues"><h5>Pistes retenues</h5>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><div><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></div></article>)}</section>}
               <div className="mockup-phone-footer">Concept d’interface · aperçu</div>
             </div>
           ) : (
@@ -163,6 +196,7 @@ export function ProjectMockupStudio({ project }: Props) {
                   <div className="mockup-hero"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.format === "dashboard" ? "Continuer le parcours" : "Découvrir les pistes"} <span>→</span></button><div className="mockup-hero-orbit" aria-hidden="true"><span>✳</span></div></div>
                   <div className="mockup-preview-section-title"><div><span>VOTRE ESPACE</span><h5>Ce que vous pourrez explorer</h5></div><span className="mockup-section-counter">{model.visibleModules.length} bloc(s) conceptuels</span></div>
                   <div className="mockup-module-grid">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><h5>{item.title}</h5><p>{item.description}</p><span className="mockup-card-arrow">↗</span></article>)}</div>
+                  {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution retenues"><div className="mockup-preview-section-title"><div><span>PISTES CHOISIES</span><h5>Les solutions à explorer</h5></div><span className="mockup-section-counter">{model.visibleRecommendations.length} piste(s)</span></div>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></article>)}</section>}
                   <div className="mockup-demo-footer">Contenu de démonstration · à confirmer avec le client</div>
                 </div>
               </div>
