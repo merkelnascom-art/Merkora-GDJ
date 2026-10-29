@@ -1,7 +1,9 @@
 "use client";
 
+type ExampleStart = { title: string; category: "personal" | "business" | "creative" };
+
 type LandingPageProps = {
-  onStartDiscovery: () => void;
+  onStartDiscovery: (example?: ExampleStart) => void;
   onOpenWorkspace: () => void;
   projectCount: number;
 };
@@ -13,6 +15,7 @@ const examples = [
     title: "Student Vision",
     description: "Aider un élève après le bac à explorer des métiers et formations adaptés à ses résultats, ses intérêts et ses objectifs.",
     icon: "↗",
+    category: "personal" as const,
   },
   {
     number: "02",
@@ -20,6 +23,7 @@ const examples = [
     title: "Une activité mieux organisée",
     description: "Comprendre les difficultés de caisse, de stock, de vente ou de gestion d’équipe avant de choisir un outil.",
     icon: "◫",
+    category: "business" as const,
   },
   {
     number: "03",
@@ -27,6 +31,7 @@ const examples = [
     title: "Une idée à concrétiser",
     description: "Structurer un besoin de site, d’identité visuelle, de communication ou d’outil numérique sur mesure.",
     icon: "✳",
+    category: "creative" as const,
   },
 ];
 
@@ -106,7 +111,7 @@ export function LandingPage({ onStartDiscovery, onOpenWorkspace, projectCount }:
             <article className="example-card" key={example.number}>
               <div className="example-card-top"><span>{example.number}</span><span className="example-icon">{example.icon}</span></div>
               <small>{example.label}</small><h3>{example.title}</h3><p>{example.description}</p>
-              <button className="example-link" onClick={onStartDiscovery}>Explorer ce besoin <span aria-hidden="true">→</span></button>
+              <button className="example-link" onClick={() => onStartDiscovery({ title: example.title, category: example.category })}>Explorer ce besoin <span aria-hidden="true">→</span></button>
             </article>
           ))}
         </div>
