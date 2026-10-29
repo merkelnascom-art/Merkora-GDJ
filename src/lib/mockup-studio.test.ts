@@ -71,4 +71,28 @@ describe("buildMockupModel", () => {
     expect(model.supportingCopy.length).toBeGreaterThan(0);
     expect(model.visibleModules.length).toBeGreaterThan(0);
   });
+
+  it("shows only the solution tracks explicitly selected by the client", () => {
+    const config = {
+      format: "website" as const,
+      palette: "violet" as const,
+      enabledModules: [],
+      selectedRecommendationIds: ["organiser-les-operations-commerciales"],
+    };
+    const model = buildMockupModel(teamProject, config);
+    expect(model.visibleRecommendations.map((item) => item.id)).toEqual([
+      "organiser-les-operations-commerciales",
+    ]);
+    expect(model.visibleRecommendations[0]?.title).toBe("Organiser les opérations commerciales");
+  });
+
+  it("preserves legacy configs by showing recommendations when no selection has been saved", () => {
+    const model = buildMockupModel(teamProject, {
+      format: "website",
+      palette: "violet",
+      enabledModules: [],
+    });
+    expect(model.visibleRecommendations.length).toBe(teamProject.recommendations.length);
+  });
+
 });
