@@ -87,7 +87,7 @@ function detectDomain(project: Pick<Project, "title" | "category" | "problem" | 
 function recommendationId(title: string): string {
   return title
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("fr")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
