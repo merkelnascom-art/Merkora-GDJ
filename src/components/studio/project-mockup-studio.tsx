@@ -11,6 +11,7 @@ import {
 
 type Props = { project: Project };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
+type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -37,7 +38,7 @@ export function ProjectMockupStudio({ project }: Props) {
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (raw) {
-        const parsed = JSON.parse(raw) as Partial<MockupConfig>;
+        const parsed = JSON.parse(raw) as StoredMockupConfig;
         const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
         const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
         setReviewStatus(parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested" ? parsed.reviewStatus : "draft");
