@@ -57,7 +57,8 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
-      <AdminQuotesPanel />\n      <CloudClientRequestsPanel />
+      <AdminQuotesPanel />
+      <CloudClientRequestsPanel />
       <ClientResponseImportPanel />
       <footer style={styles.footer}>MerKora GDJ · Administration de prévisualisation · aucune action de production</footer>
     </main>
