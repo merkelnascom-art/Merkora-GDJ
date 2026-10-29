@@ -14,7 +14,7 @@ Le studio présente deux résultats distincts :
 1. une maquette interactive assemblée par MerKora à partir des informations du dossier ;
 2. une représentation visuelle générée par un service d’images IA lorsqu’un fournisseur est configuré et disponible.
 
-Ces deux résultats ne doivent jamais être confondus. La maquette interactive est un prototype conceptuel ; elle ne représente pas une application déjà construite ni une fonctionnalité de production. Une image générée est une illustration de direction artistique, pas une interface exécutable.
+Les deux résultats doivent être cohérents avec le même dossier et les mêmes choix du client, mais ne doivent jamais être confondus. **L’image IA doit représenter le besoin réel décrit par le client** : son activité ou son contexte, le problème à résoudre, le résultat recherché et les pistes de solution retenues. Elle ne doit pas être un visuel générique sans rapport avec sa demande, ni inventer des fonctions, chiffres, marques ou promesses non fournis. **La maquette interactive doit refléter concrètement les pistes et options choisies** : format, palette, modules sélectionnés, demandes complémentaires et priorités exprimées. Les choix doivent être visibles dans l’aperçu et, lorsque cela est possible, dans les libellés et les éléments de l’interface. Une modification d’option doit mettre à jour la maquette et les instructions du prochain rendu IA. La maquette reste un prototype conceptuel ; elle ne représente pas une application déjà construite ni une fonctionnalité de production. L’image générée est une représentation visuelle de la solution envisagée, pas une interface exécutable.
 
 ## 2. Approches envisagées
 
@@ -32,8 +32,8 @@ Produire des visuels sans maquette interactive. Avantage : impact visuel rapide.
 1. Le client ouvre un dossier issu du parcours de description des besoins.
 2. MerKora affiche un concept de départ qui reprend le titre, le domaine, l’objectif et les informations utiles du dossier.
 3. Le client choisit un format (site web, mobile ou tableau de bord), une palette et les blocs à montrer.
-4. L’aperçu se met à jour sans rechargement ; les contrôles de démonstration sont clairement signalés comme conceptuels.
-5. Le client peut consulter une illustration IA si le service est configuré, ou continuer avec la maquette interactive seule.
+4. L’aperçu se met à jour sans rechargement ; il montre réellement les options choisies, les modules activés et la finalité exprimée par le client. Les contrôles de démonstration sont clairement signalés comme conceptuels.
+5. Le client peut demander une illustration IA construite à partir de sa description, de ses problèmes, des pistes retenues et des options sélectionnées. L’illustration doit correspondre au dossier, et non à un prompt générique. Si le service est indisponible, il continue avec la maquette interactive seule.
 6. Le client enregistre ses choix, copie un résumé et peut soumettre une demande de modification ou une validation du concept.
 7. La validation du concept ne vaut ni validation d’un devis, ni paiement, ni ordre de construction.
 
@@ -43,7 +43,8 @@ Les états proposés sont : `draft`, `ready_for_review`, `changes_requested` et 
 
 ### Interface
 - **`src/components/studio/project-mockup-studio.tsx`** : commandes du studio, aperçu, états de chargement/erreur, sauvegarde et actions du client.
-- **`src/lib/mockup-studio.ts`** : construction pure du modèle d’aperçu à partir du dossier et des choix.
+- **`src/lib/mockup-studio.ts`** : construction pure du modèle d’aperçu à partir du dossier et des choix, en veillant à ce que les modules activés et la finalité du client soient réellement visibles.
+- **Construction du prompt d’image côté serveur** : assembler uniquement les informations utiles du dossier (description du besoin, activité/contexte, problème, objectif, pistes retenues, options et modules sélectionnés, demandes complémentaires). Le prompt doit préciser au fournisseur de représenter cette solution précise, de respecter les choix du client et de ne pas ajouter de fonctionnalités ou de faits non demandés.
 - **Types de projet existants** : garder la compatibilité avec les dossiers existants et rendre les nouveaux champs optionnels pendant la transition si nécessaire.
 
 ### Persistance
@@ -55,6 +56,8 @@ Les états proposés sont : `draft`, `ready_for_review`, `changes_requested` et 
 ### Service d’images IA
 - Ajouter une route serveur dédiée au rendu visuel, séparée de l’analyse de besoin déjà présente.
 - Le serveur valide les entrées, limite leur taille, construit une instruction visuelle à partir des champs autorisés et appelle le fournisseur configuré.
+- L’instruction doit être spécifique au dossier : besoin formulé par le client, activité ou contexte, problème à résoudre, résultat recherché, pistes de solution retenues, format, palette, modules sélectionnés et demandes complémentaires. Ne pas transmettre des options rejetées comme si elles étaient choisies. Si des informations essentielles manquent, produire un visuel prudent plutôt que d’inventer des détails.
+- Le rendu IA et la maquette interactive doivent être issus d’un même ensemble de choix validés, afin d’éviter qu’ils montrent deux solutions contradictoires. Après un changement de choix, le rendu existant doit être signalé comme correspondant à une version antérieure et pouvoir être régénéré.
 - Les clés API restent exclusivement côté serveur. Ne jamais envoyer une clé au navigateur ni enregistrer de secrets dans le dépôt.
 - Si aucun fournisseur n’est configuré, si la requête échoue ou si une limite est atteinte, afficher un message compréhensible et laisser le studio interactif disponible.
 - Ne pas prétendre qu’une image a été générée tant que le service n’a pas renvoyé un résultat exploitable. Les coûts éventuels et les limites du fournisseur doivent être explicités avant activation.
@@ -90,16 +93,18 @@ Le contrat définitif doit suivre le schéma réel et les conventions de nommage
 
 ## 7. Tests et critères d’acceptation
 
-1. Le changement de format, de palette ou de module met à jour l’aperçu sans rechargement.
-2. Le chargement de préférences locales anciennes ou malformées ne fait pas planter le studio.
-3. Un concept sauvegardé peut être rechargé après reconnexion et reste associé au bon dossier.
-4. Un utilisateur non authentifié ou non autorisé ne peut pas lire les concepts administratifs.
-5. Un client ne peut pas lire ni modifier les dossiers ou concepts d’un autre client.
-6. L’absence de fournisseur d’images IA ne bloque pas la maquette interactive et produit un message explicite.
-7. Une erreur du fournisseur ne se présente jamais comme une réussite ; l’utilisateur peut réessayer.
-8. Les états de concept ne déclenchent aucun devis, paiement, déploiement ou livraison.
-9. Les tests existants, le contrôle TypeScript et le build passent, ou toute défaillance préexistante est identifiée et rapportée séparément.
-10. Aucune donnée n’est effacée et aucune configuration de production n’est modifiée.
+1. Le changement de format, de palette ou de module met à jour l’aperçu sans rechargement, et les options activées sont effectivement représentées dans la maquette.
+2. Le prompt du rendu IA reprend la demande réelle, les objectifs, les pistes retenues et uniquement les options choisies ; il n’est pas générique et n’invente pas de fonctions ou de faits. Le rendu généré est associé à la version de choix qui l’a produit.
+3. Une modification des options rend visible que l’image précédente correspond à une version antérieure et permet de demander un nouveau rendu.
+4. Le chargement de préférences locales anciennes ou malformées ne fait pas planter le studio.
+5. Un concept sauvegardé peut être rechargé après reconnexion et reste associé au bon dossier.
+6. Un utilisateur non authentifié ou non autorisé ne peut pas lire les concepts administratifs.
+7. Un client ne peut pas lire ni modifier les dossiers ou concepts d’un autre client.
+8. L’absence de fournisseur d’images IA ne bloque pas la maquette interactive et produit un message explicite.
+9. Une erreur du fournisseur ne se présente jamais comme une réussite ; l’utilisateur peut réessayer.
+10. Les états de concept ne déclenchent aucun devis, paiement, déploiement ou livraison.
+11. Les tests existants, le contrôle TypeScript et le build passent, ou toute défaillance préexistante est identifiée et rapportée séparément.
+12. Aucune donnée n’est effacée et aucune configuration de production n’est modifiée.
 
 ## 8. Hors périmètre
 
