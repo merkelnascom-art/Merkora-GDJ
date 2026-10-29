@@ -1,0 +1,32 @@
+name: Preview branch quality checks
+
+on:
+  push:
+    branches:
+      - feature/admin-preview-secure-access
+  pull_request:
+    branches:
+      - feature/admin-preview-secure-access
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm test
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Build Next.js app
+        run: npm run build
