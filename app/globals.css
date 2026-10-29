@@ -355,3 +355,17 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mockup-review-actions button{font-size:11px}
 .mockup-review-actions .button-primary{border:1px solid #5940bd;background:#5940bd;color:#fff}
 @media(max-width:620px){.mockup-review-panel{padding:12px}.mockup-review-heading{flex-direction:column}.mockup-review-actions{flex-direction:column}.mockup-review-actions button{width:100%}}
+
+
+/* Local quote preparation and client response; no cloud transmission. */
+.mockup-quote-panel,.mockup-client-response{display:grid;gap:12px;margin-top:16px;padding:16px;border:1px solid #e5e1f0;border-radius:14px;background:#fff}
+.mockup-quote-input{width:100%;padding:11px 12px;border:1px solid #e4e0ee;border-radius:9px;background:#fff;color:#37334f;font:inherit;font-size:12px}
+.mockup-quote-input:focus{outline:2px solid #b8a8f2;outline-offset:1px}
+.mockup-quote-response-options{display:grid;gap:8px}
+.mockup-quote-response-options label{display:flex;align-items:flex-start;gap:10px;padding:11px;border:1px solid #e7e3f0;border-radius:10px;background:#fcfbff;cursor:pointer}
+.mockup-quote-response-options input{margin-top:3px;accent-color:#5940bd}
+.mockup-quote-response-options span{display:grid;gap:3px}
+.mockup-quote-response-options strong{color:#37334f;font-size:12px}
+.mockup-quote-response-options small{color:#77728b;font-size:11px;line-height:1.5}
+.mockup-quote-panel>.button-primary,.mockup-client-response>.button-primary{justify-self:start}
+@media(max-width:620px){.mockup-quote-panel,.mockup-client-response{padding:12px}.mockup-quote-panel>.button-primary,.mockup-client-response>.button-primary{width:100%}}
