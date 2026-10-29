@@ -10,6 +10,7 @@ import {
 } from "@/lib/mockup-studio";
 
 type Props = { project: Project };
+type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -27,6 +28,8 @@ export function ProjectMockupStudio({ project }: Props) {
   const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [] });
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>("draft");
+  const [reviewNote, setReviewNote] = useState("");
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
@@ -37,6 +40,8 @@ export function ProjectMockupStudio({ project }: Props) {
         const parsed = JSON.parse(raw) as Partial<MockupConfig>;
         const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
         const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
+        setReviewStatus(parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested" ? parsed.reviewStatus : "draft");
+        setReviewNote(typeof parsed.reviewNote === "string" ? parsed.reviewNote.slice(0, 1200) : "");
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
@@ -56,11 +61,11 @@ export function ProjectMockupStudio({ project }: Props) {
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify(config));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, ready, storageKey]);
+  }, [config, reviewStatus, reviewNote, ready, storageKey]);
 
   function toggleModule(id: string) {
     setConfig((current) => {
@@ -95,6 +100,9 @@ export function ProjectMockupStudio({ project }: Props) {
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
       "Pistes de solution retenues :",
       ...model.visibleRecommendations.map((item) => `- ${item.title} : ${item.description} (raison : ${item.reason})`),
+      `État local du concept : ${reviewStatus === "approved" ? "Concept validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
+      ...(reviewNote.trim() ? [`Note de retour : ${reviewNote.trim()}`] : []),
+      "Attention : cet état et cette note sont enregistrés uniquement dans ce navigateur; ils ne sont pas transmis à MerKora ni au cloud.",
       model.conceptNotice,
     ].join("\n");
     try {
@@ -170,6 +178,23 @@ export function ProjectMockupStudio({ project }: Props) {
             {model.recommendations.length === 0 && <p className="mockup-control-hint">Aucune piste n’est disponible. Les pistes apparaîtront ici après l’analyse du besoin.</p>}
           </div>
 
+          <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
+            <div className="mockup-review-heading">
+              <div>
+                <span className="mockup-control-title">Étape 03 · Retour sur le concept</span>
+                <h4 id="mockup-review-title">Le concept correspond-il au besoin ?</h4>
+              </div>
+              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
+            </div>
+            <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
+            <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
+            <div className="mockup-review-actions">
+              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("draft")}>À examiner</button>
+              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("changes_requested")}>Demander des modifications</button>
+              <button type="button" className="button button-primary" onClick={() => setReviewStatus("approved")}>Valider ce concept</button>
+            </div>
+            <p className="mockup-local-note">Prototype uniquement : le statut et les commentaires sont enregistrés dans ce navigateur. Rien n’est envoyé à l’administrateur, au client connecté ou au cloud. La validation officielle nécessitera ensuite un parcours sécurisé côté serveur.</p>
+          </section>
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
           <p className="mockup-local-note">Les préférences de présentation sont enregistrées dans ce navigateur uniquement. Elles ne sont pas encore synchronisées dans le cloud.</p>
         </aside>
