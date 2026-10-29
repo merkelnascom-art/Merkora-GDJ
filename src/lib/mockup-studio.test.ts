@@ -77,13 +77,24 @@ describe("buildMockupModel", () => {
       format: "website" as const,
       palette: "violet" as const,
       enabledModules: [],
-      selectedRecommendationIds: ["presences"],
+      selectedRecommendationIds: ["profil-de-l-eleve"],
     };
-    const model = buildMockupModel(teamProject, config);
+    const model = buildMockupModel(studentProject, config);
     expect(model.visibleRecommendations.map((item) => item.id)).toEqual([
-      "presences",
+      "profil-de-l-eleve",
     ]);
-    expect(model.visibleRecommendations[0]?.title).toBe("Présences");
+    expect(model.visibleRecommendations[0]?.title).toBe("Profil de l’élève");
+    expect(model.visibleRecommendations).toHaveLength(1);
+  });
+
+  it("allows the client to explicitly deselect every recommendation", () => {
+    const model = buildMockupModel(studentProject, {
+      format: "website",
+      palette: "violet",
+      enabledModules: [],
+      selectedRecommendationIds: [],
+    });
+    expect(model.visibleRecommendations).toEqual([]);
   });
 
   it("preserves legacy configs by showing recommendations when no selection has been saved", () => {
