@@ -5,6 +5,7 @@ import { LandingPage } from "@/components/marketing/landing-page";
 import { CloudAccountPanel } from "@/components/account/cloud-account-panel";
 import { AiProposalPanel } from "@/components/ai/ai-proposal-panel";
 import { ProjectMockupStudio } from "@/components/studio/project-mockup-studio";
+import { ClientRequestSubmitPanel } from "@/components/studio/client-request-submit-panel";
 import type { Project } from "@/lib/project-types";
 import { analyzeNeed } from "@/lib/discovery";
 import {
@@ -212,6 +213,7 @@ export default function HomePage() {
               <div className="detail-status"><span className="status-dot" /> {statusLabels[activeProject.status]} <span className="status-note">· Pré-analyse locale, sans IA connectée</span></div>
               <div className="detail-grid"><article><span className="detail-label">LA SITUATION</span><p>{activeProject.problem}</p></article><article><span className="detail-label">LE RÉSULTAT SOUHAITÉ</span><p>{activeProject.desiredOutcome}</p></article><article><span className="detail-label">BUDGET ENVISAGÉ</span><p>{activeProject.budget}</p></article><article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "soon" ? "À traiter bientôt" : "Normale"}</p></article></div>
               <ProjectMockupStudio key={activeProject.id} project={activeProject} />
+              <ClientRequestSubmitPanel key={`send-${activeProject.id}`} project={activeProject} />
 
               {(() => {
                 const discovery = activeProject.discovery ?? analyzeNeed(activeProject);
