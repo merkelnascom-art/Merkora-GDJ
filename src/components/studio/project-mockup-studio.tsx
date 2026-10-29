@@ -11,7 +11,7 @@ import {
 
 type Props = { project: Project };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
-type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string };
+type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -31,6 +31,9 @@ export function ProjectMockupStudio({ project }: Props) {
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>("draft");
   const [reviewNote, setReviewNote] = useState("");
+  const [quoteAmount, setQuoteAmount] = useState("");
+  const [quoteDays, setQuoteDays] = useState("");
+  const [quotePaymentTerms, setQuotePaymentTerms] = useState("À convenir après échange avec le client");
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
@@ -43,6 +46,9 @@ export function ProjectMockupStudio({ project }: Props) {
         const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
         setReviewStatus(parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested" ? parsed.reviewStatus : "draft");
         setReviewNote(typeof parsed.reviewNote === "string" ? parsed.reviewNote.slice(0, 1200) : "");
+        setQuoteAmount(typeof parsed.quoteAmount === "string" ? parsed.quoteAmount : "");
+        setQuoteDays(typeof parsed.quoteDays === "string" ? parsed.quoteDays : "");
+        setQuotePaymentTerms(typeof parsed.quotePaymentTerms === "string" ? parsed.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
@@ -62,11 +68,11 @@ export function ProjectMockupStudio({ project }: Props) {
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, reviewStatus, reviewNote, ready, storageKey]);
+  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, ready, storageKey]);
 
   function toggleModule(id: string) {
     setConfig((current) => {
@@ -89,6 +95,43 @@ export function ProjectMockupStudio({ project }: Props) {
           : [...selected, id],
       };
     });
+  }
+
+  function downloadQuoteDraft() {
+    const amount = quoteAmount.trim();
+    const days = quoteDays.trim();
+    const lines = [
+      "MERKORA GDJ — PROJET DE DEVIS (BROUILLON NON CONTRACTUEL)",
+      "",
+      `Projet : ${model.title}`,
+      `Catégorie : ${model.domainLabel}`,
+      `Concept : ${reviewStatus === "approved" ? "validé localement" : "non validé"}`,
+      `Format envisagé : ${model.formatLabel}`,
+      "",
+      "PÉRIMÈTRE ENVISAGÉ",
+      ...model.visibleModules.map((item) => `- Fonction / bloc : ${item.title} — ${item.description}`),
+      ...model.visibleRecommendations.map((item) => `- Piste retenue : ${item.title} — ${item.description}`),
+      "",
+      "BESOINS ET CONTEXTE",
+      `Problème initial : ${project.problem}`,
+      `Résultat souhaité : ${project.desiredOutcome}`,
+      `Budget indiqué : ${project.budget}`,
+      "",
+      "PROPOSITION COMMERCIALE À COMPLÉTER",
+      `Montant indicatif : ${amount ? `${amount} FCFA` : "À chiffrer après estimation du travail"}`,
+      `Délai estimé : ${days ? `${days} jour(s)` : "À confirmer"}`,
+      `Conditions de paiement : ${quotePaymentTerms.trim() || "À convenir"}`,
+      "",
+      "ÉTAT : brouillon préparatoire uniquement. Ce document n'est ni un devis officiel, ni une offre contractuelle, ni une acceptation client. Le prix et le délai doivent être vérifiés par MerKora avant transmission.",
+      "Données et préférences conservées localement dans ce navigateur ; aucun envoi automatique n'a lieu.",
+    ];
+    const blob = new Blob([lines.join("\\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `merkora-brouillon-devis-${model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet"}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function copySummary() {
@@ -196,6 +239,26 @@ export function ProjectMockupStudio({ project }: Props) {
             </div>
             <p className="mockup-local-note">Prototype uniquement : le statut et les commentaires sont enregistrés dans ce navigateur. Rien n’est envoyé à l’administrateur, au client connecté ou au cloud. La validation officielle nécessitera ensuite un parcours sécurisé côté serveur.</p>
           </section>
+          {reviewStatus === "approved" && (
+            <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
+              <div className="mockup-review-heading">
+                <div>
+                  <span className="mockup-control-title">Étape 04 · Préparer la proposition</span>
+                  <h4 id="mockup-quote-title">Préparer un brouillon de devis</h4>
+                </div>
+                <span className="mockup-review-status status-draft">Brouillon</span>
+              </div>
+              <p className="mockup-local-note">Le concept étant marqué comme validé dans ce navigateur, tu peux préparer une première proposition. Aucun prix n'est inventé : laisse le montant vide tant que le travail n'a pas été estimé. Le brouillon n'est pas envoyé au client.</p>
+              <label className="mockup-review-note-label" htmlFor={`mockup-quote-amount-${project.id}`}>Montant proposé (FCFA, facultatif)</label>
+              <input id={`mockup-quote-amount-${project.id}`} className="mockup-quote-input" type="number" min="0" step="500" value={quoteAmount} onChange={(event) => setQuoteAmount(event.target.value)} placeholder="À chiffrer après estimation" />
+              <label className="mockup-review-note-label" htmlFor={`mockup-quote-days-${project.id}`}>Délai estimé en jours (facultatif)</label>
+              <input id={`mockup-quote-days-${project.id}`} className="mockup-quote-input" type="number" min="1" step="1" value={quoteDays} onChange={(event) => setQuoteDays(event.target.value)} placeholder="À confirmer" />
+              <label className="mockup-review-note-label" htmlFor={`mockup-quote-terms-${project.id}`}>Conditions ou étapes de paiement</label>
+              <textarea id={`mockup-quote-terms-${project.id}`} className="mockup-review-note" maxLength={500} value={quotePaymentTerms} onChange={(event) => setQuotePaymentTerms(event.target.value)} rows={2} />
+              <button type="button" className="button button-primary" onClick={downloadQuoteDraft}>Exporter le brouillon de devis (.txt) ↗</button>
+              <p className="mockup-local-note">L'export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel, ne facture personne et ne synchronise aucune donnée.</p>
+            </section>
+          )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
           <p className="mockup-local-note">Les préférences de présentation sont enregistrées dans ce navigateur uniquement. Elles ne sont pas encore synchronisées dans le cloud.</p>
         </aside>
