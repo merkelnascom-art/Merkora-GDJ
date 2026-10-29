@@ -127,6 +127,7 @@ export function ProjectMockupStudio({ project }: Props) {
         imageDataUrl?: unknown;
         imageUrl?: unknown;
         model?: unknown;
+        persisted?: unknown;
         error?: unknown;
       };
       if (!response.ok) {
