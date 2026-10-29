@@ -101,6 +101,60 @@ export function ClientResponseImportPanel() {
     }
   }
 
+  async function handleBackupRestore(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setError("");
+    if (!file) return;
+    if (file.size > 500_000) {
+      setError("Sauvegarde trop volumineuse : maximum 500 Ko.");
+      return;
+    }
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Le fichier de sauvegarde doit être un objet JSON.");
+      }
+      const backup = parsed as Record<string, unknown>;
+      if (backup.schema !== "merkora.admin-response-backup.v1" || !Array.isArray(backup.items)) {
+        throw new Error("Ce fichier n’est pas une sauvegarde de suivi administratif MerKora reconnue.");
+      }
+      const restored: ImportedItem[] = [];
+      for (const rawItem of backup.items.slice(0, 50)) {
+        if (!rawItem || typeof rawItem !== "object" || Array.isArray(rawItem)) continue;
+        const candidate = rawItem as Record<string, unknown>;
+        try {
+          const response = parseClientResponseFile(JSON.stringify({
+            schema: candidate.schema,
+            project: candidate.project,
+            quote: candidate.quote,
+            response: candidate.response,
+            exportedAt: candidate.exportedAt,
+          }));
+          restored.push({
+            ...response,
+            importedAt: typeof candidate.importedAt === "string" && !Number.isNaN(Date.parse(candidate.importedAt))
+              ? candidate.importedAt : response.exportedAt,
+            localImportId: typeof candidate.localImportId === "string" && candidate.localImportId.length <= 500
+              ? candidate.localImportId : response.project.id + ":" + response.exportedAt,
+            adminStatus: isWorkflowStatus(candidate.adminStatus) ? candidate.adminStatus : "to_review",
+            adminNote: typeof candidate.adminNote === "string" ? candidate.adminNote.slice(0, 1200) : "",
+          });
+        } catch {
+          // Ignore malformed individual entries while retaining valid items.
+        }
+      }
+      const next = restored;
+      setItems(next);
+      setMessage(saveItemsLocally(next)
+        ? "Sauvegarde importée : " + next.length + " dossier(s) restauré(s) localement. Vérifiez les données."
+        : "Sauvegarde lue pour cette session, mais non conservée durablement.");
+      if (restored.length === 0) setError("Aucun dossier valide n’a été trouvé dans cette sauvegarde.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Impossible de lire cette sauvegarde.");
+    }
+  }
+
   const visibleItems = items.filter((item) => {
     const term = searchTerm.trim().toLocaleLowerCase("fr");
     const matchesTerm = !term || item.project.id.toLocaleLowerCase("fr").includes(term) ||
@@ -221,6 +275,10 @@ export function ClientResponseImportPanel() {
             <input type="file" accept=".json,application/json" onChange={handleFileChange} style={styles.fileInput} />
           </label>
           <button type="button" onClick={downloadLocalBackup} disabled={items.length === 0} style={styles.secondaryButton}>Exporter le suivi complet (.json)</button>
+          <label style={styles.secondaryUpload}>
+            Restaurer une sauvegarde
+            <input type="file" accept=".json,application/json" onChange={handleBackupRestore} style={styles.fileInput} />
+          </label>
         </div>
       </div>
       <p role="status" style={styles.status}>{message}</p>
@@ -286,6 +344,7 @@ const styles: Record<string, React.CSSProperties> = {
   headerActions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 },
   upload: { position: "relative", display: "inline-block", padding: "12px 16px", background: "#5e35b1", color: "#fff", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer" },
   secondaryButton: { border: "1px solid #d8d0e7", borderRadius: 12, padding: "11px 14px", background: "#fff", color: "#514b61", fontWeight: 700, fontSize: 12, cursor: "pointer" },
+  secondaryUpload: { position: "relative", display: "inline-block", border: "1px solid #d8d0e7", borderRadius: 12, padding: "11px 14px", background: "#fff", color: "#514b61", fontWeight: 700, fontSize: 12, cursor: "pointer" },
   filters: { display: "flex", flexWrap: "wrap", alignItems: "end", gap: 12, margin: "16px 0" },
   filterField: { display: "grid", gap: 6, color: "#514b61", fontSize: 12, fontWeight: 700, minWidth: 200, flex: "1 1 220px" },
   filterInput: { width: "100%", border: "1px solid #d8d0e7", borderRadius: 9, padding: "10px 12px", background: "#fff", color: "#302840", font: "inherit", fontWeight: 400 },
