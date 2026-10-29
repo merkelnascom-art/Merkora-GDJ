@@ -47,12 +47,7 @@ export function AdminQuotesPanel() {
   useEffect(() => { void load(); }, [load]);
 
   const selected = requests.find(item => item.id === selectedId);
-  const selectedVersions = versions.filter(version => {
-    const group = version.quote_id;
-    return versions.some(other => other.quote_id === group && other.client_user_id === version.client_user_id) &&
-      (version.snapshot.requestId === selectedId || requests.find(req => req.id === selectedId)?.user_id === version.client_user_id);
-  });
-  const visibleVersions = selected ? versions.filter(version => version.client_user_id === selected.user_id) : [];
+  const visibleVersions = selected ? versions.filter(version => version.client_user_id === selected.user_id && version.snapshot.requestId === selected.id) : [];
   const money = (amount: unknown) => Number(amount || 0).toLocaleString("fr-FR") + " FCFA";
 
   async function submit(action: "save_draft" | "publish") {
