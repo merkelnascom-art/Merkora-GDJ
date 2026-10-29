@@ -36,6 +36,8 @@ export function ClientResponseImportPanel() {
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("Sélectionnez un export JSON MerKora pour l’examiner.");
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     try {
@@ -101,6 +103,40 @@ export function ClientResponseImportPanel() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Impossible de lire ce fichier.");
     }
+  }
+
+  const visibleItems = items.filter((item) => {
+    const term = searchTerm.trim().toLocaleLowerCase("fr");
+    const matchesTerm = !term || item.project.id.toLocaleLowerCase("fr").includes(term) ||
+      item.project.title.toLocaleLowerCase("fr").includes(term) ||
+      item.response.comment.toLocaleLowerCase("fr").includes(term);
+    return matchesTerm && (statusFilter === "all" || item.adminStatus === statusFilter);
+  });
+
+  function downloadLocalBackup() {
+    const backup = {
+      schema: "merkora.admin-response-backup.v1",
+      exportedAt: new Date().toISOString(),
+      warning: "Sauvegarde locale uniquement. Protégez ce fichier : il contient des informations de projets et des commentaires clients.",
+      items: items.map((item) => ({
+        schema: item.schema,
+        project: item.project,
+        quote: item.quote,
+        response: item.response,
+        exportedAt: item.exportedAt,
+        importedAt: item.importedAt,
+        localImportId: item.localImportId,
+        adminStatus: item.adminStatus,
+        adminNote: item.adminNote,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "merkora-suivi-administratif-" + new Date().toISOString().slice(0, 10) + ".json";
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function saveItemsLocally(next: ImportedItem[]) {
@@ -183,17 +219,32 @@ export function ClientResponseImportPanel() {
           <h2 id="client-response-import-title" style={styles.title}>Retours clients à examiner</h2>
           <p style={styles.text}>Importez le fichier JSON que le client vous a transmis. Les réponses restent sur ce navigateur : aucun envoi au serveur ni synchronisation entre comptes n’a lieu.</p>
         </div>
-        <label style={styles.upload}>
-          Choisir un fichier JSON
-          <input type="file" accept=".json,application/json" onChange={handleFileChange} style={styles.fileInput} />
-        </label>
+        <div style={styles.headerActions}>
+          <label style={styles.upload}>
+            Choisir un fichier JSON
+            <input type="file" accept=".json,application/json" onChange={handleFileChange} style={styles.fileInput} />
+          </label>
+          <button type="button" onClick={downloadLocalBackup} disabled={items.length === 0} style={styles.secondaryButton}>Sauvegarder le suivi (.json)</button>
+        </div>
       </div>
       <p role="status" style={styles.status}>{message}</p>
       {error && <p role="alert" style={styles.error}>{error}</p>}
       {!ready && <p style={styles.text}>Chargement des imports locaux…</p>}
       {ready && items.length === 0 && <div style={styles.empty}>Aucun retour importé pour le moment.</div>}
+      {items.length > 0 && <div style={styles.filters}>
+        <label style={styles.filterField}>Rechercher un projet ou commentaire
+          <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Référence, nom du projet…" style={styles.filterInput} />
+        </label>
+        <label style={styles.filterField}>Filtrer par statut
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={styles.filterInput}>
+            <option value="all">Tous les statuts</option>
+            {workflowStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+          </select>
+        </label>
+        <span style={styles.resultCount}>{visibleItems.length} / {items.length} dossier(s)</span>
+      </div>}
       <div style={styles.list}>
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <article key={item.localImportId} style={styles.item}>
             <div style={styles.itemHeader}>
               <div><span style={styles.projectId}>{item.project.id}</span><h3 style={styles.itemTitle}>{item.project.title}</h3></div>
@@ -235,7 +286,13 @@ const styles: Record<string, React.CSSProperties> = {
   eyebrow: { color: "#6e56a5", fontSize: 11, fontWeight: 800, letterSpacing: 1.4 },
   title: { fontSize: 24, margin: "8px 0" },
   text: { color: "#716c80", fontSize: 13, lineHeight: 1.6, maxWidth: 680 },
+  headerActions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 },
   upload: { position: "relative", display: "inline-block", padding: "12px 16px", background: "#5e35b1", color: "#fff", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer" },
+  secondaryButton: { border: "1px solid #d8d0e7", borderRadius: 12, padding: "11px 14px", background: "#fff", color: "#514b61", fontWeight: 700, fontSize: 12, cursor: "pointer" },
+  filters: { display: "flex", flexWrap: "wrap", alignItems: "end", gap: 12, margin: "16px 0" },
+  filterField: { display: "grid", gap: 6, color: "#514b61", fontSize: 12, fontWeight: 700, minWidth: 200, flex: "1 1 220px" },
+  filterInput: { width: "100%", border: "1px solid #d8d0e7", borderRadius: 9, padding: "10px 12px", background: "#fff", color: "#302840", font: "inherit", fontWeight: 400 },
+  resultCount: { color: "#716c80", fontSize: 12, padding: "10px 0" },
   fileInput: { position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
   status: { padding: 12, borderRadius: 10, background: "#f5f2fc", color: "#50446e", fontSize: 13, lineHeight: 1.5 },
   error: { padding: 12, borderRadius: 10, background: "#fff0f0", color: "#9c2020", fontSize: 13 },
