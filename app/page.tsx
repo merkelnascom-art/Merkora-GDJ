@@ -96,7 +96,8 @@ export default function HomePage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function startDiscovery() {
+  function startDiscovery(example?: { title: string; category: NeedCategory }) {
+    setForm(example ? { ...initialForm, title: example.title, category: example.category } : initialForm);
     setActiveProjectId(null);
     setShowForm(true);
     setShowLanding(false);
