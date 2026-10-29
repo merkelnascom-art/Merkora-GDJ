@@ -77,13 +77,13 @@ describe("buildMockupModel", () => {
       format: "website" as const,
       palette: "violet" as const,
       enabledModules: [],
-      selectedRecommendationIds: ["organiser-les-operations-commerciales"],
+      selectedRecommendationIds: ["presences"],
     };
     const model = buildMockupModel(teamProject, config);
     expect(model.visibleRecommendations.map((item) => item.id)).toEqual([
-      "organiser-les-operations-commerciales",
+      "presences",
     ]);
-    expect(model.visibleRecommendations[0]?.title).toBe("Organiser les opérations commerciales");
+    expect(model.visibleRecommendations[0]?.title).toBe("Présences");
   });
 
   it("preserves legacy configs by showing recommendations when no selection has been saved", () => {
