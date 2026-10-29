@@ -162,7 +162,7 @@ export default function HomePage() {
         <button className={`side-link ${!activeProject && !showForm ? "selected" : ""}`} onClick={() => { setActiveProjectId(null); setShowForm(false); }}>
           <span>◫</span> Vue d'ensemble
         </button>
-        <button className={`side-link ${showForm ? "selected" : ""}`} onClick={startDiscovery}>
+        <button className={`side-link ${showForm ? "selected" : ""}`} onClick={() => startDiscovery()}>
           <span>＋</span> Nouveau besoin
         </button>
         <button className="side-link" onClick={() => setShowLanding(true)}><span>✳</span> Découvrir MerKora</button>
@@ -183,7 +183,7 @@ export default function HomePage() {
         <div className="content-wrap">
           <section className="welcome-row">
             <div><div className="eyebrow"><span className="eyebrow-star">✳</span> VOTRE ESPACE POUR CONSTRUIRE</div><h1>Bonjour, <span>créateur.</span></h1><p>Un projet commence par une question à résoudre, pas par un outil imposé.</p></div>
-            <button className="button button-primary" onClick={startDiscovery}><span>＋</span> Décrire un besoin</button>
+            <button className="button button-primary" onClick={() => startDiscovery()}><span>＋</span> Décrire un besoin</button>
           </section>
 
           <section className="metric-grid" aria-label="Résumé des projets">
@@ -234,7 +234,7 @@ export default function HomePage() {
           ) : (
             <section className="project-section">
               <div className="section-title-row"><div><div className="eyebrow">VOTRE PORTFOLIO</div><h2>Vos projets</h2><p>Chaque besoin devient un dossier que vous pouvez reprendre et approfondir.</p></div><span className="count-chip">{projects.length} dossier{projects.length > 1 ? "s" : ""}</span></div>
-              {projects.length === 0 ? <div className="empty-state"><div className="empty-illustration"><div className="empty-orbit orbit-a" /><div className="empty-orbit orbit-b" /><span>✳</span></div><h3>Votre prochaine idée commence ici.</h3><p>Décrivez un problème, une ambition ou une tâche à améliorer. Nous organiserons les premières pistes sans prétendre avoir déjà toutes les réponses.</p><button className="button button-primary" onClick={startDiscovery}>＋ Décrire mon premier besoin</button></div> : <div className="project-list">{projects.map((project) => <article className="project-card" key={project.id}><div className="project-symbol">◈</div><button className="project-main" onClick={() => setActiveProjectId(project.id)}><strong>{project.title}</strong><span>{getCategoryLabel(project.category)}</span><small>{project.problem.slice(0, 110)}{project.problem.length > 110 ? "…" : ""}</small></button><div className="project-card-end"><span className="status-chip">{statusLabels[project.status]}</span><button className="open-project" onClick={() => setActiveProjectId(project.id)} aria-label={`Ouvrir ${project.title}`}>↗</button></div></article>)}</div>}
+              {projects.length === 0 ? <div className="empty-state"><div className="empty-illustration"><div className="empty-orbit orbit-a" /><div className="empty-orbit orbit-b" /><span>✳</span></div><h3>Votre prochaine idée commence ici.</h3><p>Décrivez un problème, une ambition ou une tâche à améliorer. Nous organiserons les premières pistes sans prétendre avoir déjà toutes les réponses.</p><button className="button button-primary" onClick={() => startDiscovery()}>＋ Décrire mon premier besoin</button></div> : <div className="project-list">{projects.map((project) => <article className="project-card" key={project.id}><div className="project-symbol">◈</div><button className="project-main" onClick={() => setActiveProjectId(project.id)}><strong>{project.title}</strong><span>{getCategoryLabel(project.category)}</span><small>{project.problem.slice(0, 110)}{project.problem.length > 110 ? "…" : ""}</small></button><div className="project-card-end"><span className="status-chip">{statusLabels[project.status]}</span><button className="open-project" onClick={() => setActiveProjectId(project.id)} aria-label={`Ouvrir ${project.title}`}>↗</button></div></article>)}</div>}
             </section>
           )}
 
