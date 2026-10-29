@@ -4,7 +4,26 @@ import { useEffect, useState } from "react";
 import { parseClientResponseFile, type ClientResponseFile } from "@/lib/client-response-file";
 
 const STORAGE_KEY = "merkora-admin-imported-client-responses-v1";
-type ImportedItem = ClientResponseFile & { importedAt: string; localImportId: string };
+const workflowStatuses = [
+  { value: "to_review", label: "À examiner" },
+  { value: "verified", label: "Identité et dossier vérifiés" },
+  { value: "changes_requested", label: "Modifications à préparer" },
+  { value: "negotiation", label: "Négociation en cours" },
+  { value: "accepted", label: "Accepté par l’administration" },
+  { value: "in_progress", label: "Réalisation en cours" },
+  { value: "delivered", label: "Livré" },
+  { value: "rejected", label: "Refusé / clôturé" },
+] as const;
+type WorkflowStatus = typeof workflowStatuses[number]["value"];
+type ImportedItem = ClientResponseFile & {
+  importedAt: string;
+  localImportId: string;
+  adminStatus: WorkflowStatus;
+  adminNote: string;
+};
+function isWorkflowStatus(value: unknown): value is WorkflowStatus {
+  return typeof value === "string" && workflowStatuses.some((status) => status.value === value);
+}
 
 const labels = {
   accepted: "Le client indique accepter",
@@ -34,6 +53,8 @@ export function ClientResponseImportPanel() {
                 ...response,
                 importedAt: typeof candidate.importedAt === "string" ? candidate.importedAt : response.exportedAt,
                 localImportId: typeof candidate.localImportId === "string" ? candidate.localImportId : response.project.id + response.exportedAt,
+                adminStatus: isWorkflowStatus(candidate.adminStatus) ? candidate.adminStatus : "to_review",
+                adminNote: typeof candidate.adminNote === "string" ? candidate.adminNote.slice(0, 1200) : "",
               }];
             } catch {
               return [];
@@ -65,30 +86,51 @@ export function ClientResponseImportPanel() {
         ...response,
         importedAt: new Date().toISOString(),
         localImportId: response.project.id + ":" + response.exportedAt + ":" + response.response.choice,
+        adminStatus: "to_review",
+        adminNote: "",
       };
       setItems((current) => {
         const next = [item, ...current.filter((old) => old.localImportId !== item.localImportId)].slice(0, 50);
-        try {
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.map((entry) => ({
-            rawJson: JSON.stringify({
-              schema: entry.schema,
-              project: entry.project,
-              quote: entry.quote,
-              response: entry.response,
-              exportedAt: entry.exportedAt,
-            }),
-            importedAt: entry.importedAt,
-            localImportId: entry.localImportId,
-          }))));
+        if (saveItemsLocally(next)) {
           setMessage("Fichier vérifié et ajouté à la liste locale. Vérifiez manuellement l’identité de l’expéditeur et le dossier concerné.");
-        } catch {
-          setMessage("Fichier vérifié pour cette session. Le navigateur n’a pas permis de le conserver après fermeture.");
+        } else {
+          setMessage("Fichier importé pour cette session, mais non enregistré durablement.");
         }
         return next;
       });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Impossible de lire ce fichier.");
     }
+  }
+
+  function saveItemsLocally(next: ImportedItem[]) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.map((entry) => ({
+        rawJson: JSON.stringify({
+          schema: entry.schema,
+          project: entry.project,
+          quote: entry.quote,
+          response: entry.response,
+          exportedAt: entry.exportedAt,
+        }),
+        importedAt: entry.importedAt,
+        localImportId: entry.localImportId,
+        adminStatus: entry.adminStatus,
+        adminNote: entry.adminNote,
+      }))));
+      return true;
+    } catch {
+      setMessage("La liste est mise à jour dans cette session, mais le navigateur n’a pas permis de l’enregistrer durablement.");
+      return false;
+    }
+  }
+
+  function updateAdminReview(localImportId: string, changes: Partial<Pick<ImportedItem, "adminStatus" | "adminNote">>) {
+    setItems((current) => {
+      const next = current.map((item) => item.localImportId === localImportId ? { ...item, ...changes } : item);
+      if (saveItemsLocally(next)) setMessage("Suivi administratif enregistré sur cet appareil uniquement.");
+      return next;
+    });
   }
 
   function downloadReviewSheet(item: ImportedItem) {
@@ -126,21 +168,7 @@ export function ClientResponseImportPanel() {
   function removeItem(localImportId: string) {
     setItems((current) => {
       const next = current.filter((item) => item.localImportId !== localImportId);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.map((entry) => ({
-          rawJson: JSON.stringify({
-            schema: entry.schema,
-            project: entry.project,
-            quote: entry.quote,
-            response: entry.response,
-            exportedAt: entry.exportedAt,
-          }),
-          importedAt: entry.importedAt,
-          localImportId: entry.localImportId,
-        }))));
-      } catch {
-        setMessage("La liste a été modifiée dans cette session, mais n’a pas pu être enregistrée localement.");
-      }
+      saveItemsLocally(next);
       return next;
     });
   }
@@ -177,6 +205,15 @@ export function ClientResponseImportPanel() {
             </dl>
             <div style={styles.comment}><strong>Commentaire du client</strong><p>{item.response.comment.trim() || "Aucun commentaire ajouté."}</p></div>
             <p style={styles.terms}><strong>Conditions affichées :</strong> {item.quote.paymentTerms || "À convenir"}</p>
+            <div style={styles.adminReview}>
+              <label style={styles.adminLabel} htmlFor={"admin-status-" + item.localImportId}>Statut administratif interne</label>
+              <select id={"admin-status-" + item.localImportId} value={item.adminStatus} onChange={(event) => updateAdminReview(item.localImportId, { adminStatus: event.target.value as WorkflowStatus })} style={styles.adminSelect}>
+                {workflowStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+              </select>
+              <label style={styles.adminLabel} htmlFor={"admin-note-" + item.localImportId}>Note de suivi interne</label>
+              <textarea id={"admin-note-" + item.localImportId} value={item.adminNote} maxLength={1200} rows={3} onChange={(event) => updateAdminReview(item.localImportId, { adminNote: event.target.value })} placeholder="Prochaine action, personne à contacter, point à vérifier…" style={styles.adminTextarea} />
+              <p style={styles.localHint}>Ce statut et cette note sont internes à ce navigateur. Ils ne sont pas transmis au client ni à un autre administrateur.</p>
+            </div>
             <p style={styles.warning}>{item.notice} L’import ne prouve pas l’identité de l’expéditeur. Comparez la référence avec le dossier avant toute décision.</p>
             <div style={styles.actions}>
               <button type="button" onClick={() => downloadReviewSheet(item)} style={styles.download}>Télécharger la fiche de contrôle (.txt)</button>
@@ -211,6 +248,11 @@ const styles: Record<string, React.CSSProperties> = {
   details: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "14px 0" },
   comment: { padding: 14, background: "#f5f2fc", borderRadius: 12, whiteSpace: "pre-wrap" },
   terms: { color: "#514b61", fontSize: 13, lineHeight: 1.5 },
+  adminReview: { display: "grid", gap: 8, margin: "16px 0", padding: 14, border: "1px solid #e3dced", borderRadius: 12, background: "#fff" },
+  adminLabel: { fontSize: 12, fontWeight: 800, color: "#514b61" },
+  adminSelect: { width: "100%", maxWidth: 420, border: "1px solid #d8d0e7", borderRadius: 9, padding: "10px 12px", background: "#fff", color: "#302840" },
+  adminTextarea: { width: "100%", border: "1px solid #d8d0e7", borderRadius: 9, padding: 12, background: "#fff", color: "#302840", resize: "vertical", font: "inherit", fontSize: 13 },
+  localHint: { color: "#918ba0", fontSize: 11, lineHeight: 1.5, margin: 0 },
   warning: { color: "#746a82", fontSize: 12, lineHeight: 1.55 },
   actions: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 },
   download: { border: "1px solid #5e35b1", borderRadius: 9, padding: "8px 11px", background: "#5e35b1", color: "#fff", cursor: "pointer", fontWeight: 700 },
