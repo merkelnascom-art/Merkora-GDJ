@@ -28,17 +28,6 @@ export function ProjectMockupStudio({ project }: Props) {
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
-  const imageSignature = useMemo(() => JSON.stringify({
-    title: project.title,
-    category: project.category,
-    problem: project.problem,
-    desiredOutcome: project.desiredOutcome,
-    budget: project.budget,
-    urgency: project.urgency,
-    recommendations: project.recommendations,
-    config,
-  }), [project, config]);
-  const imageIsCurrent = generatedImage?.signature === imageSignature;
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
   useEffect(() => {
