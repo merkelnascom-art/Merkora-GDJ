@@ -91,15 +91,11 @@ export function ClientResponseImportPanel() {
         adminStatus: "to_review",
         adminNote: "",
       };
-      setItems((current) => {
-        const next = [item, ...current.filter((old) => old.localImportId !== item.localImportId)].slice(0, 50);
-        if (saveItemsLocally(next)) {
-          setMessage("Fichier vérifié et ajouté à la liste locale. Vérifiez manuellement l’identité de l’expéditeur et le dossier concerné.");
-        } else {
-          setMessage("Fichier importé pour cette session, mais non enregistré durablement.");
-        }
-        return next;
-      });
+      const next = [item, ...items.filter((old) => old.localImportId !== item.localImportId)].slice(0, 50);
+      setItems(next);
+      setMessage(saveItemsLocally(next)
+        ? "Fichier vérifié et ajouté à la liste locale. Vérifiez manuellement l’identité de l’expéditeur et le dossier concerné."
+        : "Fichier importé pour cette session, mais non enregistré durablement.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Impossible de lire ce fichier.");
     }
@@ -204,11 +200,11 @@ export function ClientResponseImportPanel() {
   }
 
   function removeItem(localImportId: string) {
-    setItems((current) => {
-      const next = current.filter((item) => item.localImportId !== localImportId);
-      saveItemsLocally(next);
-      return next;
-    });
+    const next = items.filter((item) => item.localImportId !== localImportId);
+    setItems(next);
+    setMessage(saveItemsLocally(next)
+      ? "Réponse retirée de cette liste locale."
+      : "Réponse retirée pour cette session, mais le changement n’a pas été enregistré durablement.");
   }
 
   return (
