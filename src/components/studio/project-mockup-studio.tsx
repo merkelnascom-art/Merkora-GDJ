@@ -125,7 +125,7 @@ export function ProjectMockupStudio({ project }: Props) {
       "ÉTAT : brouillon préparatoire uniquement. Ce document n'est ni un devis officiel, ni une offre contractuelle, ni une acceptation client. Le prix et le délai doivent être vérifiés par MerKora avant transmission.",
       "Données et préférences conservées localement dans ce navigateur ; aucun envoi automatique n'a lieu.",
     ];
-    const blob = new Blob([lines.join("\\n")], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
