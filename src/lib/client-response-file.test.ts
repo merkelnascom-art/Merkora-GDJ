@@ -32,6 +32,11 @@ describe("parseClientResponseFile", () => {
     expect(() => parseClientResponseFile(JSON.stringify({ ...valid, exportedAt: "hier" }))).toThrow(/date d'export/);
   });
 
+  it("rejects non-numeric quote amounts and delays", () => {
+    expect(() => parseClientResponseFile(JSON.stringify({ ...valid, quote: { ...valid.quote, amountFcfa: "150000 FCFA" } }))).toThrow(/informations de proposition/);
+    expect(() => parseClientResponseFile(JSON.stringify({ ...valid, quote: { ...valid.quote, estimatedDays: "deux semaines" } }))).toThrow(/informations de proposition/);
+  });
+
   it("does not accept unsupported fields as a substitute for required values", () => {
     const { project: _project, ...withoutProject } = valid;
     expect(() => parseClientResponseFile(JSON.stringify(withoutProject))).toThrow(/Référence du projet/);
