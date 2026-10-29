@@ -44,7 +44,12 @@ export function ClientRequestTrackingPanel() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const refreshAfterSubmission = () => { void load(); };
+    window.addEventListener("merkora:request-sent", refreshAfterSubmission);
+    return () => window.removeEventListener("merkora:request-sent", refreshAfterSubmission);
+  }, [load]);
 
   return (
     <section className="panel" style={{ maxWidth: 1100, margin: "18px auto 0", padding: 22, border: "1px solid #e7e2f0", borderRadius: 18, background: "#fff" }}>
