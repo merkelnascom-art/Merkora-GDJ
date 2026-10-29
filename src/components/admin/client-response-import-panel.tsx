@@ -146,11 +146,27 @@ export function ClientResponseImportPanel() {
           // Ignore malformed individual entries while retaining valid items.
         }
       }
-      const next = restored;
+      // Merge rather than replace: restoring an older backup must not erase newer local records.
+      // For matching IDs, the current device's admin status and note take precedence.
+      const currentById = new Map(items.map((item) => [item.localImportId, item]));
+      const merged = restored.map((entry) => {
+        const current = currentById.get(entry.localImportId);
+        return current
+          ? { ...entry, importedAt: current.importedAt, adminStatus: current.adminStatus, adminNote: current.adminNote }
+          : entry;
+      });
+      const restoredIds = new Set(merged.map((entry) => entry.localImportId));
+      const retainedCurrent = items.filter((item) => !restoredIds.has(item.localImportId));
+      const seen = new Set<string>();
+      const next = [...merged, ...retainedCurrent].filter((item) => {
+        if (seen.has(item.localImportId)) return false;
+        seen.add(item.localImportId);
+        return true;
+      }).slice(0, 50);
       setItems(next);
       setMessage(saveItemsLocally(next)
-        ? "Sauvegarde importée : " + next.length + " dossier(s) restauré(s) localement. Vérifiez les données."
-        : "Sauvegarde lue pour cette session, mais non conservée durablement.");
+        ? "Sauvegarde fusionnée : " + restored.length + " dossier(s) valide(s) lus, " + next.length + " dossier(s) conservés. Les statuts et notes locaux existants ont été préservés."
+        : "Sauvegarde fusionnée pour cette session, mais non conservée durablement.");
       if (restored.length === 0) setError("Aucun dossier valide n’a été trouvé dans cette sauvegarde.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Impossible de lire cette sauvegarde.");
