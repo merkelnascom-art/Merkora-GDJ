@@ -113,7 +113,7 @@ export function ClientResponseImportPanel() {
       "[ ] Enregistrer la décision administrative dans le dossier officiel.",
       "",
       "ATTENTION : cette fiche est un relevé local généré depuis un fichier importé. Elle ne prouve pas l’identité de l’expéditeur et ne constitue pas un contrat ni une preuve de paiement.",
-    ].join("\\n");
+    ].join("\n");
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
