@@ -15,6 +15,8 @@ create table if not exists public.client_requests (
 );
 
 alter table public.client_requests enable row level security;
+grant select, insert on public.client_requests to authenticated;
+grant all on public.client_requests to service_role;
 
 drop policy if exists "Clients can read their own MerKora requests" on public.client_requests;
 create policy "Clients can read their own MerKora requests"
