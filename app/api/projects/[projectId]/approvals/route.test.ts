@@ -21,7 +21,7 @@ function makeRequest(body: unknown) {
 }
 const clientBody = {
   planVersion: 2, approvalKind: "client_scope", decision: "approved",
-  comment: "Je confirme ce périmètre.", requestId,
+  comment: "Je confirme ce périmètre.", requestId, aiProcessingConsent: true,
 };
 beforeEach(() => {
   vi.mocked(isSameOrigin).mockReturnValue(true);
@@ -52,7 +52,15 @@ describe("POST /api/projects/[projectId]/approvals", () => {
       project_id: "MK-CLIENT-001", plan_version: 2,
       plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
       actor_user_id: user.id, actor_role: "client", approval_kind: "client_scope",
+      ai_processing_consent: true,
     });
+  });
+
+  it("requires an explicit boolean consent choice for client scope approval", async () => {
+    const { aiProcessingConsent: _consent, ...missingConsent } = clientBody;
+    const response = await POST(makeRequest(missingConsent), context);
+    expect(response.status).toBe(400);
+    expect(callUserData).not.toHaveBeenCalled();
   });
 
   it("does not allow a client to issue administrative approvals", async () => {
@@ -67,9 +75,9 @@ describe("POST /api/projects/[projectId]/approvals", () => {
       .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
       .mockResolvedValueOnce({ ok: true, status: 201, data: [{ id: "approval-2" }] })
       .mockResolvedValueOnce({ ok: true, status: 201, data: null });
-    const response = await POST(makeRequest({ ...clientBody, approvalKind: "admin_review" }), context);
+    const response = await POST(makeRequest({ planVersion: 2, approvalKind: "admin_review", decision: "approved", comment: "Revue administrative.", requestId }), context);
     expect(response.status).toBe(200);
-    expect(vi.mocked(callUserData).mock.calls[1][3]).toMatchObject({ actor_role: "admin", approval_kind: "admin_review" });
+    expect(vi.mocked(callUserData).mock.calls[1][3]).toMatchObject({ actor_role: "admin", approval_kind: "admin_review", ai_processing_consent: false });
     expect(vi.mocked(callUserData).mock.calls[2][0]).toBe("project_memory_events");
   });
 
