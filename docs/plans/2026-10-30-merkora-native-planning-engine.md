@@ -121,7 +121,7 @@ git commit -m "feat(planning): add deterministic project plan engine"
 - Consumes: two `ProjectPlan` values generated from different brief versions.
 - Produces: `ProjectPlanDiff` containing added, removed and changed scope items, tasks, assumptions, open questions and estimates.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Verify that comparison:
 1. identifies an added selected feature and the tasks it introduces;
@@ -131,29 +131,29 @@ Verify that comparison:
 5. refuses to compare plans from different project identifiers;
 6. retains the original plan objects without mutating either one.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- --run src/lib/planning/compare-project-plans.test.ts`
 
 Expected: the comparison module or export is missing.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Compare by stable identifiers and return a structured diff. Do not automatically overwrite, approve or execute the newer plan. A changed brief produces a new draft plan; a human/client review policy decides whether it can proceed.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- --run src/lib/planning/compare-project-plans.test.ts`
 
 Expected: all add/remove/change and immutability assertions pass.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck && npm test`
 
 Expected: all tests and type checks pass.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 ```bash
 git add src/lib/planning/compare-project-plans.ts src/lib/planning/compare-project-plans.test.ts src/lib/planning/plan-types.ts
@@ -171,7 +171,7 @@ git commit -m "feat(planning): compare project plan revisions"
 - Consumes: authenticated user's existing project record and a same-origin preview request with a brief version and explicit selected/approved scope.
 - Produces: a generated `ProjectPlan` response only; this endpoint does not persist the plan or update project status.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Verify:
 1. cross-origin requests are rejected before reading project data;
@@ -184,29 +184,29 @@ Verify:
 8. the endpoint never writes to Supabase and never changes quotes, payments, launch records or project status;
 9. an unavailable Supabase configuration returns an explicit service-unavailable response rather than a fabricated plan.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- --run 'app/api/projects/[projectId]/plan/preview/route.test.ts'`
 
 Expected: the preview route does not exist.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Use the existing authenticated-user access pattern from `app/api/projects/route.ts`. Query only the requesting user's project through their own access token; do not use a service-role key. Apply same-origin protection to the POST request. Generate the plan in memory and return `Cache-Control: no-store`. Do not persist or approve it. Keep the route server-side and do not expose tokens or environment secrets.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- --run 'app/api/projects/[projectId]/plan/preview/route.test.ts'`
 
 Expected: all authentication, ownership, malformed-input, zero-provider and no-write assertions pass.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck && npm test`
 
 Expected: the API route type-checks and all existing project, auth and AI zero-expense tests pass.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 ```bash
 git add 'app/api/projects/[projectId]/plan/preview/route.ts' 'app/api/projects/[projectId]/plan/preview/route.test.ts'
