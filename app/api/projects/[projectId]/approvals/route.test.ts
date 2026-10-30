@@ -64,7 +64,7 @@ describe("POST /api/projects/[projectId]/approvals", () => {
   });
 
   it("does not allow a client to issue administrative approvals", async () => {
-    const response = await POST(makeRequest({ ...clientBody, approvalKind: "execution_authorization" }), context);
+    const response = await POST(makeRequest({ planVersion: 2, approvalKind: "execution_authorization", decision: "approved", comment: "Test client restriction.", requestId }), context);
     expect(response.status).toBe(403);
     expect(callUserData).not.toHaveBeenCalled();
   });
