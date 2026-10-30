@@ -19,13 +19,14 @@ Transformer un plan et un périmètre client déjà approuvés en changements de
 
 Cette étape ne déclenche aucun appel à un modèle. Le mode zéro dépense reste actif : aucun appel AI Gateway, aucune création de clé et aucun crédit consommé par ces fonctions.
 
-Le prompt et le validateur préparent le futur agent. L'intégration d'une génération IA réelle devra être derrière :
-1. une configuration serveur explicite du modèle et de l'authentification AI Gateway ;
-2. un interrupteur d'activation administrateur ;
-3. une confirmation explicite de l'appel payant au moment de l'exécution ;
-4. un budget et des limites de dépense côté AI Gateway ;
-5. la validation du patch avant toute écriture dans le projet ;
-6. une compilation isolée et une revue humaine avant livraison.
+Le prompt, le validateur et la route d'implémentation sont préparés. La route `POST /api/admin/projects/[projectId]/factory/jobs/[jobId]/implement` reste inactive par défaut et exige cumulativement :
+1. le consentement de traitement IA enregistré dans le payload du plan approuvé (`aiImplementationConsent: true`) ;
+2. `MERKORA_AI_ENABLED=true` côté serveur ;
+3. un modèle `provider/model` configuré dans `MERKORA_CODEGEN_MODEL` et une authentification AI Gateway serveur ;
+4. une confirmation explicite `confirmAiSpend: true` au moment de l'exécution ;
+5. un budget et des limites de dépense côté AI Gateway ;
+6. la validation du patch avant toute écriture dans le projet ;
+7. une compilation isolée et une revue humaine avant livraison.
 
 ## Contrat de sécurité
 
@@ -38,4 +39,4 @@ Le prompt et le validateur préparent le futur agent. L'intégration d'une gén�
 
 ## État
 
-Le générateur de squelette et la compilation isolée existent. Le prompt d'implémentation et le contrat de patch sont implémentés et testés. L'appel IA réel, l'implémentation complète de chaque logique métier et la livraison client restent à construire et à autoriser séparément.
+Le générateur de squelette et la compilation isolée existent. Le prompt d'implémentation, le parseur de réponse, le validateur de patch et l'application sécurisée du patch sont implémentés et testés. La route d'appel IA est construite mais ne peut pas s'exécuter sans consentement client, activation serveur et confirmation de dépense. Aucun appel IA n'a été effectué. L'implémentation complète de chaque logique métier et la livraison client restent à construire et à autoriser séparément.
