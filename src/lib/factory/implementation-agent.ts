@@ -1,3 +1,7 @@
+import { createProjectMemoryDigest } from "./project-memory-digest";
+import type { GeneratedProjectSource } from "./project-generator";
+import { validateGeneratedProjectSource } from "./validate-generated-source";
+
 export type ImplementationModule = { id: string; title: string; description: string };
 export type ImplementationBrief = {
   projectName: string;
@@ -146,4 +150,32 @@ export function validateProjectCodePatch(value: unknown): CodePatchValidation {
   }
 
   return { ok: true, fileCount: patch.files.length, totalBytes };
+}
+
+
+export function applyProjectCodePatch(
+  source: GeneratedProjectSource,
+  patch: ProjectCodePatch,
+): { source: GeneratedProjectSource; summary: string; openQuestions: string[] } {
+  const sourceValidation = validateGeneratedProjectSource(source);
+  if (!sourceValidation.ok) throw new Error("Le manifeste source doit être valide avant application du patch.");
+  const patchValidation = validateProjectCodePatch(patch);
+  if (!patchValidation.ok) throw new Error(`Patch de code refusé : ${patchValidation.reason}.`);
+
+  const filesByPath = new Map(source.files.map((file) => [file.path, file]));
+  for (const file of patch.files) filesByPath.set(file.path, { path: file.path, content: file.content });
+  const files = [...filesByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
+  const nextSource: GeneratedProjectSource = {
+    ...source,
+    files,
+    digest: createProjectMemoryDigest({ generatorVersion: source.generatorVersion, files }),
+  };
+  const nextValidation = validateGeneratedProjectSource(nextSource);
+  if (!nextValidation.ok) throw new Error(`Le résultat du patch est invalide : ${nextValidation.reason}.`);
+
+  return {
+    source: nextSource,
+    summary: patch.summary.trim(),
+    openQuestions: patch.openQuestions.map((question) => question.trim()),
+  };
 }
