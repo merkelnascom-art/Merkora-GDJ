@@ -7,32 +7,24 @@ export function canonicalizeProjectMemoryPayload(value: unknown): string {
 
   function serialize(current: unknown): string {
     if (current === null) return "null";
-
-    if (typeof current === "string" || typeof current === "boolean") {
-      return JSON.stringify(current);
-    }
+    if (typeof current === "string" || typeof current === "boolean") return JSON.stringify(current);
 
     if (typeof current === "number") {
-      if (!Number.isFinite(current)) {
-        throw new TypeError("Project memory payload requires a finite number.");
-      }
+      if (!Number.isFinite(current)) throw new TypeError("Project memory payload requires a finite number.");
       return JSON.stringify(current);
     }
 
     if (typeof current !== "object") {
       throw new TypeError("Project memory payload contains an unsupported value.");
     }
-
-    if (ancestors.has(current)) {
-      throw new TypeError("Project memory payload contains a cyclic reference.");
-    }
+    if (ancestors.has(current)) throw new TypeError("Project memory payload contains a cyclic reference.");
 
     ancestors.add(current);
     try {
       if (Array.isArray(current)) {
         const ownKeys = Reflect.ownKeys(current);
         if (ownKeys.some((key) => typeof key === "symbol"
-          || (key !== "length" && !/^(0|[1-9]\\d*)$/.test(key)))) {
+          || (key !== "length" && !/^(0|[1-9]\d*)$/.test(key)))) {
           throw new TypeError("Project memory arrays must not contain custom properties.");
         }
 
