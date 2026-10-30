@@ -12,7 +12,7 @@ import { GET } from "./route";
 const projectId = "MK-PROJECT-001";
 const jobId = "b2c3d4e5-f678-4123-8abc-1234567890ab";
 const digest = "a".repeat(64);
-const sourcePath = `${projectId}/${jobId}/source-${digest}.json`;
+const sourcePath = `${projectId}/${jobId}/source-${digest}.tar.gz`;
 const context = { params: Promise.resolve({ projectId, jobId }) };
 
 beforeEach(() => {
@@ -23,7 +23,7 @@ beforeEach(() => {
     data: [{ id: jobId, status: "awaiting_approval", manifest: { sourcePath, sourceDigest: digest } }],
   });
   vi.mocked(downloadUserStorageObject).mockResolvedValue({
-    ok: true, status: 200, contentType: "application/json",
+    ok: true, status: 200, contentType: "application/gzip",
     data: new TextEncoder().encode('{"files":[]}'),
   });
 });
@@ -34,6 +34,7 @@ describe("GET factory source artifact", () => {
     const response = await GET(new Request("https://merkora.test"), context);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toContain(jobId);
+    expect(response.headers.get("content-type")).toBe("application/gzip");
     expect(await response.text()).toBe('{"files":[]}');
     expect(downloadUserStorageObject).toHaveBeenCalledWith("merkora-factory-artifacts", sourcePath, "token");
   });
