@@ -6,6 +6,29 @@ export const dynamic = "force-dynamic";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 const uuid = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
 
+type PaymentChannel = { label: string; number: string };
+function getPaymentChannels(): Record<string, PaymentChannel> {
+  try {
+    const raw: unknown = JSON.parse(process.env.MERKORA_PAYMENT_CHANNELS_JSON ?? "{}");
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    const source = raw as Record<string, unknown>;
+    const channels: Record<string, PaymentChannel> = {};
+    for (const key of ["mtn_momo", "celtiis_cash"] as const) {
+      const item = source[key];
+      if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+      const value = item as Record<string, unknown>;
+      if (typeof value.number !== "string" || !/^\\+?[0-9]{8,16}$/.test(value.number)) continue;
+      channels[key] = {
+        label: key === "mtn_momo" ? "MTN MoMo" : "Celtiis Cash",
+        number: value.number,
+      };
+    }
+    return channels;
+  } catch {
+    return {};
+  }
+}
+
 export async function GET() {
   try {
     const store = await cookies();
@@ -34,7 +57,7 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return fail(400, "Données invalides.");
   const value = body as Record<string, unknown>;
   if (!uuid(value.invoiceId) || !Number.isSafeInteger(value.amount) || Number(value.amount) <= 0 ||
-      !["cash", "mtn_momo", "moov_money", "bank_transfer", "other"].includes(String(value.paymentMethod)) ||
+      !["cash", "mtn_momo", "celtiis_cash", "bank_transfer", "other"].includes(String(value.paymentMethod)) ||
       typeof value.paidAt !== "string" || Number.isNaN(Date.parse(value.paidAt)) ||
       Date.parse(value.paidAt) > Date.now() + 5 * 60 * 1000 ||
       typeof value.reference !== "string" || value.reference.length > 160 ||
