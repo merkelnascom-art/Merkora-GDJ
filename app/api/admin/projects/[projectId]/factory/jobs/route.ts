@@ -106,17 +106,6 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       return NextResponse.json({ error: "Le travail est créé, mais ses étapes initiales n'ont pas toutes été enregistrées. Ne relancez pas : une réconciliation administrateur est nécessaire.", jobId: job.id }, { status: 502 });
     }
 
-    const eventResult = await callUserData("project_memory_events", "POST", token, {
-      project_id: projectId, event_type: "task_started",
-      actor_user_id: user.id, actor_role: "admin",
-      correlation_id: body.correlationId, plan_version: body.planVersion,
-      summary: "Travail de fabrication créé en attente d'un worker contrôlé.",
-      payload: { job_id: job.id, status: "queued", execution_started: false },
-    }, "return=minimal");
-    if (!eventResult.ok) {
-      return NextResponse.json({ error: "Le travail et ses étapes sont enregistrés, mais l'événement d'audit doit être réconcilié.", jobId: job.id }, { status: 502 });
-    }
-
     return NextResponse.json({
       created: true, jobId: job.id, status: "queued",
       taskCount: TASKS.length, executionStarted: false,
