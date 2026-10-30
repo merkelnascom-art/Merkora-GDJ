@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { ClientResponseImportPanel } from "@/components/admin/client-response-import-panel";
 import { CloudClientRequestsPanel } from "@/components/admin/cloud-client-requests-panel";
 import { AdminQuotesPanel } from "@/components/admin/admin-quotes-panel";
 import { AdminPaymentsPanel } from "@/components/admin/admin-payments-panel";
+import { FactoryJobsPanel } from "@/components/admin/factory-jobs-panel";
+import { callUserData, getAccessToken } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +48,24 @@ export default async function AdminPage() {
   }
   if (!access.ok) redirect("/");
 
+  const token = await getAccessToken(await cookies());
+  const factoryJobsResult = token
+    ? await callUserData("project_factory_jobs?select=id,project_id,plan_version,status,created_at&order=created_at.desc&limit=20", "GET", token)
+    : { ok: false, status: 401, data: [] };
+  const factoryJobs = factoryJobsResult.ok && Array.isArray(factoryJobsResult.data)
+    ? factoryJobsResult.data.flatMap((item) => {
+        if (!item || typeof item !== "object") return [];
+        const job = item as Record<string, unknown>;
+        if (typeof job.id !== "string" || typeof job.project_id !== "string" ||
+          typeof job.status !== "string" || typeof job.plan_version !== "number" ||
+          typeof job.created_at !== "string") return [];
+        return [{
+          id: job.id, projectId: job.project_id, status: job.status,
+          planVersion: job.plan_version, createdAt: job.created_at,
+        }];
+      })
+    : [];
+
   return (
     <main style={styles.page}>
       <header style={styles.header}>
@@ -58,6 +79,7 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
+      <FactoryJobsPanel initialJobs={factoryJobs} />
       <AdminQuotesPanel />
       <AdminPaymentsPanel />
       <CloudClientRequestsPanel />
