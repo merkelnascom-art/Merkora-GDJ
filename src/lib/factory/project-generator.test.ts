@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { generateProjectSource, type ProjectSourceInput } from "./project-generator";
 
@@ -41,6 +42,17 @@ describe("generateProjectSource", () => {
       { id: "staff", title: "A", description: "First" },
       { id: "staff", title: "B", description: "Second" },
     ] })).toThrow(/unique/i);
+  });
+
+  it("emits syntactically valid TypeScript and TSX files", () => {
+    const result = generateProjectSource(input);
+    for (const file of result.files.filter((item) => item.path.endsWith(".tsx"))) {
+      const output = ts.transpileModule(file.content, {
+        compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+        reportDiagnostics: true,
+      });
+      expect(output.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)).toEqual([]);
+    }
   });
 
   it("produces a deterministic manifest digest for identical input", () => {
