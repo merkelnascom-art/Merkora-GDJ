@@ -56,14 +56,15 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const approvalResult = await callUserData(
-      `project_memory_approvals?select=approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
+      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
       "GET", token,
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Impossible de vérifier les validations." }, { status: 502 });
     const approvals = Array.isArray(approvalResult.data) ? approvalResult.data : [];
-    const exactApproved = new Set(approvals.filter((item) => isRecord(item) &&
-      item.decision === "approved" && item.plan_digest === plan.payload_digest &&
-      item.scope_digest === plan.scope_digest).map((item) => item.approval_kind));
+    const exactApprovalRows = approvals.filter((item) => isRecord(item) &&
+      typeof item.id === "string" && item.decision === "approved" &&
+      item.plan_digest === plan.payload_digest && item.scope_digest === plan.scope_digest);
+    const exactApproved = new Set(exactApprovalRows.map((item) => item.approval_kind));
     const missing = REQUIRED_APPROVALS.filter((kind) => !exactApproved.has(kind));
     if (missing.length) {
       return NextResponse.json({ error: "Le lancement est bloqué : les trois validations exactes sont obligatoires.", missingApprovals: missing }, { status: 409 });
@@ -85,12 +86,13 @@ export async function POST(request: Request, context: { params: Promise<{ projec
         schemaVersion: 1, kind: "merkora_project_factory_job",
         projectId, planVersion: body.planVersion,
         sourceBriefVersion: plan.source_brief_version,
+        approvalIds: exactApprovalRows.map((approval) => approval.id),
         stages: TASKS.map((task) => task.task_key),
         executionMode: "manual_worker_required",
         deliveryRequiresHumanReview: true,
       },
       requested_by: user.id, authorized_by: user.id,
-      approval_ids: [], correlation_id: body.correlationId,
+      approval_ids: exactApprovalRows.map((approval) => approval.id), correlation_id: body.correlationId,
     }, "return=representation");
     if (!jobResult.ok) return NextResponse.json({ error: "La base a refusé la création du travail. Vérifiez les trois validations et réessayez." }, { status: jobResult.status === 403 ? 403 : 502 });
     const job = Array.isArray(jobResult.data) ? jobResult.data[0] : null;
