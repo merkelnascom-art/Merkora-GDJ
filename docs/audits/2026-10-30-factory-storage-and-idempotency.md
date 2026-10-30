@@ -32,10 +32,11 @@ Une vérification préalable n'a trouvé aucun doublon `(project_id, correlation
 
 - Le bucket est confirmé privé.
 - Les deux politiques de stockage attendues sont présentes : INSERT administrateur et SELECT propriétaire/administrateur.
-- Les nouvelles tables de mémoire/fabrique n'apparaissent pas dans les avertissements de clés étrangères non indexées.
+- Les nouvelles tables de mémoire/fabrique n'apparaissent pas dans les cinq avertissements de clés étrangères non indexées ; ces cinq cas concernent les tables commerciales préexistantes `client_invoices`, `client_payment_reviews`, `client_quote_versions`, `client_quotes` et `client_requests`.
 - Aucun nouvel avertissement de sécurité lié aux nouvelles tables ou au bucket n'a été signalé.
-- Avertissement restant : la protection des mots de passe compromis dans Supabase Auth est désactivée. [Documentation Supabase](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
-- Les avertissements de performance observés concernent des tables commerciales préexistantes : factures, devis, demandes et revues de paiement. Ils n'ont pas été modifiés dans cette étape.
+- Avertissement de sécurité restant : la protection des mots de passe compromis dans Supabase Auth est désactivée. [Documentation Supabase](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+- Les avertissements `auth_rls_initplan` (14) et `multiple_permissive_policies` (7) concernent des politiques des tables commerciales préexistantes ; elles n'ont pas été modifiées dans cette étape.
+- Les 36 avertissements informatifs `unused_index` comprennent des index des nouvelles tables encore peu utilisées. Ils ne sont pas supprimés : leur utilité devra être réévaluée après l'arrivée d'un vrai volume d'exécution.
 
 ## Limites
 
