@@ -3,9 +3,11 @@
 import { useState } from "react";
 import type { Project } from "@/lib/project-types";
 import { buildSelectedPlanOptions } from "@/lib/planning/mockup-selections";
+import type { MockupConfig } from "@/lib/mockup-studio";
 import type { ProjectPlan, ProjectPlanInput } from "@/lib/planning/plan-types";
 
 type Props = { project: Project };
+type StoredStudioConfig = Partial<MockupConfig>;
 
 function readStudioConfig(projectId: string): StoredStudioConfig {
   try {
