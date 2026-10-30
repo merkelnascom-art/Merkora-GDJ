@@ -88,6 +88,13 @@ describe("POST factory AI implementation", () => {
           scope_digest: createProjectMemoryDigest(payload.includedScope),
         }],
       };
+      if (method === "GET" && path.startsWith("project_memory_approvals?select")) return {
+        ok: true, status: 200, data: [
+          { id: "approval-1", approval_kind: "client_scope", decision: "approved", plan_digest: digest, scope_digest: createProjectMemoryDigest(payload.includedScope), ai_processing_consent: false },
+          { id: "approval-2", approval_kind: "admin_review", decision: "approved", plan_digest: digest, scope_digest: createProjectMemoryDigest(payload.includedScope), ai_processing_consent: false },
+          { id: "approval-3", approval_kind: "execution_authorization", decision: "approved", plan_digest: digest, scope_digest: createProjectMemoryDigest(payload.includedScope), ai_processing_consent: false },
+        ],
+      };
       return { ok: true, status: 200, data: [] };
     });
     const response = await POST(request(true), context);
