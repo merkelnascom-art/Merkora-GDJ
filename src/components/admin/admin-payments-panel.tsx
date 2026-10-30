@@ -6,7 +6,8 @@ type Invoice = { id: string; quote_version_id: string; client_user_id: string; i
 type Declaration = { id: string; invoice_id: string; client_user_id: string; amount: number; payment_method: string; paid_at: string; transaction_reference: string; client_note: string; created_at: string };
 type Review = { id: string; payment_declaration_id: string; invoice_id: string; status: string; review_note: string; created_at: string };
 type Version = { id: string; client_user_id: string; version_number: number; snapshot: Record<string, unknown>; total_amount: number; valid_until: string; published_at: string };
-type Decision = { id: string; quote_version_id: string; client_user_id: string; decision: string; message: string; created_at: string };\ntype Launch = { id: string; request_id: string; client_user_id: string; quote_version_id: string; invoice_id: string; required_amount: number; invoice_total_at_launch: number; confirmed_amount_at_launch: number; launch_message: string; launched_at: string };
+type Decision = { id: string; quote_version_id: string; client_user_id: string; decision: string; message: string; created_at: string };
+type Launch = { id: string; request_id: string; client_user_id: string; quote_version_id: string; invoice_id: string; required_amount: number; invoice_total_at_launch: number; confirmed_amount_at_launch: number; launch_message: string; launched_at: string };
 const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", celtiis_cash: "Celtiis Cash", bank_transfer: "Virement", other: "Autre" };
 const money = (n: number) => Number(n || 0).toLocaleString("fr-FR") + " FCFA";
 
@@ -15,7 +16,11 @@ export function AdminPaymentsPanel() {
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [versions, setVersions] = useState<Version[]>([]);
-  const [decisions, setDecisions] = useState<Decision[]>([]);\n  const [launches, setLaunches] = useState<Launch[]>([]);\n  const [requiredAmounts, setRequiredAmounts] = useState<Record<string, string>>({});\n  const [launchMessages, setLaunchMessages] = useState<Record<string, string>>({});\n  const [launchConfirmInvoiceId, setLaunchConfirmInvoiceId] = useState("");
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [launches, setLaunches] = useState<Launch[]>([]);
+  const [requiredAmounts, setRequiredAmounts] = useState<Record<string, string>>({});
+  const [launchMessages, setLaunchMessages] = useState<Record<string, string>>({});
+  const [launchConfirmInvoiceId, setLaunchConfirmInvoiceId] = useState("");
   const [selected, setSelected] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [note, setNote] = useState<Record<string, string>>({});
@@ -39,10 +44,13 @@ export function AdminPaymentsPanel() {
   async function action(payload: Record<string, unknown>, key: string) {
     setBusy(key); setError(""); setNotice("");
     try {
-      const endpoint = payload.action === "launch_project" ? "/api/admin/project-launches" : "/api/admin/payments";\n      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const endpoint = payload.action === "launch_project" ? "/api/admin/project-launches" : "/api/admin/payments";
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Action impossible.");
-      setNotice(data.message || "Opération enregistrée."); setSelected(""); setDueDate(""); setNote(current => ({ ...current, [key]: "" }));\n      if (payload.action === "launch_project") setLaunchConfirmInvoiceId("");\n      await load();
+      setNotice(data.message || "Opération enregistrée."); setSelected(""); setDueDate(""); setNote(current => ({ ...current, [key]: "" }));
+      if (payload.action === "launch_project") setLaunchConfirmInvoiceId("");
+      await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Action impossible."); }
     finally { setBusy(""); }
   }
@@ -114,7 +122,8 @@ export function AdminPaymentsPanel() {
     </div>
     <h3 style={{ marginTop: 22 }}>Historique des décisions</h3>
     {reviews.map(r => <p key={r.id} style={{ fontSize: 13 }}>{r.status === "confirmed" ? "Confirmé" : "Rejeté"} · {r.payment_declaration_id} · {r.review_note || "Sans note"} · {new Date(r.created_at).toLocaleString("fr-FR")}</p>)}
-    <button className="button button-quiet" onClick={() => void load()} style={{ marginTop: 10 }}>Actualiser ↻</button>\n    {launchConfirmInvoiceId && (() => {
+    <button className="button button-quiet" onClick={() => void load()} style={{ marginTop: 10 }}>Actualiser ↻</button>
+    {launchConfirmInvoiceId && (() => {
       const invoice = invoices.find(item => item.id === launchConfirmInvoiceId);
       if (!invoice) return null;
       const rows = declarations.filter(d => d.invoice_id === invoice.id);
