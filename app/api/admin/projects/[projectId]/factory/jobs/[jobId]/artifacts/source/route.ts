@@ -42,8 +42,10 @@ export async function GET(
     }
 
     const sourcePath = job.manifest.sourcePath;
-    if (typeof sourcePath !== "string" ||
-      !new RegExp(`^${projectId}/${jobId}/source-[a-f0-9]{64}\\.json$`).test(sourcePath)) {
+    const sourceDigest = job.manifest.sourceDigest;
+    if (typeof sourcePath !== "string" || typeof sourceDigest !== "string" ||
+      !/^[a-f0-9]{64}$/.test(sourceDigest) ||
+      sourcePath !== `${projectId}/${jobId}/source-${sourceDigest}.json`) {
       return Response.json({ error: "Le fichier source n'est pas référencé dans le manifeste." }, { status: 404 });
     }
 
