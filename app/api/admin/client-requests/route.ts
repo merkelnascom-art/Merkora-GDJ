@@ -4,7 +4,7 @@ import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
-const allowedStatuses = new Set(["to_review","verified","changes_requested","negotiation","accepted","in_progress","delivered","rejected"]);
+const allowedStatuses = new Set(["to_review","verified","changes_requested","negotiation","accepted","delivered","rejected"]);
 
 export async function GET() {
   const access = await getAdminAccess();
