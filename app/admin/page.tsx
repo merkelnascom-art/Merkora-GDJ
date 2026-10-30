@@ -52,8 +52,8 @@ export default async function AdminPage() {
         <Link href="/" style={styles.link}>← Espace de travail</Link>
       </header>
       <section style={styles.notice}>
-        <strong>Mode aperçu sécurisé · lecture seule</strong>
-        <p>Cette première étape n’écrit aucune donnée et ne modifie aucun dossier. Les modules ci-dessous décrivent le périmètre en préparation; ils ne sont pas présentés comme déjà opérationnels.</p>
+        <strong>Mode aperçu sécurisé · actions encadrées</strong>
+        <p>Les devis, factures, validations de paiement et lancements officiels sont enregistrés après vérification côté serveur. Les autres modules restent en préparation. Aucune action de production n’est effectuée depuis cet aperçu.</p>
       </section>
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
