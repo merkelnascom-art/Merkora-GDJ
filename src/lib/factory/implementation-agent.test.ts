@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildProjectImplementationPrompt, validateProjectCodePatch } from "./implementation-agent";
+import { applyProjectCodePatch, buildProjectImplementationPrompt, validateProjectCodePatch } from "./implementation-agent";
+import { generateProjectSource } from "./project-generator";
+import { validateGeneratedProjectSource } from "./validate-generated-source";
 
 const brief = {
   projectName: "Aéro Service",
@@ -58,5 +60,37 @@ describe("validateProjectCodePatch", () => {
       summary: "Patch", openQuestions: [],
       files: [{ path: "src/app/page.tsx", content: "x".repeat(600_000) }],
     })).toMatchObject({ ok: false, reason: "patch_too_large" });
+  });
+});
+
+
+describe("applyProjectCodePatch", () => {
+  it("applies only validated source changes and recalculates the source digest", () => {
+    const source = generateProjectSource({
+      projectName: "Gestion RH",
+      projectDescription: "Gérer le personnel.",
+      modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
+    });
+    const result = applyProjectCodePatch(source, {
+      summary: "Ajoute une vue de liste du personnel.",
+      openQuestions: [],
+      files: [{ path: "src/app/modules/staff/page.tsx", content: "export default function Page() { return <main>Personnel</main>; }" }],
+    });
+    expect(result.source.digest).not.toBe(source.digest);
+    expect(result.source.files.find((file) => file.path === "src/app/modules/staff/page.tsx")?.content).toContain("Personnel");
+    expect(validateGeneratedProjectSource(result.source).ok).toBe(true);
+  });
+
+  it("refuses patches that change dependency manifests or escape approved folders", () => {
+    const source = generateProjectSource({
+      projectName: "Gestion RH",
+      projectDescription: "Gérer le personnel.",
+      modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
+    });
+    expect(() => applyProjectCodePatch(source, {
+      summary: "Ajoute une dépendance.",
+      openQuestions: [],
+      files: [{ path: "package.json", content: "{}" }],
+    })).toThrow(/patch/i);
   });
 });
