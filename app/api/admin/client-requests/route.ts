@@ -4,7 +4,7 @@ import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
-const allowedStatuses = new Set(["to_review","verified","changes_requested","negotiation","accepted","delivered","rejected"]);
+const allowedStatuses = new Set(["to_review","verified","changes_requested","negotiation","accepted","in_progress","delivered","rejected"]);
 
 export async function GET() {
   const access = await getAdminAccess();
@@ -38,6 +38,13 @@ export async function PATCH(request: Request) {
     const store = await cookies();
     const token = await getAccessToken(store);
     if (!token) return NextResponse.json({ error: "Session expirée. Reconnectez-vous." }, { status: 401 });
+    if (value.status === "in_progress") {
+      const launch = await callUserData(`client_project_launches?select=id&request_id=eq.${encodeURIComponent(value.id)}&limit=1`, "GET", token);
+      if (!launch.ok) return NextResponse.json({ error: "Impossible de vérifier le lancement officiel du projet." }, { status: 502 });
+      if (!Array.isArray(launch.data) || launch.data.length === 0) {
+        return NextResponse.json({ error: "Utilisez le bouton « Lancer le projet » après vérification du paiement pour démarrer officiellement ce dossier." }, { status: 409 });
+      }
+    }
     const result = await callUserData(`client_requests?id=eq.${encodeURIComponent(value.id)}`, "PATCH", token, {
       admin_status: value.status,
       admin_note: value.note,
