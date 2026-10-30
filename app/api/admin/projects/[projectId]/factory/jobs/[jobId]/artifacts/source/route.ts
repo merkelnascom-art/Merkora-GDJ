@@ -56,7 +56,7 @@ export async function GET(
     return new Response(artifact.data, {
       status: 200,
       headers: {
-        "Content-Type": artifact.contentType === "application/json" ? "application/json; charset=utf-8" : "application/octet-stream",
+        "Content-Type": artifact.contentType.startsWith("application/json") ? "application/json; charset=utf-8" : "application/octet-stream",
         "Content-Disposition": `attachment; filename="merkora-${jobId}-source.json"`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
