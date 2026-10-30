@@ -70,12 +70,13 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect(result).toMatchObject({ created: true, jobId: "job-1", status: "queued", taskCount: 5, executionStarted: false });
     const calls = vi.mocked(callUserData).mock.calls;
     expect(calls[3][0]).toBe("project_factory_jobs");
-    expect(calls[3][3]).toMatchObject({
+    const jobPayload = calls[3][3] as Record<string, unknown>;
+    expect(jobPayload).toMatchObject({
       plan_version: 3, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
       requested_by: user.id, authorized_by: user.id,
       approval_ids: ["approval-1", "approval-2", "approval-3"],
     });
-    expect(calls[3][3].manifest.approvalIds).toEqual(["approval-1", "approval-2", "approval-3"]);
+    expect((jobPayload.manifest as Record<string, unknown>).approvalIds).toEqual(["approval-1", "approval-2", "approval-3"]);
     expect(calls[4][0]).toBe("project_factory_tasks");
     expect(calls[4][3]).toHaveLength(5);
     expect(calls[4][3][1]).toMatchObject({ task_key: "generate_application", dependencies: ["prepare_specification"] });
