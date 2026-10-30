@@ -101,6 +101,35 @@ describe("createProjectResumeSnapshot", () => {
     expect(snapshot.evidenceCount).toBe(0);
   });
 
+  it("requires human review before resuming an interrupted job", () => {
+    const snapshot = createProjectResumeSnapshot({
+      projectId: "MK-004",
+      briefVersion: 1,
+      planVersion: 1,
+      jobStatus: "interrupted",
+      tasks: [readyTask()],
+      requiredApprovals: ["execution_authorization"],
+      recordedApprovals: ["execution_authorization"],
+      evidenceCount: 1,
+    });
+    expect(snapshot.canResume).toBe(false);
+    expect(snapshot.requiresHumanReview).toBe(true);
+  });
+
+  it("does not resume an empty task list", () => {
+    const snapshot = createProjectResumeSnapshot({
+      projectId: "MK-005",
+      briefVersion: 1,
+      planVersion: 1,
+      jobStatus: "building",
+      tasks: [],
+      requiredApprovals: [],
+      recordedApprovals: [],
+      evidenceCount: 0,
+    });
+    expect(snapshot.canResume).toBe(false);
+  });
+
   it("does not allow resume when plan versions are unknown", () => {
     const snapshot = createProjectResumeSnapshot({
       projectId: "MK-003",
