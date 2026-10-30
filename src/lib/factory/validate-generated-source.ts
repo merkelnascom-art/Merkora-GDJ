@@ -66,6 +66,13 @@ export function validateGeneratedProjectSource(
     return { ok: false, reason: "missing_entrypoint" };
   }
 
+  if (!matchesProjectMemoryDigest(
+    { generatorVersion: candidate.generatorVersion, files: candidate.files },
+    candidate.digest,
+  )) {
+    return { ok: false, reason: "digest_mismatch" };
+  }
+
   const packageFile = candidate.files.find((file) => file.path === "package.json");
   try {
     const packageJson = JSON.parse(packageFile?.content ?? "") as {
@@ -80,13 +87,6 @@ export function validateGeneratedProjectSource(
     }
   } catch {
     return { ok: false, reason: "invalid_package_manifest" };
-  }
-
-  if (!matchesProjectMemoryDigest(
-    { generatorVersion: candidate.generatorVersion, files: candidate.files },
-    candidate.digest,
-  )) {
-    return { ok: false, reason: "digest_mismatch" };
   }
 
   return { ok: true, fileCount: candidate.files.length, totalBytes };
