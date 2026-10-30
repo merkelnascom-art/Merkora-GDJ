@@ -10,7 +10,7 @@ type FactoryJob = {
   createdAt: string;
 };
 
-export function FactoryJobsPanel({ initialJobs }: { initialJobs: FactoryJob[] }) {
+export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: FactoryJob[]; aiEnabled: boolean }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -36,6 +36,34 @@ export function FactoryJobsPanel({ initialJobs }: { initialJobs: FactoryJob[] })
       setMessage(result.message ?? "La base du projet a été compilée.");
     } catch {
       setMessage("Le service de fabrication ne répond pas. Vérifiez le statut du travail avant de réessayer.");
+    } finally {
+      setRunningId(null);
+    }
+  }
+
+  async function implementWithAi(job: FactoryJob) {
+    const confirmed = window.confirm(
+      "Confirmer l'envoi des besoins et du code de ce projet à un modèle IA externe ? Cette opération peut consommer des crédits. Elle ne déploiera rien.",
+    );
+    if (!confirmed) return;
+    setRunningId(job.id);
+    setMessage("");
+    try {
+      const response = await fetch(
+        `/api/admin/projects/${encodeURIComponent(job.projectId)}/factory/jobs/${encodeURIComponent(job.id)}/implement`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmAiSpend: true }) },
+      );
+      const result = await response.json().catch(() => ({})) as {
+        status?: string; error?: string; message?: string; questions?: string[];
+      };
+      if (result.status) {
+        setJobs((current) => current.map((item) =>
+          item.id === job.id ? { ...item, status: result.status! } : item,
+        ));
+      }
+      setMessage(result.message ?? result.error ?? "L'implémentation IA n'a pas abouti.");
+    } catch {
+      setMessage("Le service IA ne répond pas. Vérifiez le statut du travail avant de réessayer.");
     } finally {
       setRunningId(null);
     }
@@ -68,6 +96,16 @@ export function FactoryJobsPanel({ initialJobs }: { initialJobs: FactoryJob[] })
                   >
                     Télécharger le code généré
                   </a>
+                ) : null}
+                {aiEnabled && job.status === "awaiting_approval" ? (
+                  <button
+                    type="button"
+                    disabled={runningId !== null}
+                    onClick={() => void implementWithAi(job)}
+                    style={{ ...styles.aiButton, opacity: runningId !== null ? 0.55 : 1 }}
+                  >
+                    {runningId === job.id ? "Analyse IA…" : "Compléter la logique métier (IA)"}
+                  </button>
                 ) : null}
               </div>
               <button
@@ -107,6 +145,7 @@ const styles: Record<string, React.CSSProperties> = {
   id: { margin: 0, color: "#9992a8", fontSize: 10, overflowWrap: "anywhere" },
   button: { border: 0, borderRadius: 10, padding: "11px 14px", background: "#5e35b1", color: "#fff", fontWeight: 700, fontSize: 12 },
   download: { display: "inline-block", marginTop: 9, color: "#5e35b1", fontSize: 12, fontWeight: 700, textDecoration: "underline" },
+  aiButton: { display: "block", marginTop: 9, border: "1px solid #b7a5df", borderRadius: 10, padding: "9px 12px", background: "#f7f4fc", color: "#5e35b1", fontWeight: 700, fontSize: 11 },
   message: { margin: "16px 0 0", color: "#4d3b73", fontSize: 13, lineHeight: 1.6 },
   warning: { margin: "16px 0 0", color: "#8b8498", fontSize: 11, lineHeight: 1.6 },
 };
