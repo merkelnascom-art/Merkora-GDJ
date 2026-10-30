@@ -65,8 +65,8 @@ export function AdminQuotesPanel() {
           },
         }),
       });
-      const data = await response.json() as { error?: string; message?: string; version?: number };
-      if (!response.ok) throw new Error(data.error || "Le devis n’a pas été enregistré.");
+      const data = await response.json() as { error?: string; message?: string; version?: number; diagnostic?: string };
+      if (!response.ok) throw new Error([data.error || "Le devis n’a pas été enregistré.", data.diagnostic].filter(Boolean).join("\\nDétail technique : "));
       setMessage((data.message || "Enregistré") + (data.version ? ` · version ${data.version}` : ""));
       await load();
     } catch (cause) {
