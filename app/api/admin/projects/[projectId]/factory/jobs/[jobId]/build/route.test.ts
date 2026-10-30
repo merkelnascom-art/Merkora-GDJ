@@ -99,6 +99,31 @@ describe("POST factory job build", () => {
       method === "PATCH" && String(path).includes("status=eq.queued"))).toBe(true);
   });
 
+  it("calls the implementation model only when consent is part of the exact approved plan", async () => {
+    planPayload.aiImplementationConsent = true;
+    process.env.AI_GATEWAY_API_KEY = "unit-test-key";
+    process.env.MERKORA_IMPLEMENTATION_MODEL = "unit-test-model";
+    vi.mocked(requestAiGatewayCompletion).mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify({
+        summary: "Ajoute une première vue des présences.",
+        openQuestions: [],
+        files: [{
+          path: "src/app/modules/attendance/page.tsx",
+          content: "export default function Page() { return <main>Présences</main>; }",
+        }],
+      }) } }],
+    }), { status: 200 }));
+
+    const response = await POST(request(), context);
+    const result = await response.json();
+    expect(response.status).toBe(200);
+    expect(requestAiGatewayCompletion).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({
+      implementationLevel: "ai_patch",
+      fullBusinessLogicImplementationPending: true,
+    });
+  });
+
   it("does not claim or execute a job without all exact approvals", async () => {
     vi.mocked(callUserData).mockImplementation(async (path, method) => {
       if (method === "GET" && path.startsWith("project_factory_jobs?select")) return { ok: true, status: 200, data: [job] };
