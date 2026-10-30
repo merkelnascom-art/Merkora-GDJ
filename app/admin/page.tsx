@@ -12,7 +12,7 @@ const cards = [
   { title: "Dossiers clients", description: "Consulter les dossiers autorisés et leur statut.", value: "Lecture seule" },
   { title: "Studio & propositions", description: "Préparer la revue des maquettes et des choix clients.", value: "À connecter" },
   { title: "Devis & validations", description: "Créer des versions de devis, les publier au client et suivre ses décisions.", value: "Disponible en aperçu" },
-  { title: "Réalisation & livraison", description: "Suivre les étapes après autorisation du devis.", value: "À construire" },
+  { title: "Réalisation & livraison", description: "Lancer officiellement le projet après validation du paiement et préparer son suivi.", value: "Lancement manuel en aperçu" },
 ];
 
 export default async function AdminPage() {
