@@ -118,6 +118,12 @@ export async function POST(
       plan.scope_digest !== job.scope_digest) {
       return NextResponse.json({ error: "Le plan ne correspond plus aux empreintes approuvées." }, { status: 409 });
     }
+    if (plan.payload.aiImplementationConsent !== true) {
+      return NextResponse.json({
+        error: "Le client n'a pas encore autorisé l'envoi de son dossier à un modèle IA externe.",
+        code: "CLIENT_AI_CONSENT_REQUIRED",
+      }, { status: 409 });
+    }
 
     const approvalResult = await callUserData(
       `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${job.plan_version}`,
