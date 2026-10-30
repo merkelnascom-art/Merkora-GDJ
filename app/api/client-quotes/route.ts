@@ -51,6 +51,28 @@ export async function POST(request: Request) {
 
     // Match the UI rule server-side as well: one initial response per quote version.
     // RLS ensures this lookup only returns decisions belonging to the authenticated client.
+    const targetVersion = await callUserData(
+      `client_quote_versions?select=id,quote_id,version_number,valid_until,published_at& id=eq.${encodeURIComponent(value.versionId)}&client_user_id=eq.${encodeURIComponent(user.id)}&published_at=not.is.null&limit=1`.replace("& id=", "&id="),
+      "GET", token,
+    );
+    if (!targetVersion.ok) return NextResponse.json({ error: "Impossible de vérifier la version du devis." }, { status: 502 });
+    if (!Array.isArray(targetVersion.data) || targetVersion.data.length === 0) {
+      return NextResponse.json({ error: "Cette version du devis est inaccessible ou n’est pas publiée." }, { status: 404 });
+    }
+    const selectedVersion = targetVersion.data[0] as { id: string; quote_id: string; version_number: number; valid_until: string; published_at: string | null };
+    if (selectedVersion.valid_until < new Date().toISOString().slice(0, 10)) {
+      return NextResponse.json({ error: "La validité de cette version du devis est expirée." }, { status: 409 });
+    }
+    const latestPublished = await callUserData(
+      `client_quote_versions?select=id,version_number&quote_id=eq.${encodeURIComponent(selectedVersion.quote_id)}&client_user_id=eq.${encodeURIComponent(user.id)}&published_at=not.is.null&order=version_number.desc&limit=1`,
+      "GET", token,
+    );
+    if (!latestPublished.ok) return NextResponse.json({ error: "Impossible de vérifier la dernière version publiée." }, { status: 502 });
+    if (!Array.isArray(latestPublished.data) || latestPublished.data.length === 0 ||
+        String((latestPublished.data[0] as { id: string }).id) !== value.versionId) {
+      return NextResponse.json({ error: "Une version plus récente de ce devis a été publiée. Consultez-la avant de répondre." }, { status: 409 });
+    }
+
     const prior = await callUserData(
       `client_quote_decisions?select=id&quote_version_id=eq.${encodeURIComponent(value.versionId)}&client_user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
       "GET", token,
