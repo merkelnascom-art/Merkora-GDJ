@@ -31,7 +31,7 @@ describe("generateProjectSource", () => {
     const page = result.files.find((file) => file.path === "src/app/page.tsx")?.content ?? "";
     expect(page).not.toContain("<script>");
     expect(page).not.toContain("<img");
-    expect(page).toContain("\\\\u003cscript\\\\u003e");
+    expect(page).toContain("\\u003cscript\\u003e");
   });
 
   it("rejects an empty scope and unsafe or duplicate module identifiers", () => {
