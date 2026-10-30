@@ -159,11 +159,13 @@ export async function validateSessionAccessToken(accessToken: string): Promise<b
 export async function uploadUserStorageObject(
   bucket: string,
   objectPath: string,
-  content: string,
+  content: string | Uint8Array,
   accessToken: string,
+  contentType: "application/json" | "application/gzip" = "application/json",
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const contentBytes = typeof content === "string" ? Buffer.byteLength(content, "utf8") : content.byteLength;
   if (!/^[a-z0-9-]{1,100}$/.test(bucket) || !accessToken.trim() ||
-    typeof content !== "string" || Buffer.byteLength(content, "utf8") > 1_000_000) {
+    contentBytes > 20_000_000) {
     return { ok: false, status: 400, data: null };
   }
   const segments = objectPath.split("/");
@@ -178,10 +180,12 @@ export async function uploadUserStorageObject(
     headers: {
       apikey: key,
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+      "Content-Type": contentType,
       "x-upsert": "false",
     },
-    body: content,
+    body: typeof content === "string"
+      ? content
+      : content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength) as ArrayBuffer,
     cache: "no-store",
   });
   const data: unknown = await response.json().catch(() => null);
