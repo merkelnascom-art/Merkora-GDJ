@@ -287,3 +287,17 @@ GitHub commits on the active preview branch record the component, selection mapp
 - Decide retention and deletion rules for plan versions and their audit history before adding database storage.
 - Decide the initial effort-estimation unit (relative effort bands only, person-hours, or person-days). This plan deliberately does not invent dates or prices.
 - Decide when external AI may be enabled, which provider/model is approved, the budget ceiling, and what client data may be sent. The current zero-expense behavior remains unchanged until explicit approval.
+## Task 5: Add a fail-closed execution readiness gate
+
+**Files:**
+- Create: `src/lib/planning/execution-readiness.ts`
+- Test: `src/lib/planning/execution-readiness.test.ts`
+
+This gate is a pure safety check for the future factory. It does not persist approvals, launch code generation, or infer consent. It requires the plan, exact scope, and execution authorization to be explicitly approved by a trusted source, and blocks plans with unresolved questions, missing scope, or missing acceptance criteria.
+
+- [x] Define the failing tests for missing approvals, incomplete plans, absent scope and missing acceptance criteria.
+- [x] Implement the pure fail-closed readiness check.
+- [ ] Verify the complete CI run after implementation.
+- [ ] Review how approval facts will be stored and audited before connecting this gate to any job runner.
+
+**Security boundary:** This function is not a replacement for server-side authorization, immutable audit records, or a durable approval workflow. No generation job should be launched based only on client-supplied booleans.
