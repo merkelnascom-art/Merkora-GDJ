@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyProjectCodePatch, buildProjectImplementationPrompt, validateProjectCodePatch } from "./implementation-agent";
+import { applyProjectCodePatch, buildProjectImplementationPrompt, parseProjectCodePatchResponse, validateProjectCodePatch } from "./implementation-agent";
 import { generateProjectSource } from "./project-generator";
 import { validateGeneratedProjectSource } from "./validate-generated-source";
 
@@ -63,6 +63,20 @@ describe("validateProjectCodePatch", () => {
   });
 });
 
+
+describe("parseProjectCodePatchResponse", () => {
+  it("accepts valid structured JSON and rejects malformed or unsafe model output", () => {
+    const patch = { summary: "Ajoute le pointage.", openQuestions: [], files: [
+      { path: "src/app/modules/attendance/page.tsx", content: "export default function Page() { return <main />; }" },
+    ] };
+    expect(parseProjectCodePatchResponse(JSON.stringify(patch))).toEqual({ ok: true, patch });
+    expect(parseProjectCodePatchResponse("not json")).toEqual({ ok: false, reason: "invalid_json" });
+    expect(parseProjectCodePatchResponse("")).toEqual({ ok: false, reason: "empty_response" });
+    expect(parseProjectCodePatchResponse(JSON.stringify({
+      ...patch, files: [{ path: "../../outside.ts", content: "x" }],
+    }))).toEqual({ ok: false, reason: "unsafe_path" });
+  });
+});
 
 describe("applyProjectCodePatch", () => {
   it("applies only validated source changes and recalculates the source digest", () => {
