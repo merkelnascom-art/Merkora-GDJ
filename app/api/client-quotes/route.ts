@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     // Match the UI rule server-side as well: one initial response per quote version.
     // RLS ensures this lookup only returns decisions belonging to the authenticated client.
     const targetVersion = await callUserData(
-      `client_quote_versions?select=id,quote_id,version_number,valid_until,published_at& id=eq.${encodeURIComponent(value.versionId)}&client_user_id=eq.${encodeURIComponent(user.id)}&published_at=not.is.null&limit=1`.replace("& id=", "&id="),
+      `client_quote_versions?select=id,quote_id,version_number,valid_until,published_at&id=eq.${encodeURIComponent(value.versionId)}&client_user_id=eq.${encodeURIComponent(user.id)}&published_at=not.is.null&limit=1`,
       "GET", token,
     );
     if (!targetVersion.ok) return NextResponse.json({ error: "Impossible de vérifier la version du devis." }, { status: 502 });
