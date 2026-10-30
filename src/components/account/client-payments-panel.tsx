@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 
 type Invoice = { id: string; invoice_number: string; description: string; currency: string; total_amount: number; due_date: string | null; created_at: string };
 type Declaration = { id: string; invoice_id: string; amount: number; payment_method: string; paid_at: string; transaction_reference: string; client_note: string; created_at: string };
-type Review = { id: string; payment_declaration_id: string; status: string; review_note: string; created_at: string };
-const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", bank_transfer: "Virement bancaire", other: "Autre" };
+type Review = { id: string; payment_declaration_id: string; status: string; review_note: string; created_at: string };\ntype PaymentChannel = { label: string; number: string };
+const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", celtiis_cash: "Celtiis Cash", bank_transfer: "Virement bancaire", other: "Autre" };\nconst selectableMethods = ["mtn_momo", "celtiis_cash", "cash", "bank_transfer", "other"];
 
 export function ClientPaymentsPanel() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);\n  const [paymentChannels, setPaymentChannels] = useState<Record<string, PaymentChannel>>({});
   const [forms, setForms] = useState<Record<string, { amount: string; method: string; paidAt: string; reference: string; note: string }>>({});
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -24,7 +24,7 @@ export function ClientPaymentsPanel() {
       const response = await fetch("/api/client-payments", { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Impossible de charger les factures.");
-      setInvoices(data.invoices || []); setDeclarations(data.declarations || []); setReviews(data.reviews || []); setLoaded(true);
+      setInvoices(data.invoices || []); setDeclarations(data.declarations || []); setReviews(data.reviews || []); setPaymentChannels(data.paymentChannels || {}); setLoaded(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Service indisponible."); }
   }, []);
   useEffect(() => { void load(); }, [load]);
@@ -56,6 +56,17 @@ export function ClientPaymentsPanel() {
     <p style={{ color: "#716c80", fontSize: 14, lineHeight: 1.6 }}>Déclarez un paiement total ou partiel. Une déclaration reste « à vérifier » jusqu’à sa confirmation par l’administration; elle ne réduit pas le solde comptabilisé avant confirmation.</p>
     {error && <p role="alert" style={{ color: "#b42318" }}>{error}</p>}{notice && <p role="status" style={{ color: "#176b45" }}>{notice}</p>}
     {loaded && invoices.length === 0 && <p style={{ color: "#716c80" }}>Aucune facture disponible pour ce compte.</p>}
+    {invoices.length > 0 && Object.keys(paymentChannels).length > 0 && <div style={{ border: "1px solid #ded8ea", borderRadius: 12, padding: 14, margin: "12px 0", background: "#faf9fc" }}>
+      <strong>Effectuer un transfert Mobile Money</strong>
+      <p style={{ color: "#716c80", fontSize: 13, lineHeight: 1.5 }}>Choisissez le même opérateur dans votre application Mobile Money, vérifiez le nom du bénéficiaire affiché avant de confirmer, puis saisissez la référence de transaction dans votre déclaration.</p>
+      <div style={{ display: "grid", gap: 10 }}>
+        {Object.entries(paymentChannels).map(([key, channel]) => <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", padding: 10, background: "#fff", border: "1px solid #eee", borderRadius: 9 }}>
+          <div><b>{channel.label}</b><div style={{ fontSize: 15, letterSpacing: 0.3, marginTop: 3 }}>{channel.number}</div></div>
+          <button type="button" className="button button-quiet" onClick={() => { void navigator.clipboard.writeText(channel.number).then(() => setNotice("Numéro copié. Vérifiez toujours le bénéficiaire avant le transfert.")).catch(() => setError("Copie impossible. Vous pouvez sélectionner le numéro manuellement.")); }}>Copier le numéro</button>
+        </div>)}
+      </div>
+      <p style={{ color: "#716c80", fontSize: 12, marginBottom: 0 }}>MerKora ne confirme jamais automatiquement un transfert déclaré. La réception doit être vérifiée dans le compte du bénéficiaire.</p>
+    </div>}
     <div style={{ display: "grid", gap: 14 }}>
       {invoices.map(invoice => {
         const rows = declarations.filter(d => d.invoice_id === invoice.id);
@@ -79,9 +90,9 @@ export function ClientPaymentsPanel() {
             <strong>Déclarer un paiement</strong>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 9, marginTop: 10 }}>
               <label style={label}>Montant (FCFA)<input type="number" min="1" max={balance} step="1" value={form.amount} onChange={e => update(invoice.id, "amount", e.target.value)} style={field} /></label>
-              <label style={label}>Mode<select value={form.method} onChange={e => update(invoice.id, "method", e.target.value)} style={field}>{Object.entries(methods).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+              <label style={label}>Mode<select value={form.method} onChange={e => update(invoice.id, "method", e.target.value)} style={field}>{selectableMethods.map(v => <option key={v} value={v}>{methods[v]}</option>)}</select></label>
               <label style={label}>Date du paiement<input type="datetime-local" value={form.paidAt} onChange={e => update(invoice.id, "paidAt", e.target.value)} style={field} /></label>
-              <label style={label}>Référence (facultatif)<input maxLength={160} value={form.reference} onChange={e => update(invoice.id, "reference", e.target.value)} style={field} /></label>
+              <label style={label}>Référence de transaction {["mtn_momo", "celtiis_cash"].includes(form.method) ? "(obligatoire)" : "(facultative)"}<input required={["mtn_momo", "celtiis_cash"].includes(form.method)} maxLength={160} value={form.reference} onChange={e => update(invoice.id, "reference", e.target.value)} placeholder="Référence indiquée sur le reçu" style={field} /></label>
             </div>
             <label style={label}>Note (facultative)<textarea maxLength={1000} rows={2} value={form.note} onChange={e => update(invoice.id, "note", e.target.value)} style={field} /></label>
             <button className="button button-primary" disabled={busy === invoice.id || !form.amount} onClick={() => void submit(invoice.id)} style={{ marginTop: 10 }}>{busy === invoice.id ? "Envoi…" : "Envoyer ma déclaration"}</button>
