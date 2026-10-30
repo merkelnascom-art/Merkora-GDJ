@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
+import { createProjectArchive } from "@/lib/factory/project-archive";
 import { generateProjectSource } from "@/lib/factory/project-generator";
 import { createVercelProjectSandbox } from "@/lib/factory/vercel-project-sandbox";
 import { runProjectBuildInSandbox } from "@/lib/factory/project-sandbox-runner";
@@ -166,16 +167,28 @@ export async function POST(
       projectDescription: `${project.problem} Objectif : ${project.desired_outcome}`.slice(0, 500),
       modules: modules as Array<{ id: string; title: string; description: string }>,
     });
-    const sourcePath = `${projectId}/${jobId}/source-${source.digest}.json`;
+    const archive = createProjectArchive(source);
+    const sourceManifestPath = `${projectId}/${jobId}/source-${source.digest}.json`;
+    const sourcePath = `${projectId}/${jobId}/source-${source.digest}.tar.gz`;
     const sourceUpload = await uploadUserStorageObject(
-      BUCKET, sourcePath, JSON.stringify(source), token,
+      BUCKET, sourceManifestPath, JSON.stringify(source), token,
     );
     if (!sourceUpload.ok) {
       await patchJob(projectId, jobId, token, {
         status: "failed", updated_at: new Date().toISOString(),
-        manifest: { ...job.manifest, failureStage: "artifact_upload", sourceDigest: source.digest },
+        manifest: { ...job.manifest, failureStage: "artifact_manifest_upload", sourceDigest: source.digest },
       });
-      return NextResponse.json({ error: "Le code généré n'a pas pu être conservé dans le stockage privé.", stage: "artifact_upload" }, { status: 502 });
+      return NextResponse.json({ error: "Le manifeste du code généré n'a pas pu être conservé dans le stockage privé.", stage: "artifact_manifest_upload" }, { status: 502 });
+    }
+    const archiveUpload = await uploadUserStorageObject(
+      BUCKET, sourcePath, archive.bytes, token, archive.contentType,
+    );
+    if (!archiveUpload.ok) {
+      await patchJob(projectId, jobId, token, {
+        status: "failed", updated_at: new Date().toISOString(),
+        manifest: { ...job.manifest, sourceManifestPath, sourceDigest: source.digest, failureStage: "source_archive_upload" },
+      });
+      return NextResponse.json({ error: "L'archive téléchargeable du projet n'a pas pu être conservée.", stage: "source_archive_upload" }, { status: 502 });
     }
 
     const build = await runProjectBuildInSandbox(source, createVercelProjectSandbox);
@@ -197,7 +210,7 @@ export async function POST(
     if (!reportUpload.ok) {
       await patchJob(projectId, jobId, token, {
         status: "failed", updated_at: new Date().toISOString(),
-        manifest: { ...job.manifest, sourcePath, sourceDigest: source.digest, failureStage: "report_upload" },
+        manifest: { ...job.manifest, sourcePath, sourceManifestPath, sourceDigest: source.digest, failureStage: "report_upload" },
       });
       return NextResponse.json({ error: "Le code est conservé, mais le rapport de compilation n'a pas pu être enregistré.", stage: "report_upload" }, { status: 502 });
     }
@@ -212,7 +225,7 @@ export async function POST(
       {
         job_id: jobId, project_id: projectId, task_id: taskByKey.get("generate_application")?.id,
         evidence_type: "artifact", storage_path: `storage://${BUCKET}/${sourcePath}`,
-        content_digest: source.digest, metadata: { generatorVersion: source.generatorVersion, fileCount: source.files.length, moduleIds: source.moduleIds },
+        content_digest: source.digest, metadata: { generatorVersion: source.generatorVersion, fileCount: source.files.length, moduleIds: source.moduleIds, sourceManifestPath },
         created_by: user.id,
       },
       {
@@ -234,7 +247,7 @@ export async function POST(
     if (!evidenceResult.ok || rows(evidenceResult.data).length !== evidencePayload.length) {
       await patchJob(projectId, jobId, token, {
         status: "failed", updated_at: new Date().toISOString(),
-        manifest: { ...job.manifest, sourcePath, reportPath, sourceDigest: source.digest, reportDigest, failureStage: "evidence_persistence" },
+        manifest: { ...job.manifest, sourcePath, sourceManifestPath, reportPath, sourceDigest: source.digest, reportDigest, failureStage: "evidence_persistence" },
       });
       return NextResponse.json({ error: "Les artefacts sont stockés, mais leurs preuves n'ont pas toutes été enregistrées.", stage: "evidence_persistence" }, { status: 502 });
     }
@@ -265,7 +278,7 @@ export async function POST(
     const finalStatus = build.ok ? "awaiting_approval" : "failed";
     const manifest = {
       ...job.manifest,
-      sourcePath, reportPath, sourceDigest: source.digest, reportDigest,
+      sourcePath, sourceManifestPath, reportPath, sourceDigest: source.digest, reportDigest,
       generatorVersion: source.generatorVersion, generatedFileCount: source.files.length,
       generatedModuleIds: source.moduleIds, buildResult: build.ok ? "passed" : "failed",
       buildStage: build.stage, buildLogs: safeLog(build.logs),
