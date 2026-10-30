@@ -139,7 +139,17 @@ export async function POST(request: Request) {
       published_at: body.action === "publish" ? new Date().toISOString() : null, created_by: access.user.id,
     }, "return=representation");
     if (!createdVersion.ok) {
-      return NextResponse.json({ error: "La version du devis n’a pas été enregistrée. Aucune version existante n’a été modifiée." }, { status: 502 });
+      const databaseError = isRecord(createdVersion.data) ? createdVersion.data : {};
+      const databaseMessage = typeof databaseError.message === "string"
+        ? databaseError.message.slice(0, 240)
+        : "La base de données n’a pas précisé la cause.";
+      const databaseCode = typeof databaseError.code === "string"
+        ? databaseError.code.slice(0, 32)
+        : null;
+      return NextResponse.json({
+        error: "La version du devis n’a pas été enregistrée. Aucune version existante n’a été modifiée.",
+        diagnostic: [databaseCode, databaseMessage].filter(Boolean).join(" · "),
+      }, { status: 502 });
     }
     return NextResponse.json({
       saved: true, published: body.action === "publish", version: versionNumber,
