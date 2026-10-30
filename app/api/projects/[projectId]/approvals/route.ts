@@ -11,6 +11,7 @@ type Body = {
   decision: "approved" | "changes_requested";
   comment: string;
   requestId: string;
+  aiProcessingConsent?: boolean;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -22,6 +23,8 @@ function validBody(value: unknown): value is Body {
     ["client_scope", "admin_review", "execution_authorization"].includes(String(value.approvalKind)) &&
     ["approved", "changes_requested"].includes(String(value.decision)) &&
     typeof value.comment === "string" && value.comment.length <= 2000 &&
+    (value.approvalKind !== "client_scope" || typeof value.aiProcessingConsent === "boolean") &&
+    (value.approvalKind === "client_scope" || value.aiProcessingConsent === undefined) &&
     typeof value.requestId === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.requestId);
 }
@@ -64,6 +67,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
       actor_user_id: user.id, actor_role: isAdmin ? "admin" : "client",
       comment: body.comment.trim(), request_id: body.requestId,
+      ai_processing_consent: body.approvalKind === "client_scope" ? body.aiProcessingConsent : false,
     }, "return=representation");
     if (!approval.ok) {
       return NextResponse.json(
@@ -83,7 +87,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       if (!event.ok) return NextResponse.json({ error: "La validation est enregistrée, mais l'événement d'audit doit être réconcilié." }, { status: 502 });
     }
 
-    return NextResponse.json({ saved: true, approvalKind: body.approvalKind, decision: body.decision }, {
+    return NextResponse.json({ saved: true, approvalKind: body.approvalKind, decision: body.decision, aiProcessingConsent: body.approvalKind === "client_scope" ? body.aiProcessingConsent : false }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
