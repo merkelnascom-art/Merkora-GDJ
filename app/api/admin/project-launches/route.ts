@@ -122,7 +122,11 @@ export async function POST(request: Request) {
       confirmed_amount_at_launch: confirmedAmount,
       launch_message: value.message.trim(),
     }, "return=representation");
-    if (!saved.ok) return fail(502, "Le lancement n’a pas été enregistré. Aucune facture ni déclaration de paiement n’a été modifiée.");
+    if (!saved.ok) {
+      const databaseError = saved.data && typeof saved.data === "object" ? saved.data as Record<string, unknown> : {};
+      if (databaseError.code === "23505") return fail(409, "Ce projet vient déjà d’être lancé. Son historique est conservé.");
+      return fail(502, "Le lancement n’a pas été enregistré. Aucune facture ni déclaration de paiement n’a été modifiée.");
+    }
 
     const statusUpdate = await callUserData(
       `client_requests?id=eq.${encodeURIComponent(quote.request_id)}&user_id=eq.${encodeURIComponent(invoice.client_user_id)}`,
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
       saved: true,
       launch,
       statusUpdated: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0,
-      message: "Le lancement officiel est enregistré. Le client peut maintenant voir la confirmation dans son espace.",
+      message: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0\n        ? "Le lancement officiel est enregistré. Le client peut maintenant voir la confirmation dans son espace."\n        : "Le lancement officiel est enregistré et visible du client. Le statut administratif du dossier n’a pas pu être actualisé automatiquement.",
     });
   } catch {
     return fail(503, "Le service de lancement est momentanément indisponible.");
