@@ -39,7 +39,7 @@ export function AdminPaymentsPanel() {
   async function action(payload: Record<string, unknown>, key: string) {
     setBusy(key); setError(""); setNotice("");
     try {
-      const response = await fetch("/api/admin/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const endpoint = payload.action === "launch_project" ? "/api/admin/project-launches" : "/api/admin/payments";\n      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Action impossible.");
       setNotice(data.message || "Opération enregistrée."); setSelected(""); setDueDate(""); setNote(current => ({ ...current, [key]: "" }));\n      if (payload.action === "launch_project") setLaunchConfirmInvoiceId("");\n      await load();
