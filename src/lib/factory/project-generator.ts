@@ -109,7 +109,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     },
     {
       path: "src/app/page.tsx",
-      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>{${jsString(projectName)}}</h1>\n      <p className="lead">{${jsString(projectDescription)}}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={`/modules/${module.id}`} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.0.0</footer>\n    </main>\n  );\n}\n`,
+      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>{${jsString(projectName)}}</h1>\n      <p className="lead">{${jsString(projectDescription)}}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={"/modules/" + module.id} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.0.0</footer>\n    </main>\n  );\n}\n`,
     },
     {
       path: "README.md",
