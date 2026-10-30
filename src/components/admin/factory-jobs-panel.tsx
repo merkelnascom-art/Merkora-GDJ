@@ -61,6 +61,14 @@ export function FactoryJobsPanel({ initialJobs }: { initialJobs: FactoryJob[] })
                 <strong style={styles.project}>Projet {job.projectId}</strong>
                 <p style={styles.meta}>Plan v{job.planVersion} · {job.status}</p>
                 <p style={styles.id}>Travail {job.id}</p>
+                {job.status === "awaiting_approval" ? (
+                  <a
+                    href={`/api/admin/projects/${encodeURIComponent(job.projectId)}/factory/jobs/${encodeURIComponent(job.id)}/artifacts/source`}
+                    style={styles.download}
+                  >
+                    Télécharger le code généré
+                  </a>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -98,6 +106,7 @@ const styles: Record<string, React.CSSProperties> = {
   meta: { margin: "5px 0", color: "#716c80", fontSize: 12 },
   id: { margin: 0, color: "#9992a8", fontSize: 10, overflowWrap: "anywhere" },
   button: { border: 0, borderRadius: 10, padding: "11px 14px", background: "#5e35b1", color: "#fff", fontWeight: 700, fontSize: 12 },
+  download: { display: "inline-block", marginTop: 9, color: "#5e35b1", fontSize: 12, fontWeight: 700, textDecoration: "underline" },
   message: { margin: "16px 0 0", color: "#4d3b73", fontSize: 13, lineHeight: 1.6 },
   warning: { margin: "16px 0 0", color: "#8b8498", fontSize: 11, lineHeight: 1.6 },
 };
