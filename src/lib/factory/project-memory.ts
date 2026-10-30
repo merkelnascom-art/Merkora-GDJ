@@ -152,8 +152,10 @@ export function createProjectResumeSnapshot(input: {
     && missingApprovals.length === 0
     && blockedTasks.length === 0
     && verifyFirstTasks.length === 0
+    && input.tasks.length > 0
     && input.jobStatus !== "delivered"
-    && input.jobStatus !== "failed";
+    && input.jobStatus !== "failed"
+    && input.jobStatus !== "interrupted";
 
   return {
     projectId: input.projectId,
