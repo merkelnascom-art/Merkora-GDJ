@@ -38,8 +38,8 @@ describe("generateProjectSource", () => {
     expect(() => generateProjectSource({ ...input, modules: [] })).toThrow(/module/i);
     expect(() => generateProjectSource({ ...input, modules: [{ id: "../admin", title: "Admin", description: "" }] })).toThrow(/identifiant/i);
     expect(() => generateProjectSource({ ...input, modules: [
-      { id: "staff", title: "A", description: "" },
-      { id: "staff", title: "B", description: "" },
+      { id: "staff", title: "A", description: "First" },
+      { id: "staff", title: "B", description: "Second" },
     ] })).toThrow(/unique/i);
   });
 
