@@ -66,6 +66,9 @@ export async function POST(request: Request) {
       typeof value.note !== "string" || value.note.length > 1000) {
     return fail(400, "Montant, date ou mode de paiement invalide.");
   }
+  if (["mtn_momo", "celtiis_cash"].includes(String(value.paymentMethod)) && !value.reference.trim()) {
+    return fail(400, "La référence de transaction est obligatoire pour un paiement Mobile Money.");
+  }
   try {
     const store = await cookies();
     const user = await getCurrentUser(store);
