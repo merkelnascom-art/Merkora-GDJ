@@ -87,7 +87,7 @@ export function FactoryJobsPanel({ initialJobs }: { initialJobs: FactoryJob[] })
         </div>
       )}
       {message ? <p role="status" style={styles.message}>{message}</p> : null}
-      <p style={styles.warning}>Cette étape génère et compile un squelette applicatif isolé. Elle ne livre pas l'application, ne publie rien et ne remplace pas le développement de la logique métier.</p>
+      <p style={styles.warning}>Cette étape génère et compile un squelette applicatif isolé. L'IA externe reste désactivée en mode zéro dépense ; sa mise en route exigera le consentement client et une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
     </section>
   );
 }
