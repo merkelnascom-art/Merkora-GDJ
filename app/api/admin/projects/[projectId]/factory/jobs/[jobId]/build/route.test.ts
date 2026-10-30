@@ -8,23 +8,17 @@ vi.mock("@/lib/server/supabase-rest", () => ({
 }));
 vi.mock("@/lib/factory/vercel-project-sandbox", () => ({ createVercelProjectSandbox: vi.fn() }));
 vi.mock("@/lib/factory/project-sandbox-runner", () => ({ runProjectBuildInSandbox: vi.fn() }));
-vi.mock("@/lib/ai-provider", () => ({ requestAiGatewayCompletion: vi.fn() }));
 
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin, uploadUserStorageObject } from "@/lib/server/supabase-rest";
 import { createVercelProjectSandbox } from "@/lib/factory/vercel-project-sandbox";
 import { runProjectBuildInSandbox } from "@/lib/factory/project-sandbox-runner";
-import { requestAiGatewayCompletion } from "@/lib/ai-provider";
 import { createProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
 import { POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
 const planPayload = {
   includedScope: [{ id: "attendance", title: "Présences", description: "Pointage des arrivées." }],
-  aiImplementationConsent: false,
-  acceptanceCriteria: ["L’administrateur peut consulter les présences."],
-  confirmedConstraints: [],
-  openQuestions: [],
 };
 const plan = {
   version: 3, payload: planPayload,
@@ -58,13 +52,6 @@ function request() {
 }
 
 beforeEach(() => {
-  planPayload.aiImplementationConsent = false;
-  plan.payload_digest = createProjectMemoryDigest(planPayload);
-  job.plan_digest = plan.payload_digest;
-  approvals.forEach((approval) => { approval.plan_digest = plan.payload_digest; });
-  delete process.env.AI_GATEWAY_API_KEY;
-  delete process.env.MERKORA_IMPLEMENTATION_MODEL;
-  vi.mocked(requestAiGatewayCompletion).mockReset();
   vi.mocked(isSameOrigin).mockReturnValue(true);
   vi.mocked(getCurrentUser).mockResolvedValue(user);
   vi.mocked(getAccessToken).mockResolvedValue("token");
@@ -96,39 +83,9 @@ describe("POST factory job build", () => {
     expect(response.status).toBe(200);
     expect(result).toMatchObject({ status: "awaiting_approval", executionStarted: true, deployed: false, humanReviewRequired: true });
     expect(runProjectBuildInSandbox).toHaveBeenCalledOnce();
-    expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
     expect(uploadUserStorageObject).toHaveBeenCalledTimes(3);
     expect(vi.mocked(callUserData).mock.calls.some(([path, method]) =>
       method === "PATCH" && String(path).includes("status=eq.queued"))).toBe(true);
-  });
-
-  it("calls the implementation model only when consent is part of the exact approved plan", async () => {
-    planPayload.aiImplementationConsent = true;
-    const consentDigest = createProjectMemoryDigest(planPayload);
-    plan.payload_digest = consentDigest;
-    job.plan_digest = consentDigest;
-    approvals.forEach((approval) => { approval.plan_digest = consentDigest; });
-    process.env.AI_GATEWAY_API_KEY = "unit-test-key";
-    process.env.MERKORA_IMPLEMENTATION_MODEL = "unit-test-model";
-    vi.mocked(requestAiGatewayCompletion).mockResolvedValue(new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify({
-        summary: "Ajoute une première vue des présences.",
-        openQuestions: [],
-        files: [{
-          path: "src/app/modules/attendance/page.tsx",
-          content: "export default function Page() { return <main>Présences</main>; }",
-        }],
-      }) } }],
-    }), { status: 200 }));
-
-    const response = await POST(request(), context);
-    const result = await response.json();
-    expect(response.status).toBe(200);
-    expect(requestAiGatewayCompletion).toHaveBeenCalledOnce();
-    expect(result).toMatchObject({
-      implementationLevel: "ai_patch",
-      fullBusinessLogicImplementationPending: true,
-    });
   });
 
   it("does not claim or execute a job without all exact approvals", async () => {
