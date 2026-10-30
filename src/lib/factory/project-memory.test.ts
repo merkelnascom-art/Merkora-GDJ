@@ -30,7 +30,7 @@ describe("assessTaskResumability", () => {
       state: "completed",
       evidenceRequired: true,
       evidenceIds: [],
-    })])[0].action).toBe("blocked");
+    })])[0].action).toBe("blocked"));
   });
 
   it("does not repeat an external action with an unknown result", () => {
