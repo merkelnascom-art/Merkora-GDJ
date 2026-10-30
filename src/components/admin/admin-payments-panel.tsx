@@ -7,7 +7,7 @@ type Declaration = { id: string; invoice_id: string; client_user_id: string; amo
 type Review = { id: string; payment_declaration_id: string; invoice_id: string; status: string; review_note: string; created_at: string };
 type Version = { id: string; client_user_id: string; version_number: number; snapshot: Record<string, unknown>; total_amount: number; valid_until: string; published_at: string };
 type Decision = { id: string; quote_version_id: string; client_user_id: string; decision: string; message: string; created_at: string };
-const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", bank_transfer: "Virement", other: "Autre" };
+const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", celtiis_cash: "Celtiis Cash", bank_transfer: "Virement", other: "Autre" };
 const money = (n: number) => Number(n || 0).toLocaleString("fr-FR") + " FCFA";
 
 export function AdminPaymentsPanel() {
