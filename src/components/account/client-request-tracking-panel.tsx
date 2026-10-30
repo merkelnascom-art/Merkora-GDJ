@@ -50,7 +50,11 @@ export function ClientRequestTrackingPanel() {
     void load();
     const refreshAfterSubmission = () => { void load(); };
     window.addEventListener("merkora:request-sent", refreshAfterSubmission);
-    return () => window.removeEventListener("merkora:request-sent", refreshAfterSubmission);
+    const refreshTimer = window.setInterval(refreshAfterSubmission, 30_000);
+    return () => {
+      window.removeEventListener("merkora:request-sent", refreshAfterSubmission);
+      window.clearInterval(refreshTimer);
+    };
   }, [load]);
 
   return (
