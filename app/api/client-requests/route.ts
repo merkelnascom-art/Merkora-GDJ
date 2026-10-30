@@ -43,13 +43,24 @@ export async function GET() {
     if (!user || !token) return NextResponse.json({ error: "Connectez-vous pour consulter vos demandes." }, { status: 401 });
     // Explicitly scope to the signed-in user even when the account is also on the admin allowlist.
     // Never return admin_note here: it is an internal-only field.
-    const result = await callUserData(
-      `client_requests?select=id,project_id,project_title,admin_status,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=100`,
-      "GET",
-      token,
-    );
+    const [result, launchResult] = await Promise.all([
+      callUserData(
+        `client_requests?select=id,project_id,project_title,admin_status,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=100`,
+        "GET",
+        token,
+      ),
+      callUserData(
+        `client_project_launches?select=id,request_id,required_amount,invoice_total_at_launch,confirmed_amount_at_launch,launch_message,launched_at&client_user_id=eq.${encodeURIComponent(user.id)}&order=launched_at.desc&limit=100`,
+        "GET",
+        token,
+      ),
+    ]);
     if (!result.ok) return NextResponse.json({ error: "Impossible de charger vos demandes en ligne pour le moment." }, { status: 502 });
-    return NextResponse.json({ requests: Array.isArray(result.data) ? result.data : [] });
+    if (!launchResult.ok) return NextResponse.json({ error: "Impossible de charger les confirmations de lancement de vos projets." }, { status: 502 });
+    return NextResponse.json({
+      requests: Array.isArray(result.data) ? result.data : [],
+      launches: Array.isArray(launchResult.data) ? launchResult.data : [],
+    });
   } catch {
     return NextResponse.json({ error: "Le suivi de vos demandes est momentanément indisponible." }, { status: 503 });
   }
