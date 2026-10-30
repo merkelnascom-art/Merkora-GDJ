@@ -153,6 +153,22 @@ export function validateProjectCodePatch(value: unknown): CodePatchValidation {
 }
 
 
+export type ProjectCodePatchParseResult =
+  | { ok: true; patch: ProjectCodePatch }
+  | { ok: false; reason: "empty_response" | "invalid_json" | CodePatchValidationReason };
+
+export function parseProjectCodePatchResponse(content: unknown): ProjectCodePatchParseResult {
+  if (typeof content !== "string" || !content.trim() || content.length > 550_000) {
+    return { ok: false, reason: "empty_response" };
+  }
+  let candidate: unknown;
+  try { candidate = JSON.parse(content); }
+  catch { return { ok: false, reason: "invalid_json" }; }
+  const validation = validateProjectCodePatch(candidate);
+  if (!validation.ok) return { ok: false, reason: validation.reason };
+  return { ok: true, patch: candidate as ProjectCodePatch };
+}
+
 export function applyProjectCodePatch(
   source: GeneratedProjectSource,
   patch: ProjectCodePatch,
