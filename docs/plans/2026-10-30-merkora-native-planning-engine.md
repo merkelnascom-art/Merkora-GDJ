@@ -64,7 +64,7 @@ The function must not access the network, environment variables, browser APIs, S
 - Consumes: existing `NeedInput`, `DiscoveryResult` and `Recommendation` types from `src/lib/solution-recommendations.ts` and `src/lib/discovery.ts`.
 - Produces: `ProjectPlanInput`, `ProjectPlan`, `PlanTask`, `PlanEstimate`, and `generateProjectPlan(input): ProjectPlan`.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Cover at least these cases:
 1. A complete commerce/team-management brief creates a draft plan with distinct analysis, design, implementation and verification tasks.
@@ -79,31 +79,31 @@ Cover at least these cases:
 10. The generated plan records the source brief version and planner version supplied by the caller.
 11. Equivalent inputs produce equivalent plan content; timestamps and random identifiers are not generated inside the pure function.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- --run src/lib/planning/generate-project-plan.test.ts`
 
 Expected: Vitest reports the new module or exported generator is missing. No existing test should be changed to hide this failure.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Implement typed plan output and deterministic rules for the current supported categories: business, digital, creative, organization, personal and other. Reuse discovery domain information when present; otherwise derive only a conservative category from the supplied project category. Create a small set of domain-specific task patterns and a shared lifecycle (clarify, scope, design, build/produce, verify, hand over).
 
 Preserve uncertainty explicitly. If the description is vague or essential facts are missing, return a clarification state and list questions; do not label the plan ready. The first implementation may provide relative effort bands such as low/medium/high/unknown, but must not promise calendar dates or FCFA prices. Keep software construction tasks distinct from non-software creative or advisory work. Do not infer that a recommendation has been selected.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- --run src/lib/planning/generate-project-plan.test.ts`
 
 Expected: all plan-generation tests pass, including domain separation, scope fidelity, uncertainty, task dependencies and determinism.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck && npm test`
 
 Expected: strict TypeScript checking succeeds and the complete existing Vitest suite remains green. Existing discovery, recommendations, project serialization and zero-expense AI tests remain unchanged and pass.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 ```bash
 git add src/lib/planning/plan-types.ts src/lib/planning/generate-project-plan.ts src/lib/planning/generate-project-plan.test.ts
