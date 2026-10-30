@@ -187,3 +187,34 @@ export async function uploadUserStorageObject(
   const data: unknown = await response.json().catch(() => null);
   return { ok: response.ok, status: response.status, data };
 }
+
+
+export async function downloadUserStorageObject(
+  bucket: string,
+  objectPath: string,
+  accessToken: string,
+): Promise<{ ok: boolean; status: number; contentType: string; data: Uint8Array | null }> {
+  if (!/^[a-z0-9-]{1,100}$/.test(bucket) || !accessToken.trim()) {
+    return { ok: false, status: 400, contentType: "application/octet-stream", data: null };
+  }
+  const segments = objectPath.split("/");
+  if (!objectPath || objectPath.length > 500 ||
+    segments.some((segment) => !segment || segment === "." || segment === ".." || !/^[a-zA-Z0-9._-]+$/.test(segment))) {
+    return { ok: false, status: 400, contentType: "application/octet-stream", data: null };
+  }
+  const { url, key } = config();
+  const encodedPath = segments.map(encodeURIComponent).join("/");
+  const response = await fetch(`${url}/storage/v1/object/authenticated/${encodeURIComponent(bucket)}/${encodedPath}`, {
+    method: "GET",
+    headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    return { ok: false, status: response.status, contentType: "application/octet-stream", data: null };
+  }
+  return {
+    ok: true, status: response.status,
+    contentType: response.headers.get("content-type") ?? "application/octet-stream",
+    data: new Uint8Array(await response.arrayBuffer()),
+  };
+}
