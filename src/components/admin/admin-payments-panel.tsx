@@ -31,11 +31,17 @@ export function AdminPaymentsPanel() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const response = await fetch("/api/admin/payments", { cache: "no-store" });
+      const [response, launchResponse] = await Promise.all([
+        fetch("/api/admin/payments", { cache: "no-store" }),
+        fetch("/api/admin/project-launches", { cache: "no-store" }),
+      ]);
       const data = await response.json();
+      const launchData = await launchResponse.json();
       if (!response.ok) throw new Error(data.error || "Impossible de charger les paiements.");
+      if (!launchResponse.ok) throw new Error(launchData.error || "Impossible de charger les lancements de projets.");
       setInvoices(data.invoices || []); setDeclarations(data.declarations || []); setReviews(data.reviews || []);
       setVersions(data.versions || []); setDecisions(data.decisions || []);
+      setLaunches(launchData.launches || []);
     } catch (e) { setError(e instanceof Error ? e.message : "Service indisponible."); }
   }, []);
   useEffect(() => { void load(); }, [load]);
