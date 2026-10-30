@@ -297,7 +297,23 @@ This gate is a pure safety check for the future factory. It does not persist app
 
 - [x] Define the failing tests for missing approvals, incomplete plans, absent scope and missing acceptance criteria.
 - [x] Implement the pure fail-closed readiness check.
-- [ ] Verify the complete CI run after implementation.
+- [x] Verify the complete CI run after implementation (GitHub Actions run `41063923223`: unit tests, TypeScript check and Next.js build all succeeded).
 - [ ] Review how approval facts will be stored and audited before connecting this gate to any job runner.
 
 **Security boundary:** This function is not a replacement for server-side authorization, immutable audit records, or a durable approval workflow. No generation job should be launched based only on client-supplied booleans.
+
+## Next milestone proposal: Durable plan versions and audited approvals (not implemented)
+
+The native planner now produces a non-persistent preview, compares versions, and has a pure fail-closed execution gate. The next safe milestone is to design and review the durable lifecycle before adding any database objects.
+
+Required work, in a separate approved milestone:
+1. Inspect the existing Supabase schema and row-level security policies without modifying data.
+2. Design versioned plan records linked to the owning project and source brief version.
+3. Design server-verified approval records with actor, role, exact plan version, approved scope digest, timestamp and audit correlation ID. Never accept approval booleans from the browser as authoritative.
+4. Define what changes invalidate an approval (new brief, changed scope, changed plan, estimate or acceptance criteria).
+5. Define retention, deletion, and access policies for customer plan history.
+6. Add migration and RLS tests only after the schema/security design is reviewed and explicitly approved.
+7. Connect a job queue only after the approval state is persisted and the server independently verifies the approved plan version and scope.
+8. Add a small sandbox execution adapter with strict resource/time limits and an auditable artifact record; do not run arbitrary commands or deploy to production.
+
+**Do not implement persistence or launch a code-generation job in this milestone.** Current constraints prohibit database migrations and the preview route is intentionally read-only.
