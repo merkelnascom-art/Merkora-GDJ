@@ -59,6 +59,9 @@ function request() {
 
 beforeEach(() => {
   planPayload.aiImplementationConsent = false;
+  plan.payload_digest = createProjectMemoryDigest(planPayload);
+  job.plan_digest = plan.payload_digest;
+  approvals.forEach((approval) => { approval.plan_digest = plan.payload_digest; });
   delete process.env.AI_GATEWAY_API_KEY;
   delete process.env.MERKORA_IMPLEMENTATION_MODEL;
   vi.mocked(requestAiGatewayCompletion).mockReset();
