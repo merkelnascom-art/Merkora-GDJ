@@ -226,21 +226,19 @@ git commit -m "feat(planning): add authenticated plan preview endpoint"
 
 - [x] **Step 1: Add the focused failing tests**
 
-Verify:
-1. the client can request a plan preview for its own open project;
-2. the UI clearly labels a generated plan as a draft until reviewed;
-3. selected options are visually distinguished from recommendations not selected;
-4. unknown values and open questions are visible rather than hidden;
-5. a changed brief shows a structured difference and does not silently replace the prior preview;
-6. loading, API failure, offline and clarification states are explicit;
-7. the UI does not display a false “approved”, “in production” or “delivered” state;
-8. keyboard navigation and labels are usable on mobile and desktop layouts.
+Verify the selection boundary used by the preview:
+1. default-visible mockup modules are not treated as explicit customer selections;
+2. only module identifiers explicitly stored by the Studio are included;
+3. only explicitly selected recommendation identifiers are included;
+4. omitted or unselected recommendations remain suggestions and are not added to the approved scope.
+
+The UI component itself is compiled by the Next.js production build. Browser-driven interaction and responsive accessibility tests remain a follow-up verification item.
 
 - [x] **Step 2: Verify the relevant failure**
 
-Run: `npm test -- --run src/components/project-plan-preview.test.tsx`
+Run: `npm test -- --run src/lib/planning/mockup-selections.test.ts`
 
-Expected: the component and tests do not exist.
+Expected: Vitest reports the selection-mapping module is missing.
 
 - [x] **Step 3: Implement the minimum behavior**
 
@@ -248,9 +246,9 @@ Integrate the preview into the existing project flow without changing quote appr
 
 - [x] **Step 4: Verify the focused pass**
 
-Run: `npm test -- --run src/components/project-plan-preview.test.tsx`
+Run: `npm test -- --run src/lib/planning/mockup-selections.test.ts`
 
-Expected: all rendering, draft-state, scope-fidelity, error and accessibility assertions pass.
+Expected: all explicit-selection mapping assertions pass.
 
 - [x] **Step 5: Run the affected integration check**
 
@@ -261,8 +259,7 @@ Expected: the complete app builds and existing client/admin workflows remain fun
 - [x] **Step 6: Commit the passing deliverable**
 
 ```bash
-git add src/components/project-plan-preview.tsx src/components/project-plan-preview.test.tsx [confirmed-existing-project-detail-files]
-git commit -m "feat(planning): show generated project plans"
+GitHub commits on the active preview branch record the component, selection mapper and project-page integration.
 ```
 
 **Verification boundary:** the selection-mapping tests, strict TypeScript check and Next.js production build pass. The current milestone does not include a browser-driven click-through test; the preview remains non-persistent and requires an authenticated cloud-saved project.
