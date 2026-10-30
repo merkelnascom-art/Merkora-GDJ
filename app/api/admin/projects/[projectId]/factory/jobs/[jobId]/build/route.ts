@@ -202,7 +202,7 @@ export async function POST(
       return NextResponse.json({ error: "Le code est conservé, mais le rapport de compilation n'a pas pu être enregistré.", stage: "report_upload" }, { status: 502 });
     }
 
-    const evidencePayload = [
+    const evidencePayload: Array<Record<string, unknown>> = [
       {
         job_id: jobId, project_id: projectId, task_id: taskByKey.get("prepare_specification")?.id,
         evidence_type: "other", storage_path: `database://project_memory_plan_versions/${projectId}/${job.plan_version}`,
