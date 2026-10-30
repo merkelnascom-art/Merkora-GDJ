@@ -14,7 +14,32 @@ ChatGPT, les modèles IA et les outils externes peuvent contribuer à construire
 
 Cette exigence décrit une capacité cible. Elle ne signifie pas que l'autonomie complète est déjà implémentée ou disponible dans le prototype actuel.
 
-## 2. Parcours autonome cible
+## 2. Exigence explicite : MerKora produit ses propres plans de projet
+
+Le moteur de planification est une capacité native de MerKora GDJ. Pour chaque nouveau dossier client, MerKora doit produire et maintenir le plan du projet à partir des besoins, contraintes, choix validés et objectifs réellement enregistrés dans ce dossier.
+
+Le plan ne doit pas être rédigé manuellement par ChatGPT, par un assistant externe ou par un opérateur pour chaque client. Les modèles IA et outils tiers peuvent être utilisés comme composants techniques du moteur, mais la responsabilité du résultat, de sa cohérence, de son versionnement et de son suivi appartient à MerKora.
+
+Pour chaque projet, le moteur doit être capable de générer :
+- un résumé du problème, des objectifs et du résultat attendu ;
+- le périmètre inclus, les exclusions et les hypothèses ;
+- les modules et fonctionnalités correspondant aux choix du client ;
+- les exigences fonctionnelles, techniques, de sécurité et d'exploitation ;
+- une architecture proposée et ses justifications ;
+- les étapes, tâches, dépendances, priorités et jalons ;
+- les critères d'acceptation et les scénarios de vérification ;
+- une estimation des ressources, délais, coûts et incertitudes ;
+- les points nécessitant une clarification ou une approbation humaine.
+
+Le plan est un artefact versionné lié au dossier client et à la version de sa spécification. Il doit pouvoir être recalculé lorsqu'un choix change, en montrant les différences et les conséquences sur le périmètre, le coût, les délais et les tâches. Une modification du besoin ne doit pas effacer l'historique ni réécrire silencieusement un plan déjà validé.
+
+Le parcours attendu est donc : besoin client → analyse MerKora → propositions et choix → spécification validée → plan de projet généré par MerKora → validation requise selon le niveau de risque → exécution par l'usine → vérification et suivi.
+
+L'administration supervise et peut demander une révision ou valider les étapes sensibles ; elle n'a pas à reconstruire manuellement chaque plan. Si les informations sont insuffisantes, MerKora pose des questions ciblées et signale les hypothèses au lieu d'inventer des réponses.
+
+Cette capacité doit être testée indépendamment de la génération de code. Elle constitue une porte d'entrée obligatoire de l'usine : aucun job de construction ne démarre sans plan traçable, critères d'acceptation et périmètre autorisé.
+
+## 3. Parcours autonome cible
 
 1. **Comprendre** — recueillir le problème, le contexte, les utilisateurs, les objectifs, les contraintes et les résultats attendus.
 2. **Clarifier** — détecter les informations manquantes et demander au client uniquement les précisions qui changent réellement la solution.
@@ -33,15 +58,15 @@ Cette exigence décrit une capacité cible. Elle ne signifie pas que l'autonomie
 
 Le système doit pouvoir s'arrêter proprement lorsqu'une information, une permission, une ressource ou une validation manque. Il ne doit jamais simuler une réussite.
 
-## 3. Architecture logique recommandée
+## 4. Architecture logique recommandée
 
 Les chemins ci-dessous sont des responsabilités et emplacements proposés ; ils doivent être confrontés à la structure réelle du dépôt avant toute implémentation.
 
-### 3.1 Plan de contrôle MerKora
+### 4.1 Plan de contrôle MerKora
 
 Responsable de l'expérience client et de l'administration : dossiers, besoins, choix, maquettes, devis, validations, suivi, facturation et autorisations. Il ne doit pas exécuter directement du code arbitraire dans le processus web principal.
 
-### 3.2 Orchestrateur de production
+### 4.2 Orchestrateur de production
 
 Emplacement proposé : `src/lib/factory/orchestrator/`.
 
@@ -80,7 +105,7 @@ interface FactoryOrchestrator {
 
 Les noms et signatures sont des contrats conceptuels à adapter après inspection du code existant.
 
-### 3.3 Capacités spécialisées
+### 4.3 Capacités spécialisées
 
 Emplacement proposé : `src/lib/factory/agents/`.
 
@@ -97,7 +122,7 @@ Capacités séparables, coordonnées par l'orchestrateur :
 
 Ces capacités peuvent utiliser des modèles IA différents, mais aucune ne reçoit automatiquement un accès global. Chaque capacité reçoit seulement le contexte nécessaire à sa tâche.
 
-### 3.4 Générateurs et modèles de projet
+### 4.4 Générateurs et modèles de projet
 
 Emplacement proposé : `src/lib/factory/templates/`.
 
@@ -109,7 +134,7 @@ Emplacement proposé : `src/lib/factory/templates/`.
 
 Ne pas créer un générateur universel opaque. Commencer par un petit nombre de familles d'applications testées et élargir sur preuve.
 
-### 3.5 Environnements d'exécution isolés
+### 4.5 Environnements d'exécution isolés
 
 Emplacement proposé : `src/lib/factory/workspaces/` et infrastructure d'exécution dédiée.
 
@@ -121,7 +146,7 @@ Emplacement proposé : `src/lib/factory/workspaces/` et infrastructure d'exécut
 - Aucun accès aux autres projets ou données clients.
 - Nettoyage contrôlé des espaces temporaires sans toucher aux livrables conservés.
 
-### 3.6 Vérification et réparation
+### 4.6 Vérification et réparation
 
 Emplacement proposé : `src/lib/factory/verification/`.
 
@@ -144,7 +169,7 @@ Boucle de réparation bornée :
 
 Le moteur ne doit jamais modifier ses propres politiques de sécurité pour faire passer un test.
 
-### 3.7 Politique d'autorisation et supervision
+### 4.7 Politique d'autorisation et supervision
 
 Emplacement proposé : `src/lib/factory/policies/`.
 
@@ -167,7 +192,7 @@ Actions soumises à une autorisation administrative explicite, selon le contexte
 
 Une approbation doit être liée à une action précise, un projet, une version, un périmètre et une durée. Une approbation ne vaut pas autorisation générale et ne doit pas être réutilisée pour une action différente.
 
-### 3.8 Journal d'audit
+### 4.8 Journal d'audit
 
 Emplacement proposé : `src/lib/factory/audit/`.
 
@@ -183,7 +208,7 @@ Pour chaque étape, enregistrer au minimum :
 
 Ne pas copier inutilement les réponses privées des utilisateurs, mots de passe, tokens, clés API, PIN, OTP ou contenus sensibles dans les journaux. Les secrets sont masqués. Les données détaillées d'un client ne sont accessibles qu'aux personnes et services autorisés.
 
-## 4. Séparation des responsabilités
+## 5. Séparation des responsabilités
 
 - **Client :** décrit le besoin, choisit les options, valide le concept et le périmètre, accepte le devis et réalise la recette.
 - **Moteur MerKora :** analyse, planifie, conçoit, génère, construit, teste, corrige et prépare la livraison.
@@ -192,7 +217,7 @@ Ne pas copier inutilement les réponses privées des utilisateurs, mots de passe
 
 L'administration doit pouvoir voir ce que le moteur a fait, pourquoi, sur quelle version, avec quel résultat et quelles preuves, sans devoir intervenir manuellement dans chaque étape normale.
 
-## 5. Déploiement progressif de l'autonomie
+## 6. Déploiement progressif de l'autonomie
 
 | Niveau | Capacité | Autorisation |
 |---|---|---|
@@ -205,7 +230,7 @@ L'administration doit pouvoir voir ce que le moteur a fait, pourquoi, sur quelle
 
 Le passage à un niveau supérieur dépend de tests et de preuves observables, jamais d'une simple déclaration de l'agent.
 
-## 6. Student Vision comme premier projet de validation
+## 7. Student Vision comme premier projet de validation
 
 Student Vision est le premier cas d'essai de bout en bout de l'usine MerKora. Son cahier des charges existant décrit le produit à fabriquer et ses critères d'acceptation.
 
@@ -219,7 +244,7 @@ ChatGPT peut aider à concevoir et développer l'usine elle-même, à examiner l
 
 Le statut commercial existant de Student Vision, ses données de lancement et ses montants ne doivent pas être confondus avec son avancement technique. Le lancement enregistré ne prouve pas que l'application est construite ou livrée.
 
-## 7. Sécurité et limites obligatoires
+## 8. Sécurité et limites obligatoires
 
 - Aucun déploiement en production sans approbation administrative explicite.
 - Aucune migration destructive, réinitialisation ou suppression de données.
@@ -232,7 +257,7 @@ Le statut commercial existant de Student Vision, ses données de lancement et se
 - Toute sortie non vérifiée est marquée comme telle.
 - Le client garde le droit de demander une modification ou de refuser la solution proposée.
 
-## 8. Critères de réussite de l'usine
+## 9. Critères de réussite de l'usine
 
 L'exigence sera considérée comme démontrée seulement lorsqu'un test reproductible prouvera que MerKora peut, sans qu'un opérateur ChatGPT construise manuellement l'application cliente :
 
@@ -249,7 +274,7 @@ L'exigence sera considérée comme démontrée seulement lorsqu'un test reproduc
 
 Jusqu'à ce que ces critères soient prouvés, toute capacité non réalisée doit être présentée comme planifiée, expérimentale ou indisponible — jamais comme déjà autonome.
 
-## 9. Décisions à confirmer avant l'exécution technique
+## 10. Décisions à confirmer avant l'exécution technique
 
 - Choisir l'environnement d'exécution isolé (conteneurs éphémères, workers dédiés ou service sandbox) selon les capacités réellement disponibles.
 - Définir les plafonds initiaux de coût, durée, mémoire et tentatives par job.
