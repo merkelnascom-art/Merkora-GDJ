@@ -15,7 +15,7 @@ type RequestItem = {
 const statuses = [
   ["to_review", "À examiner"], ["verified", "Identité et dossier vérifiés"],
   ["changes_requested", "Modifications à préparer"], ["negotiation", "Négociation en cours"],
-  ["accepted", "Accepté par l’administration"], ["in_progress", "Réalisation en cours"],
+  ["accepted", "Accepté par l’administration"],
   ["delivered", "Livré"], ["rejected", "Refusé / clôturé"],
 ] as const;
 
