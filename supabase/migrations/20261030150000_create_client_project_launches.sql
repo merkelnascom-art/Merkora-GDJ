@@ -59,13 +59,13 @@ create policy "Merkora admins can record project launches"
       join public.client_quote_versions v on v.id = i.quote_version_id
       join public.client_quotes q on q.id = v.quote_id
       join public.client_requests r on r.id = q.request_id
-      where i.id = invoice_id
-        and i.client_user_id = client_user_id
-        and v.id = quote_version_id
-        and v.client_user_id = client_user_id
-        and q.request_id = request_id
-        and r.user_id = client_user_id
-        and i.total_amount = invoice_total_at_launch
+      where i.id = client_project_launches.invoice_id
+        and i.client_user_id = client_project_launches.client_user_id
+        and v.id = client_project_launches.quote_version_id
+        and v.client_user_id = client_project_launches.client_user_id
+        and q.request_id = client_project_launches.request_id
+        and r.user_id = client_project_launches.client_user_id
+        and i.total_amount = client_project_launches.invoice_total_at_launch
     )
   );
 
