@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+type Launch = { id: string; request_id: string; required_amount: number; invoice_total_at_launch: number; confirmed_amount_at_launch: number; launch_message: string; launched_at: string };
 type RequestItem = {
   id: string;
   project_id: string;
@@ -23,7 +24,8 @@ const labels: Record<string, { title: string; explanation: string }> = {
 };
 
 export function ClientRequestTrackingPanel() {
-  const [items, setItems] = useState<RequestItem[]>([]);\n  const [launches, setLaunches] = useState<Launch[]>([]);
+  const [items, setItems] = useState<RequestItem[]>([]);
+  const [launches, setLaunches] = useState<Launch[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
