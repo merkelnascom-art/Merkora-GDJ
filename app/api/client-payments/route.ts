@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       callUserData(`client_payment_reviews?select=payment_declaration_id,status&invoice_id=eq.${encodeURIComponent(invoice.id)}&client_user_id=eq.${encodeURIComponent(user.id)}`, "GET", token),
     ]);
     if (!declarations.ok || !reviews.ok) return fail(502, "Impossible de calculer le solde actuel.");
-    const amountById = new Map((Array.isArray(declarations.data) ? declarations.data : []).map((d: { id: string; amount: number }) => [d.id, Number(d.amount)]));
+    const amountById = new Map<string, number>((Array.isArray(declarations.data) ? declarations.data : []).map((d: { id: string; amount: number }) => [d.id, Number(d.amount)] as const));
     const confirmedIds = new Set((Array.isArray(reviews.data) ? reviews.data : []).filter((r: { status: string }) => r.status === "confirmed").map((r: { payment_declaration_id: string }) => r.payment_declaration_id));
     const confirmed = [...confirmedIds].reduce((sum, id) => sum + (amountById.get(id) || 0), 0);
     const pending = (Array.isArray(declarations.data) ? declarations.data : [])
