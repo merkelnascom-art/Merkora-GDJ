@@ -118,15 +118,8 @@ export async function POST(
       plan.scope_digest !== job.scope_digest) {
       return NextResponse.json({ error: "Le plan ne correspond plus aux empreintes approuvées." }, { status: 409 });
     }
-    if (plan.payload.aiImplementationConsent !== true) {
-      return NextResponse.json({
-        error: "Le client n'a pas encore autorisé l'envoi de son dossier à un modèle IA externe.",
-        code: "CLIENT_AI_CONSENT_REQUIRED",
-      }, { status: 409 });
-    }
-
     const approvalResult = await callUserData(
-      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${job.plan_version}`,
+      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest,ai_processing_consent&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${job.plan_version}`,
       "GET", token,
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Vérification des validations impossible." }, { status: 502 });
@@ -138,6 +131,15 @@ export async function POST(
     const missing = REQUIRED_APPROVALS.filter((kind) =>
       !exactApprovals.some((approval) => approval.approval_kind === kind));
     if (missing.length) return NextResponse.json({ error: "Les validations exactes sont incomplètes.", missingApprovals: missing }, { status: 409 });
+
+    const clientConsent = exactApprovals.some((approval) =>
+      approval.approval_kind === "client_scope" && approval.ai_processing_consent === true);
+    if (!clientConsent) {
+      return NextResponse.json({
+        error: "Le client n'a pas encore autorisé l'envoi de son dossier à un modèle IA externe.",
+        code: "CLIENT_AI_CONSENT_REQUIRED",
+      }, { status: 409 });
+    }
 
     const projectResult = await callUserData(
       `user_projects?select=id,title,problem,desired_outcome&id=eq.${encodeURIComponent(projectId)}&limit=1`,
