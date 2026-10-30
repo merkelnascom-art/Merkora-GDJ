@@ -58,12 +58,21 @@ export async function POST(request: Request) {
     }
 
     const versionResult = await callUserData(
-      `client_quote_versions?select=id,quote_id,client_user_id,published_at&id=eq.${encodeURIComponent(invoice.quote_version_id)}&limit=1`,
+      `client_quote_versions?select=id,quote_id,client_user_id,version_number,published_at&id=eq.${encodeURIComponent(invoice.quote_version_id)}&limit=1`,
       "GET", token,
     );
     if (!versionResult.ok || !Array.isArray(versionResult.data) || !versionResult.data.length) return fail(409, "Version du devis introuvable.");
-    const version = versionResult.data[0] as { id: string; quote_id: string; client_user_id: string; published_at: string | null };
+    const version = versionResult.data[0] as { id: string; quote_id: string; client_user_id: string; version_number: number; published_at: string | null };
     if (version.client_user_id !== invoice.client_user_id || !version.published_at) return fail(409, "La facture ne correspond pas à une version publiée du devis.");
+    const latestVersion = await callUserData(
+      `client_quote_versions?select=id&quote_id=eq.${encodeURIComponent(version.quote_id)}&client_user_id=eq.${encodeURIComponent(invoice.client_user_id)}&published_at=not.is.null&order=version_number.desc&limit=1`,
+      "GET", token,
+    );
+    if (!latestVersion.ok) return fail(502, "Impossible de vérifier la dernière version publiée du devis.");
+    if (!Array.isArray(latestVersion.data) || !latestVersion.data.length ||
+        String((latestVersion.data[0] as { id: string }).id) !== version.id) {
+      return fail(409, "Une version plus récente du devis a été publiée. Le client doit l’examiner et l’accepter avant le lancement.");
+    }
 
     const [decisionResult, quoteResult, declarationResult, reviewResult] = await Promise.all([
       callUserData(
