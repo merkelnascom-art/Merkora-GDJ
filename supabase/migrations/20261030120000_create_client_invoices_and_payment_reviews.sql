@@ -94,10 +94,10 @@ create policy "Merkora admins can create invoices"
       select 1
       from public.client_quote_versions v
       join public.client_quote_decisions d on d.quote_version_id = v.id
-      where v.id = quote_version_id
-        and v.client_user_id = client_user_id
+      where v.id = client_invoices.quote_version_id
+        and v.client_user_id = client_invoices.client_user_id
         and v.published_at is not null
-        and d.client_user_id = client_user_id
+        and d.client_user_id = client_invoices.client_user_id
         and d.decision = 'accepted'
     )
   );
@@ -140,9 +140,9 @@ create policy "Merkora admins can review payments"
     and exists (
       select 1
       from public.client_payment_declarations p
-      where p.id = payment_declaration_id
-        and p.invoice_id = invoice_id
-        and p.client_user_id = client_user_id
+      where p.id = client_payment_reviews.payment_declaration_id
+        and p.invoice_id = client_payment_reviews.invoice_id
+        and p.client_user_id = client_payment_reviews.client_user_id
     )
   );
 
