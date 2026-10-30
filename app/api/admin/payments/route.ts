@@ -13,16 +13,16 @@ export async function GET() {
   try {
     const token = await getAccessToken(await cookies());
     if (!token) return fail(401, "Session expirée. Reconnectez-vous.");
-    const [invoices, declarations, reviews] = await Promise.all([
+    const [invoices, declarations, reviews, versions, decisions] = await Promise.all([
       callUserData("client_invoices?select=*&order=created_at.desc&limit=200", "GET", token),
       callUserData("client_payment_declarations?select=*&order=created_at.desc&limit=300", "GET", token),
-      callUserData("client_payment_reviews?select=*&order=created_at.desc&limit=300", "GET", token),
+      callUserData("client_payment_reviews?select=*&order=created_at.desc&limit=300", "GET", token),\n      callUserData("client_quote_versions?select=id,client_user_id,version_number,snapshot,currency,total_amount,valid_until,published_at&published_at=not.is.null&order=created_at.desc&limit=200", "GET", token),\n      callUserData("client_quote_decisions?select=id,quote_version_id,client_user_id,decision,message,created_at&order=created_at.desc&limit=300", "GET", token),
     ]);
-    if (![invoices, declarations, reviews].every(x => x.ok)) return fail(502, "Impossible de charger les factures et paiements. Vérifiez les accès Supabase du compte administrateur.");
+    if (![invoices, declarations, reviews, versions, decisions].every(x => x.ok)) return fail(502, "Impossible de charger les factures et paiements. Vérifiez les accès Supabase du compte administrateur.");
     return NextResponse.json({
       invoices: Array.isArray(invoices.data) ? invoices.data : [],
       declarations: Array.isArray(declarations.data) ? declarations.data : [],
-      reviews: Array.isArray(reviews.data) ? reviews.data : [],
+      reviews: Array.isArray(reviews.data) ? reviews.data : [],\n      versions: Array.isArray(versions.data) ? versions.data : [],\n      decisions: Array.isArray(decisions.data) ? decisions.data : [],
     });
   } catch { return fail(503, "Le service de facturation est indisponible."); }
 }
