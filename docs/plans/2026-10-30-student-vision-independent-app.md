@@ -10,6 +10,11 @@
 
 ## Global Constraints
 
+- **Responsabilité de planification :** MerKora doit générer elle-même le plan de chaque projet client à partir de sa spécification versionnée, des choix enregistrés et des contraintes du dossier. ChatGPT ou un opérateur externe ne doit pas rédiger manuellement le plan de chaque nouveau client.
+- Le moteur de planification doit produire un périmètre, une architecture proposée, les tâches et dépendances, les jalons, les critères d'acceptation, les estimations et les incertitudes ; il doit versionner les plans et présenter les différences lorsqu'un besoin change.
+- **Porte obligatoire avant construction :** aucun job de génération de code ne démarre sans plan MerKora traçable, critères d'acceptation, estimation et périmètre autorisé. Les informations manquantes déclenchent des questions ciblées ou un blocage explicite, jamais des hypothèses présentées comme des faits.
+
+
 - Principe fondateur : MerKora GDJ doit analyser, concevoir, générer, développer, tester, corriger et livrer les plateformes clientes de manière autonome, sous supervision et contrôle de son administration.
 - Ordre obligatoire : construire et vérifier d’abord les capacités minimales de l’usine logicielle MerKora ; seulement ensuite lui confier la génération de Student Vision. Les tâches Student Vision ci-dessous constituent le cahier des charges et les critères d’acceptation que l’usine devra exécuter.
 - Ne pas contourner ce principe en faisant développer manuellement Student Vision par ChatGPT ou un opérateur externe comme livrable client. ChatGPT peut contribuer à construire et améliorer l’usine elle-même.
