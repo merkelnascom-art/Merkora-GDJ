@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("next/headers", () => ({ cookies: vi.fn().mockResolvedValue({}) }));
 vi.mock("@/lib/server/admin-access", () => ({ getAdminAccess: vi.fn() }));
 vi.mock("@/lib/server/supabase-rest", () => ({
-  getAccessToken: vi.fn(), getCurrentUser: vi.fn(), isSameOrigin: vi.fn(),
+  callUserData: vi.fn(), getAccessToken: vi.fn(), getCurrentUser: vi.fn(), isSameOrigin: vi.fn(),
 }));
 vi.mock("@/lib/ai-provider", () => ({ requestAiGatewayCompletion: vi.fn() }));
 
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
+import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
+import { createProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
 import { requestAiGatewayCompletion } from "@/lib/ai-provider";
 import { POST } from "./route";
 
@@ -60,6 +61,38 @@ describe("POST factory AI implementation", () => {
     const response = await POST(request(true), context);
     expect(response.status).toBe(503);
     expect((await response.json()).code).toBe("AI_NOT_CONFIGURED");
+    expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
+  });
+
+  it("requires client consent recorded in the exact approved plan", async () => {
+    vi.stubEnv("MERKORA_AI_ENABLED", "true");
+    vi.stubEnv("MERKORA_CODEGEN_MODEL", "openai/test-model");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "test-server-key");
+    const payload = {
+      includedScope: [{ id: "staff", title: "Personnel", description: "Dossiers employés." }],
+      aiImplementationConsent: false,
+    };
+    const digest = createProjectMemoryDigest(payload);
+    vi.mocked(callUserData).mockImplementation(async (path, method) => {
+      if (method === "GET" && path.startsWith("project_factory_jobs?select")) return {
+        ok: true, status: 200, data: [{
+          id: jobId, status: "awaiting_approval", plan_version: 2,
+          plan_digest: digest, scope_digest: createProjectMemoryDigest(payload.includedScope),
+          approval_ids: ["approval-1", "approval-2", "approval-3"],
+          manifest: { fullBusinessLogicImplementationPending: true, sourceManifestPath: "p/j/source.json", sourceDigest: "a".repeat(64) },
+        }],
+      };
+      if (method === "GET" && path.startsWith("project_memory_plan_versions?select")) return {
+        ok: true, status: 200, data: [{
+          version: 2, payload, payload_digest: digest,
+          scope_digest: createProjectMemoryDigest(payload.includedScope),
+        }],
+      };
+      return { ok: true, status: 200, data: [] };
+    });
+    const response = await POST(request(true), context);
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe("CLIENT_AI_CONSENT_REQUIRED");
     expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
   });
 
