@@ -24,7 +24,9 @@ export async function GET() {
     return NextResponse.json({
       invoices: Array.isArray(invoices.data) ? invoices.data : [],
       declarations: Array.isArray(declarations.data) ? declarations.data : [],
-      reviews: Array.isArray(reviews.data) ? reviews.data : [],\n      versions: Array.isArray(versions.data) ? versions.data : [],\n      decisions: Array.isArray(decisions.data) ? decisions.data : [],
+      reviews: Array.isArray(reviews.data) ? reviews.data : [],
+      versions: Array.isArray(versions.data) ? versions.data : [],
+      decisions: Array.isArray(decisions.data) ? decisions.data : [],
     });
   } catch { return fail(503, "Le service de facturation est indisponible."); }
 }
