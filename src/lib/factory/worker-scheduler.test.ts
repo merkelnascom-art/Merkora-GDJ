@@ -14,7 +14,7 @@ describe("selectNextFactoryTask", () => {
 
   it("waits until every dependency is completed with required evidence", () => {
     const dependency = task({ id: "task-1", state: "completed", evidenceCount: 1 });
-    const next = task({ id: "task-2", taskKey: "generate_application", dependencies: ["task-1"] });
+    const next = task({ id: "task-2", taskKey: "generate_application", dependencies: ["prepare_specification"] });
     expect(selectNextFactoryTask([dependency, next])).toEqual({ taskId: "task-2", taskKey: "generate_application" });
     expect(selectNextFactoryTask([task({ id: "task-1", state: "in_progress" }), next])).toBeNull();
     expect(selectNextFactoryTask([task({ id: "task-1", state: "completed", evidenceCount: 0 }), next])).toBeNull();
