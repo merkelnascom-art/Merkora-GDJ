@@ -10,7 +10,7 @@ const generated = () => generateProjectSource({
 
 describe("validateGeneratedProjectSource", () => {
   it("accepts an intact generated source manifest", () => {
-    expect(validateGeneratedProjectSource(generated())).toEqual({ ok: true, fileCount: 6, totalBytes: expect.any(Number) });
+    expect(validateGeneratedProjectSource(generated())).toEqual({ ok: true, fileCount: 7, totalBytes: expect.any(Number) });
   });
 
   it("rejects a modified file whose digest no longer matches", () => {
