@@ -79,7 +79,7 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
-      <FactoryJobsPanel initialJobs={factoryJobs} />
+      <FactoryJobsPanel initialJobs={factoryJobs} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
       <AdminQuotesPanel />
       <AdminPaymentsPanel />
       <CloudClientRequestsPanel />
