@@ -101,6 +101,10 @@ describe("POST factory job build", () => {
 
   it("calls the implementation model only when consent is part of the exact approved plan", async () => {
     planPayload.aiImplementationConsent = true;
+    const consentDigest = createProjectMemoryDigest(planPayload);
+    plan.payload_digest = consentDigest;
+    job.plan_digest = consentDigest;
+    approvals.forEach((approval) => { approval.plan_digest = consentDigest; });
     process.env.AI_GATEWAY_API_KEY = "unit-test-key";
     process.env.MERKORA_IMPLEMENTATION_MODEL = "unit-test-model";
     vi.mocked(requestAiGatewayCompletion).mockResolvedValue(new Response(JSON.stringify({
