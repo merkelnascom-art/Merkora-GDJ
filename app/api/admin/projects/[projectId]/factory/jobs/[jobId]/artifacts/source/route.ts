@@ -45,7 +45,7 @@ export async function GET(
     const sourceDigest = job.manifest.sourceDigest;
     if (typeof sourcePath !== "string" || typeof sourceDigest !== "string" ||
       !/^[a-f0-9]{64}$/.test(sourceDigest) ||
-      sourcePath !== `${projectId}/${jobId}/source-${sourceDigest}.json`) {
+      sourcePath !== `${projectId}/${jobId}/source-${sourceDigest}.tar.gz`) {
       return Response.json({ error: "Le fichier source n'est pas référencé dans le manifeste." }, { status: 404 });
     }
 
@@ -60,8 +60,8 @@ export async function GET(
     return new Response(body, {
       status: 200,
       headers: {
-        "Content-Type": artifact.contentType.startsWith("application/json") ? "application/json; charset=utf-8" : "application/octet-stream",
-        "Content-Disposition": `attachment; filename="merkora-${jobId}-source.json"`,
+        "Content-Type": artifact.contentType.startsWith("application/gzip") ? "application/gzip" : "application/octet-stream",
+        "Content-Disposition": `attachment; filename="merkora-${jobId}-source.tar.gz"`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },
