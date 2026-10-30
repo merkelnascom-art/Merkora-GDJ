@@ -28,6 +28,7 @@ function readyPlan(): ProjectPlan {
   return {
     ...plan,
     status: "ready_for_review",
+    openQuestions: [],
     acceptanceCriteria: ["Les présences peuvent être enregistrées et vérifiées."],
     tasks: plan.tasks.map((task) => ({
       ...task,
