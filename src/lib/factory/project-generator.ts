@@ -109,7 +109,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     },
     {
       path: "src/app/page.tsx",
-      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>${jsString(projectName)}</h1>\n      <p className="lead">${jsString(projectDescription)}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={`/modules/${module.id}`} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.0.0</footer>\n    </main>\n  );\n}\n`,
+      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>{${jsString(projectName)}}</h1>\n      <p className="lead">{${jsString(projectDescription)}}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={`/modules/${module.id}`} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.0.0</footer>\n    </main>\n  );\n}\n`,
     },
     {
       path: "README.md",
@@ -121,7 +121,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     const component = componentName(module.id);
     files.push({
       path: `src/app/modules/${module.id}/page.tsx`,
-      content: `export default function ${component}ModulePage() {\n  return (\n    <main>\n      <p className="eyebrow">Module du projet</p>\n      <h1>${jsString(module.title)}</h1>\n      <p className="lead">${jsString(module.description)}</p>\n      <section className="card" aria-label="État du module">\n        <h2>Fonctionnalités à construire</h2>\n        <p>Cette page est le point de départ du module. Les opérations métier, les données et les autorisations restent à implémenter selon le cahier des charges approuvé.</p>\n      </section>\n      <p><a href="/">← Retour à l'espace de travail</a></p>\n    </main>\n  );\n}\n`,
+      content: `export default function ${component}ModulePage() {\n  return (\n    <main>\n      <p className="eyebrow">Module du projet</p>\n      <h1>{${jsString(module.title)}}</h1>\n      <p className="lead">{${jsString(module.description)}}</p>\n      <section className="card" aria-label="État du module">\n        <h2>Fonctionnalités à construire</h2>\n        <p>Cette page est le point de départ du module. Les opérations métier, les données et les autorisations restent à implémenter selon le cahier des charges approuvé.</p>\n      </section>\n      <p><a href="/">← Retour à l'espace de travail</a></p>\n    </main>\n  );\n}\n`,
     });
   }
 
