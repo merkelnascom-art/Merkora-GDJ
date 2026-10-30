@@ -2,14 +2,19 @@
 
 > **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Construire Student Vision comme une application web autonome pour l’orientation après le BAC, tout en permettant à l’administration MerKora GDJ de suivre chaque étape du projet depuis son lancement jusqu’à sa livraison.
+**Goal:** Faire réaliser Student Vision par l’usine logicielle autonome de MerKora GDJ, puis permettre à l’administration de suivre chaque étape jusqu’à la livraison.
 
-**Architecture:** Student Vision est une application Next.js indépendante dans le monorepo, isolée dans `apps/student-vision/` et déployable avec son propre projet Vercel Preview. MerKora GDJ reste le plan de contrôle : il conserve le dossier commercial et expose une vue administrative des événements, jalons, versions et livrables Student Vision. Les deux applications échangent par des API serveur authentifiées et des identifiants de projet explicites ; elles ne partagent pas leur interface ni leurs secrets.
+**Architecture:** Student Vision est une application Next.js indépendante dans le monorepo, isolée dans `apps/student-vision/` et déployable avec son propre projet Vercel Preview. MerKora GDJ reste le plan de contrôle et doit d’abord disposer d’une usine capable de recevoir une spécification validée, planifier, générer, construire, tester et corriger une application dans un environnement isolé. Student Vision est le premier projet confié à cette usine ; ChatGPT peut aider à construire l’usine, mais ne doit pas fabriquer manuellement l’application cliente à sa place.
 
 **Tech Stack:** Next.js App Router, React, TypeScript, Vitest, Supabase Auth/Postgres/RLS, GitHub et Vercel Preview. Le fournisseur IA est optionnel et reste côté serveur ; le parcours étudiant doit fonctionner en mode déterministe lorsque l’IA n’est pas configurée.
 
 ## Global Constraints
 
+- Principe fondateur : MerKora GDJ doit analyser, concevoir, générer, développer, tester, corriger et livrer les plateformes clientes de manière autonome, sous supervision et contrôle de son administration.
+- Ordre obligatoire : construire et vérifier d’abord les capacités minimales de l’usine logicielle MerKora ; seulement ensuite lui confier la génération de Student Vision. Les tâches Student Vision ci-dessous constituent le cahier des charges et les critères d’acceptation que l’usine devra exécuter.
+- Ne pas contourner ce principe en faisant développer manuellement Student Vision par ChatGPT ou un opérateur externe comme livrable client. ChatGPT peut contribuer à construire et améliorer l’usine elle-même.
+- La capacité autonome est une cible d’architecture, pas une fonctionnalité déjà disponible. Toute capacité non vérifiée doit rester étiquetée comme planifiée, expérimentale ou indisponible.
+- Toute génération et réparation de code doit se faire dans un workspace isolé, avec droits minimaux, plafonds de coût/durée/tentatives et journal d'audit. Les actions sensibles restent soumises à approbation humaine.
 - Développer uniquement sur la branche `feature/admin-preview-secure-access` du dépôt `merkelnascom-art/Merkora-GDJ`.
 - Créer Student Vision dans `apps/student-vision/` comme application indépendante et séparément déployable ; ne pas remplacer MerKora GDJ.
 - Déployer et vérifier uniquement des aperçus Vercel. Ne pas promouvoir ni déployer en production.
@@ -62,7 +67,29 @@
 
 ---
 
-### Task 1: Isoler l’application Student Vision et ses fondations
+## Phase préalable obligatoire — construire l’usine MerKora
+
+Avant d'exécuter les tâches de fabrication Student Vision ci-dessous, l'équipe doit livrer et vérifier un premier socle d'usine logicielle. Le document de référence est [le principe fondateur de l'usine autonome](../specs/2026-10-30-merkora-autonomous-factory-principles.md).
+
+Cette phase préalable doit démontrer les capacités suivantes dans MerKora :
+1. recevoir une spécification de projet versionnée et un périmètre explicitement approuvé ;
+2. créer un job de production traçable ;
+3. planifier des tâches avec entrées, sorties et critères de réussite ;
+4. créer un workspace isolé et limité au projet ;
+5. générer une application à partir d'un modèle contrôlé ;
+6. exécuter tests, vérification TypeScript et build ;
+7. analyser un échec contrôlé et tenter une correction bornée ;
+8. conserver les diffs, journaux et preuves de vérification ;
+9. arrêter le job et demander une approbation pour toute action sensible ;
+10. exposer à l'administration le statut, les blocages et les preuves.
+
+**Porte de sortie obligatoire :** un test de bout en bout doit prouver qu'un job de démonstration peut générer et construire une petite application indépendante dans un environnement isolé, puis afficher ses résultats dans l'administration MerKora. Aucun code de Student Vision ne doit être généré comme livrable final avant que cette porte soit validée.
+
+Les choix d'infrastructure de l'usine (conteneurs éphémères, workers dédiés ou sandbox managé), les plafonds de ressources et les fournisseurs IA doivent être confirmés après inventaire technique et analyse de sécurité. Aucune ressource cloud ni aucun secret de production ne doit être créé pour cette phase sans autorisation explicite.
+
+---
+
+### Task 1: Isoler l’application Student Vision et ses fondations — exécution par l’usine
 
 **Files:**
 - Create: `apps/student-vision/package.json` — scripts et dépendances propres à l’application, alignés sur les versions déjà utilisées dans le dépôt.
@@ -94,7 +121,7 @@ Expected: échec initial car les fichiers et fonctions de configuration n’exis
 
 - [ ] **Step 3: Implement the minimum behavior**
 
-Créer le squelette Next.js isolé. Définir les scripts `dev`, `build`, `start`, `typecheck` et `test`. Ne pas importer le layout, les composants ou le stockage local de MerKora dans l’application étudiante. La page d’accueil doit afficher le nom Student Vision, la finalité « explorer des pistes d’orientation après le BAC » et un avertissement clair : les résultats sont des pistes de réflexion, pas une décision automatique.
+Lorsque la porte de sortie de l'usine est validée, lui transmettre cette tâche comme premier vrai job client. L'usine crée le squelette Next.js isolé et définit les scripts `dev`, `build`, `start`, `typecheck` et `test`. Elle ne doit pas importer le layout, les composants ou le stockage local de MerKora dans l’application étudiante. La page d’accueil doit afficher le nom Student Vision, la finalité « explorer des pistes d’orientation après le BAC » et un avertissement clair : les résultats sont des pistes de réflexion, pas une décision automatique.
 
 - [ ] **Step 4: Verify the focused pass**
 
