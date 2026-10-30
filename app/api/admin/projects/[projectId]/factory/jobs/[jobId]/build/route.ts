@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 import { createProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
 import { createProjectArchive } from "@/lib/factory/project-archive";
 import { generateProjectSource } from "@/lib/factory/project-generator";
+import { applyProjectCodePatch } from "@/lib/factory/implementation-agent";
+import { generateProjectImplementationPatch } from "@/lib/factory/project-ai-implementation";
+import { requestAiGatewayCompletion } from "@/lib/ai-provider";
 import { createVercelProjectSandbox } from "@/lib/factory/vercel-project-sandbox";
 import { runProjectBuildInSandbox } from "@/lib/factory/project-sandbox-runner";
 import { getAdminAccess } from "@/lib/server/admin-access";
@@ -162,11 +165,73 @@ export async function POST(
       return NextResponse.json({ error: "Le périmètre approuvé contient un module invalide." }, { status: 422 });
     }
 
-    const source = generateProjectSource({
+    let source = generateProjectSource({
       projectName: project.title,
       projectDescription: `${project.problem} Objectif : ${project.desired_outcome}`.slice(0, 500),
       modules: modules as Array<{ id: string; title: string; description: string }>,
     });
+    let implementationLevel: "scaffold" | "ai_patch" = "scaffold";
+    let implementationSummary: string | null = null;
+
+    // Sending a customer's brief to an external model is disabled unless the
+    // exact approved plan explicitly records project-level AI implementation consent.
+    if (plan.payload.aiImplementationConsent === true) {
+      const apiKey = process.env.AI_GATEWAY_API_KEY;
+      const model = process.env.MERKORA_IMPLEMENTATION_MODEL;
+      if (!apiKey || !model) {
+        await patchJob(projectId, jobId, token, {
+          status: "failed", updated_at: new Date().toISOString(),
+          manifest: { ...job.manifest, failureStage: "ai_configuration", implementationLevel: "scaffold" },
+        });
+        return NextResponse.json({ error: "L'implémentation IA a été autorisée, mais le fournisseur IA n'est pas configuré." }, { status: 503 });
+      }
+
+      const aiResult = await generateProjectImplementationPatch({
+        apiKey,
+        model,
+        requestCompletion: requestAiGatewayCompletion,
+        brief: {
+          projectName: project.title,
+          projectDescription: `${project.problem} Objectif : ${project.desired_outcome}`.slice(0, 1000),
+          planVersion: Number(job.plan_version),
+          planDigest: String(job.plan_digest),
+          modules: modules as Array<{ id: string; title: string; description: string }>,
+          confirmedConstraints: Array.isArray(plan.payload.confirmedConstraints)
+            ? plan.payload.confirmedConstraints.filter(isRecord).filter((item) =>
+                typeof item.key === "string" && typeof item.value === "string")
+                .map((item) => ({ key: item.key as string, value: item.value as string }))
+            : [],
+          acceptanceCriteria: Array.isArray(plan.payload.acceptanceCriteria)
+            ? plan.payload.acceptanceCriteria.filter((item): item is string => typeof item === "string")
+            : [],
+          openQuestions: Array.isArray(plan.payload.openQuestions)
+            ? plan.payload.openQuestions.filter((item): item is string => typeof item === "string")
+            : [],
+        },
+      });
+      if (!aiResult.ok) {
+        await patchJob(projectId, jobId, token, {
+          status: "failed", updated_at: new Date().toISOString(),
+          manifest: { ...job.manifest, failureStage: "ai_implementation", aiFailure: aiResult.reason },
+        });
+        return NextResponse.json({ error: "L'agent IA n'a pas produit un patch de code valide.", stage: "ai_implementation" }, { status: 502 });
+      }
+      if (aiResult.patch.openQuestions.length > 0) {
+        await patchJob(projectId, jobId, token, {
+          status: "blocked", updated_at: new Date().toISOString(),
+          manifest: { ...job.manifest, failureStage: "ai_clarification", implementationQuestions: aiResult.patch.openQuestions },
+        });
+        return NextResponse.json({
+          error: "L'agent a identifié des décisions métier à clarifier avant de poursuivre.",
+          stage: "ai_clarification", questions: aiResult.patch.openQuestions,
+        }, { status: 409 });
+      }
+      const applied = applyProjectCodePatch(source, aiResult.patch);
+      source = applied.source;
+      implementationLevel = "ai_patch";
+      implementationSummary = applied.summary;
+    }
+
     const archive = createProjectArchive(source);
     const sourceManifestPath = `${projectId}/${jobId}/source-${source.digest}.json`;
     const sourcePath = `${projectId}/${jobId}/source-${source.digest}.tar.gz`;
@@ -202,7 +267,7 @@ export async function POST(
       logs: safeLog(build.logs),
       generatedAt: new Date().toISOString(),
       delivery: "not_deployed_human_review_required",
-      implementationLevel: "scaffold",
+      implementationLevel,
     };
     const reportDigest = createProjectMemoryDigest(report);
     const reportPath = `${projectId}/${jobId}/build-report-${reportDigest}.json`;
@@ -282,7 +347,8 @@ export async function POST(
       generatorVersion: source.generatorVersion, generatedFileCount: source.files.length,
       generatedModuleIds: source.moduleIds, buildResult: build.ok ? "passed" : "failed",
       buildStage: build.stage, buildLogs: safeLog(build.logs),
-      implementationLevel: "scaffold",
+      implementationLevel,
+      implementationSummary,
       fullBusinessLogicImplementationPending: true,
       deployment: "not_started",
       deliveryRequiresHumanReview: true,
@@ -313,7 +379,8 @@ export async function POST(
       created: true, jobId, status: finalStatus,
       executionStarted: true, buildPassed: build.ok,
       deployed: false, humanReviewRequired: true,
-      implementationLevel: "scaffold",
+      implementationLevel,
+      implementationSummary,
       fullBusinessLogicImplementationPending: true,
       fileCount: source.files.length, moduleCount: source.moduleIds.length,
       sourceDigest: source.digest, reportDigest,
