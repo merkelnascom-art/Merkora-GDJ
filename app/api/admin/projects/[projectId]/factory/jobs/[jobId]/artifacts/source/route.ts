@@ -53,7 +53,11 @@ export async function GET(
     if (!artifact.ok || !artifact.data) {
       return Response.json({ error: "Le fichier source privé est momentanément indisponible." }, { status: artifact.status === 404 ? 404 : 502 });
     }
-    return new Response(artifact.data, {
+    const body = artifact.data.buffer.slice(
+      artifact.data.byteOffset,
+      artifact.data.byteOffset + artifact.data.byteLength,
+    ) as ArrayBuffer;
+    return new Response(body, {
       status: 200,
       headers: {
         "Content-Type": artifact.contentType.startsWith("application/json") ? "application/json; charset=utf-8" : "application/octet-stream",
