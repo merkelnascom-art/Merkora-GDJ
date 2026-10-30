@@ -44,7 +44,7 @@ describe("validateProjectCodePatch", () => {
     const base = { summary: "Patch", openQuestions: [], files: [{ path: "src/app/page.tsx", content: "export default function Page() {}" }] };
     expect(validateProjectCodePatch({ ...base, files: [{ path: "../../package.json", content: "{}" }] })).toMatchObject({ ok: false, reason: "unsafe_path" });
     expect(validateProjectCodePatch({ ...base, files: [{ path: "package.json", content: "{}" }] })).toMatchObject({ ok: false, reason: "unsafe_path" });
-    expect(validateProjectCodePatch({ ...base, files: [{ path: "src/lib/secret.ts", content: 'const key = "sk-live-secret";' }] })).toMatchObject({ ok: false, reason: "sensitive_content" });
+    expect(validateProjectCodePatch({ ...base, files: [{ path: "src/lib/secret.ts", content: 'const key = "sk-live-1234567890abcdef";' }] })).toMatchObject({ ok: false, reason: "sensitive_content" });
     expect(validateProjectCodePatch({ ...base, files: [{ path: "src/lib/exec.ts", content: 'import { exec } from "node:child_process";' }] })).toMatchObject({ ok: false, reason: "unsafe_code" });
   });
 
