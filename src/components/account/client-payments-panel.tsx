@@ -4,13 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 
 type Invoice = { id: string; invoice_number: string; description: string; currency: string; total_amount: number; due_date: string | null; created_at: string };
 type Declaration = { id: string; invoice_id: string; amount: number; payment_method: string; paid_at: string; transaction_reference: string; client_note: string; created_at: string };
-type Review = { id: string; payment_declaration_id: string; status: string; review_note: string; created_at: string };\ntype PaymentChannel = { label: string; number: string };
-const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", celtiis_cash: "Celtiis Cash", bank_transfer: "Virement bancaire", other: "Autre" };\nconst selectableMethods = ["mtn_momo", "celtiis_cash", "cash", "bank_transfer", "other"];
+type Review = { id: string; payment_declaration_id: string; status: string; review_note: string; created_at: string };
+type PaymentChannel = { label: string; number: string };
+const methods: Record<string, string> = { cash: "Espèces", mtn_momo: "MTN MoMo", moov_money: "Moov Money", celtiis_cash: "Celtiis Cash", bank_transfer: "Virement bancaire", other: "Autre" };
+const selectableMethods = ["mtn_momo", "celtiis_cash", "cash", "bank_transfer", "other"];
 
 export function ClientPaymentsPanel() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);\n  const [paymentChannels, setPaymentChannels] = useState<Record<string, PaymentChannel>>({});
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [paymentChannels, setPaymentChannels] = useState<Record<string, PaymentChannel>>({});
   const [forms, setForms] = useState<Record<string, { amount: string; method: string; paidAt: string; reference: string; note: string }>>({});
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
