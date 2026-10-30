@@ -68,7 +68,9 @@ beforeEach(() => {
     if (method === "GET" && path.startsWith("user_projects?select")) return { ok: true, status: 200, data: [project] };
     if (method === "GET" && path.startsWith("project_factory_tasks?select")) return { ok: true, status: 200, data: tasks };
     if (method === "PATCH" && path.includes("status=eq.queued")) return { ok: true, status: 200, data: [{ ...job, status: "building" }] };
-    if (method === "POST" && path === "project_factory_evidence") return { ok: true, status: 201, data: [{ id: "evidence-1" }] };
+    if (method === "POST" && path === "project_factory_evidence") return { ok: true, status: 201, data: [
+      { id: "evidence-1" }, { id: "evidence-2" }, { id: "evidence-3" }, { id: "evidence-4" },
+    ] };
     return { ok: true, status: 200, data: [] };
   });
 });
