@@ -217,14 +217,14 @@ git commit -m "feat(planning): add authenticated plan preview endpoint"
 
 **Files:**
 - Create: `src/components/project-plan-preview.tsx`
-- Test: `src/components/project-plan-preview.test.tsx`
+- Test: `src/lib/planning/mockup-selections.test.ts` (explicit Studio selection mapping; the Next.js production build compiles the UI component)
 - Modify: the existing project detail/review component that currently displays discovery, recommendations and Studio/quote information. Exact component path must be confirmed from the repository tree before implementation; do not create a parallel project screen.
 
 **Interfaces:**
 - Consumes: project identifier, source brief version, explicit selected options, preview endpoint response and `ProjectPlanDiff`.
 - Produces: an accessible plan preview with status, scope, tasks, milestones, unknowns, questions and review actions.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Verify:
 1. the client can request a plan preview for its own open project;
@@ -236,34 +236,36 @@ Verify:
 7. the UI does not display a false “approved”, “in production” or “delivered” state;
 8. keyboard navigation and labels are usable on mobile and desktop layouts.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- --run src/components/project-plan-preview.test.tsx`
 
 Expected: the component and tests do not exist.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Integrate the preview into the existing project flow without changing quote approval, payment or launch behavior. Provide separate review actions for requesting changes and marking the plan reviewed only if an existing authorized workflow supports them; otherwise keep the component read-only and label the review action as unavailable. Never persist an approval using browser-only state.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- --run src/components/project-plan-preview.test.tsx`
 
 Expected: all rendering, draft-state, scope-fidelity, error and accessibility assertions pass.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck && npm test && npm run build`
 
 Expected: the complete app builds and existing client/admin workflows remain functional.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 ```bash
 git add src/components/project-plan-preview.tsx src/components/project-plan-preview.test.tsx [confirmed-existing-project-detail-files]
 git commit -m "feat(planning): show generated project plans"
 ```
+
+**Verification boundary:** the selection-mapping tests, strict TypeScript check and Next.js production build pass. The current milestone does not include a browser-driven click-through test; the preview remains non-persistent and requires an authenticated cloud-saved project.
 
 ---
 
