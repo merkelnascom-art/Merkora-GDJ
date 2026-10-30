@@ -8,17 +8,23 @@ vi.mock("@/lib/server/supabase-rest", () => ({
 }));
 vi.mock("@/lib/factory/vercel-project-sandbox", () => ({ createVercelProjectSandbox: vi.fn() }));
 vi.mock("@/lib/factory/project-sandbox-runner", () => ({ runProjectBuildInSandbox: vi.fn() }));
+vi.mock("@/lib/ai-provider", () => ({ requestAiGatewayCompletion: vi.fn() }));
 
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin, uploadUserStorageObject } from "@/lib/server/supabase-rest";
 import { createVercelProjectSandbox } from "@/lib/factory/vercel-project-sandbox";
 import { runProjectBuildInSandbox } from "@/lib/factory/project-sandbox-runner";
+import { requestAiGatewayCompletion } from "@/lib/ai-provider";
 import { createProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
 import { POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
 const planPayload = {
   includedScope: [{ id: "attendance", title: "Présences", description: "Pointage des arrivées." }],
+  aiImplementationConsent: false,
+  acceptanceCriteria: ["L’administrateur peut consulter les présences."],
+  confirmedConstraints: [],
+  openQuestions: [],
 };
 const plan = {
   version: 3, payload: planPayload,
