@@ -154,3 +154,36 @@ export async function validateSessionAccessToken(accessToken: string): Promise<b
   });
   return response.ok;
 }
+
+
+export async function uploadUserStorageObject(
+  bucket: string,
+  objectPath: string,
+  content: string,
+  accessToken: string,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  if (!/^[a-z0-9-]{1,100}$/.test(bucket) || !accessToken.trim() ||
+    typeof content !== "string" || Buffer.byteLength(content, "utf8") > 1_000_000) {
+    return { ok: false, status: 400, data: null };
+  }
+  const segments = objectPath.split("/");
+  if (!objectPath || objectPath.length > 500 ||
+    segments.some((segment) => !segment || segment === "." || segment === ".." || !/^[a-zA-Z0-9._-]+$/.test(segment))) {
+    return { ok: false, status: 400, data: null };
+  }
+  const { url, key } = config();
+  const encodedPath = segments.map(encodeURIComponent).join("/");
+  const response = await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${encodedPath}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "x-upsert": "false",
+    },
+    body: content,
+    cache: "no-store",
+  });
+  const data: unknown = await response.json().catch(() => null);
+  return { ok: response.ok, status: response.status, data };
+}
