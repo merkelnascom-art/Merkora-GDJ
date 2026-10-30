@@ -51,6 +51,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ projectId: string; jobId: string }> },
 ) {
+  let claimedContext: { projectId: string; jobId: string; token: string; manifest: Record<string, unknown> } | null = null;
+  let finalized = false;
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
   }
@@ -143,6 +145,7 @@ export async function POST(
     if (rows(claim.data).length !== 1) {
       return NextResponse.json({ error: "Ce travail a déjà été pris en charge par une autre exécution." }, { status: 409 });
     }
+    claimedContext = { projectId, jobId, token, manifest: job.manifest };
 
     const modules = plan.payload.includedScope.map((item) => {
       if (!isRecord(item) || typeof item.id !== "string" ||
@@ -277,6 +280,7 @@ export async function POST(
     if (!finalJob.ok) {
       return NextResponse.json({ error: "Les artefacts sont enregistrés, mais le statut final du travail doit être réconcilié.", jobId }, { status: 502 });
     }
+    finalized = true;
 
     const event = await callUserData("project_memory_events", "POST", token, {
       project_id: projectId, event_type: build.ok ? "evidence_recorded" : "task_failed",
@@ -305,6 +309,15 @@ export async function POST(
         : "Le code a été généré et archivé, mais la compilation a échoué. Le travail est bloqué pour correction.",
     }, { status: build.ok ? 200 : 422, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (claimedContext && !finalized) {
+      try {
+        await patchJob(claimedContext.projectId, claimedContext.jobId, claimedContext.token, {
+          status: "failed",
+          manifest: { ...claimedContext.manifest, failureStage: "unexpected_worker_error" },
+          updated_at: new Date().toISOString(),
+        });
+      } catch { /* the job remains visible for administrator reconciliation */ }
+    }
     const missingConfig = error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED";
     return NextResponse.json({
       error: missingConfig ? "Le service n'est pas configuré." : "Le moteur de fabrication est momentanément indisponible.",
