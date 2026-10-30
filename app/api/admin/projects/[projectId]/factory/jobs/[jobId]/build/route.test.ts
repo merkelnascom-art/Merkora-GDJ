@@ -83,7 +83,7 @@ describe("POST factory job build", () => {
     expect(response.status).toBe(200);
     expect(result).toMatchObject({ status: "awaiting_approval", executionStarted: true, deployed: false, humanReviewRequired: true });
     expect(runProjectBuildInSandbox).toHaveBeenCalledOnce();
-    expect(uploadUserStorageObject).toHaveBeenCalledTimes(2);
+    expect(uploadUserStorageObject).toHaveBeenCalledTimes(3);
     expect(vi.mocked(callUserData).mock.calls.some(([path, method]) =>
       method === "PATCH" && String(path).includes("status=eq.queued"))).toBe(true);
   });
