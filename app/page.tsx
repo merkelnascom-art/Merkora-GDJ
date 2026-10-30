@@ -7,6 +7,7 @@ import { AiProposalPanel } from "@/components/ai/ai-proposal-panel";
 import { ProjectMockupStudio } from "@/components/studio/project-mockup-studio";
 import { ClientRequestSubmitPanel } from "@/components/studio/client-request-submit-panel";
 import { ProjectPlanPreview } from "@/components/project-plan-preview";
+import { ClientPlanApprovalPanel } from "@/components/account/client-plan-approval-panel";
 import { ClientRequestTrackingPanel } from "@/components/account/client-request-tracking-panel";
 import { ClientQuotesPanel } from "@/components/account/client-quotes-panel";
 import { ClientPaymentsPanel } from "@/components/account/client-payments-panel";
@@ -221,6 +222,7 @@ export default function HomePage() {
               <div className="detail-grid"><article><span className="detail-label">LA SITUATION</span><p>{activeProject.problem}</p></article><article><span className="detail-label">LE RÉSULTAT SOUHAITÉ</span><p>{activeProject.desiredOutcome}</p></article><article><span className="detail-label">BUDGET ENVISAGÉ</span><p>{activeProject.budget}</p></article><article><span className="detail-label">PRIORITÉ</span><p>{activeProject.urgency === "urgent" ? "Urgente" : activeProject.urgency === "soon" ? "À traiter bientôt" : "Normale"}</p></article></div>
               <ProjectMockupStudio key={activeProject.id} project={activeProject} />
               <ProjectPlanPreview key={`plan-${activeProject.id}`} project={activeProject} />
+              <ClientPlanApprovalPanel key={`client-approval-${activeProject.id}`} projectId={activeProject.id} />
               <ClientRequestSubmitPanel key={`send-${activeProject.id}`} project={activeProject} />
 
               {(() => {
