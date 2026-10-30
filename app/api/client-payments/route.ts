@@ -17,7 +17,7 @@ function getPaymentChannels(): Record<string, PaymentChannel> {
       const item = source[key];
       if (!item || typeof item !== "object" || Array.isArray(item)) continue;
       const value = item as Record<string, unknown>;
-      if (typeof value.number !== "string" || !/^\\+?[0-9]{8,16}$/.test(value.number)) continue;
+      if (typeof value.number !== "string" || !/^\+?[0-9]{8,16}$/.test(value.number)) continue;
       channels[key] = {
         label: key === "mtn_momo" ? "MTN MoMo" : "Celtiis Cash",
         number: value.number,
@@ -42,8 +42,10 @@ export async function GET() {
       callUserData(`client_payment_reviews?select=*&client_user_id=eq.${filter}&order=created_at.desc&limit=200`, "GET", token),
     ]);
     if (![invoices, declarations, reviews].every(x => x.ok)) return fail(502, "Impossible de charger vos factures et déclarations.");
+    const invoiceRows = Array.isArray(invoices.data) ? invoices.data : [];
     return NextResponse.json({
-      invoices: Array.isArray(invoices.data) ? invoices.data : [],
+      invoices: invoiceRows,
+      paymentChannels: invoiceRows.length > 0 ? getPaymentChannels() : {},
       declarations: Array.isArray(declarations.data) ? declarations.data : [],
       reviews: Array.isArray(reviews.data) ? reviews.data : [],
     });
