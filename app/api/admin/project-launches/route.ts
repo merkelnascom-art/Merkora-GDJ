@@ -139,7 +139,9 @@ export async function POST(request: Request) {
       saved: true,
       launch,
       statusUpdated: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0,
-      message: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0\n        ? "Le lancement officiel est enregistré. Le client peut maintenant voir la confirmation dans son espace."\n        : "Le lancement officiel est enregistré et visible du client. Le statut administratif du dossier n’a pas pu être actualisé automatiquement.",
+      message: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0
+        ? "Le lancement officiel est enregistré. Le client peut maintenant voir la confirmation dans son espace."
+        : "Le lancement officiel est enregistré et visible du client. Le statut administratif du dossier n’a pas pu être actualisé automatiquement.",
     });
   } catch {
     return fail(503, "Le service de lancement est momentanément indisponible.");
