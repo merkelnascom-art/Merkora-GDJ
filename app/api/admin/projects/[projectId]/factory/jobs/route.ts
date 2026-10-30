@@ -94,7 +94,10 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       requested_by: user.id, authorized_by: user.id,
       approval_ids: exactApprovalRows.map((approval) => approval.id), correlation_id: body.correlationId,
     }, "return=representation");
-    if (!jobResult.ok) return NextResponse.json({ error: "La base a refusé la création du travail. Vérifiez les trois validations et réessayez." }, { status: jobResult.status === 403 ? 403 : 502 });
+    if (!jobResult.ok) return NextResponse.json(
+      { error: jobResult.status === 409 ? "Un travail existe déjà pour cet identifiant de corrélation." : "La base a refusé la création du travail. Vérifiez les trois validations et réessayez." },
+      { status: jobResult.status === 403 ? 403 : jobResult.status === 409 ? 409 : 502 },
+    );
     const job = Array.isArray(jobResult.data) ? jobResult.data[0] : null;
     if (!isRecord(job) || typeof job.id !== "string") {
       return NextResponse.json({ error: "Le travail a été créé, mais son identifiant n'a pas été retourné. Vérification administrateur nécessaire." }, { status: 502 });
