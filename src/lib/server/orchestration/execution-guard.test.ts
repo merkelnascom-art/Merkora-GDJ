@@ -38,7 +38,7 @@ describe("execution guard", () => {
       code: null,
       occurredAt: "2026-10-31T14:00:00.000Z",
     });
-    const events: ExecutionAuditEvent[] = guard.listAuditEvents("project-1");
+    const events: readonly ExecutionAuditEvent[] = guard.listAuditEvents("project-1");
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       projectId: "project-1",
