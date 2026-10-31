@@ -17,7 +17,8 @@ describe("project execution planner", () => {
       connections,
     });
 
-    expect(plan.selectedProviders).toEqual(["figma", "github", "openai", "supabase"]);
+    expect(plan.selectedProviders).toEqual(["figma", "github", "supabase"]);
+    expect(plan.selectedProviders).not.toContain("openai");
     expect(plan.blockedCapabilities).toContain("previews.create");
     expect(plan.tasks.map((task) => task.id)).toContain("prepare_delivery");
   });
