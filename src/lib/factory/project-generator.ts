@@ -31,7 +31,7 @@ function requiredText(value: unknown, field: string, maxLength: number): string 
 
 function safeModuleId(value: unknown): string {
   if (typeof value !== "string" || value.length > 50 ||
-    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) {
+    !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(value)) {
     throw new Error("Identifiant de module invalide.");
   }
   return value;
