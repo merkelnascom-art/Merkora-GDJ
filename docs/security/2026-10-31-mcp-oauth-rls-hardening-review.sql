@@ -34,7 +34,7 @@ BEGIN
     claims := jsonb_set(
       claims,
       '{aud}',
-      to_jsonb('https://REPLACE-WITH-VERIFIED-MERKORA-DOMAIN/api/mcp'::text),
+      jsonb_build_array('authenticated', 'https://REPLACE-WITH-VERIFIED-MERKORA-DOMAIN/api/mcp'),
       true
     );
   END IF;
