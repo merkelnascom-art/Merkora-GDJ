@@ -45,10 +45,26 @@ describe("transitionWorkflow", () => {
     });
   });
 
-  it("marks delivery completed only through the delivery stage", () => {
-    const result = transitionWorkflow(active("delivery_approval"), "delivery_completed");
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.workflow.status).toBe("completed");
+  it("requires an explicit delivery approval before completing delivery", () => {
+    expect(transitionWorkflow(active("delivery_approval"), "delivery_completed")).toEqual({
+      ok: false,
+      reason: "invalid_transition",
+    });
+    const approved = transitionWorkflow(active("delivery_approval"), "delivery_approved");
+    expect(approved.ok).toBe(true);
+    if (!approved.ok) return;
+    expect(transitionWorkflow(approved.workflow, "delivery_completed")).toEqual({
+      ok: true,
+      workflow: { ...active("delivery_approved"), status: "completed", version: 2, stage: "delivered" },
+    });
+  });
+
+  it("requires a separate transition into the test stage", () => {
+    const started = transitionWorkflow(active("implementation"), "tests_started");
+    expect(started).toEqual({
+      ok: true,
+      workflow: { ...active("implementation"), stage: "tests", version: 1 },
+    });
   });
 
   it("rejects malformed records", () => {
