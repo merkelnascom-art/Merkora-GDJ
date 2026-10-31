@@ -40,7 +40,7 @@ const directionLabels: Record<string, string> = {
   inbound: "Outil → MerKora",
 };
 
-const transportLabels: Record<string, string> = {
+const workspaceLabels: Record<string, string> = {\n  client: "Espace client",\n  admin: "Administration",\n  assistant: "Copilote IA",\n  studio_visuel: "Studio visuel",\n  fabrique: "Fabrique de projets",\n  creation_media: "Création média",\n};\n\nconst transportLabels: Record<string, string> = {
   oauth: "OAuth",
   rest_api: "API REST",
   mcp: "MCP",
@@ -112,7 +112,7 @@ export default function AdminIntegrationsPage() {
                       {item.directions.map((direction) => <span key={direction} style={{ fontSize: 10, color: "#175c49", background: "#e8f5f0", padding: "5px 7px", borderRadius: 6 }}>{directionLabels[direction]}</span>)}
                     </div>
                     {item.verificationRequired && <p style={{ fontSize: 12, color: "#8a5a00", background: "#fff8e8", padding: 9, borderRadius: 9 }}>Vérification préalable requise</p>}
-                    <p style={{ fontSize: 13, lineHeight: 1.5 }}>{item.connectionNotes}</p>
+                    <p style={{ fontSize: 13, lineHeight: 1.5 }}>{item.connectionNotes}</p>\n                    <p style={{ fontSize: 11, color: "#667085", margin: "12px 0 6px", fontWeight: 700 }}>ESPACES MERKORA CONCERNÉS</p>\n                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>\n                      {(item.workspaces ?? []).map((workspace) => <span key={workspace} style={{ fontSize: 10, color: "#175c49", background: "#e8f5f0", padding: "5px 7px", borderRadius: 6 }}>{workspaceLabels[workspace] ?? workspace}</span>)}\n                    </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
                       {item.capabilities.map((capability) => <span key={capability} style={{ fontSize: 10, color: "#5550a8", background: "#f0efff", padding: "5px 7px", borderRadius: 6 }}>{capability}</span>)}
                     </div>
