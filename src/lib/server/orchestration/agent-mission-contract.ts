@@ -52,13 +52,28 @@ export type AgentMissionResult = {
 const ROLES = new Set<AgentMissionRole>([
   "analyst", "architect", "implementer", "reviewer", "tester", "cross_checker",
 ]);
+const FINDING_SEVERITIES = new Set(["info", "warning", "critical"]);
+const ARTIFACT_KINDS = new Set(["patch", "document", "test_report", "design", "deployment_reference"]);
+const RESULT_STATUSES = new Set(["completed", "blocked", "failed"]);
 
-function requiredText(value: string, label: string, maxLength: number): string {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requiredText(value: unknown, label: string, maxLength: number): string {
+  if (typeof value !== "string") throw new Error(`${label} must be text.`);
   const normalized = value.trim();
   if (!normalized || normalized.length > maxLength) {
     throw new Error(`${label} must be non-empty and within its length limit.`);
   }
   return normalized;
+}
+
+function boundedTextList(value: unknown, label: string, maxItems = 100, maxLength = 240): string[] {
+  if (!Array.isArray(value) || value.length > maxItems) {
+    throw new Error(`${label} must be a bounded list.`);
+  }
+  return value.map((item) => requiredText(item, label, maxLength));
 }
 
 function uniqueReferences(values: readonly string[], label: string): string[] {
@@ -104,41 +119,76 @@ export function createAgentMissionEnvelope(input: {
 }
 
 /**
- * Validates that a returned result belongs to the exact mission and has a
- * complete, bounded shape. This does not prove that claims or artifacts are true:
- * independent verification is a separate workflow stage.
+ * Validates untrusted provider JSON at runtime. Contract typing alone is not a
+ * runtime security boundary. This validates shape and scope, not truthfulness:
+ * independent verification remains a separate workflow stage.
  */
 export function validateAgentMissionResult(
   mission: Pick<AgentMissionEnvelope, "missionId" | "projectId">,
-  result: AgentMissionResult,
+  value: unknown,
 ): AgentMissionResult {
-  if (result.contractVersion !== 1) throw new Error("Unsupported mission result contract.");
-  if (result.missionId !== mission.missionId || result.projectId !== mission.projectId) {
+  if (!isRecord(value)) throw new Error("Mission result must be an object.");
+  if (value.contractVersion !== 1) throw new Error("Unsupported mission result contract.");
+  if (value.missionId !== mission.missionId || value.projectId !== mission.projectId) {
     throw new Error("Mission result scope mismatch.");
   }
-  requiredText(result.providerId, "Provider identifier", 100);
-  requiredText(result.summary, "Result summary", 4_000);
-  if (result.findings.length > 100 || result.artifacts.length > 50) {
-    throw new Error("Mission result collection limit exceeded.");
+
+  const providerId = requiredText(value.providerId, "Provider identifier", 100);
+  const summary = requiredText(value.summary, "Result summary", 4_000);
+  if (typeof value.status !== "string" || !RESULT_STATUSES.has(value.status)) {
+    throw new Error("Invalid mission result status.");
   }
-  for (const finding of result.findings) {
-    requiredText(finding.title, "Finding title", 240);
-    requiredText(finding.detail, "Finding detail", 4_000);
+  if (typeof value.requiresHumanDecision !== "boolean") {
+    throw new Error("Invalid human-decision flag.");
   }
-  for (const artifact of result.artifacts) {
-    requiredText(artifact.reference, "Artifact reference", 1_000);
+  if (!Array.isArray(value.findings) || value.findings.length > 100) {
+    throw new Error("Mission findings must be a bounded list.");
   }
-  for (const list of [
-    result.verification.performed,
-    result.verification.passed,
-    result.verification.failed,
-    result.verification.notPerformed,
-  ]) {
-    if (list.length > 100) throw new Error("Verification list limit exceeded.");
-    for (const item of list) requiredText(item, "Verification entry", 240);
+  const findings = value.findings.map((finding) => {
+    if (!isRecord(finding) || typeof finding.severity !== "string" || !FINDING_SEVERITIES.has(finding.severity)) {
+      throw new Error("Invalid mission finding.");
+    }
+    return {
+      severity: finding.severity as "info" | "warning" | "critical",
+      title: requiredText(finding.title, "Finding title", 240),
+      detail: requiredText(finding.detail, "Finding detail", 4_000),
+    };
+  });
+
+  if (!Array.isArray(value.artifacts) || value.artifacts.length > 50) {
+    throw new Error("Mission artifacts must be a bounded list.");
   }
-  if (result.status === "completed" && result.verification.failed.length > 0) {
+  const artifacts = value.artifacts.map((artifact) => {
+    if (!isRecord(artifact) || typeof artifact.kind !== "string" || !ARTIFACT_KINDS.has(artifact.kind)) {
+      throw new Error("Invalid mission artifact.");
+    }
+    return {
+      kind: artifact.kind as "patch" | "document" | "test_report" | "design" | "deployment_reference",
+      reference: requiredText(artifact.reference, "Artifact reference", 1_000),
+    };
+  });
+
+  if (!isRecord(value.verification)) throw new Error("Mission verification is required.");
+  const verification = {
+    performed: boundedTextList(value.verification.performed, "Verification entry"),
+    passed: boundedTextList(value.verification.passed, "Verification entry"),
+    failed: boundedTextList(value.verification.failed, "Verification entry"),
+    notPerformed: boundedTextList(value.verification.notPerformed, "Verification entry"),
+  };
+  if (value.status === "completed" && verification.failed.length > 0) {
     throw new Error("A result with failed verification cannot be marked completed.");
   }
-  return result;
+
+  return {
+    contractVersion: 1,
+    missionId: mission.missionId,
+    projectId: mission.projectId,
+    providerId,
+    status: value.status as "completed" | "blocked" | "failed",
+    summary,
+    findings,
+    artifacts,
+    verification,
+    requiresHumanDecision: value.requiresHumanDecision,
+  };
 }
