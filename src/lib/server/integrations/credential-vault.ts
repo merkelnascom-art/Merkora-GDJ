@@ -14,8 +14,8 @@ export type CredentialContext = Readonly<{
   providerId: string;
 }>;
 
-function readKey(getKey: () => string | undefined): Buffer {
-  const encoded = getKey();
+function readKey(getKey: (keyId?: string) => string | undefined, keyId?: string): Buffer {
+  const encoded = getKey(keyId);
   if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) {
     throw new Error("Credential encryption is not configured");
   }
@@ -49,7 +49,7 @@ function associatedData(keyId: string, context: CredentialContext): Buffer {
   ]), "utf8");
 }
 
-export function createCredentialVault(getKey: () => string | undefined) {
+export function createCredentialVault(getKey: (keyId?: string) => string | undefined) {
   return {
     seal(plaintext: string, context: CredentialContext): string {
       if (typeof plaintext !== "string" || plaintext.length === 0) {
@@ -87,7 +87,7 @@ export function createCredentialVault(getKey: () => string | undefined) {
         throw new Error("Invalid credential envelope");
       }
 
-      const key = readKey(getKey);
+      const key = readKey(getKey, keyId);
       const expectedKeyId = createHash("sha256").update(key).digest("hex").slice(0, 12);
       if (keyId !== expectedKeyId) {
         throw new Error("Unable to decrypt credential");
