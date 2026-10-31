@@ -363,8 +363,12 @@ export async function POST(
     const finalJob = await patchJob(projectId, jobId, token, {
       status: finalStatus, manifest, updated_at: new Date().toISOString(),
     });
-    if (!finalJob.ok) {
-      return NextResponse.json({ error: "Les artefacts sont enregistrés, mais le statut final du travail doit être réconcilié.", jobId }, { status: 502 });
+    if (!finalJob.ok || rows(finalJob.data).length !== 1) {
+      return NextResponse.json({
+        error: "Les artefacts sont enregistrés, mais le statut final du travail n'a pas été confirmé en base. Réconciliation administrateur requise.",
+        stage: "final_job_status_persistence",
+        jobId,
+      }, { status: 502 });
     }
     finalized = true;
 
