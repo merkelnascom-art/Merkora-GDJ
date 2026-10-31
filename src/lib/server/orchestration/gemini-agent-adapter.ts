@@ -14,7 +14,7 @@ type GeminiGenerateContentPayload = {
 };
 
 type GeminiAgentAdapterOptions = {
-  getApiKey: () => string | undefined;
+  getApiKey: (connection: AgentInvocation["connection"]) => string | undefined;
   models: Readonly<Record<string, string>>;
   fetcher?: typeof fetch;
 };
@@ -51,7 +51,7 @@ export function createGeminiAgentAdapter(
     providerId: "gemini",
     invocationCapability: "models.generate",
     async invoke(input: AgentInvocation): Promise<AgentMissionResult> {
-      const apiKey = options.getApiKey()?.trim();
+      const apiKey = options.getApiKey(input.connection)?.trim();
       if (!apiKey) throw new Error("Gemini server credential is not configured.");
       const model = options.models[input.modelAlias];
       if (!model || !/^[A-Za-z0-9._-]{1,120}$/.test(model)) {
