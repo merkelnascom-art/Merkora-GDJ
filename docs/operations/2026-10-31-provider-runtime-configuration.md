@@ -5,7 +5,7 @@ Statut: documentation de configuration — aucun secret ajouté et aucun appel f
 
 ## Objectif
 
-Le module `src/lib/server/orchestration/provider-runtime.ts` enregistre uniquement les fournisseurs qui disposent à la fois :
+Le module `src/lib/server/orchestration/provider-runtime.ts` reste totalement désactivé tant que `MERKORA_AGENT_RUNTIME_ENABLED` n'est pas exactement `true`. Lorsqu'il est activé, il enregistre uniquement les fournisseurs qui disposent à la fois :
 1. d'une clé API présente dans l'environnement serveur ;
 2. d'au moins un identifiant de modèle explicitement autorisé par configuration serveur.
 
@@ -19,7 +19,7 @@ La construction du runtime ne lance aucun appel réseau. Les identifiants de mod
 | Anthropic | `ANTHROPIC_API_KEY` | `MERKORA_ANTHROPIC_MODEL_FAST`, `MERKORA_ANTHROPIC_MODEL_BALANCED`, `MERKORA_ANTHROPIC_MODEL_DEEP`, `MERKORA_ANTHROPIC_MODEL_REVIEW` |
 | Google Gemini | `GEMINI_API_KEY` | `MERKORA_GEMINI_MODEL_FAST`, `MERKORA_GEMINI_MODEL_BALANCED`, `MERKORA_GEMINI_MODEL_DEEP`, `MERKORA_GEMINI_MODEL_REVIEW` |
 
-Les valeurs doivent être des noms de modèles réellement disponibles pour le compte fournisseur et validés par l'administrateur. Aucun identifiant de modèle n'est présumé ni fixé dans le code.
+Les valeurs doivent être des noms de modèles réellement disponibles pour le compte fournisseur et validés par l'administrateur. Aucun identifiant de modèle n'est présumé ni fixé dans le code. Le commutateur global doit rester `false` tant que les contrôles de production ne sont pas prêts.
 
 ## Installation sûre
 
