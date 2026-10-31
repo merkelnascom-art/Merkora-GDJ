@@ -67,8 +67,11 @@ export function createAgentRuntime(adapters: readonly AgentRuntimeAdapter[]) {
           modelAlias: input.modelAlias,
           timeoutMs: input.timeoutMs,
         });
-      } catch {
+      } catch (error) {
         // Never return provider exception text: it may contain prompts or secrets.
+        if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
+          return { ok: false, code: "TIMEOUT" };
+        }
         return { ok: false, code: "PROVIDER_ERROR" };
       }
 
