@@ -86,7 +86,7 @@ describe("agent mission contract", () => {
         kind: "document" as const,
         reference: `artifact://${index}`,
       })),
-    })).toThrow("Mission result collection limit exceeded.");
+    })).toThrow("Mission artifacts must be a bounded list.");
   });
   it("rejects malformed provider JSON instead of trusting its TypeScript shape", () => {
     expect(() => validateAgentMissionResult(missionInput, null)).toThrow("Mission result must be an object.");
