@@ -6,7 +6,7 @@ vi.mock("@/lib/server/supabase-rest", () => ({
   callUserData: vi.fn(), getAccessToken: vi.fn(), getCurrentUser: vi.fn(), isSameOrigin: vi.fn(),
 }));
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
+import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 import { GET, POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
