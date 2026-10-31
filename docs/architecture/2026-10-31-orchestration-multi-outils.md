@@ -1,7 +1,7 @@
 # MerKora GDJ — Architecture d'orchestration multi-outils
 Date: 2026-10-31
 Statut: fondation de conception à implémenter progressivement
-Branche: `feature/merkora-orchestration-foundation`
+Branche: `feature/merkora-orchestration-v1`
 
 ## 1. Vision produit
 
