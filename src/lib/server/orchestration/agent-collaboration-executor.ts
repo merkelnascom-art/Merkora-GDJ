@@ -76,6 +76,25 @@ export async function executeAgentCollaboration(input: {
       continue;
     }
 
+    const connection = connectionByProvider.get(assignment.providerId);
+    if (!connection || connection.status !== "connected") {
+      invocations.push({ ...base, outcome: { ok: false, code: "NOT_CONNECTED" } });
+      blockedRoles.push(assignment.role);
+      continue;
+    }
+    if (!connection.capabilities.includes(assignment.capability)) {
+      invocations.push({ ...base, outcome: { ok: false, code: "CAPABILITY_MISSING" } });
+      blockedRoles.push(assignment.role);
+      continue;
+    }
+
+    const modelAlias = input.modelAliases[assignment.providerId];
+    if (!modelAlias) {
+      invocations.push({ ...base, outcome: { ok: false, code: "PROVIDER_ERROR" } });
+      blockedRoles.push(assignment.role);
+      continue;
+    }
+
     let reserved = false;
     try {
       reserved = await input.reserveBudget(base);
@@ -84,20 +103,6 @@ export async function executeAgentCollaboration(input: {
     }
     if (!reserved) {
       invocations.push({ ...base, outcome: { ok: false, code: "BUDGET_NOT_RESERVED" } });
-      blockedRoles.push(assignment.role);
-      continue;
-    }
-
-    const connection = connectionByProvider.get(assignment.providerId);
-    if (!connection || !connection.capabilities.includes(assignment.capability)) {
-      invocations.push({ ...base, outcome: { ok: false, code: "NOT_CONNECTED" } });
-      blockedRoles.push(assignment.role);
-      continue;
-    }
-
-    const modelAlias = input.modelAliases[assignment.providerId];
-    if (!modelAlias) {
-      invocations.push({ ...base, outcome: { ok: false, code: "PROVIDER_ERROR" } });
       blockedRoles.push(assignment.role);
       continue;
     }
