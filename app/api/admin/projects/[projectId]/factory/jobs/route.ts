@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
+import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -133,3 +133,36 @@ export async function POST(request: Request, context: RouteContext) {
     executionStarted: false,
   });
 }
+
+export async function GET(_request: Request, context: RouteContext) {
+  const user = await getCurrentUser();
+  if (!user) return jsonError("Authentification requise.", 401);
+
+  const { projectId } = await context.params;
+  if (!projectId || projectId.length > 160) return jsonError("Projet invalide.", 400);
+
+  // Existing Supabase RLS exposes these records only to the project owner or a MerKora admin.
+  const jobsResult = await callUserData<Row[]>("project_factory_jobs", "GET", {
+    select: "*",
+    project_id: `eq.${projectId}`,
+    order: "created_at.desc",
+    limit: "25",
+  });
+  if (!jobsResult.ok) return jsonError("Impossible de charger l'historique de fabrication.", jobsResult.status >= 500 ? 503 : 403);
+
+  const tasksResult = await callUserData<Row[]>("project_factory_tasks", "GET", {
+    select: "*",
+    project_id: `eq.${projectId}`,
+    order: "created_at.asc",
+    limit: "200",
+  });
+  if (!tasksResult.ok) return jsonError("Impossible de charger les tâches de fabrication.", tasksResult.status >= 500 ? 503 : 403);
+
+  return NextResponse.json({
+    jobs: Array.isArray(jobsResult.data) ? jobsResult.data : [],
+    tasks: Array.isArray(tasksResult.data) ? tasksResult.data : [],
+  }, {
+    headers: { "Cache-Control": "private, no-store, max-age=0" },
+  });
+}
+
