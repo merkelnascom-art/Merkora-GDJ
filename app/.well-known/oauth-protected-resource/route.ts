@@ -4,7 +4,7 @@ import { createMcpProtectedResourceMetadata } from "@/lib/mcp/oauth-resource";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const resourceUrl = process.env.MERKORA_MCP_RESOURCE_URL;
   if (!supabaseUrl || !resourceUrl) {
