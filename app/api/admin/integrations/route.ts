@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { listIntegrationCatalog } from "@/lib/integrations/catalog";
+import { getProviderWorkspaces } from "@/lib/integrations/workspace-map";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { integrations: listIntegrationCatalog() },
+    { integrations: listIntegrationCatalog().map((integration) => ({ ...integration, workspaces: getProviderWorkspaces(integration.id) })) },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
 }
