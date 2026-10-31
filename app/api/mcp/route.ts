@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MERKORA_MCP_TOOLS } from "@/lib/mcp/tools";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ type JsonRpcRequest = {
   params?: unknown;
 };
 
-type AuthenticatedUser = { id: string; email: string };
+type AuthenticatedUser = { id: string; email: string | null };
 
 function rpcResult(id: unknown, result: unknown) {
   return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
@@ -40,8 +41,8 @@ async function authenticate(request: Request): Promise<AuthenticatedUser | null>
     });
     if (!response.ok) return null;
     const user = await response.json();
-    if (!user || typeof user.id !== "string" || typeof user.email !== "string") return null;
-    return { id: user.id, email: user.email };
+    if (!user || typeof user.id !== "string") return null;
+    return { id: user.id, email: typeof user.email === "string" ? user.email : null };
   } catch {
     return null;
   }
@@ -70,29 +71,6 @@ async function fetchOwnProjects(request: Request, user: AuthenticatedUser, proje
   if (!Array.isArray(rows)) throw new Error("MCP_PROJECT_READ_FAILED");
   return rows;
 }
-
-const TOOLS = [
-  {
-    name: "merkora_get_profile",
-    description: "Retourne le profil de l'utilisateur authentifié dans MerKora.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
-  },
-  {
-    name: "merkora_list_projects",
-    description: "Liste les projets appartenant à l'utilisateur authentifié (lecture seule).",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
-  },
-  {
-    name: "merkora_get_project",
-    description: "Lit un projet appartenant à l'utilisateur authentifié (lecture seule).",
-    inputSchema: {
-      type: "object",
-      properties: { project_id: { type: "string", minLength: 1, maxLength: 160 } },
-      required: ["project_id"],
-      additionalProperties: false,
-    },
-  },
-];
 
 export async function GET() {
   return NextResponse.json({ name: "merkora-mcp", protocolVersion: MCP_PROTOCOL_VERSION, transport: "streamable-http", status: "available" });
@@ -136,7 +114,7 @@ export async function POST(request: Request) {
   if (message.method === "ping") return rpcResult(id, {});
 
   if (message.method === "tools/list") {
-    return rpcResult(id, { tools: TOOLS });
+    return rpcResult(id, { tools: MERKORA_MCP_TOOLS });
   }
 
   if (message.method === "tools/call") {
