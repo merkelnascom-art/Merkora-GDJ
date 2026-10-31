@@ -92,12 +92,11 @@ export async function POST(request: Request, context: RouteContext) {
       plan_digest: plan.payload_digest,
       scope_digest: plan.scope_digest,
       status: "queued",
-      manifest: { taskKeys: TASKS.map((task) => task.task_key), executionStarted: false },
+      manifest: { taskKeys: TASKS.map((task) => task.task_key), executionStarted: false, sourceApprovalRequestId: requestId },
       requested_by: access.user.id,
       authorized_by: access.user.id,
       approval_ids: approvalIds,
       correlation_id: input.correlationId,
-      ...(requestId ? { request_id: requestId } : {}),
     },
   );
   if (!jobResult.ok) {
@@ -121,7 +120,7 @@ export async function POST(request: Request, context: RouteContext) {
     // Keep a visible, recoverable record instead of deleting the job or hiding a partial failure.
     await callUserData("project_factory_jobs", "PATCH", { id: `eq.${job.id}` }, {
       status: "blocked",
-      manifest: { taskKeys: TASKS.map((task) => task.task_key), executionStarted: false, provisioningError: "task_creation_incomplete" },
+      manifest: { taskKeys: TASKS.map((task) => task.task_key), executionStarted: false, sourceApprovalRequestId: requestId, provisioningError: "task_creation_incomplete" },
     });
     return jsonError("La demande existe mais ses tâches n'ont pas toutes été créées. Elle a été bloquée pour reprise administrative.", 502, { jobId: job.id });
   }
