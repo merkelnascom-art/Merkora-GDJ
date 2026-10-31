@@ -39,7 +39,7 @@ describe("Gemini agent adapter", () => {
       models: { reviewer: "gemini-approved-model" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).resolves.toEqual(result);
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "gemini" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).resolves.toEqual(result);
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("/models/gemini-approved-model:generateContent");
     expect(new Headers(init.headers).get("x-goog-api-key")).toBe("server-secret");
@@ -55,7 +55,7 @@ describe("Gemini agent adapter", () => {
       models: { reviewer: "gemini-approved-model" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "gemini" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("Gemini agent adapter", () => {
       models: { reviewer: "gemini-approved-model" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "unknown-model", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "gemini" }, mission, modelAlias: "unknown-model", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -79,6 +79,6 @@ describe("Gemini agent adapter", () => {
       models: { reviewer: "gemini-approved-model" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "gemini" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
   });
 });
