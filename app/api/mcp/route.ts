@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
 import { validateMcpHttpRequest, MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
 import { createMcpUnauthorizedHeaders } from "@/lib/mcp/oauth-resource";
+import { getOAuthClientIdFromAccessToken } from "@/lib/mcp/oauth-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ type JsonRpcRequest = {
   params?: unknown;
 };
 
-type AuthenticatedUser = { id: string; email: string | null };
+type AuthenticatedUser = { id: string; email: string | null; clientId: string };
 
 function rpcResult(id: unknown, result: unknown) {
   return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { "MCP-Protocol-Version": MERKORA_MCP_PROTOCOL_VERSION } });
@@ -34,6 +35,8 @@ async function authenticate(request: Request): Promise<AuthenticatedUser | null>
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!token || !url || !key) return null;
+  const oauthClientId = getOAuthClientIdFromAccessToken(token);
+  if (!oauthClientId) return null;
 
   try {
     const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
@@ -43,7 +46,7 @@ async function authenticate(request: Request): Promise<AuthenticatedUser | null>
     if (!response.ok) return null;
     const user = await response.json();
     if (!user || typeof user.id !== "string") return null;
-    return { id: user.id, email: typeof user.email === "string" ? user.email : null };
+    return { id: user.id, email: typeof user.email === "string" ? user.email : null, clientId: oauthClientId };
   } catch {
     return null;
   }
