@@ -26,7 +26,7 @@ Set `MERKORA_MCP_RESOURCE_URL` to the exact public HTTPS MCP endpoint URL in eac
 2. The client discovers Supabase Auth OAuth metadata and performs authorization-code + PKCE.
 3. The user signs in to MerKora and explicitly approves the requesting client in the configured consent UI.
 4. Supabase Auth issues an access token.
-5. MerKora validates the token through Supabase Auth's `/auth/v1/user` endpoint.
+5. MerKora requires the OAuth `client_id` claim and an `aud` claim bound to the exact canonical MCP resource URL, then validates the same token through Supabase Auth's `/auth/v1/user` endpoint. The local claim parser is not treated as signature verification.
 6. MerKora forwards the same user access token to PostgREST. No service-role key is used.
 7. The query also filters `user_projects.user_id` to the authenticated user ID; RLS remains active as a second enforcement layer.
 
@@ -41,6 +41,12 @@ Set `MERKORA_MCP_RESOURCE_URL` to the exact public HTTPS MCP endpoint URL in eac
 
 Other project-memory tables also have owner/admin read policies, but they are not exposed as MCP tools. Admin privileges do not broaden MCP queries because the explicit `user_id` filter remains in place.
 
+## Token audience binding requirement
+
+Supabase OAuth access tokens include a `client_id` claim, but the default `aud` is `authenticated`. MerKora therefore rejects these tokens for MCP use until the Supabase Custom Access Token Hook sets `aud` to the exact canonical MCP resource URL (for example, `https://merkora.com/api/mcp`) for the approved OAuth client(s). The route checks both the OAuth client claim and exact resource audience before validating the token with Supabase Auth.
+
+This is intentional fail-closed behavior: an OAuth token that is valid for Supabase generally is not automatically valid for the MerKora MCP resource. Configure and test the hook in a non-production environment first. Do not use user-editable metadata to decide authorization. The hook should distinguish OAuth issuance using the trusted `client_id` / `authentication_method` context and preserve safe defaults for ordinary user sessions.
+
 ## Required dashboard configuration before real client connections
 
 These actions have deliberately NOT been performed:
@@ -49,8 +55,9 @@ These actions have deliberately NOT been performed:
 2. Configure the authorization path to the MerKora consent screen.
 3. Decide whether dynamic client registration is enabled. If enabled, monitor registrations and require user approval.
 4. Configure exact HTTPS redirect URIs / trusted client settings according to the MCP clients' current official setup requirements.
-5. Confirm the project uses asymmetric JWT signing if OIDC ID tokens are requested.
-6. Test the complete authorization, refresh, revocation, and cross-user isolation flow on a preview environment before production.
+5. Configure a Custom Access Token Hook that sets the OAuth token audience to the exact MCP resource URL for approved clients; ordinary session tokens must not receive this audience.
+6. Confirm the project uses asymmetric JWT signing if OIDC ID tokens are requested.
+7. Test the complete authorization, refresh, revocation, audience rejection, and cross-user isolation flow on a preview environment before production.
 
 A first consent screen now exists at `/oauth/consent`. It displays the OAuth client name, redirect URI, requested OAuth scopes, and the precise read-only MerKora data currently exposed by MCP, with explicit approve/deny controls. The login page safely returns users to the pending consent request. The complete flow still requires Supabase OAuth 2.1 to be enabled, the authorization path to be configured, and a real client to be registered or dynamically registered. Grant listing/revocation UI remains to be built and tested.
 
