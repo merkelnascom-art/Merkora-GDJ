@@ -73,8 +73,9 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
       requested_by: user.id, authorized_by: user.id,
     });
     expect(calls[4][0]).toBe("project_factory_tasks");
-    expect(calls[4][3]).toHaveLength(5);
-    expect(calls[4][3][1]).toMatchObject({ task_key: "generate_application", dependencies: ["prepare_specification"] });
+    const tasksPayload = calls[4][3] as Array<Record<string, unknown>>;
+    expect(tasksPayload).toHaveLength(5);
+    expect(tasksPayload[1]).toMatchObject({ task_key: "generate_application", dependencies: ["prepare_specification"] });
   });
 
   it("does not create a second job for an existing correlation id", async () => {
