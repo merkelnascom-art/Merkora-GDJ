@@ -74,7 +74,7 @@ async function fetchOwnProjects(request: Request, user: AuthenticatedUser, proje
 }
 
 export async function GET() {
-  return NextResponse.json({ name: "merkora-mcp", protocolVersion: MCP_PROTOCOL_VERSION, transport: "streamable-http", status: "available" });
+  return new Response(null, { status: 405, headers: { Allow: "POST" } });
 }
 
 export async function POST(request: Request) {
