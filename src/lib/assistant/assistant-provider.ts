@@ -57,6 +57,7 @@ function parseReply(value: unknown): ExternalReply | null {
 export async function completeWithExternalAssistant(input: CompleteInput): Promise<CompleteResult> {
   const authorization = authorizeExternalAssistant(input.config, input.authorization);
   if (!authorization.allowed) return { ok: false, reason: authorization.reason };
+  if (input.config.status !== "ready") return { ok: false, reason: "not_configured" };
   if (input.message.trim().length < 1 || input.message.length > 5000 ||
     !Array.isArray(input.history) || input.history.length > 12) {
     return { ok: false, reason: "invalid_input" };
