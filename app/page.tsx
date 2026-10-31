@@ -13,7 +13,9 @@ import {
   type Recommendation,
 } from "@/lib/solution-recommendations";
 
-type AiChatMessage = { role: "user" | "assistant"; content: string };\ntype FactoryJob = { id: string; status: string; plan_version?: number; created_at?: string; manifest?: Record<string, unknown> };\ntype FactoryTask = { id: string; job_id: string; task_key: string; state: string; dependencies?: string[] };
+type AiChatMessage = { role: "user" | "assistant"; content: string };
+type FactoryJob = { id: string; status: string; plan_version?: number; created_at?: string; manifest?: Record<string, unknown> };
+type FactoryTask = { id: string; job_id: string; task_key: string; state: string; dependencies?: string[] };
 
 type Project = NeedInput & {
   id: string;
@@ -71,7 +73,11 @@ export default function HomePage() {
   const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
   const [aiInput, setAiInput] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
-  const [aiError, setAiError] = useState("");\n  const [factoryJobs, setFactoryJobs] = useState<FactoryJob[]>([]);\n  const [factoryTasks, setFactoryTasks] = useState<FactoryTask[]>([]);\n  const [factoryLoading, setFactoryLoading] = useState(false);\n  const [factoryError, setFactoryError] = useState("");
+  const [aiError, setAiError] = useState("");
+  const [factoryJobs, setFactoryJobs] = useState<FactoryJob[]>([]);
+  const [factoryTasks, setFactoryTasks] = useState<FactoryTask[]>([]);
+  const [factoryLoading, setFactoryLoading] = useState(false);
+  const [factoryError, setFactoryError] = useState("");
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
