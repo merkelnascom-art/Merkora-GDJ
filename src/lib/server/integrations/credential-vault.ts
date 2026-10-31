@@ -1,0 +1,96 @@
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto";
+
+const VERSION = "v1";
+const ALGORITHM = "aes-256-gcm";
+const AAD_PREFIX = "merkora-credential:v1:";
+
+function readKey(getKey: () => string | undefined): Buffer {
+  const encoded = getKey();
+  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) {
+    throw new Error("Credential encryption is not configured");
+  }
+
+  const key = Buffer.from(encoded, "base64");
+  if (key.length !== 32 || key.toString("base64") !== encoded) {
+    throw new Error("Credential encryption is not configured");
+  }
+  return key;
+}
+
+function decodePart(value: string): Buffer {
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error("Invalid credential envelope");
+  }
+  return Buffer.from(value, "base64url");
+}
+
+export function createCredentialVault(getKey: () => string | undefined) {
+  return {
+    seal(plaintext: string): string {
+      if (typeof plaintext !== "string" || plaintext.length === 0) {
+        throw new Error("Credential must be a non-empty string");
+      }
+
+      const key = readKey(getKey);
+      const keyId = createHash("sha256").update(key).digest("hex").slice(0, 12);
+      const nonce = randomBytes(12);
+      const cipher = createCipheriv(ALGORITHM, key, nonce);
+      cipher.setAAD(Buffer.from(AAD_PREFIX + keyId, "utf8"));
+      const ciphertext = Buffer.concat([
+        cipher.update(plaintext, "utf8"),
+        cipher.final(),
+      ]);
+      const tag = cipher.getAuthTag();
+
+      return [
+        VERSION,
+        keyId,
+        nonce.toString("base64url"),
+        tag.toString("base64url"),
+        ciphertext.toString("base64url"),
+      ].join(".");
+    },
+
+    open(envelope: string): string {
+      const parts = envelope.split(".");
+      if (parts.length !== 5 || parts[0] !== VERSION) {
+        throw new Error("Invalid credential envelope");
+      }
+
+      const [, keyId, noncePart, tagPart, ciphertextPart] = parts;
+      if (!/^[a-f0-9]{12}$/.test(keyId)) {
+        throw new Error("Invalid credential envelope");
+      }
+
+      const key = readKey(getKey);
+      const expectedKeyId = createHash("sha256").update(key).digest("hex").slice(0, 12);
+      if (keyId !== expectedKeyId) {
+        throw new Error("Unable to decrypt credential");
+      }
+
+      try {
+        const nonce = decodePart(noncePart);
+        const tag = decodePart(tagPart);
+        const ciphertext = decodePart(ciphertextPart);
+        if (nonce.length !== 12 || tag.length !== 16 || ciphertext.length === 0) {
+          throw new Error("Invalid credential envelope");
+        }
+
+        const decipher = createDecipheriv(ALGORITHM, key, nonce);
+        decipher.setAAD(Buffer.from(AAD_PREFIX + keyId, "utf8"));
+        decipher.setAuthTag(tag);
+        return Buffer.concat([
+          decipher.update(ciphertext),
+          decipher.final(),
+        ]).toString("utf8");
+      } catch {
+        throw new Error("Unable to decrypt credential");
+      }
+    },
+  };
+}

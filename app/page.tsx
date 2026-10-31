@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSafeOAuthConsentReturnPath } from "@/lib/auth/oauth-return-path";
 import { toProjectRecord, toSupabaseProjectRow, type SupabaseProjectRow } from "@/lib/supabase/project-record";
 import {
   buildRecommendations,
@@ -12,6 +13,10 @@ import {
   type ProjectStatus,
   type Recommendation,
 } from "@/lib/solution-recommendations";
+
+type AiChatMessage = { role: "user" | "assistant"; content: string };
+type FactoryJob = { id: string; status: string; plan_version?: number; created_at?: string; manifest?: Record<string, unknown> };
+type FactoryTask = { id: string; job_id: string; task_key: string; state: string; dependencies?: string[] };
 
 type Project = NeedInput & {
   id: string;
@@ -66,6 +71,14 @@ export default function HomePage() {
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [factoryJobs, setFactoryJobs] = useState<FactoryJob[]>([]);
+  const [factoryTasks, setFactoryTasks] = useState<FactoryTask[]>([]);
+  const [factoryLoading, setFactoryLoading] = useState(false);
+  const [factoryError, setFactoryError] = useState("");
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
@@ -91,6 +104,11 @@ export default function HomePage() {
       const user = data.session?.user;
       setCurrentUser(user ? { id: user.id, email: user.email } : null);
       if (user) {
+        const returnTo = getSafeOAuthConsentReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
+        if (returnTo) {
+          window.location.replace(returnTo);
+          return;
+        }
         const { data: rows, error: queryError } = await supabase
           .from("user_projects")
           .select("*")
@@ -137,6 +155,35 @@ export default function HomePage() {
     }
   }, [projects, storageReady, supabase]);
 
+  useEffect(() => {
+    setAiMessages([]);
+    setAiInput("");
+    setAiError("");
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    let active = true;
+    setFactoryJobs([]);
+    setFactoryTasks([]);
+    setFactoryError("");
+    if (!activeProjectId || !supabase || !currentUser) return;
+    setFactoryLoading(true);
+    void fetch(`/api/admin/projects/${encodeURIComponent(activeProjectId)}/factory/jobs`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as { jobs?: FactoryJob[]; tasks?: FactoryTask[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Impossible de charger le suivi de fabrication.");
+        if (active) {
+          setFactoryJobs(Array.isArray(result.jobs) ? result.jobs : []);
+          setFactoryTasks(Array.isArray(result.tasks) ? result.tasks : []);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setFactoryError(error instanceof Error ? error.message : "Erreur de chargement du suivi.");
+      })
+      .finally(() => { if (active) setFactoryLoading(false); });
+    return () => { active = false; };
+  }, [activeProjectId, supabase, currentUser]);
+
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
@@ -144,6 +191,54 @@ export default function HomePage() {
 
   function updateForm<K extends keyof NeedInput>(key: K, value: NeedInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function sendAiMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const prompt = aiInput.trim();
+    if (!prompt || !activeProject || aiBusy) return;
+    if (!supabase || !currentUser) {
+      setAiError("Connectez-vous à votre compte pour utiliser l'assistant IA.");
+      return;
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      setAiError("Votre session a expiré. Reconnectez-vous puis réessayez.");
+      return;
+    }
+
+    const nextMessages: AiChatMessage[] = [...aiMessages, { role: "user", content: prompt }];
+    setAiMessages(nextMessages);
+    setAiInput("");
+    setAiError("");
+    setAiBusy(true);
+    try {
+      const dossierContext = `Dossier MerKora : ${activeProject.title}\nCatégorie : ${getCategoryLabel(activeProject.category)}\nProblème décrit : ${activeProject.problem}\nRésultat souhaité : ${activeProject.desiredOutcome}\nBudget : ${activeProject.budget}\nPriorité : ${activeProject.urgency}`;
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          task: aiMessages.length === 0 ? "analysis" : "conversation",
+          messages: [
+            { role: "user", content: `Contexte du dossier client (à garder en tête) :\n${dossierContext}` },
+            ...aiMessages.slice(-8),
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      const payload = await response.json() as { answer?: string; error?: string };
+      if (!response.ok || !payload.answer) {
+        setAiError(payload.error || "L'assistant IA n'a pas pu répondre.");
+        return;
+      }
+      setAiMessages([...nextMessages, { role: "assistant", content: payload.answer }]);
+    } catch {
+      setAiError("Impossible de joindre l'assistant. Vérifiez votre connexion puis réessayez.");
+    } finally {
+      setAiBusy(false);
+    }
   }
 
   function submitNeed(event: FormEvent<HTMLFormElement>) {
@@ -207,6 +302,8 @@ export default function HomePage() {
       } else if (result.data.user) {
         setCurrentUser({ id: result.data.user.id, email: result.data.user.email });
         setAuthNotice("Connexion réussie. Chargement de votre espace…");
+        const returnTo = getSafeOAuthConsentReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
+        if (returnTo) window.location.assign(returnTo);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Une erreur inattendue est survenue.";
@@ -271,6 +368,7 @@ export default function HomePage() {
           <span>＋</span> Nouveau besoin
         </button>
         <a className="side-link" href="#methode"><span>✳</span> Comment ça marche</a>
+        {currentUser && <a className="side-link" href="/account/connections"><span>⌁</span> Applications autorisées</a>}
         <div className="sidebar-bottom">
           <div className="sidebar-mini-mark">✳</div>
           <strong>Les besoins d’abord.</strong>
@@ -287,6 +385,7 @@ export default function HomePage() {
           </div>
           <div className="topbar-right">
             <span className="local-indicator"><i /> {supabase ? "Sauvegarde en ligne" : "Données locales"}</span>
+            {currentUser && <a className="button button-quiet" href="/account/connections">Connexions</a>}
             {currentUser && <span style={{ fontSize: "13px" }}>{currentUser.email}</span>}
             {currentUser ? <button className="button button-quiet" onClick={handleSignOut}>Déconnexion</button> : <button className="avatar" aria-label="Profil de démonstration">M</button>}
           </div>
@@ -365,7 +464,7 @@ export default function HomePage() {
                 <div><div className="eyebrow">DOSSIER · {activeProject.id}</div><h2>{activeProject.title}</h2><p>{getCategoryLabel(activeProject.category)} · Créé le {new Date(activeProject.createdAt).toLocaleDateString("fr-FR")}</p></div>
                 <button className="icon-button" onClick={() => setActiveProjectId(null)} aria-label="Retour à la liste">×</button>
               </div>
-              <div className="detail-status"><span className="status-dot" /> {statusLabels[activeProject.status]} <span className="status-note">· Pré-analyse locale, sans IA connectée</span></div>
+              <div className="detail-status"><span className="status-dot" /> {statusLabels[activeProject.status]} <span className="status-note">· Pistes locales et assistant IA si activé</span></div>
               <div className="detail-grid">
                 <article><span className="detail-label">LA SITUATION</span><p>{activeProject.problem}</p></article>
                 <article><span className="detail-label">LE RÉSULTAT SOUHAITÉ</span><p>{activeProject.desiredOutcome}</p></article>
@@ -381,7 +480,64 @@ export default function HomePage() {
                   </article>
                 ))}
               </div>
-              <div className="notice"><span>ⓘ</span><p>Ces pistes sont générées par des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation.</p></div>
+              <section className="panel ai-assistant-panel">
+                <div className="recommendation-heading">
+                  <div><div className="eyebrow">ÉTAPE 02 · ANALYSE ASSISTÉE</div><h3>Approfondissons votre besoin</h3></div>
+                  <span className="local-tag">Assistant MerKora</span>
+                </div>
+                <p className="ai-assistant-intro">L'assistant peut analyser votre situation et vous aider à préciser les options. Ses réponses ne valent ni devis, ni validation de réalisation.</p>
+                {aiMessages.length > 0 && (
+                  <div className="ai-chat-history" aria-live="polite">
+                    {aiMessages.map((message, index) => (
+                      <article className={`ai-chat-message ${message.role === "user" ? "user-message" : "assistant-message"}`} key={index}>
+                        <strong>{message.role === "user" ? "Vous" : "MerKora IA"}</strong>
+                        <p>{message.content}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                {aiError && <div className="form-errors" role="alert"><p>{aiError}</p></div>}
+                <form className="ai-chat-form" onSubmit={sendAiMessage}>
+                  <label htmlFor="ai-assistant-prompt">Votre question ou précision</label>
+                  <textarea id="ai-assistant-prompt" value={aiInput} onChange={(event) => setAiInput(event.target.value)} placeholder="Ex. Quelles options permettraient de mieux suivre les retards et les recettes ?" rows={3} maxLength={3000} disabled={aiBusy} />
+                  <div className="form-footer"><small>{currentUser ? "Votre session sécurisée sera utilisée." : "Connectez-vous pour utiliser l'assistant."}</small><button className="button button-primary" type="submit" disabled={aiBusy || !aiInput.trim()}>{aiBusy ? "Analyse en cours…" : "Interroger MerKora IA →"}</button></div>
+                </form>
+              </section>
+              <section className="panel ai-assistant-panel" aria-labelledby="factory-progress-title">
+                <div className="recommendation-heading">
+                  <div><div className="eyebrow">SUIVI DE RÉALISATION</div><h3 id="factory-progress-title">Atelier de fabrication MerKora</h3></div>
+                  <span className="local-tag">{factoryJobs.length} demande{factoryJobs.length > 1 ? "s" : ""}</span>
+                </div>
+                <p className="ai-assistant-intro">Retrouvez ici les demandes de fabrication autorisées, leur état et les tâches associées. Une demande en file d'attente n'est pas encore une application en cours de génération.</p>
+                {factoryLoading && <p role="status">Chargement du suivi…</p>}
+                {factoryError && <div className="form-errors" role="alert"><p>{factoryError}</p></div>}
+                {!factoryLoading && !factoryError && factoryJobs.length === 0 && <p className="ai-assistant-intro">Aucune fabrication n'a encore été mise en file pour ce dossier.</p>}
+                {factoryJobs.map((job) => {
+                  const tasks = factoryTasks.filter((task) => task.job_id === job.id);
+                  const taskLabels: Record<string, string> = {
+                    prepare_specification: "Préparer le cahier des charges",
+                    generate_application: "Construire l'application",
+                    run_tests: "Exécuter les tests",
+                    review_security: "Vérifier la sécurité",
+                    prepare_delivery: "Préparer la livraison",
+                  };
+                  return (
+                    <article key={job.id} style={{ border: "1px solid var(--border, #e5e7eb)", borderRadius: "14px", padding: "16px", marginTop: "14px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                        <strong>Fabrication · {job.id.slice(0, 8)}</strong>
+                        <span className="status-chip">{job.status}</span>
+                      </div>
+                      <small>Plan version {job.plan_version ?? "—"}{job.created_at ? ` · ${new Date(job.created_at).toLocaleString("fr-FR")}` : ""}</small>
+                      {tasks.length > 0 ? (
+                        <ol style={{ margin: "14px 0 0", paddingLeft: "22px", display: "grid", gap: "8px" }}>
+                          {tasks.map((task) => <li key={task.id}><span>{taskLabels[task.task_key] ?? task.task_key}</span> <small>— {task.state}</small></li>)}
+                        </ol>
+                      ) : <p className="ai-assistant-intro">Les tâches de cette demande ne sont pas encore disponibles. Une reprise administrative peut être nécessaire.</p>}
+                    </article>
+                  );
+                })}
+              </section>
+              <div className="notice"><span>ⓘ</span><p>Les premières pistes sont générées localement. L'assistant IA nécessite une activation et une configuration serveur ; aucune réponse IA n'est simulée si le service est indisponible.</p></div>
               <button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button>
             </section>
           ) : (
