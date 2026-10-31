@@ -78,6 +78,9 @@ beforeEach(() => {
       const taskId = decodeURIComponent(path.match(/id=eq.([^&]+)/)?.[1] ?? "");
       return { ok: true, status: 200, data: [{ id: taskId }] };
     }
+    if (method === "PATCH" && path.startsWith("project_factory_jobs?id=")) {
+      return { ok: true, status: 200, data: [{ ...job, status: "awaiting_approval" }] };
+    }
     return { ok: true, status: 200, data: [] };
   });
 });
