@@ -36,7 +36,10 @@ describe("OpenAI agent adapter", () => {
       choices: [{ message: { content: JSON.stringify(result) } }],
     }));
     const adapter = createOpenAIAgentAdapter({
-      getApiKey: () => "server-secret",
+      getApiKey: (connection) => {
+        expect(connection).toEqual({ connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai" });
+        return "server-secret";
+      },
       models: { balanced: "gpt-model-approved" },
       fetcher,
     });
