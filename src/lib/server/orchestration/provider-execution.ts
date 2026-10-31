@@ -36,6 +36,17 @@ export interface AgentRuntimeAdapter {
 const MAX_TIMEOUT_MS = 120_000;
 const MIN_TIMEOUT_MS = 1_000;
 
+function hasValidConnectionIdentity(connection: AgentRuntimeConnection): boolean {
+  const owner = connection.owner as unknown;
+  if (!connection.connectionId || connection.connectionId.trim().length > 160) return false;
+  if (typeof owner !== "object" || owner === null) return false;
+  const value = owner as Record<string, unknown>;
+  return (value.type === "organization" || value.type === "user" || value.type === "customer")
+    && typeof value.id === "string"
+    && value.id.trim().length > 0
+    && value.id.length <= 160;
+}
+
 /**
  * Server-side dispatch boundary for real provider adapters.
  * Provider output is untrusted and revalidated here even if an adapter also
@@ -52,6 +63,9 @@ export function createAgentRuntime(adapters: readonly AgentRuntimeAdapter[]) {
       modelAlias: string;
       timeoutMs: number;
     }): Promise<AgentInvocationOutcome> {
+      if (!hasValidConnectionIdentity(input.connection)) {
+        return { ok: false, code: "NOT_CONNECTED" };
+      }
       const adapter = byProvider.get(input.connection.providerId);
       if (!adapter || input.connection.status !== "connected") {
         return { ok: false, code: "NOT_CONNECTED" };
