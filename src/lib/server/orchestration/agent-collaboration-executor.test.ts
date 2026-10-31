@@ -29,6 +29,8 @@ const plan: AgentCollaborationPlan = {
   blockedRoles: [],
 };
 const connection = {
+  connectionId: "connection-1",
+  owner: { type: "organization" as const, id: "merkora-gdj" },
   providerId: "openai",
   status: "connected" as const,
   capabilities: ["models.generate"],
