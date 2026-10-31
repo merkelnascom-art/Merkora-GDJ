@@ -38,12 +38,15 @@ const MIN_TIMEOUT_MS = 1_000;
 
 function hasValidConnectionIdentity(connection: AgentRuntimeConnection): boolean {
   const owner = connection.owner as unknown;
-  if (!connection.connectionId || connection.connectionId.trim().length > 160) return false;
+  if (typeof connection.connectionId !== "string" || !connection.connectionId.trim()
+    || connection.connectionId !== connection.connectionId.trim()
+    || connection.connectionId.length > 160) return false;
   if (typeof owner !== "object" || owner === null) return false;
   const value = owner as Record<string, unknown>;
   return (value.type === "organization" || value.type === "user" || value.type === "customer")
     && typeof value.id === "string"
     && value.id.trim().length > 0
+    && value.id === value.id.trim()
     && value.id.length <= 160;
 }
 
