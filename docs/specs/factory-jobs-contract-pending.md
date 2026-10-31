@@ -57,3 +57,18 @@ The route rejects cross-origin requests, malformed identifiers, unauthenticated 
 The route does not start a worker, call an AI provider, write application code, or deploy. If task provisioning fails after the job is created, it attempts to mark the job `blocked` and returns the job ID for administrative recovery. This is a recoverable two-request flow, not a single database transaction; a transactional RPC remains a future hardening option and would require separately approved schema work.
 
 No Supabase schema or customer data was changed during this implementation. Verification is pending the latest Vercel preview and test results.
+
+
+## 10. Plan and approval endpoints (2026-10-31)
+
+Added two server-side steps ahead of factory queue creation:
+
+- `POST /api/admin/projects/[projectId]/plans`: administrator-only plan version creation. It verifies the project exists, assigns the next plan version, generates a request UUID, calculates SHA-256 digests for the canonical plan payload and selected `includedScope`, then stores the version through the authenticated Supabase session and existing RLS.
+- `POST /api/projects/[projectId]/plans/[version]/approvals`: records a plan approval tied to the exact plan/scope digests and request UUID. Client accounts may approve only `client_scope`; administrator-only approvals are `admin_review` and `execution_authorization`. The endpoint requires an explicit boolean for AI-processing consent and records the actor identity/role.
+
+No migration, service-role key, AI provider call, code generation, or deployment was introduced. The endpoints prepare the approval chain but do not themselves create factory jobs; factory queue creation remains a separate administrator action requiring all three approvals.
+
+Operational caveats:
+- The plan endpoint currently uses `source_brief_version: 1` because the existing `user_projects` table has no brief-version column. This should be upgraded when brief revision history is implemented.
+- Plan version selection is read-then-insert. A concurrent administrator save can race; the database uniqueness constraint remains the final guard and the API reports a conflict rather than silently overwriting a plan.
+- These routes are API foundations. The customer/admin screens and a real execution worker are still required before a client can experience end-to-end automated delivery.
