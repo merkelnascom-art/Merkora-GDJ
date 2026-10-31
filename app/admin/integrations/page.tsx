@@ -10,6 +10,8 @@ type Integration = {
   category: string;
   description: string;
   authMethod: string;
+  directions: ("outbound" | "inbound")[];
+  transport: string;
   capabilities: string[];
   initialStatus: "not_configured";
   verificationRequired: boolean;
@@ -31,6 +33,19 @@ const authLabels: Record<string, string> = {
   manual: "Utilisation manuelle",
   external_link: "Lien externe",
   none: "Aucune authentification",
+};
+
+const directionLabels: Record<string, string> = {
+  outbound: "MerKora → outil",
+  inbound: "Outil → MerKora",
+};
+
+const transportLabels: Record<string, string> = {
+  oauth: "OAuth",
+  rest_api: "API REST",
+  mcp: "MCP",
+  manual_handoff: "Passage manuel",
+  verified_webhook: "Webhook vérifié",
 };
 
 export default function AdminIntegrationsPage() {
@@ -70,7 +85,8 @@ export default function AdminIntegrationsPage() {
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 28 }}>
           <Summary label="Outils référencés" value={integrations.length} />
-          <Summary label="Comptes connectés" value={integrations.filter((item) => item.initialStatus === "not_configured" && false).length} />
+          <Summary label="Connexions actives" value={0} />
+          <Summary label="Flux bidirectionnels prévus" value={integrations.filter((item) => item.directions.includes("inbound") && item.directions.includes("outbound")).length} />
           <Summary label="Vérifications nécessaires" value={integrations.filter((item) => item.verificationRequired).length} />
         </section>
 
@@ -90,7 +106,11 @@ export default function AdminIntegrationsPage() {
                       <span style={{ fontSize: 11, borderRadius: 99, padding: "6px 9px", background: status.tone === "success" ? "#e9f8ef" : status.tone === "warning" ? "#fff5df" : "#eef0f4", color: status.tone === "success" ? "#176b3a" : status.tone === "warning" ? "#8a5a00" : "#596273", whiteSpace: "nowrap" }}>{status.label}</span>
                     </div>
                     <p style={{ color: "#667085", lineHeight: 1.5, minHeight: 46 }}>{item.description}</p>
-                    <p style={{ fontSize: 12, color: "#475467" }}><strong>Mode :</strong> {authLabels[item.authMethod] ?? item.authMethod}</p>
+                    <p style={{ fontSize: 12, color: "#475467" }}><strong>Autorisation :</strong> {authLabels[item.authMethod] ?? item.authMethod}</p>
+                    <p style={{ fontSize: 12, color: "#475467" }}><strong>Transport :</strong> {transportLabels[item.transport] ?? item.transport}</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "10px 0" }}>
+                      {item.directions.map((direction) => <span key={direction} style={{ fontSize: 10, color: "#175c49", background: "#e8f5f0", padding: "5px 7px", borderRadius: 6 }}>{directionLabels[direction]}</span>)}
+                    </div>
                     {item.verificationRequired && <p style={{ fontSize: 12, color: "#8a5a00", background: "#fff8e8", padding: 9, borderRadius: 9 }}>Vérification préalable requise</p>}
                     <p style={{ fontSize: 13, lineHeight: 1.5 }}>{item.connectionNotes}</p>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
