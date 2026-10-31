@@ -2,7 +2,7 @@ import {
   canUseIntegrationConnection,
   type IntegrationConnectionMetadata,
   type IntegrationConnectionOwner,
-} from "@/lib/integrations/connection-types";
+} from "../../integrations/connection-types";
 import type { ProviderAdapter } from "./provider-adapter";
 
 function ownerKey(owner: IntegrationConnectionOwner, providerId: string): string {
