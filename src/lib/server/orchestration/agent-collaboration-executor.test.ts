@@ -87,6 +87,32 @@ describe("agent collaboration executor", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  it("does not reserve budget when a provider is disconnected", async () => {
+    const reserveBudget = vi.fn(async () => true);
+    const invoke = vi.fn(async () => result);
+    const output = await executeAgentCollaboration(input({
+      adapters: [adapter(invoke)],
+      connections: [{ ...connection, status: "revoked" as const }],
+      reserveBudget,
+    }));
+    expect(output.invocations[0].outcome).toEqual({ ok: false, code: "NOT_CONNECTED" });
+    expect(reserveBudget).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("does not reserve budget when no approved model alias exists", async () => {
+    const reserveBudget = vi.fn(async () => true);
+    const invoke = vi.fn(async () => result);
+    const output = await executeAgentCollaboration(input({
+      adapters: [adapter(invoke)],
+      modelAliases: {},
+      reserveBudget,
+    }));
+    expect(output.invocations[0].outcome).toEqual({ ok: false, code: "PROVIDER_ERROR" });
+    expect(reserveBudget).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it("blocks missions that do not belong to the plan project or role", async () => {
     const invoke = vi.fn(async () => result);
     const wrongMission = createAgentMissionEnvelope({
