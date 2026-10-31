@@ -122,21 +122,20 @@ export default function OAuthConsentPage() {
               <p style={{ margin: 0, overflowWrap: "anywhere", fontSize: 13 }}>{details.redirectUri}</p>
               {details.scopes.length > 0 && (
                 <>
-                  <p style={{ fontSize: 12, color: "#667085", margin: "18px 0 7px" }}>AUTORISATIONS DEMANDÉES PAR LE FOURNISSEUR</p>
+                  <p style={{ fontSize: 12, color: "#667085", margin: "18px 0 7px" }}>SCOPES D’IDENTITÉ DEMANDÉS PAR LE FOURNISSEUR</p>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>{details.scopes.map((scope) => <li key={scope} style={{ padding: "3px 0" }}>{scope}</li>)}</ul>
                 </>
               )}
             </div>
 
             <div style={{ marginTop: 18, padding: 18, border: "1px solid #dcebe5", background: "#f4faf7", borderRadius: 14 }}>
-              <strong style={{ display: "block", marginBottom: 8 }}>Ce que MerKora partagera avec cet assistant</strong>
+              <strong style={{ display: "block", marginBottom: 8 }}>Données et accès MCP</strong>
               <ul style={{ margin: 0, paddingLeft: 20, color: "#344b42", lineHeight: 1.55 }}>
-                <li>Votre identifiant de compte et votre adresse e-mail.</li>
-                <li>La liste de vos propres projets : titres, catégories, statuts et dates.</li>
-                <li>Les détails de vos propres projets : problème, résultat souhaité, budget et urgence.</li>
+                <li>Votre identifiant de compte et votre adresse e-mail, pour identifier la session autorisée.</li>
+                <li>La lecture de vos projets reste désactivée jusqu’à l’activation et la vérification des règles RLS dédiées aux clients OAuth.</li>
               </ul>
               <p style={{ margin: "12px 0 0", color: "#344b42", fontSize: 13, lineHeight: 1.5 }}>
-                L’accès MCP actuel est en lecture seule : aucun projet ne peut être modifié, aucun devis accepté, aucun paiement effectué et aucun déploiement lancé.
+                Les scopes OAuth affichés concernent l’identité. Les accès aux données MerKora sont contrôlés séparément par les règles RLS et les outils MCP. Aucun projet ne peut être modifié, aucun devis accepté, aucun paiement effectué et aucun déploiement lancé par les outils MCP actuels.
               </p>
             </div>
 
