@@ -5,7 +5,7 @@ services:
     region: frankfurt
     plan: starter
     branch: feature/merkora-integration-reconciliation
-    buildCommand: npm ci
+    buildCommand: npm install
     startCommand: node scripts/factory-worker.mjs
     autoDeploy: false
     envVars:
