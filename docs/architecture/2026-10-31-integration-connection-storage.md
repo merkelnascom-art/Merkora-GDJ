@@ -96,3 +96,8 @@ No tables, policies, migrations, credentials, provider OAuth apps, environment s
 The AES-256-GCM vault now authenticates the connection identifier and provider identifier as additional authenticated data, in addition to the envelope version and key identifier. A ciphertext copied from one provider connection cannot be decrypted in the context of another connection/provider pair. The context is supplied by trusted server-side metadata and is not read from a client request.
 
 The vault remains a cryptographic primitive only: no database persistence, key rotation workflow, OAuth callback, or production secret has been configured. The API requires the caller to pass the exact connection context to both `seal` and `open`.
+
+
+## Key rotation primitive update (2026-10-31)
+
+The vault key provider now accepts an optional key identifier. Encryption uses the current key when no identifier is supplied; decryption can resolve a historical key by the envelope's key ID. This makes staged rotation possible without changing ciphertext format. Production still needs a server-side keyring implementation, a tested re-encryption job, and a documented rollback/retention policy before rotating any live credential.
