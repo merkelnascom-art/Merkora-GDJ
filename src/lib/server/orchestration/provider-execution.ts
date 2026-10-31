@@ -1,4 +1,8 @@
-import type { AgentMissionEnvelope, AgentMissionResult } from "./agent-mission-contract";
+import {
+  validateAgentMissionResult,
+  type AgentMissionEnvelope,
+  type AgentMissionResult,
+} from "./agent-mission-contract";
 
 export type AgentRuntimeConnection = {
   providerId: string;
@@ -29,11 +33,8 @@ const MIN_TIMEOUT_MS = 1_000;
 
 /**
  * Server-side dispatch boundary for real provider adapters.
- *
- * This module deliberately contains no vendor SDK, credentials, network calls,
- * persistence, or default provider implementation. An adapter must be explicitly
- * registered by the server composition root after its credentials and budget
- * policy are configured.
+ * Provider output is untrusted and revalidated here even if an adapter also
+ * validates it. Adapters must be explicitly registered by the server root.
  */
 export function createAgentRuntime(adapters: readonly AgentRuntimeAdapter[]) {
   const byProvider = new Map(adapters.map((adapter) => [adapter.providerId, adapter]));
@@ -59,21 +60,29 @@ export function createAgentRuntime(adapters: readonly AgentRuntimeAdapter[]) {
         return { ok: false, code: "PROVIDER_ERROR" };
       }
 
+      let rawResult: unknown;
       try {
-        const result = await adapter.invoke({
+        rawResult = await adapter.invoke({
           mission: input.mission,
           modelAlias: input.modelAlias,
           timeoutMs: input.timeoutMs,
         });
-        if (result.missionId !== input.mission.missionId
-          || result.projectId !== input.mission.projectId
-          || result.providerId !== adapter.providerId) {
+      } catch {
+        // Never return provider exception text: it may contain prompts or secrets.
+        return { ok: false, code: "PROVIDER_ERROR" };
+      }
+
+      try {
+        const result = validateAgentMissionResult(
+          { missionId: input.mission.missionId, projectId: input.mission.projectId },
+          rawResult,
+        );
+        if (result.providerId !== adapter.providerId) {
           return { ok: false, code: "INVALID_RESULT" };
         }
         return { ok: true, result };
       } catch {
-        // Never return provider exception text: it may contain prompts or secrets.
-        return { ok: false, code: "PROVIDER_ERROR" };
+        return { ok: false, code: "INVALID_RESULT" };
       }
     },
   };
