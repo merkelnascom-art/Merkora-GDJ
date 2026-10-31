@@ -69,6 +69,8 @@ A review-only SQL proposal is stored at `docs/security/2026-10-31-mcp-oauth-rls-
 
 **The SQL proposal has not been applied.** No RLS policy, hook, Auth setting, table, row, or migration history was changed in Supabase. The domain placeholder in the SQL must be replaced with the verified canonical HTTPS MCP URL before review or application.
 
+The MCP route now fails closed if `MERKORA_MCP_RESOURCE_URL` is absent; it no longer derives the OAuth audience or discovery origin from the incoming Host header. The project list/detail tools also remain disabled unless `MERKORA_MCP_DATA_ACCESS_ENABLED=true`. Keep this flag false until the OAuth-specific restrictive RLS policies in the review SQL have been applied and tested. These environment gates are not enabled in production.
+
 ## Required dashboard configuration before real client connections
 
 These actions have deliberately NOT been performed:
