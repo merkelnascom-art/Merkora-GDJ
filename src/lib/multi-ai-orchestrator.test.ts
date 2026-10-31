@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { runTwoRoleWorkflow, type MultiAiTaskRunner } from "./multi-ai-orchestrator";
+import { runTwoRoleWorkflow, type MultiAiTaskRunner, type MultiAiTaskInput } from "./multi-ai-orchestrator";
 
 describe("runTwoRoleWorkflow", () => {
   it("runs the analyst then an independent critic, and keeps both outputs in the synthesis", async () => {
     const calls: string[] = [];
     const runner: MultiAiTaskRunner = {
-      run: vi.fn(async ({ role, previousOutput }) => {
+      run: vi.fn(async ({ role, previousOutput }: MultiAiTaskInput) => {
         calls.push(role);
         if (role === "analyst") return "Le commerçant perd le suivi de ses ventes.";
         expect(previousOutput).toContain("suivi de ses ventes");
