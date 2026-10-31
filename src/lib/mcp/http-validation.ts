@@ -1,4 +1,4 @@
-export const MERKORA_MCP_PROTOCOL_VERSION = "2025-03-26";
+export const MERKORA_MCP_PROTOCOL_VERSION = "2025-11-25";
 
 export type McpHttpValidation =
   | { ok: true }
