@@ -31,3 +31,20 @@ export const MERKORA_MCP_TOOLS: readonly MerKoraMcpTool[] = [
     },
   },
 ];
+
+export function validateMcpToolArguments(name: string, value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const args = value as Record<string, unknown>;
+  switch (name) {
+    case "merkora_get_profile":
+    case "merkora_list_projects":
+      return Object.keys(args).length === 0;
+    case "merkora_get_project":
+      return Object.keys(args).length === 1
+        && typeof args.project_id === "string"
+        && args.project_id.trim().length > 0
+        && args.project_id.length <= 160;
+    default:
+      return false;
+  }
+}
