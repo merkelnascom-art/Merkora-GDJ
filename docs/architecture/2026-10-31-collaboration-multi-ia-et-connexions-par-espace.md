@@ -48,6 +48,16 @@ Chaque mission persistée devra contenir au minimum :
 
 Aucune clé, aucun jeton OAuth et aucun secret d'infrastructure ne doit apparaître dans le contenu d'une mission ou d'un résultat d'agent.
 
+
+
+### Contrat de mission déjà codé (fondation, non persistée)
+
+Le module `src/lib/server/orchestration/agent-mission-contract.ts` définit maintenant un paquet de mission neutre vis-à-vis du fournisseur : version du contrat, identifiants de mission et de projet, rôle, objectif, instructions bornées, références de contexte autorisées, contraintes et frontières d'approbation. Le résultat attendu contient un résumé, des constats, des références d'artefacts et un relevé de vérification.
+
+Le validateur de résultat vérifie notamment que la réponse revient pour le bon projet et la bonne mission, que les collections restent bornées et qu'un résultat marqué terminé ne contient pas d'échec de vérification. Cela ne prouve pas la véracité d'un rapport : les preuves doivent être contrôlées indépendamment.
+
+Ce contrat est une structure TypeScript pure accompagnée de tests. Il n'envoie encore aucune requête à un fournisseur, ne stocke aucune mission, ne transporte aucun secret et ne déclenche aucune action externe. Le contrôle d'accès au projet doit être effectué par le futur service serveur avant de construire le paquet.
+
 ## 5. Connexion bidirectionnelle des assistants
 
 ### Assistant externe vers MerKora
