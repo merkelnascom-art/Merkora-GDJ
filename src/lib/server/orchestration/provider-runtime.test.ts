@@ -4,6 +4,7 @@ import { createConfiguredAgentRuntime } from "./provider-runtime";
 describe("configured provider runtime", () => {
   it("registers only providers with a server key and explicit model allowlist", () => {
     const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
       OPENAI_API_KEY: "openai-secret",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
       ANTHROPIC_API_KEY: "anthropic-secret",
@@ -14,8 +15,19 @@ describe("configured provider runtime", () => {
     expect(configured.registeredProviders).toEqual(["gemini", "openai"]);
   });
 
+  it("keeps every provider disabled unless the global runtime switch is explicitly true", () => {
+    const configured = createConfiguredAgentRuntime({
+      OPENAI_API_KEY: "openai-secret",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      ANTHROPIC_API_KEY: "anthropic-secret",
+      MERKORA_ANTHROPIC_MODEL_REVIEW: "claude-approved",
+    });
+    expect(configured.registeredProviders).toEqual([]);
+  });
+
   it("registers no provider when no server credentials and model allowlists exist", () => {
     const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
       ANTHROPIC_API_KEY: "anthropic-secret",
     });
@@ -24,6 +36,7 @@ describe("configured provider runtime", () => {
 
   it("does not make provider calls during runtime construction", () => {
     const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
       OPENAI_API_KEY: "openai-secret",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
       ANTHROPIC_API_KEY: "anthropic-secret",
