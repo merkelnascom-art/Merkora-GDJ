@@ -7,7 +7,6 @@ describe("configured provider runtime", () => {
       MERKORA_AGENT_RUNTIME_ENABLED: "true",
       OPENAI_API_KEY: "openai-secret",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
-      ANTHROPIC_API_KEY: "anthropic-secret",
       GEMINI_API_KEY: "gemini-secret",
       MERKORA_GEMINI_MODEL_REVIEW: "gemini-approved",
       MERKORA_ANTHROPIC_MODEL_FAST: "claude-model-without-key",
