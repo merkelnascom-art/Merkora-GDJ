@@ -16,6 +16,7 @@ type Integration = {
   initialStatus: "not_configured";
   verificationRequired: boolean;
   connectionNotes: string;
+  workspaces?: string[];
 };
 
 const categoryLabels: Record<string, string> = {
