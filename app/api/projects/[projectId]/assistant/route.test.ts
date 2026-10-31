@@ -63,7 +63,7 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
     expect(body.aiProviderCalled).toBe(false);
-    expect(body.reply.disclaimer).toMatch(/pas encore validé/i);
+    expect(body.reply.disclaimer).toMatch(/aucun module.*encore validé/i);
   });
 
   it("rejects malformed messages", async () => {
