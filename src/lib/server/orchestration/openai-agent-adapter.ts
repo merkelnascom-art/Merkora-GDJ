@@ -15,7 +15,7 @@ type OpenAIChatCompletionPayload = {
 
 type OpenAIAgentAdapterOptions = {
   /** Read from server-only environment/configuration at invocation time. */
-  getApiKey: () => string | undefined;
+  getApiKey: (connection: AgentInvocation["connection"]) => string | undefined;
   /** Explicit server-side aliases; never accept a model name from the browser. */
   models: Readonly<Record<string, string>>;
   fetcher?: typeof fetch;
@@ -66,7 +66,7 @@ export function createOpenAIAgentAdapter(
     invocationCapability: "models.generate",
 
     async invoke(input: AgentInvocation): Promise<AgentMissionResult> {
-      const apiKey = options.getApiKey()?.trim();
+      const apiKey = options.getApiKey(input.connection)?.trim();
       if (!apiKey) throw new Error("OpenAI server credential is not configured.");
 
       const model = options.models[input.modelAlias];
