@@ -57,6 +57,9 @@ describe("agent collaboration planner", () => {
       requestedRoles: ["reviewer", "reviewer", "analyst"],
       providers,
     });
-    expect(plan.assignments.map((assignment) => assignment.role)).toEqual(["reviewer", "analyst"]);
+    expect(plan.assignments).toEqual([
+      { role: "reviewer", providerId: "anthropic", capability: "messages.create" },
+      { role: "analyst", providerId: "openai", capability: "models.generate" },
+    ]);
   });
 });
