@@ -10,9 +10,10 @@ import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/li
 import { GET, POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
-const plan = { version: 3, source_brief_version: 2, payload: { includedScope: [{ id: "attendance" }] }, payload_digest: "a".repeat(64), scope_digest: "b".repeat(64) };
+const requestId = "c2c3d4e5-f678-4123-8abc-1234567890ab";
+const plan = { version: 3, source_brief_version: 2, payload: { requestId, includedScope: [{ id: "attendance" }] }, payload_digest: "a".repeat(64), scope_digest: "b".repeat(64) };
 const approvalRows = ["client_scope", "admin_review", "execution_authorization"].map((approval_kind, index) => ({
-  id: `approval-${index + 1}`, approval_kind, decision: "approved", plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
+  id: `approval-${index + 1}`, approval_kind, decision: "approved", plan_digest: plan.payload_digest, scope_digest: plan.scope_digest, request_id: requestId, ai_processing_consent: approval_kind === "client_scope",
 }));
 const body = { planVersion: 3, correlationId: "b2c3d4e5-f678-4123-8abc-1234567890ab" };
 const context = { params: Promise.resolve({ projectId: "MK-PROJECT-001" }) };
@@ -85,6 +86,28 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect(callUserData).toHaveBeenCalledTimes(2);
   });
 
+
+  it("blocks factory creation when the client did not consent to AI processing", async () => {
+    const noConsent = approvalRows.map((row) => row.approval_kind === "client_scope" ? { ...row, ai_processing_consent: false } : row);
+    vi.mocked(callUserData).mockReset()
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
+      .mockResolvedValueOnce({ ok: true, status: 200, data: noConsent });
+    const response = await POST(makeRequest(), context);
+    expect(response.status).toBe(409);
+    expect((await response.json()).missingApprovals).toEqual(["client_scope_consent"]);
+    expect(callUserData).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects approvals from a different request even when their kind is approved", async () => {
+    const stale = approvalRows.map((row) => row.approval_kind === "admin_review" ? { ...row, request_id: "d2c3d4e5-f678-4123-8abc-1234567890ab" } : row);
+    vi.mocked(callUserData).mockReset()
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
+      .mockResolvedValueOnce({ ok: true, status: 200, data: stale });
+    const response = await POST(makeRequest(), context);
+    expect(response.status).toBe(409);
+    expect(callUserData).toHaveBeenCalledTimes(2);
+  });
+
   it("creates a queued job and five tasks without starting execution", async () => {
     const response = await POST(makeRequest(), context);
     const result = await response.json();
@@ -92,9 +115,13 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect(result).toMatchObject({ created: true, jobId: "job-1", status: "queued", taskCount: 5, executionStarted: false });
     const calls = vi.mocked(callUserData).mock.calls;
     expect(calls[3][0]).toBe("project_factory_jobs");
+    expect(calls[1][2]).toMatchObject({
+      request_id: `eq.${requestId}`, plan_digest: `eq.${plan.payload_digest}`, scope_digest: `eq.${plan.scope_digest}`,
+    });
     expect(calls[3][3]).toMatchObject({
       plan_version: 3, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
       requested_by: user.id, authorized_by: user.id,
+      manifest: expect.objectContaining({ sourceApprovalRequestId: requestId }),
     });
     expect(calls[4][0]).toBe("project_factory_tasks");
     const tasksPayload = calls[4][3] as Array<Record<string, unknown>>;
