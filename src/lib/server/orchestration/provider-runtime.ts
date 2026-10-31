@@ -28,6 +28,9 @@ function readModelAllowlist(
  */
 export function createConfiguredAgentRuntime(env: ProviderRuntimeEnvironment) {
   const adapters = [];
+  if (env.MERKORA_AGENT_RUNTIME_ENABLED !== "true") {
+    return { runtime: createAgentRuntime(adapters), registeredProviders: [] as string[] };
+  }
 
   const openAiKey = env.OPENAI_API_KEY?.trim();
   const openAiModels = readModelAllowlist(env, "OPENAI");
