@@ -52,13 +52,19 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("Version du plan introuvable ou invalide.", 404);
   }
 
+  const planPayload = plan.payload && typeof plan.payload === "object" ? plan.payload as Record<string, unknown> : {};
+  const requestId = planPayload.requestId;
+  if (typeof requestId !== "string" || !UUID_RE.test(requestId)) {
+    return jsonError("Référence de demande absente du plan.", 409);
+  }
+
   const approvalResult = await callUserData<Row[]>(
     "project_memory_approvals", "GET",
     {
       select: "id,approval_kind,decision,plan_digest,scope_digest,request_id,ai_processing_consent",
       project_id: `eq.${projectId}`, plan_version: `eq.${input.planVersion}`,
       plan_digest: `eq.${plan.payload_digest}`, scope_digest: `eq.${plan.scope_digest}`,
-      decision: "eq.approved",
+      request_id: `eq.${requestId}`, decision: "eq.approved",
     },
   );
   if (!approvalResult.ok) return jsonError("Impossible de vérifier les approbations.", approvalResult.status >= 500 ? 503 : 403);
@@ -69,8 +75,18 @@ export async function POST(request: Request, context: RouteContext) {
       approvedByKind.set(approval.approval_kind, approval);
     }
   }
-  const missingApprovals = APPROVAL_KINDS.filter((kind) => !approvedByKind.has(kind));
-  if (missingApprovals.length) return jsonError("Les trois approbations exactes sont requises avant la mise en file.", 409, { missingApprovals });
+  // The client-scope approval is also the explicit consent gate for sending this project's data to AI providers.
+  const clientScopeApproval = approvedByKind.get("client_scope");
+  if (!clientScopeApproval || clientScopeApproval.request_id !== requestId || clientScopeApproval.ai_processing_consent !== true) {
+    return jsonError("Le consentement explicite du client au traitement IA est requis.", 409, { missingApprovals: ["client_scope_consent"] });
+  }
+  const missingApprovals = APPROVAL_KINDS.filter((kind) => {
+    const approval = approvedByKind.get(kind);
+    return !approval || approval.request_id !== requestId
+      || approval.plan_digest !== plan.payload_digest
+      || approval.scope_digest !== plan.scope_digest;
+  });
+  if (missingApprovals.length) return jsonError("Les trois approbations exactes de cette demande et de cette version sont requises avant la mise en file.", 409, { missingApprovals });
 
   const duplicateResult = await callUserData<Row[]>(
     "project_factory_jobs", "GET",
@@ -82,8 +98,6 @@ export async function POST(request: Request, context: RouteContext) {
 
   const approvalIds = APPROVAL_KINDS.map((kind) => approvedByKind.get(kind)?.id).filter((id): id is string => typeof id === "string");
   if (approvalIds.length !== APPROVAL_KINDS.length) return jsonError("Les identifiants des approbations sont incomplets.", 409);
-  const requestId = APPROVAL_KINDS.map((kind) => approvedByKind.get(kind)?.request_id).find((id) => typeof id === "string") ?? null;
-
   const jobResult = await callUserData<Row[]>(
     "project_factory_jobs", "POST", { select: "id,status" },
     {
