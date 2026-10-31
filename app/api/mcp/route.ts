@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
-import { validateMcpHttpRequest, MERKORA_MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
+import { validateMcpHttpRequest, MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
 import { createMcpUnauthorizedHeaders } from "@/lib/mcp/oauth-resource";
 
 export const runtime = "nodejs";
