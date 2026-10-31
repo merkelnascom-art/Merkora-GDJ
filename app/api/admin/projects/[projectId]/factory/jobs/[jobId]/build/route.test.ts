@@ -74,6 +74,10 @@ beforeEach(() => {
     if (method === "POST" && path === "project_factory_evidence") return { ok: true, status: 201, data: [
       { id: "evidence-1" }, { id: "evidence-2" }, { id: "evidence-3" }, { id: "evidence-4" },
     ] };
+    if (method === "PATCH" && path.startsWith("project_factory_tasks?id=")) {
+      const taskId = decodeURIComponent(path.match(/id=eq.([^&]+)/)?.[1] ?? "");
+      return { ok: true, status: 200, data: [{ id: taskId }] };
+    }
     return { ok: true, status: 200, data: [] };
   });
 });
