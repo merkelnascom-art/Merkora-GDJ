@@ -55,6 +55,20 @@ Therefore MerKora must not interpret an approved OAuth consent screen or a reque
 
 Do not create broad policies such as `TO authenticated USING (auth.uid() = user_id)` as a substitute for client-specific restrictions if the requirement is to distinguish ordinary MerKora sessions from external assistants. Keep ordinary application access and OAuth-client access as separate policy paths.
 
+## Live RLS audit (read-only inspection, 2026-10-31)
+
+The connected Supabase project `tvwkickjtqjqwoiidmxj` was inspected without changing it.
+
+- All 18 current public base tables have RLS enabled.
+- There are no public views or materialized views in the inspected schema.
+- `public.user_projects` has owner-scoped SELECT, INSERT, UPDATE and DELETE policies. Its write policies currently allow the authenticated owner to write, including a Supabase OAuth token carrying the normal `authenticated` role.
+- Several other tables intentionally allow authenticated clients to submit quote decisions, payment declarations, or requests, while admin policies allow additional reads and writes. These policies are not suitable as a direct-access permission boundary for an MCP OAuth bearer token.
+- The MCP HTTP route only exposes three read-only tools, but that alone does not prevent an OAuth bearer token from being reused directly against the Supabase Data API.
+
+A review-only SQL proposal is stored at `docs/security/2026-10-31-mcp-oauth-rls-hardening-review.sql`. It adds restrictive policies so OAuth tokens (identified by the trusted `client_id` claim) can read only their own `user_projects` rows and cannot write to any public table. It also includes the Custom Access Token Hook that sets a dedicated MCP audience for OAuth authorization-code and refresh tokens.
+
+**The SQL proposal has not been applied.** No RLS policy, hook, Auth setting, table, row, or migration history was changed in Supabase. The domain placeholder in the SQL must be replaced with the verified canonical HTTPS MCP URL before review or application.
+
 ## Required dashboard configuration before real client connections
 
 These actions have deliberately NOT been performed:
