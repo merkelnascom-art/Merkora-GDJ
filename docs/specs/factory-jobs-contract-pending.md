@@ -1,6 +1,6 @@
-# Factory job creation endpoint — pending implementation
+# Factory job creation endpoint — implemented on feature branch
 
-**Status:** specification preserved; endpoint is not implemented yet.
+**Status:** endpoint and server helpers have been restored on `feature/merkora-orchestration-v1`; automated tests have been restored and expanded. Runtime verification is pending the current Vercel preview.
 
 The original Vitest file was orphaned: it imports `./route`, `@/lib/server/admin-access`, and `@/lib/server/supabase-rest`, but none of these files exist in this repository branch. This caused Vercel's TypeScript build to fail before the new MerKora orchestration work could be validated.
 
@@ -42,3 +42,18 @@ The database function `public.is_merkora_admin()` currently recognizes the confi
 
 This inspection is read-only. It does not implement the endpoint or authorize a schema change.
 
+
+
+## 9. Implementation delivered on the feature branch (2026-10-31)
+
+Added:
+- `POST /api/admin/projects/[projectId]/factory/jobs`
+- `src/lib/server/admin-access.ts`
+- `src/lib/server/supabase-rest.ts`
+- Restored and expanded `route.test.ts`
+
+The route rejects cross-origin requests, malformed identifiers, unauthenticated sessions and non-administrators before database writes. It loads the exact plan version and requires all three approved records to match the same project, plan version, plan digest and scope digest. It checks the correlation ID for an existing job, creates a queued job with the approval IDs and request reference in its manifest, then inserts the five dependency-aware tasks in one bulk PostgREST request.
+
+The route does not start a worker, call an AI provider, write application code, or deploy. If task provisioning fails after the job is created, it attempts to mark the job `blocked` and returns the job ID for administrative recovery. This is a recoverable two-request flow, not a single database transaction; a transactional RPC remains a future hardening option and would require separately approved schema work.
+
+No Supabase schema or customer data was changed during this implementation. Verification is pending the latest Vercel preview and test results.
