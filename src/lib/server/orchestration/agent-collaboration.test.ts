@@ -3,8 +3,8 @@ import { planAgentCollaboration, type AgentProviderConnection } from "./agent-co
 
 const providers: AgentProviderConnection[] = [
   { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
-  { providerId: "anthropic", status: "connected", capabilities: ["messages.create"] },
-  { providerId: "google-gemini", status: "not_configured", capabilities: ["generate_content"] },
+  { providerId: "anthropic", status: "connected", capabilities: ["models.generate"] },
+  { providerId: "gemini", status: "not_configured", capabilities: ["models.generate"] },
 ];
 
 describe("agent collaboration planner", () => {
@@ -17,7 +17,7 @@ describe("agent collaboration planner", () => {
 
     expect(plan.assignments).toEqual([
       { role: "analyst", providerId: "openai", capability: "models.generate" },
-      { role: "reviewer", providerId: "anthropic", capability: "messages.create" },
+      { role: "reviewer", providerId: "anthropic", capability: "models.generate" },
     ]);
     expect(plan.blockedRoles).toEqual([]);
   });
