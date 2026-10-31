@@ -89,3 +89,10 @@ Never write tokens, authorization codes, secrets, full provider error bodies, or
 ## Explicitly deferred
 
 No tables, policies, migrations, credentials, provider OAuth apps, environment secrets, or production deployments have been created. The SQL/RLS design must be reviewed and approved before implementation. First provider candidate after storage approval: GitHub read-only repository access, then pull-request creation only behind a separate approval.
+
+
+## Cryptographic context binding update (2026-10-31)
+
+The AES-256-GCM vault now authenticates the connection identifier and provider identifier as additional authenticated data, in addition to the envelope version and key identifier. A ciphertext copied from one provider connection cannot be decrypted in the context of another connection/provider pair. The context is supplied by trusted server-side metadata and is not read from a client request.
+
+The vault remains a cryptographic primitive only: no database persistence, key rotation workflow, OAuth callback, or production secret has been configured. The API requires the caller to pass the exact connection context to both `seal` and `open`.
