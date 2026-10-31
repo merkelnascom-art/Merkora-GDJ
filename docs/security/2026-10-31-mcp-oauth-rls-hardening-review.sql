@@ -26,6 +26,10 @@ BEGIN
   oauth_client_id := claims ->> 'client_id';
 
   IF oauth_client_id IS NOT NULL
+     AND oauth_client_id = ANY (ARRAY[
+       'REPLACE-WITH-APPROVED-CHATGPT-OAUTH-CLIENT-ID',
+       'REPLACE-WITH-APPROVED-CLAUDE-OAUTH-CLIENT-ID'
+     ]::text[])
      AND auth_method IN ('oauth_provider/authorization_code', 'token_refresh') THEN
     claims := jsonb_set(
       claims,
