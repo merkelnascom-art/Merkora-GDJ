@@ -44,6 +44,13 @@ describe("generateProjectSource", () => {
     ] })).toThrow(/unique/i);
   });
 
+  it("rejects module identifiers that would create invalid TypeScript component names", () => {
+    expect(() => generateProjectSource({
+      ...input,
+      modules: [{ id: "123-dashboard", title: "Tableau", description: "Vue de synthèse." }],
+    })).toThrow(/identifiant/i);
+  });
+
   it("emits syntactically valid TypeScript and TSX files", () => {
     const result = generateProjectSource(input);
     for (const file of result.files.filter((item) => item.path.endsWith(".tsx"))) {
