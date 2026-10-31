@@ -224,3 +224,10 @@ Ces éléments sont des fondations exécutables en test, pas encore une fonction
 - Le contenu des missions est explicitement traité comme une donnée non fiable dans les instructions système des trois adaptateurs.
 
 Le commutateur runtime est maintenu à `false` dans `.env.example`. Les appels fournisseur réels restent désactivés tant que les contrôles d'accès projet, le consentement, le budget atomique, l'audit durable et le worker de production ne sont pas raccordés.
+
+
+### Isolation des identifiants par connexion — 31 octobre 2026
+
+Les appels d'agents portent désormais l'identifiant de connexion et son propriétaire (`organization`, `user` ou `customer`). La résolution du credential reçoit ce contexte exact. Les clés globales MerKora ne sont utilisables que pour le propriétaire organisationnel explicitement identifié par `MERKORA_ORGANIZATION_ID`. Un compte client ne peut jamais retomber silencieusement sur une clé globale de l'organisation.
+
+Le résolveur de credentials par tenant est une interface serveur préparée, mais il n'est pas encore raccordé au stockage Supabase durable. Le runtime demeure désactivé par défaut et ne doit pas être activé en production avant la mise en place du stockage, de la vérification d'accès et des audits.
