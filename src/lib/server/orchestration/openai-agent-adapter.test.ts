@@ -41,7 +41,7 @@ describe("OpenAI agent adapter", () => {
       fetcher,
     });
 
-    await expect(adapter.invoke({ mission, modelAlias: "balanced", timeoutMs: 15_000 })).resolves.toEqual(result);
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai" }, mission, modelAlias: "balanced", timeoutMs: 15_000 })).resolves.toEqual(result);
     expect(fetcher).toHaveBeenCalledTimes(1);
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.openai.com/v1/chat/completions");
@@ -60,7 +60,7 @@ describe("OpenAI agent adapter", () => {
       fetcher,
     });
 
-    await expect(adapter.invoke({ mission, modelAlias: "balanced", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai" }, mission, modelAlias: "balanced", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -72,7 +72,7 @@ describe("OpenAI agent adapter", () => {
       fetcher,
     });
 
-    await expect(adapter.invoke({ mission, modelAlias: "client-selected-model", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai" }, mission, modelAlias: "client-selected-model", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -87,6 +87,6 @@ describe("OpenAI agent adapter", () => {
       fetcher,
     });
 
-    await expect(adapter.invoke({ mission, modelAlias: "balanced", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai" }, mission, modelAlias: "balanced", timeoutMs: 15_000 })).rejects.toThrow();
   });
 });
