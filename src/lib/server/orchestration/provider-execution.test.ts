@@ -32,7 +32,7 @@ describe("provider execution boundary", () => {
     const invoke = vi.fn(async () => result);
     const runtime = createAgentRuntime([adapter(invoke)]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: true, result });
@@ -43,7 +43,7 @@ describe("provider execution boundary", () => {
     const invoke = vi.fn(async () => result);
     const runtime = createAgentRuntime([adapter(invoke)]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "not_configured", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "not_configured", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: false, code: "NOT_CONNECTED" });
@@ -53,7 +53,7 @@ describe("provider execution boundary", () => {
   it("blocks missing capabilities", async () => {
     const runtime = createAgentRuntime([adapter()]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: [] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: [] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: false, code: "CAPABILITY_MISSING" });
@@ -63,7 +63,7 @@ describe("provider execution boundary", () => {
     const bad = { ...result, projectId: "other-project" };
     const runtime = createAgentRuntime([adapter(vi.fn(async () => bad))]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: false, code: "INVALID_RESULT" });
@@ -72,7 +72,7 @@ describe("provider execution boundary", () => {
   it("sanitizes provider exceptions", async () => {
     const runtime = createAgentRuntime([adapter(vi.fn(async () => { throw new Error("secret-key leaked"); }))]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: false, code: "PROVIDER_ERROR" });
@@ -84,7 +84,7 @@ describe("provider execution boundary", () => {
       adapter(vi.fn(async () => { throw new DOMException("secret-token", "AbortError"); })),
     ]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 30_000,
     });
     expect(outcome).toEqual({ ok: false, code: "TIMEOUT" });
@@ -95,7 +95,7 @@ describe("provider execution boundary", () => {
     const invoke = vi.fn(async () => result);
     const runtime = createAgentRuntime([adapter(invoke)]);
     const outcome = await runtime.invoke({
-      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      connection: { connectionId: "connection-1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "openai", status: "connected", capabilities: ["models.generate"] },
       mission, modelAlias: "balanced", timeoutMs: 500_000,
     });
     expect(outcome).toEqual({ ok: false, code: "PROVIDER_ERROR" });
