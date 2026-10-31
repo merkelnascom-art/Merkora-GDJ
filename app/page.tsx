@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSafeOAuthConsentReturnPath } from "@/lib/auth/oauth-return-path";
 import { toProjectRecord, toSupabaseProjectRow, type SupabaseProjectRow } from "@/lib/supabase/project-record";
 import {
   buildRecommendations,
@@ -103,6 +104,11 @@ export default function HomePage() {
       const user = data.session?.user;
       setCurrentUser(user ? { id: user.id, email: user.email } : null);
       if (user) {
+        const returnTo = getSafeOAuthConsentReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
+        if (returnTo) {
+          window.location.replace(returnTo);
+          return;
+        }
         const { data: rows, error: queryError } = await supabase
           .from("user_projects")
           .select("*")
@@ -296,6 +302,8 @@ export default function HomePage() {
       } else if (result.data.user) {
         setCurrentUser({ id: result.data.user.id, email: result.data.user.email });
         setAuthNotice("Connexion réussie. Chargement de votre espace…");
+        const returnTo = getSafeOAuthConsentReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
+        if (returnTo) window.location.assign(returnTo);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Une erreur inattendue est survenue.";
