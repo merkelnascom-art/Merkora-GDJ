@@ -49,3 +49,11 @@ Avant activation réelle, ajouter :
 ## Statut au 31 octobre 2026
 
 Les adaptateurs OpenAI, Anthropic et Gemini et le registre serveur sont présents dans la branche de travail. Aucun secret n'a été ajouté, aucun appel payant n'a été lancé et aucun fournisseur n'est déclaré connecté tant que la configuration réelle n'a pas été vérifiée.
+
+
+## Séparation des identifiants par propriétaire
+
+- Les clés globales `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` et `GEMINI_API_KEY` ne sont utilisables que pour une connexion dont le propriétaire est `organization` et dont l'identifiant correspond exactement à `MERKORA_ORGANIZATION_ID`.
+- Les connexions de type `user` ou `customer` doivent obtenir leur secret via le callback serveur `resolveCredential(providerId, connection)`, lequel devra charger le secret du bon propriétaire/connectionId et le déchiffrer avec le coffre.
+- Le callback n'est pas encore raccordé à une base persistante. Aucun secret client ne doit être stocké dans le navigateur ou dans les champs publics de la base.
+- Une clé de l'organisation MerKora ne sert jamais de solution de secours pour une connexion appartenant à un client.
