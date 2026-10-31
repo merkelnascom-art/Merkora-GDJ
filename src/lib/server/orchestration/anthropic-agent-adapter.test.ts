@@ -40,7 +40,7 @@ describe("Anthropic agent adapter", () => {
       fetcher,
     });
 
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).resolves.toEqual(result);
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "anthropic" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).resolves.toEqual(result);
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(new Headers(init.headers).get("x-api-key")).toBe("server-secret");
@@ -54,7 +54,7 @@ describe("Anthropic agent adapter", () => {
       models: { reviewer: "claude-model-approved" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "anthropic" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -65,7 +65,7 @@ describe("Anthropic agent adapter", () => {
       models: { reviewer: "claude-model-approved" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "unapproved", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "anthropic" }, mission, modelAlias: "unapproved", timeoutMs: 15_000 })).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -78,6 +78,6 @@ describe("Anthropic agent adapter", () => {
       models: { reviewer: "claude-model-approved" },
       fetcher,
     });
-    await expect(adapter.invoke({ mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
+    await expect(adapter.invoke({ connection: { connectionId: "connection_1", owner: { type: "organization", id: "merkora-gdj" }, providerId: "anthropic" }, mission, modelAlias: "reviewer", timeoutMs: 15_000 })).rejects.toThrow();
   });
 });
