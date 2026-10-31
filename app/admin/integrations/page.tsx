@@ -62,6 +62,7 @@ export default function AdminIntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedWorkspace, setSelectedWorkspace] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -78,10 +79,14 @@ export default function AdminIntegrationsPage() {
     return () => { active = false; };
   }, []);
 
-  const grouped = useMemo(() => integrations.reduce<Record<string, Integration[]>>((groups, item) => {
+  const workspaceFiltered = useMemo(() => selectedWorkspace === "all"
+    ? integrations
+    : integrations.filter((item) => item.workspaces?.includes(selectedWorkspace)), [integrations, selectedWorkspace]);
+
+  const grouped = useMemo(() => workspaceFiltered.reduce<Record<string, Integration[]>>((groups, item) => {
     (groups[item.category] ??= []).push(item);
     return groups;
-  }, {}), [integrations]);
+  }, {}), [workspaceFiltered]);
 
   return (
     <main style={{ minHeight: "100vh", background: "#f6f7fb", color: "#172033", padding: "clamp(20px, 4vw, 48px)", fontFamily: "Arial, sans-serif" }}>
@@ -99,6 +104,26 @@ export default function AdminIntegrationsPage() {
           <Summary label="Flux bidirectionnels prévus" value={integrations.filter((item) => item.directions.includes("inbound") && item.directions.includes("outbound")).length} />
           <Summary label="Vérifications nécessaires" value={integrations.filter((item) => item.verificationRequired).length} />
         </section>
+
+        {!loading && !error && (
+          <section style={{ marginBottom: 22 }}>
+            <h2 style={{ fontSize: 17, margin: "0 0 10px" }}>Connexions par espace</h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {[{ id: "all", label: "Tous les espaces" }, ...Object.entries(workspaceLabels).map(([id, label]) => ({ id, label }))].map((workspace) => {
+                const count = workspace.id === "all" ? integrations.length : integrations.filter((item) => item.workspaces?.includes(workspace.id)).length;
+                const active = selectedWorkspace === workspace.id;
+                return (
+                  <button key={workspace.id} type="button" onClick={() => setSelectedWorkspace(workspace.id)}
+                    aria-pressed={active}
+                    style={{ border: active ? "1px solid #5d55c7" : "1px solid #dfe2eb", borderRadius: 999, padding: "9px 13px", background: active ? "#f0efff" : "#fff", color: active ? "#4d46a8" : "#475467", fontWeight: 700, cursor: "pointer" }}>
+                    {workspace.label} · {count}
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ color: "#667085", fontSize: 12, margin: "10px 0 0" }}>Sélectionnez un espace pour voir uniquement les outils qui lui sont attribués. Les connexions restent à configurer individuellement.</p>
+          </section>
+        )}
 
         {loading && <p role="status">Chargement du catalogue sécurisé…</p>}
         {error && <div role="alert" style={{ background: "#fff1f0", color: "#9b2922", padding: 18, borderRadius: 14 }}>{error} <p>Connectez-vous avec un compte administrateur autorisé, puis rechargez cette page.</p></div>}
