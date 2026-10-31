@@ -40,7 +40,16 @@ const directionLabels: Record<string, string> = {
   inbound: "Outil → MerKora",
 };
 
-const workspaceLabels: Record<string, string> = {\n  client: "Espace client",\n  admin: "Administration",\n  assistant: "Copilote IA",\n  studio_visuel: "Studio visuel",\n  fabrique: "Fabrique de projets",\n  creation_media: "Création média",\n};\n\nconst transportLabels: Record<string, string> = {
+const workspaceLabels: Record<string, string> = {
+  client: "Espace client",
+  admin: "Administration",
+  assistant: "Copilote IA",
+  studio_visuel: "Studio visuel",
+  fabrique: "Fabrique de projets",
+  creation_media: "Création média",
+};
+
+const transportLabels: Record<string, string> = {
   oauth: "OAuth",
   rest_api: "API REST",
   mcp: "MCP",
