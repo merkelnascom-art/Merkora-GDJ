@@ -23,6 +23,7 @@ describe("external MerKora assistant provider", () => {
       history: [],
     });
     expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected external provider call to be blocked");
     expect(result.reason).toBe("client_consent_required");
     expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
   });
