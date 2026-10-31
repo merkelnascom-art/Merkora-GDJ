@@ -212,3 +212,15 @@ Depuis la rédaction initiale, les éléments suivants ont été ajoutés sur la
 - Guide d'exploitation des variables serveur : `docs/operations/2026-10-31-provider-runtime-configuration.md`.
 
 Ces éléments sont des fondations exécutables en test, pas encore une fonctionnalité de production complète. Il manque toujours le stockage durable multi-tenant, les contrôles d'accès intégrés à une route serveur authentifiée, les réservations de budget atomiques, la journalisation persistante, le worker durable et les écrans de gestion des connexions. Aucun appel fournisseur réel ni déploiement n'a été effectué.
+
+
+### Compléments de sécurité et d'harmonisation — 31 octobre 2026
+
+- Le runtime multi-fournisseurs possède maintenant un coupe-circuit global `MERKORA_AGENT_RUNTIME_ENABLED`, désactivé par défaut. Les clés seules ne suffisent donc pas à activer l'enregistrement des agents.
+- Les capacités d'appel ont été harmonisées sous `models.generate` pour OpenAI, Anthropic et Gemini afin que le planificateur et les adaptateurs utilisent le même contrat.
+- L'exécuteur séquentiel exige deux barrières serveur : autorisation du projet et réservation budgétaire. Il vérifie également l'état du fournisseur, sa capacité et l'alias modèle avant de réserver le budget.
+- La synthèse déterministe distingue `incomplete`, `blocked` et `ready_for_human_review`. Elle ne transforme jamais les déclarations d'un fournisseur en preuve indépendante ni en livraison.
+- Le coffre AES-256-GCM lie le ciphertext au couple connexion/fournisseur via AAD et accepte un résolveur de clés par identifiant pour préparer la rotation. Aucun coffre durable ni trousseau de production n'est configuré.
+- Le contenu des missions est explicitement traité comme une donnée non fiable dans les instructions système des trois adaptateurs.
+
+Le commutateur runtime est maintenu à `false` dans `.env.example`. Les appels fournisseur réels restent désactivés tant que les contrôles d'accès projet, le consentement, le budget atomique, l'audit durable et le worker de production ne sont pas raccordés.
