@@ -36,7 +36,8 @@ async function authenticate(request: Request): Promise<AuthenticatedUser | null>
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!token || !url || !key) return null;
   const oauthClientId = getOAuthClientIdFromAccessToken(token);
-  if (!oauthClientId) return null;
+  const resourceUrl = process.env.MERKORA_MCP_RESOURCE_URL ?? new URL("/api/mcp", request.url).toString();
+  if (!oauthClientId || !hasMcpResourceAudience(token, resourceUrl)) return null;
 
   try {
     const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
