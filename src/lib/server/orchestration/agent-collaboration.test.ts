@@ -26,7 +26,7 @@ describe("agent collaboration planner", () => {
     const plan = planAgentCollaboration({
       projectId: "project-2",
       requestedRoles: ["cross_checker"],
-      providers,
+      providers: [providers[2]],
     });
 
     expect(plan.assignments).toEqual([]);
@@ -58,7 +58,7 @@ describe("agent collaboration planner", () => {
       providers,
     });
     expect(plan.assignments).toEqual([
-      { role: "reviewer", providerId: "anthropic", capability: "messages.create" },
+      { role: "reviewer", providerId: "anthropic", capability: "models.generate" },
       { role: "analyst", providerId: "openai", capability: "models.generate" },
     ]);
   });
