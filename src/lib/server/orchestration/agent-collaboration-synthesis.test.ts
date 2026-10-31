@@ -79,7 +79,7 @@ describe("agent collaboration synthesis", () => {
       execution: execution({ ...result, status: "blocked" }),
       requiredRoles: ["analyst"],
     });
-    expect(synthesis.state).toBe("incomplete");
+    expect(synthesis.state).toBe("blocked");
     expect(synthesis.blockedRoles).toContain("analyst");
   });
 });
