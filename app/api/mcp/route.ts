@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   const auth = await authenticate(request);
   if (!auth) {
     const metadataUrl = new URL("/.well-known/oauth-protected-resource", request.url).toString();
-    const hasBearerToken = /^Bearer\\s+.+$/i.test(request.headers.get("authorization") ?? "");
+    const hasBearerToken = /^Bearer\s+.+$/i.test(request.headers.get("authorization") ?? "");
     return NextResponse.json(
       { error: "Authentification MerKora requise." },
       { status: 401, headers: createMcpUnauthorizedHeaders(metadataUrl, hasBearerToken) },
