@@ -95,6 +95,33 @@ describe("POST factory job build", () => {
       method === "PATCH" && String(path).includes("status=eq.queued"))).toBe(true);
   });
 
+  it("does not report success when the final job status update returns no row", async () => {
+    vi.mocked(callUserData).mockImplementation(async (path, method, _token, body) => {
+      if (method === "GET" && path.startsWith("project_factory_jobs?select")) return { ok: true, status: 200, data: [job] };
+      if (method === "GET" && path.startsWith("project_memory_plan_versions?select")) return { ok: true, status: 200, data: [plan] };
+      if (method === "GET" && path.startsWith("project_memory_approvals?select")) return { ok: true, status: 200, data: approvals };
+      if (method === "GET" && path.startsWith("user_projects?select")) return { ok: true, status: 200, data: [project] };
+      if (method === "GET" && path.startsWith("client_requests?select")) return { ok: true, status: 200, data: [{ id: "d1c2d3e4-f567-4890-8abc-1234567890ab", user_id: "owner-1", project_id: project.id }] };
+      if (method === "GET" && path.startsWith("client_project_launches?select")) return { ok: true, status: 200, data: [{ request_id: "d1c2d3e4-f567-4890-8abc-1234567890ab", client_user_id: "owner-1", required_amount: 20000, confirmed_amount_at_launch: 20000 }] };
+      if (method === "GET" && path.startsWith("project_factory_tasks?select")) return { ok: true, status: 200, data: tasks };
+      if (method === "PATCH" && path.includes("status=eq.queued")) return { ok: true, status: 200, data: [{ ...job, status: "building" }] };
+      if (method === "POST" && path === "project_factory_evidence") return { ok: true, status: 201, data: [
+        { id: "evidence-1" }, { id: "evidence-2" }, { id: "evidence-3" }, { id: "evidence-4" },
+      ] };
+      if (method === "PATCH" && path.startsWith("project_factory_tasks?id=")) {
+        const taskId = decodeURIComponent(path.match(/id=eq.([^&]+)/)?.[1] ?? "");
+        return { ok: true, status: 200, data: [{ id: taskId }] };
+      }
+      if (method === "PATCH" && path.startsWith("project_factory_jobs?id=") && body?.status === "awaiting_approval") {
+        return { ok: true, status: 200, data: [] };
+      }
+      return { ok: true, status: 200, data: [] };
+    });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(502);
+    expect((await response.json()).jobId).toBe(job.id);
+  });
+
   it("does not claim or execute a job without all exact approvals", async () => {
     vi.mocked(callUserData).mockImplementation(async (path, method) => {
       if (method === "GET" && path.startsWith("project_factory_jobs?select")) return { ok: true, status: 200, data: [job] };
