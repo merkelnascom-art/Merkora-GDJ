@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
 import { validateMcpHttpRequest, MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
 import { createMcpUnauthorizedHeaders } from "@/lib/mcp/oauth-resource";
-import { getOAuthClientIdFromAccessToken } from "@/lib/mcp/oauth-token";
+import { getOAuthClientIdFromAccessToken, hasMcpResourceAudience } from "@/lib/mcp/oauth-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
