@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOAuthClientIdFromAccessToken } from "./oauth-token";
+import { getOAuthClientIdFromAccessToken, hasMcpResourceAudience } from "./oauth-token";
 
 function token(payload: Record<string, unknown>) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -24,5 +24,24 @@ describe("getOAuthClientIdFromAccessToken", () => {
   it("rejects empty or excessively long client ids", () => {
     expect(getOAuthClientIdFromAccessToken(token({ client_id: " " }))).toBeNull();
     expect(getOAuthClientIdFromAccessToken(token({ client_id: "x".repeat(513) }))).toBeNull();
+  });
+});
+
+describe("hasMcpResourceAudience", () => {
+  const resource = "https://merkora.com/api/mcp";
+
+  it("accepts only a token audience bound to the canonical MCP resource", () => {
+    expect(hasMcpResourceAudience(token({ aud: resource }), resource)).toBe(true);
+    expect(hasMcpResourceAudience(token({ aud: ["authenticated", resource] }), resource)).toBe(true);
+  });
+
+  it("rejects ordinary Supabase audiences and tokens for another resource", () => {
+    expect(hasMcpResourceAudience(token({ aud: "authenticated" }), resource)).toBe(false);
+    expect(hasMcpResourceAudience(token({ aud: "https://other.example/mcp" }), resource)).toBe(false);
+  });
+
+  it("rejects missing or invalid resource configuration", () => {
+    expect(hasMcpResourceAudience(token({ aud: resource }), "")).toBe(false);
+    expect(hasMcpResourceAudience(token({ aud: resource }), "http://merkora.com/api/mcp")).toBe(false);
   });
 });
