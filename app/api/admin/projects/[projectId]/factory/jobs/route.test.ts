@@ -37,7 +37,7 @@ afterEach(() => vi.clearAllMocks());
 
 describe("GET /api/admin/projects/[projectId]/factory/jobs", () => {
   it("returns the project's jobs and task records using the authenticated RLS session", async () => {
-    vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user });
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "job-1", project_id: "MK-PROJECT-001", status: "queued" }] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "task-1", job_id: "job-1", task_key: "prepare_specification", state: "not_started" }] });
@@ -52,7 +52,7 @@ describe("GET /api/admin/projects/[projectId]/factory/jobs", () => {
   });
 
   it("does not disclose factory records to unauthenticated visitors", async () => {
-    vi.mocked(getAdminAccess).mockResolvedValue({ ok: false, reason: "unauthenticated" });
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
     const response = await GET(new Request("https://merkora.test/api/admin/projects/MK-PROJECT-001/factory/jobs"), context);
     expect(response.status).toBe(401);
     expect(callUserData).not.toHaveBeenCalled();
