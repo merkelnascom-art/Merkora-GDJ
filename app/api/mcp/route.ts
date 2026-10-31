@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
-import { validateMcpHttpRequest, MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
+import { validateMcpHttpRequest, MERKORA_MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
 import { createMcpUnauthorizedHeaders } from "@/lib/mcp/oauth-resource";
 
 export const runtime = "nodejs";
@@ -18,11 +18,11 @@ type JsonRpcRequest = {
 type AuthenticatedUser = { id: string; email: string | null };
 
 function rpcResult(id: unknown, result: unknown) {
-  return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+  return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { "MCP-Protocol-Version": MERKORA_MCP_PROTOCOL_VERSION } });
 }
 
 function rpcError(id: unknown, code: number, message: string) {
-  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } }, { headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } }, { headers: { "MCP-Protocol-Version": MERKORA_MCP_PROTOCOL_VERSION } });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -112,12 +112,12 @@ export async function POST(request: Request) {
   const id = message.id ?? null;
 
   if (message.method === "notifications/initialized" || message.method === "notifications/cancelled") {
-    return new Response(null, { status: 202, headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+    return new Response(null, { status: 202, headers: { "MCP-Protocol-Version": MERKORA_MCP_PROTOCOL_VERSION } });
   }
 
   if (message.method === "initialize") {
     return rpcResult(id, {
-      protocolVersion: MCP_PROTOCOL_VERSION,
+      protocolVersion: MERKORA_MCP_PROTOCOL_VERSION,
       capabilities: { tools: {} },
       serverInfo: { name: "merkora-gdj", version: "0.1.0" },
       instructions: "MerKora exposes uniquement des outils de lecture des données du compte authentifié. Aucune mutation, dépense ou publication n'est autorisée par ce serveur.",
