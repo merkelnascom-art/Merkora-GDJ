@@ -16,6 +16,7 @@ export const WORKFLOW_STAGES = [
   "tests",
   "preview_review",
   "delivery_approval",
+  "delivery_approved",
   "delivered",
 ] as const;
 
@@ -38,6 +39,7 @@ export type WorkflowAction =
   | "quote_prepared"
   | "client_approved_quote"
   | "build_started"
+  | "tests_started"
   | "tests_passed"
   | "tests_failed"
   | "preview_ready"
@@ -59,10 +61,11 @@ const NEXT: Partial<Record<WorkflowStage, Partial<Record<WorkflowAction, Workflo
   client_review: { client_approved_concept: "quote_review", concept_prepared: "client_review" },
   quote_review: { quote_prepared: "quote_review", client_approved_quote: "approved_for_build" },
   approved_for_build: { build_started: "implementation" },
-  implementation: { tests_passed: "preview_review", tests_failed: "implementation" },
+  implementation: { tests_started: "tests" },
   tests: { tests_passed: "preview_review", tests_failed: "implementation" },
   preview_review: { preview_ready: "delivery_approval" },
-  delivery_approval: { delivery_approved: "delivery_approval", delivery_completed: "delivered" },
+  delivery_approval: { delivery_approved: "delivery_approved" },
+  delivery_approved: { delivery_completed: "delivered" },
 };
 
 function isValidRecord(record: WorkflowRecord): boolean {
