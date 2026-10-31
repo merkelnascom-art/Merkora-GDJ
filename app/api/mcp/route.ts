@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
+import { validateMcpHttpRequest } from "@/lib/mcp/http-validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +95,11 @@ export async function POST(request: Request) {
 
   if (!isRecord(body) || body.jsonrpc !== "2.0" || typeof body.method !== "string") {
     return rpcError(isRecord(body) ? body.id ?? null : null, -32600, "Invalid JSON-RPC request");
+  }
+
+  const httpValidation = validateMcpHttpRequest(request.headers, body.method);
+  if (!httpValidation.ok) {
+    return NextResponse.json({ error: httpValidation.message }, { status: httpValidation.status });
   }
   const message = body as JsonRpcRequest;
   const id = message.id ?? null;
