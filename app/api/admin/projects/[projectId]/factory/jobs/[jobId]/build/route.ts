@@ -327,9 +327,24 @@ export async function POST(
         `project_factory_tasks?id=eq.${encodeURIComponent(String(task?.id))}&job_id=eq.${encodeURIComponent(jobId)}`,
         "PATCH", token, { state: update.state, updated_at: new Date().toISOString() }, "return=representation",
       );
-      if (!result.ok) {
-        await patchJob(projectId, jobId, token, { status: "failed", updated_at: new Date().toISOString() });
-        return NextResponse.json({ error: "Les preuves sont enregistrées, mais une étape n'a pas pu être mise à jour. Réconciliation administrateur requise." }, { status: 502 });
+      if (!result.ok || rows(result.data).length !== 1) {
+        await patchJob(projectId, jobId, token, {
+          status: "failed",
+          updated_at: new Date().toISOString(),
+          manifest: {
+            ...job.manifest,
+            sourcePath, sourceManifestPath, reportPath,
+            sourceDigest: source.digest, reportDigest,
+            failureStage: "task_state_persistence",
+            failedTaskKey: update.key,
+          },
+        });
+        return NextResponse.json({
+          error: "Les preuves sont enregistrées, mais l'état d'une étape n'a pas été confirmé en base. Réconciliation administrateur requise.",
+          stage: "task_state_persistence",
+          taskKey: update.key,
+          jobId,
+        }, { status: 502 });
       }
     }
 
