@@ -177,7 +177,8 @@ export default function HomePage() {
       .finally(() => { if (active) setFactoryLoading(false); });
     return () => { active = false; };
   }, [activeProjectId, supabase, currentUser]);
-\n  const activeProject = useMemo(
+
+  const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
   );
