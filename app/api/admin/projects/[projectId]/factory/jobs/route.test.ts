@@ -7,7 +7,7 @@ vi.mock("@/lib/server/supabase-rest", () => ({
 }));
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
 const plan = { version: 3, source_brief_version: 2, payload: { includedScope: [{ id: "attendance" }] }, payload_digest: "a".repeat(64), scope_digest: "b".repeat(64) };
@@ -34,6 +34,30 @@ beforeEach(() => {
     .mockResolvedValueOnce({ ok: true, status: 201, data: [{ id: "task-1" }, { id: "task-2" }, { id: "task-3" }, { id: "task-4" }, { id: "task-5" }] });
 });
 afterEach(() => vi.clearAllMocks());
+
+describe("GET /api/admin/projects/[projectId]/factory/jobs", () => {
+  it("returns the project's jobs and task records using the authenticated RLS session", async () => {
+    vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user });
+    vi.mocked(callUserData).mockReset()
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "job-1", project_id: "MK-PROJECT-001", status: "queued" }] })
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "task-1", job_id: "job-1", task_key: "prepare_specification", state: "not_started" }] });
+    const response = await GET(new Request("https://merkora.test/api/admin/projects/MK-PROJECT-001/factory/jobs"), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      jobs: [{ id: "job-1", status: "queued" }],
+      tasks: [{ id: "task-1", job_id: "job-1" }],
+    });
+    expect(callUserData).toHaveBeenNthCalledWith(1, "project_factory_jobs", "GET", expect.objectContaining({ project_id: "eq.MK-PROJECT-001" }));
+    expect(callUserData).toHaveBeenNthCalledWith(2, "project_factory_tasks", "GET", expect.objectContaining({ project_id: "eq.MK-PROJECT-001" }));
+  });
+
+  it("does not disclose factory records to unauthenticated visitors", async () => {
+    vi.mocked(getAdminAccess).mockResolvedValue({ ok: false, reason: "unauthenticated" });
+    const response = await GET(new Request("https://merkora.test/api/admin/projects/MK-PROJECT-001/factory/jobs"), context);
+    expect(response.status).toBe(401);
+    expect(callUserData).not.toHaveBeenCalled();
+  });
+});
 
 describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
   it("rejects malformed and cross-origin requests before database access", async () => {
