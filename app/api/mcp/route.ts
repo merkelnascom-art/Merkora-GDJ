@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { MERKORA_MCP_TOOLS } from "@/lib/mcp/tools";
+import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -121,7 +121,10 @@ export async function POST(request: Request) {
     if (!isRecord(message.params) || typeof message.params.name !== "string") {
       return rpcError(id, -32602, "Invalid tool parameters");
     }
-    const args = isRecord(message.params.arguments) ? message.params.arguments : {};
+    const args: unknown = message.params.arguments ?? {};
+    if (!validateMcpToolArguments(message.params.name, args)) {
+      return rpcError(id, -32602, "Invalid tool arguments");
+    }
 
     try {
       let result: unknown;
@@ -133,10 +136,8 @@ export async function POST(request: Request) {
           result = await fetchOwnProjects(request, auth);
           break;
         case "merkora_get_project": {
-          if (typeof args.project_id !== "string" || !args.project_id.trim() || args.project_id.length > 160) {
-            return rpcError(id, -32602, "project_id is required");
-          }
-          const rows = await fetchOwnProjects(request, auth, args.project_id);
+          const projectId = (args as { project_id: string }).project_id;
+          const rows = await fetchOwnProjects(request, auth, projectId);
           if (!rows.length) {
             return rpcResult(id, { content: [{ type: "text", text: "Projet introuvable ou non autorisé." }], isError: true });
           }
