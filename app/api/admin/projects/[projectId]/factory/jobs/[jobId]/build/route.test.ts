@@ -115,7 +115,7 @@ describe("POST factory job build", () => {
         const taskId = decodeURIComponent(path.match(/id=eq.([^&]+)/)?.[1] ?? "");
         return { ok: true, status: 200, data: [{ id: taskId }] };
       }
-      if (method === "PATCH" && path.startsWith("project_factory_jobs?id=") && body?.status === "awaiting_approval") {
+      if (method === "PATCH" && path.startsWith("project_factory_jobs?id=") && JSON.stringify(body).includes("awaiting_approval")) {
         return { ok: true, status: 200, data: [] };
       }
       return { ok: true, status: 200, data: [] };
