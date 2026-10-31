@@ -72,3 +72,12 @@ Operational caveats:
 - The plan endpoint currently uses `source_brief_version: 1` because the existing `user_projects` table has no brief-version column. This should be upgraded when brief revision history is implemented.
 - Plan version selection is read-then-insert. A concurrent administrator save can race; the database uniqueness constraint remains the final guard and the API reports a conflict rather than silently overwriting a plan.
 - These routes are API foundations. The customer/admin screens and a real execution worker are still required before a client can experience end-to-end automated delivery.
+
+
+## 11. Factory progress visibility (2026-10-31)
+
+- Added `GET /api/admin/projects/[projectId]/factory/jobs` as a session-authenticated read endpoint. It reads jobs and task rows through the caller's Supabase JWT; existing RLS restricts visibility to the project owner or MerKora administrators.
+- The project workspace now requests the job/task history when a project is opened and renders job status, plan version, creation time and the five task states.
+- Responses are private and non-cacheable. The client UI explicitly distinguishes a queued request from active code generation; it does not imply that an application is already being built.
+- Added tests for authorized progress retrieval and unauthenticated denial. These tests were added before implementation, but the focused red result has not been run/recorded in this remote-only workflow; final CI remains the verification gate.
+- This is progress visibility only. There is still no execution worker, no sandbox provisioning, no AI-generated source code, no test runner, and no customer-delivery artifact.
