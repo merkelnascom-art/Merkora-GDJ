@@ -368,6 +368,7 @@ export default function HomePage() {
           <span>＋</span> Nouveau besoin
         </button>
         <a className="side-link" href="#methode"><span>✳</span> Comment ça marche</a>
+        {currentUser && <a className="side-link" href="/account/connections"><span>⌁</span> Applications autorisées</a>}
         <div className="sidebar-bottom">
           <div className="sidebar-mini-mark">✳</div>
           <strong>Les besoins d’abord.</strong>
@@ -384,6 +385,7 @@ export default function HomePage() {
           </div>
           <div className="topbar-right">
             <span className="local-indicator"><i /> {supabase ? "Sauvegarde en ligne" : "Données locales"}</span>
+            {currentUser && <a className="button button-quiet" href="/account/connections">Connexions</a>}
             {currentUser && <span style={{ fontSize: "13px" }}>{currentUser.email}</span>}
             {currentUser ? <button className="button button-quiet" onClick={handleSignOut}>Déconnexion</button> : <button className="avatar" aria-label="Profil de démonstration">M</button>}
           </div>
