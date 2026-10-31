@@ -4,13 +4,18 @@ import {
   type AgentMissionResult,
 } from "./agent-mission-contract";
 
+export type AgentConnectionOwner = { type: "organization" | "user" | "customer"; id: string };
+
 export type AgentRuntimeConnection = {
+  connectionId: string;
+  owner: AgentConnectionOwner;
   providerId: string;
   status: "connected" | "not_configured" | "expired" | "revoked" | "error";
   capabilities: readonly string[];
 };
 
 export type AgentInvocation = {
+  connection: Pick<AgentRuntimeConnection, "connectionId" | "owner" | "providerId">;
   mission: AgentMissionEnvelope;
   /** Provider-specific model choice is resolved server-side, never trusted from a client. */
   modelAlias: string;
@@ -63,6 +68,11 @@ export function createAgentRuntime(adapters: readonly AgentRuntimeAdapter[]) {
       let rawResult: unknown;
       try {
         rawResult = await adapter.invoke({
+          connection: {
+            connectionId: input.connection.connectionId,
+            owner: input.connection.owner,
+            providerId: input.connection.providerId,
+          },
           mission: input.mission,
           modelAlias: input.modelAlias,
           timeoutMs: input.timeoutMs,
