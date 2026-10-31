@@ -88,4 +88,10 @@ describe("agent mission contract", () => {
       })),
     })).toThrow("Mission result collection limit exceeded.");
   });
+  it("rejects malformed provider JSON instead of trusting its TypeScript shape", () => {
+    expect(() => validateAgentMissionResult(missionInput, null)).toThrow("Mission result must be an object.");
+    expect(() => validateAgentMissionResult(missionInput, { ...validResult, findings: "not-an-array" })).toThrow("Mission findings must be a bounded list.");
+    expect(() => validateAgentMissionResult(missionInput, { ...validResult, requiresHumanDecision: "false" })).toThrow("Invalid human-decision flag.");
+    expect(() => validateAgentMissionResult(missionInput, { ...validResult, verification: { performed: [], passed: [], failed: null, notPerformed: [] } })).toThrow("Verification entry must be a bounded list.");
+  });
 });
