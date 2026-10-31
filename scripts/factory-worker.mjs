@@ -1,15 +1,15 @@
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
-const missing = required.filter((key) => !process.env[key]);
+import { readFactoryWorkerConfig, summarizeFactoryQueue } from "./factory-worker-core.mjs";
 
-if (missing.length) {
-  console.error(`[merkora-worker] Missing required environment variables: ${missing.join(", ")}`);
+let config;
+try {
+  config = readFactoryWorkerConfig(process.env);
+} catch (error) {
+  console.error("[merkora-worker] Invalid configuration:", error instanceof Error ? error.message : "unknown error");
   process.exit(1);
 }
 
-const supabaseUrl = process.env.SUPABASE_URL.replace(/\/$/, "");
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const intervalMs = Math.max(10_000, Number(process.env.MERKORA_WORKER_POLL_MS || 30_000));
-const controller = new AbortController();
+const { supabaseUrl, serviceKey, pollIntervalMs } = config;
+const shutdownController = new AbortController();
 let stopping = false;
 
 function sleep(ms) {
@@ -25,49 +25,41 @@ async function inspectQueue() {
         Authorization: `Bearer ${serviceKey}`,
         Accept: "application/json",
       },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.any([shutdownController.signal, AbortSignal.timeout(15_000)]),
     },
   );
 
   if (!response.ok) {
-    const safeBody = (await response.text()).slice(0, 300);
-    throw new Error(`Supabase queue read failed (${response.status}): ${safeBody}`);
+    throw new Error(`Supabase queue read failed with HTTP ${response.status}.`);
   }
 
-  const jobs = await response.json();
-  if (!Array.isArray(jobs)) throw new Error("Supabase returned an invalid queue response.");
-
-  const counts = jobs.reduce((result, job) => {
-    const status = typeof job?.status === "string" ? job.status : "unknown";
-    result[status] = (result[status] || 0) + 1;
-    return result;
-  }, {});
-
+  const queue = summarizeFactoryQueue(await response.json());
   console.info("[merkora-worker] Queue inspected", {
-    activeJobs: jobs.length,
-    statuses: counts,
+    ...queue,
     mode: "read_only_observer",
     at: new Date().toISOString(),
   });
 }
 
-async function shutdown(signal) {
+function shutdown(signal) {
   if (stopping) return;
   stopping = true;
-  console.info(`[merkora-worker] Received ${signal}; stopping after current poll.`);
-  controller.abort();
+  console.info(`[merkora-worker] Received ${signal}; stopping safely.`);
+  shutdownController.abort();
 }
 
-process.on("SIGTERM", () => void shutdown("SIGTERM"));
-process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 console.info("[merkora-worker] Started in read-only observer mode.");
 while (!stopping) {
   try {
     await inspectQueue();
   } catch (error) {
-    console.error("[merkora-worker] Poll failed:", error instanceof Error ? error.message : "unknown error");
+    if (!stopping) {
+      console.error("[merkora-worker] Poll failed:", error instanceof Error ? error.message : "unknown error");
+    }
   }
-  if (!stopping) await sleep(intervalMs);
+  if (!stopping) await sleep(pollIntervalMs);
 }
 console.info("[merkora-worker] Stopped cleanly.");
