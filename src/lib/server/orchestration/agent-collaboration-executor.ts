@@ -37,8 +37,16 @@ export async function executeAgentCollaboration(input: {
   missions: Partial<Record<AgentRole, AgentMissionEnvelope>>;
   modelAliases: Readonly<Record<string, string>>;
   timeoutMs: number;
-  authorize: (assignment: { projectId: string; role: AgentRole; providerId: string }) => Promise<boolean>;
-  reserveBudget: (assignment: { projectId: string; role: AgentRole; providerId: string }) => Promise<boolean>;
+  // Include the selected connection's owner so the policy callback can enforce
+  // tenant/project ACLs before any provider call or budget reservation.
+  authorize: (assignment: {
+    projectId: string; role: AgentRole; providerId: string;
+    connectionId: string; connectionOwner: AgentRuntimeConnection["owner"];
+  }) => Promise<boolean>;
+  reserveBudget: (assignment: {
+    projectId: string; role: AgentRole; providerId: string;
+    connectionId: string; connectionOwner: AgentRuntimeConnection["owner"];
+  }) => Promise<boolean>;
 }): Promise<CollaborationExecutionResult> {
   const runtime = createAgentRuntime(input.adapters);
   const connectionByProvider = new Map(input.connections.map((connection) => [connection.providerId, connection]));
@@ -64,18 +72,6 @@ export async function executeAgentCollaboration(input: {
       continue;
     }
 
-    let authorized = false;
-    try {
-      authorized = await input.authorize(base);
-    } catch {
-      authorized = false;
-    }
-    if (!authorized) {
-      invocations.push({ ...base, outcome: { ok: false, code: "NOT_AUTHORIZED" } });
-      blockedRoles.push(assignment.role);
-      continue;
-    }
-
     const connection = connectionByProvider.get(assignment.providerId);
     if (!connection || connection.status !== "connected") {
       invocations.push({ ...base, outcome: { ok: false, code: "NOT_CONNECTED" } });
@@ -84,6 +80,23 @@ export async function executeAgentCollaboration(input: {
     }
     if (!connection.capabilities.includes(assignment.capability)) {
       invocations.push({ ...base, outcome: { ok: false, code: "CAPABILITY_MISSING" } });
+      blockedRoles.push(assignment.role);
+      continue;
+    }
+
+    const policyContext = {
+      ...base,
+      connectionId: connection.connectionId,
+      connectionOwner: connection.owner,
+    };
+    let authorized = false;
+    try {
+      authorized = await input.authorize(policyContext);
+    } catch {
+      authorized = false;
+    }
+    if (!authorized) {
+      invocations.push({ ...base, outcome: { ok: false, code: "NOT_AUTHORIZED" } });
       blockedRoles.push(assignment.role);
       continue;
     }
@@ -97,7 +110,7 @@ export async function executeAgentCollaboration(input: {
 
     let reserved = false;
     try {
-      reserved = await input.reserveBudget(base);
+      reserved = await input.reserveBudget(policyContext);
     } catch {
       reserved = false;
     }
