@@ -51,7 +51,7 @@ Aucune clé, aucun jeton OAuth et aucun secret d'infrastructure ne doit apparaî
 ## 5. Connexion bidirectionnelle des assistants
 
 ### Assistant externe vers MerKora
-Un assistant externe compatible MCP se connecte à l'endpoint MerKora avec OAuth et reçoit des scopes limités. Il peut consulter les ressources permises, puis, après une phase ultérieure d'autorisation, proposer des artefacts ou des résultats de mission. Les mutations, modifications de code, écritures de données et déploiements sont des capacités distinctes et désactivées par défaut.
+Un assistant externe compatible MCP se connecte à l'endpoint MerKora avec OAuth. MerKora applique ses propres permissions/scopes applicatifs au niveau de chaque outil ; les scopes OIDC natifs de Supabase ne contrôlent pas à eux seuls l'accès aux tables. RLS doit donc imposer indépendamment les limites par client OAuth et par propriétaire. L'assistant peut consulter les ressources permises, puis, après une phase ultérieure d'autorisation, proposer des artefacts ou des résultats de mission. Les mutations, modifications de code, écritures de données et déploiements sont des capacités distinctes et désactivées par défaut.
 
 ### MerKora vers les fournisseurs IA
 MerKora appelle les API officielles des fournisseurs via des adaptateurs serveur indépendants. Une connexion ChatGPT ou Claude à titre d'utilisateur ne donne pas automatiquement accès à l'API OpenAI ou Anthropic. Les accès API et leurs facturations sont distincts des abonnements grand public.
@@ -75,7 +75,7 @@ Cette matrice exprime les usages visés, pas des connexions déjà actives. Le c
 ## 7. Règles de sécurité
 
 - Connexions séparées par propriétaire : organisation, utilisateur ou client.
-- OAuth avec scopes minimaux, consentement révocable, expiration et rotation.
+- OAuth avec consentement révocable, expiration et rotation ; permissions applicatives vérifiées outil par outil, et RLS indépendante pour les données.
 - Coffre de secrets côté serveur ; aucune clé dans le navigateur, le dépôt ou les prompts.
 - Séparation stricte des projets et des clients.
 - Connexions inactives ou expirées jamais utilisables.
