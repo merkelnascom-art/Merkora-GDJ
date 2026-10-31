@@ -64,7 +64,15 @@ describe("agent collaboration executor", () => {
     }));
     expect(output.completedResults).toEqual([result]);
     expect(output.blockedRoles).toEqual([]);
+    expect(authorize).toHaveBeenCalledWith(expect.objectContaining({
+      projectId: "project-1", providerId: "openai", connectionId: "connection-1",
+      connectionOwner: { type: "organization", id: "merkora-gdj" },
+    }));
     expect(authorize).toHaveBeenCalledTimes(1);
+    expect(reserveBudget).toHaveBeenCalledWith(expect.objectContaining({
+      projectId: "project-1", providerId: "openai", connectionId: "connection-1",
+      connectionOwner: { type: "organization", id: "merkora-gdj" },
+    }));
     expect(reserveBudget).toHaveBeenCalledTimes(1);
     expect(invoke).toHaveBeenCalledTimes(1);
   });
