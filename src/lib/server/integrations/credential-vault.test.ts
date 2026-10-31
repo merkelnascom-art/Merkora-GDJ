@@ -49,6 +49,18 @@ describe("credential vault", () => {
       .toThrow("Unable to decrypt credential");
   });
 
+  it("can decrypt an older envelope through an explicit key-id resolver", () => {
+    const oldKey = Buffer.alloc(32, 9).toString("base64");
+    const currentKey = Buffer.alloc(32, 10).toString("base64");
+    const oldEnvelope = createCredentialVault(() => oldKey).seal("rotated-token", context);
+    const oldKeyId = oldEnvelope.split(".")[1];
+    const rotatingVault = createCredentialVault((keyId) => keyId === oldKeyId ? oldKey : currentKey);
+    expect(rotatingVault.open(oldEnvelope, context)).toBe("rotated-token");
+    const newEnvelope = rotatingVault.seal("new-token", context);
+    expect(newEnvelope.split(".")[1]).not.toBe(oldKeyId);
+    expect(rotatingVault.open(newEnvelope, context)).toBe("new-token");
+  });
+
   it("rejects unsupported envelope versions", () => {
     expect(() =>
       createCredentialVault(() => key).open("v2.a.b.c", context),
