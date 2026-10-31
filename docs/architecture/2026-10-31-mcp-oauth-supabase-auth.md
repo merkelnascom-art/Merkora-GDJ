@@ -47,6 +47,14 @@ Supabase OAuth access tokens include a `client_id` claim and use `authenticated`
 
 This is intentional fail-closed behavior: an OAuth token that is valid for Supabase generally is not automatically valid for the MerKora MCP resource. Configure and test the hook in a non-production environment first. Do not use user-editable metadata to decide authorization. The hook should distinguish OAuth issuance using the trusted `client_id` / `authentication_method` context and preserve safe defaults for ordinary user sessions.
 
+## Important Supabase OAuth scope limitation
+
+Supabase's currently documented OAuth scopes (`openid`, `email`, `profile`, `phone`) are identity/OIDC scopes, not custom application permissions. They do not narrow PostgREST access by themselves. OAuth access tokens otherwise carry the authenticated user's normal database role and are evaluated by RLS.
+
+Therefore MerKora must not interpret an approved OAuth consent screen or a requested `email`/`profile` scope as authorization to read project data. Access to each exposed table must be explicitly constrained by RLS using both ownership (`auth.uid()`) and the trusted OAuth `client_id` where appropriate. The MCP route must also enforce its own read-only tool allowlist and project ownership checks. The current project-list/detail route is not production-ready until the actual `user_projects` policies have been reviewed for OAuth-token access and tested against both the owner and a second user.
+
+Do not create broad policies such as `TO authenticated USING (auth.uid() = user_id)` as a substitute for client-specific restrictions if the requirement is to distinguish ordinary MerKora sessions from external assistants. Keep ordinary application access and OAuth-client access as separate policy paths.
+
 ## Required dashboard configuration before real client connections
 
 These actions have deliberately NOT been performed:
