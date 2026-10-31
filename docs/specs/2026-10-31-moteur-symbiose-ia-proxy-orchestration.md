@@ -196,3 +196,19 @@ Les montants, quotas et modèles par défaut sont des décisions produit à vali
 - Le serveur MCP existant expose uniquement profil/projets en lecture et garde la lecture projet désactivée par configuration.
 - La fabrique crée une demande et ses tâches en file d'attente après approbations ; elle n'exécute pas encore ces tâches.
 - Aucun changement de base, appel IA réel, achat, fusion ou déploiement de production n'est autorisé par ce document.
+
+
+## 13. Avancement du code — 31 octobre 2026
+
+Depuis la rédaction initiale, les éléments suivants ont été ajoutés sur la branche de travail :
+
+- Adaptateurs serveur OpenAI, Anthropic et Gemini, avec alias de modèles autorisés côté serveur, clés non exposées, délais bornés et validation des résultats.
+- Composition racine `createConfiguredAgentRuntime` : un fournisseur n'est enregistré que si une clé serveur et au moins un alias de modèle sont présents.
+- Validation runtime renforcée des réponses JSON non fiables : types, listes, valeurs autorisées, limites, identifiants de mission/projet et statut de vérification.
+- Revalidation centralisée de chaque résultat à la frontière du runtime.
+- Exécuteur de collaboration séquentiel avec callbacks obligatoires d'autorisation et de réservation de budget avant tout appel fournisseur.
+- Normalisation de la capacité commune `models.generate` entre le planificateur et les adaptateurs.
+- Tests unitaires simulés pour les trois adaptateurs, le registre, la validation des résultats et les barrières d'autorisation/budget.
+- Guide d'exploitation des variables serveur : `docs/operations/2026-10-31-provider-runtime-configuration.md`.
+
+Ces éléments sont des fondations exécutables en test, pas encore une fonctionnalité de production complète. Il manque toujours le stockage durable multi-tenant, les contrôles d'accès intégrés à une route serveur authentifiée, les réservations de budget atomiques, la journalisation persistante, le worker durable et les écrans de gestion des connexions. Aucun appel fournisseur réel ni déploiement n'a été effectué.
