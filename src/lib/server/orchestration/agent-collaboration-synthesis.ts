@@ -41,6 +41,7 @@ export function synthesizeAgentCollaboration(input: {
   const providerReportedVerification: CollaborationSynthesis["providerReportedVerification"] = [];
   const blockedRoles = new Set<AgentRole>(input.execution.blockedRoles);
   let requiresHumanDecision = blockedRoles.size > 0;
+  let hasFailedAgentResult = false;
 
   for (const invocation of input.execution.invocations) {
     if (!invocation.outcome.ok) {
@@ -53,6 +54,7 @@ export function synthesizeAgentCollaboration(input: {
     if (result.status !== "completed") {
       blockedRoles.add(invocation.role);
       requiresHumanDecision = true;
+      hasFailedAgentResult = true;
     }
     if (result.requiresHumanDecision || result.verification.failed.length > 0) {
       requiresHumanDecision = true;
@@ -90,7 +92,7 @@ export function synthesizeAgentCollaboration(input: {
 
   const hasCriticalFinding = findings.some((finding) => finding.severity === "critical");
   const hasIncompleteRole = blockedRoles.size > 0;
-  const state = hasCriticalFinding
+  const state = hasCriticalFinding || hasFailedAgentResult
     ? "blocked"
     : hasIncompleteRole
       ? "incomplete"
