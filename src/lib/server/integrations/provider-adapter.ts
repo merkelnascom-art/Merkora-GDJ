@@ -1,10 +1,10 @@
-export interface ProviderVerificationResult {
+export type ProviderVerificationResult = {
   ok: true;
 } | {
   ok: false;
   code: string;
   message?: string;
-}
+};
 
 export interface ProviderAdapter {
   readonly providerId: string;
