@@ -52,7 +52,7 @@ These actions have deliberately NOT been performed:
 5. Confirm the project uses asymmetric JWT signing if OIDC ID tokens are requested.
 6. Test the complete authorization, refresh, revocation, and cross-user isolation flow on a preview environment before production.
 
-The consent screen is a required remaining implementation step. It must show the OAuth client name, redirect URI, requested scopes, what MerKora data will be accessible, and explicit approve/deny controls. Users must later be able to revoke client access.
+A first consent screen now exists at `/oauth/consent`. It displays the OAuth client name, redirect URI, requested OAuth scopes, and the precise read-only MerKora data currently exposed by MCP, with explicit approve/deny controls. The login page safely returns users to the pending consent request. The complete flow still requires Supabase OAuth 2.1 to be enabled, the authorization path to be configured, and a real client to be registered or dynamically registered. Grant listing/revocation UI remains to be built and tested.
 
 ## Security and operational boundaries
 
