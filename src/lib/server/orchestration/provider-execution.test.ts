@@ -79,6 +79,18 @@ describe("provider execution boundary", () => {
     expect(JSON.stringify(outcome)).not.toContain("secret-key");
   });
 
+  it("classifies aborted provider calls as timeouts without leaking details", async () => {
+    const runtime = createAgentRuntime([
+      adapter(vi.fn(async () => { throw new DOMException("secret-token", "AbortError"); })),
+    ]);
+    const outcome = await runtime.invoke({
+      connection: { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+      mission, modelAlias: "balanced", timeoutMs: 30_000,
+    });
+    expect(outcome).toEqual({ ok: false, code: "TIMEOUT" });
+    expect(JSON.stringify(outcome)).not.toContain("secret-token");
+  });
+
   it("rejects timeouts outside server policy", async () => {
     const invoke = vi.fn(async () => result);
     const runtime = createAgentRuntime([adapter(invoke)]);
