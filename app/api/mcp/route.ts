@@ -30,13 +30,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-async function authenticate(request: Request): Promise<AuthenticatedUser | null> {
+async function authenticate(request: Request, resourceUrl: string): Promise<AuthenticatedUser | null> {
   const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!token || !url || !key) return null;
   const oauthClientId = getOAuthClientIdFromAccessToken(token);
-  const resourceUrl = process.env.MERKORA_MCP_RESOURCE_URL ?? new URL("/api/mcp", request.url).toString();
   if (!oauthClientId || !hasMcpResourceAudience(token, resourceUrl)) return null;
 
   try {
@@ -82,9 +81,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await authenticate(request);
+  const resourceUrl = process.env.MERKORA_MCP_RESOURCE_URL;
+  if (!resourceUrl) return NextResponse.json({ error: "MCP resource URL is not configured." }, { status: 503 });
+  const metadataUrl = new URL("/.well-known/oauth-protected-resource", resourceUrl).toString();
+  const auth = await authenticate(request, resourceUrl);
   if (!auth) {
-    const metadataUrl = new URL("/.well-known/oauth-protected-resource", request.url).toString();
     const hasBearerToken = /^Bearer\s+.+$/i.test(request.headers.get("authorization") ?? "");
     return NextResponse.json(
       { error: "Authentification MerKora requise." },
@@ -150,9 +151,11 @@ export async function POST(request: Request) {
           result = { id: auth.id, email: auth.email };
           break;
         case "merkora_list_projects":
+          if (process.env.MERKORA_MCP_DATA_ACCESS_ENABLED !== "true") throw new Error("MCP_PROJECT_ACCESS_NOT_ENABLED");
           result = await fetchOwnProjects(request, auth);
           break;
         case "merkora_get_project": {
+          if (process.env.MERKORA_MCP_DATA_ACCESS_ENABLED !== "true") throw new Error("MCP_PROJECT_ACCESS_NOT_ENABLED");
           const projectId = (args as { project_id: string }).project_id;
           const rows = await fetchOwnProjects(request, auth, projectId);
           if (!rows.length) {
