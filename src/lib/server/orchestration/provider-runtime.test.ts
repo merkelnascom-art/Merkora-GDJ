@@ -51,6 +51,7 @@ describe("configured provider runtime", () => {
   it("does not make provider calls during runtime construction", () => {
     const configured = createConfiguredAgentRuntime({
       MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_ORGANIZATION_ID: "merkora-gdj",
       OPENAI_API_KEY: "openai-secret",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
       ANTHROPIC_API_KEY: "anthropic-secret",
