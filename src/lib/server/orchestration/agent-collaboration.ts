@@ -27,12 +27,12 @@ export type AgentCollaborationPlan = {
 const ROLE_CAPABILITIES: Record<AgentRole, readonly string[]> = {
   // Roles are prompt/workflow specializations. Provider capabilities below
   // represent the actual API operation exposed by the connected provider.
-  analyst: ["models.generate", "messages.create", "generate_content"],
-  architect: ["models.generate", "messages.create", "generate_content"],
-  implementer: ["models.generate", "messages.create", "generate_content"],
-  reviewer: ["models.generate", "messages.create", "generate_content"],
-  tester: ["models.generate", "messages.create", "generate_content"],
-  cross_checker: ["models.generate", "messages.create", "generate_content"],
+  analyst: ["models.generate"],
+  architect: ["models.generate"],
+  implementer: ["models.generate"],
+  reviewer: ["models.generate"],
+  tester: ["models.generate"],
+  cross_checker: ["models.generate"],
 };
 
 const INDEPENDENT_REVIEW_ROLES = new Set<AgentRole>(["reviewer", "cross_checker"]);
