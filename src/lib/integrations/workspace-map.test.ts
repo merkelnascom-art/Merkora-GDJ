@@ -24,9 +24,8 @@ describe("integration workspace mapping", () => {
       expect(listWorkspaceProviders(workspace).length).toBeGreaterThan(0);
     }
   });
-});
 
-  // Inbound assistants use the same scoped client/copot workspace access path.
+  // Inbound assistants use the same scoped client/copilot workspace access path.
   it("maps external assistants to client and copilot spaces", () => {
     expect(getProviderWorkspaces("chatgpt-mcp")).toEqual(["client", "assistant"]);
     expect(getProviderWorkspaces("claude-mcp")).toEqual(["client", "assistant"]);
@@ -41,3 +40,4 @@ describe("integration workspace mapping", () => {
       for (const workspace of assigned) expect(known.has(workspace)).toBe(true);
     }
   });
+});
