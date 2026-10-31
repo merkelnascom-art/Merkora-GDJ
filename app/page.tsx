@@ -13,7 +13,7 @@ import {
   type Recommendation,
 } from "@/lib/solution-recommendations";
 
-type AiChatMessage = { role: "user" | "assistant"; content: string };
+type AiChatMessage = { role: "user" | "assistant"; content: string };\ntype FactoryJob = { id: string; status: string; plan_version?: number; created_at?: string; manifest?: Record<string, unknown> };\ntype FactoryTask = { id: string; job_id: string; task_key: string; state: string; dependencies?: string[] };
 
 type Project = NeedInput & {
   id: string;
@@ -71,7 +71,7 @@ export default function HomePage() {
   const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
   const [aiInput, setAiInput] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
-  const [aiError, setAiError] = useState("");
+  const [aiError, setAiError] = useState("");\n  const [factoryJobs, setFactoryJobs] = useState<FactoryJob[]>([]);\n  const [factoryTasks, setFactoryTasks] = useState<FactoryTask[]>([]);\n  const [factoryLoading, setFactoryLoading] = useState(false);\n  const [factoryError, setFactoryError] = useState("");
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
@@ -149,7 +149,29 @@ export default function HomePage() {
     setAiError("");
   }, [activeProjectId]);
 
-  const activeProject = useMemo(
+  useEffect(() => {
+    let active = true;
+    setFactoryJobs([]);
+    setFactoryTasks([]);
+    setFactoryError("");
+    if (!activeProjectId || !supabase || !currentUser) return;
+    setFactoryLoading(true);
+    void fetch(`/api/admin/projects/${encodeURIComponent(activeProjectId)}/factory/jobs`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as { jobs?: FactoryJob[]; tasks?: FactoryTask[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Impossible de charger le suivi de fabrication.");
+        if (active) {
+          setFactoryJobs(Array.isArray(result.jobs) ? result.jobs : []);
+          setFactoryTasks(Array.isArray(result.tasks) ? result.tasks : []);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setFactoryError(error instanceof Error ? error.message : "Erreur de chargement du suivi.");
+      })
+      .finally(() => { if (active) setFactoryLoading(false); });
+    return () => { active = false; };
+  }, [activeProjectId, supabase, currentUser]);
+\n  const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
   );
@@ -463,6 +485,40 @@ export default function HomePage() {
                   <textarea id="ai-assistant-prompt" value={aiInput} onChange={(event) => setAiInput(event.target.value)} placeholder="Ex. Quelles options permettraient de mieux suivre les retards et les recettes ?" rows={3} maxLength={3000} disabled={aiBusy} />
                   <div className="form-footer"><small>{currentUser ? "Votre session sécurisée sera utilisée." : "Connectez-vous pour utiliser l'assistant."}</small><button className="button button-primary" type="submit" disabled={aiBusy || !aiInput.trim()}>{aiBusy ? "Analyse en cours…" : "Interroger MerKora IA →"}</button></div>
                 </form>
+              </section>
+              <section className="panel ai-assistant-panel" aria-labelledby="factory-progress-title">
+                <div className="recommendation-heading">
+                  <div><div className="eyebrow">SUIVI DE RÉALISATION</div><h3 id="factory-progress-title">Atelier de fabrication MerKora</h3></div>
+                  <span className="local-tag">{factoryJobs.length} demande{factoryJobs.length > 1 ? "s" : ""}</span>
+                </div>
+                <p className="ai-assistant-intro">Retrouvez ici les demandes de fabrication autorisées, leur état et les tâches associées. Une demande en file d'attente n'est pas encore une application en cours de génération.</p>
+                {factoryLoading && <p role="status">Chargement du suivi…</p>}
+                {factoryError && <div className="form-errors" role="alert"><p>{factoryError}</p></div>}
+                {!factoryLoading && !factoryError && factoryJobs.length === 0 && <p className="ai-assistant-intro">Aucune fabrication n'a encore été mise en file pour ce dossier.</p>}
+                {factoryJobs.map((job) => {
+                  const tasks = factoryTasks.filter((task) => task.job_id === job.id);
+                  const taskLabels: Record<string, string> = {
+                    prepare_specification: "Préparer le cahier des charges",
+                    generate_application: "Construire l'application",
+                    run_tests: "Exécuter les tests",
+                    review_security: "Vérifier la sécurité",
+                    prepare_delivery: "Préparer la livraison",
+                  };
+                  return (
+                    <article key={job.id} style={{ border: "1px solid var(--border, #e5e7eb)", borderRadius: "14px", padding: "16px", marginTop: "14px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                        <strong>Fabrication · {job.id.slice(0, 8)}</strong>
+                        <span className="status-chip">{job.status}</span>
+                      </div>
+                      <small>Plan version {job.plan_version ?? "—"}{job.created_at ? ` · ${new Date(job.created_at).toLocaleString("fr-FR")}` : ""}</small>
+                      {tasks.length > 0 ? (
+                        <ol style={{ margin: "14px 0 0", paddingLeft: "22px", display: "grid", gap: "8px" }}>
+                          {tasks.map((task) => <li key={task.id}><span>{taskLabels[task.task_key] ?? task.task_key}</span> <small>— {task.state}</small></li>)}
+                        </ol>
+                      ) : <p className="ai-assistant-intro">Les tâches de cette demande ne sont pas encore disponibles. Une reprise administrative peut être nécessaire.</p>}
+                    </article>
+                  );
+                })}
               </section>
               <div className="notice"><span>ⓘ</span><p>Les premières pistes sont générées localement. L'assistant IA nécessite une activation et une configuration serveur ; aucune réponse IA n'est simulée si le service est indisponible.</p></div>
               <button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button>
