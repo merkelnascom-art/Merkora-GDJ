@@ -24,6 +24,6 @@ describe("validateMcpHttpRequest", () => {
 
   it("requires the negotiated protocol version after initialization", () => {
     expect(validateMcpHttpRequest(headers(), "tools/list")).toMatchObject({ ok: false, status: 400 });
-    expect(validateMcpHttpRequest(headers({ "mcp-protocol-version": "2025-03-26" }), "tools/list")).toEqual({ ok: true });
+    expect(validateMcpHttpRequest(headers({ "mcp-protocol-version": "2025-11-25" }), "tools/list")).toEqual({ ok: true });
   });
 });
