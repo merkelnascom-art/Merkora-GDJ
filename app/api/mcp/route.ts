@@ -1,0 +1,190 @@
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const MCP_PROTOCOL_VERSION = "2025-03-26";
+const MAX_BODY_BYTES = 16_384;
+
+type JsonRpcRequest = {
+  jsonrpc?: unknown;
+  id?: unknown;
+  method?: unknown;
+  params?: unknown;
+};
+
+type AuthenticatedUser = { id: string; email: string };
+
+function rpcResult(id: unknown, result: unknown) {
+  return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+}
+
+function rpcError(id: unknown, code: number, message: string) {
+  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } }, { headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+async function authenticate(request: Request): Promise<AuthenticatedUser | null> {
+  const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!token || !url || !key) return null;
+
+  try {
+    const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
+      headers: { apikey: key, Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const user = await response.json();
+    if (!user || typeof user.id !== "string" || typeof user.email !== "string") return null;
+    return { id: user.id, email: user.email };
+  } catch {
+    return null;
+  }
+}
+
+async function readOwnProjects(user: AuthenticatedUser, projectId?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const token = process.env.MERKORA_MCP_SUPABASE_ACCESS_TOKEN;
+  if (!url || !key || !token) {
+    // The user's own access token is supplied separately to this helper below;
+    // this branch is intentionally unreachable for configured calls.
+    throw new Error("MCP_DATA_ACCESS_UNAVAILABLE");
+  }
+  return { url, key, token, user, projectId };
+}
+
+async function fetchOwnProjects(request: Request, user: AuthenticatedUser, projectId?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const accessToken = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!url || !key || !accessToken) throw new Error("MCP_DATA_ACCESS_UNAVAILABLE");
+
+  const query = new URLSearchParams({
+    select: projectId ? "id,title,category,problem,desired_outcome,budget,urgency,status,created_at,updated_at" : "id,title,category,status,created_at,updated_at",
+    user_id: `eq.${user.id}`,
+    order: "updated_at.desc",
+    limit: projectId ? "1" : "50",
+  });
+  if (projectId) query.set("id", `eq.${projectId}`);
+
+  const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/user_projects?${query}`, {
+    headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("MCP_PROJECT_READ_FAILED");
+  const rows: unknown = await response.json();
+  if (!Array.isArray(rows)) throw new Error("MCP_PROJECT_READ_FAILED");
+  return rows;
+}
+
+const TOOLS = [
+  {
+    name: "merkora_get_profile",
+    description: "Retourne le profil de l'utilisateur authentifié dans MerKora.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "merkora_list_projects",
+    description: "Liste les projets appartenant à l'utilisateur authentifié (lecture seule).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "merkora_get_project",
+    description: "Lit un projet appartenant à l'utilisateur authentifié (lecture seule).",
+    inputSchema: {
+      type: "object",
+      properties: { project_id: { type: "string", minLength: 1, maxLength: 160 } },
+      required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+];
+
+export async function GET() {
+  return NextResponse.json({ name: "merkora-mcp", protocolVersion: MCP_PROTOCOL_VERSION, transport: "streamable-http", status: "available" });
+}
+
+export async function POST(request: Request) {
+  const auth = await authenticate(request);
+  if (!auth) return NextResponse.json({ error: "Authentification MerKora requise." }, { status: 401 });
+
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+  if (declaredLength > MAX_BODY_BYTES) return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
+
+  let body: unknown;
+  try {
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
+    body = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "JSON-RPC invalide." }, { status: 400 });
+  }
+
+  if (!isRecord(body) || body.jsonrpc !== "2.0" || typeof body.method !== "string") {
+    return rpcError(isRecord(body) ? body.id ?? null : null, -32600, "Invalid JSON-RPC request");
+  }
+  const message = body as JsonRpcRequest;
+  const id = message.id ?? null;
+
+  if (message.method === "notifications/initialized" || message.method === "notifications/cancelled") {
+    return new Response(null, { status: 202, headers: { "MCP-Protocol-Version": MCP_PROTOCOL_VERSION } });
+  }
+
+  if (message.method === "initialize") {
+    return rpcResult(id, {
+      protocolVersion: MCP_PROTOCOL_VERSION,
+      capabilities: { tools: {} },
+      serverInfo: { name: "merkora-gdj", version: "0.1.0" },
+      instructions: "MerKora exposes uniquement des outils de lecture des données du compte authentifié. Aucune mutation, dépense ou publication n'est autorisée par ce serveur.",
+    });
+  }
+
+  if (message.method === "ping") return rpcResult(id, {});
+
+  if (message.method === "tools/list") {
+    return rpcResult(id, { tools: TOOLS });
+  }
+
+  if (message.method === "tools/call") {
+    if (!isRecord(message.params) || typeof message.params.name !== "string") {
+      return rpcError(id, -32602, "Invalid tool parameters");
+    }
+    const args = isRecord(message.params.arguments) ? message.params.arguments : {};
+
+    try {
+      let result: unknown;
+      switch (message.params.name) {
+        case "merkora_get_profile":
+          result = { id: auth.id, email: auth.email };
+          break;
+        case "merkora_list_projects":
+          result = await fetchOwnProjects(request, auth);
+          break;
+        case "merkora_get_project": {
+          if (typeof args.project_id !== "string" || !args.project_id.trim() || args.project_id.length > 160) {
+            return rpcError(id, -32602, "project_id is required");
+          }
+          const rows = await fetchOwnProjects(request, auth, args.project_id);
+          if (!rows.length) {
+            return rpcResult(id, { content: [{ type: "text", text: "Projet introuvable ou non autorisé." }], isError: true });
+          }
+          result = rows[0];
+          break;
+        }
+        default:
+          return rpcError(id, -32602, "Unknown tool");
+      }
+      return rpcResult(id, { content: [{ type: "text", text: JSON.stringify(result) }], isError: false });
+    } catch {
+      return rpcResult(id, { content: [{ type: "text", text: "Lecture indisponible. Réessayez plus tard." }], isError: true });
+    }
+  }
+
+  return rpcError(id, -32601, "Method not found");
+}
