@@ -56,11 +56,15 @@ export function planAgentCollaboration(input: {
   }
 
   const roles = [...new Set(input.requestedRoles)];
-  const assignments: AgentAssignment[] = [];
-  const blockedRoles: AgentRole[] = [];
+  const assignmentsByRole = new Map<AgentRole, AgentAssignment>();
   const usedProviders = new Set<string>();
+  // Reserve independent review providers after the primary project roles.
+  const planningOrder = [
+    ...roles.filter((role) => !INDEPENDENT_REVIEW_ROLES.has(role as AgentRole)),
+    ...roles.filter((role) => INDEPENDENT_REVIEW_ROLES.has(role as AgentRole)),
+  ];
 
-  for (const requestedRole of roles) {
+  for (const requestedRole of planningOrder) {
     if (!isAgentRole(requestedRole)) throw new Error("Unknown agent role.");
 
     const role = requestedRole;
@@ -73,19 +77,21 @@ export function planAgentCollaboration(input: {
     );
 
     if (!provider) {
-      blockedRoles.push(role);
       continue;
     }
 
     const capability = requiredCapabilities.find((item) => provider.capabilities.includes(item));
     if (!capability) {
-      blockedRoles.push(role);
       continue;
     }
 
-    assignments.push({ role, providerId: provider.providerId, capability });
+    assignmentsByRole.set(role, { role, providerId: provider.providerId, capability });
     usedProviders.add(provider.providerId);
   }
 
+  const assignments = roles
+    .map((role) => assignmentsByRole.get(role as AgentRole))
+    .filter((assignment): assignment is AgentAssignment => assignment !== undefined);
+  const blockedRoles = roles.filter((role) => !assignmentsByRole.has(role as AgentRole)) as AgentRole[];
   return { projectId: input.projectId, assignments, blockedRoles };
 }
