@@ -47,18 +47,6 @@ async function authenticate(request: Request): Promise<AuthenticatedUser | null>
   }
 }
 
-async function readOwnProjects(user: AuthenticatedUser, projectId?: string) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const token = process.env.MERKORA_MCP_SUPABASE_ACCESS_TOKEN;
-  if (!url || !key || !token) {
-    // The user's own access token is supplied separately to this helper below;
-    // this branch is intentionally unreachable for configured calls.
-    throw new Error("MCP_DATA_ACCESS_UNAVAILABLE");
-  }
-  return { url, key, token, user, projectId };
-}
-
 async function fetchOwnProjects(request: Request, user: AuthenticatedUser, projectId?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
