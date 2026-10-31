@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   createOAuthAuthorizationProof,
@@ -12,6 +13,8 @@ describe("OAuth authorization proof", () => {
     expect(first.state).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(first.verifier).toMatch(/^[A-Za-z0-9_-]{43,128}$/);
     expect(first.challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(first.challenge).toBe(createHash("sha256").update(first.verifier, "ascii").digest("base64url"));
+    expect(first.challengeMethod).toBe("S256");
     expect(first.state).not.toBe(second.state);
     expect(first.verifier).not.toBe(second.verifier);
     expect(first.challenge).not.toBe(first.verifier);
