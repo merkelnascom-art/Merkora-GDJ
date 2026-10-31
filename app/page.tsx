@@ -13,6 +13,8 @@ import {
   type Recommendation,
 } from "@/lib/solution-recommendations";
 
+type AiChatMessage = { role: "user" | "assistant"; content: string };
+
 type Project = NeedInput & {
   id: string;
   createdAt: string;
@@ -66,6 +68,10 @@ export default function HomePage() {
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
@@ -137,6 +143,12 @@ export default function HomePage() {
     }
   }, [projects, storageReady, supabase]);
 
+  useEffect(() => {
+    setAiMessages([]);
+    setAiInput("");
+    setAiError("");
+  }, [activeProjectId]);
+
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
@@ -144,6 +156,54 @@ export default function HomePage() {
 
   function updateForm<K extends keyof NeedInput>(key: K, value: NeedInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function sendAiMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const prompt = aiInput.trim();
+    if (!prompt || !activeProject || aiBusy) return;
+    if (!supabase || !currentUser) {
+      setAiError("Connectez-vous à votre compte pour utiliser l'assistant IA.");
+      return;
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      setAiError("Votre session a expiré. Reconnectez-vous puis réessayez.");
+      return;
+    }
+
+    const nextMessages: AiChatMessage[] = [...aiMessages, { role: "user", content: prompt }];
+    setAiMessages(nextMessages);
+    setAiInput("");
+    setAiError("");
+    setAiBusy(true);
+    try {
+      const dossierContext = `Dossier MerKora : ${activeProject.title}\nCatégorie : ${getCategoryLabel(activeProject.category)}\nProblème décrit : ${activeProject.problem}\nRésultat souhaité : ${activeProject.desiredOutcome}\nBudget : ${activeProject.budget}\nPriorité : ${activeProject.urgency}`;
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          task: aiMessages.length === 0 ? "analysis" : "conversation",
+          messages: [
+            { role: "user", content: `Contexte du dossier client (à garder en tête) :\n${dossierContext}` },
+            ...aiMessages.slice(-8),
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      const payload = await response.json() as { answer?: string; error?: string };
+      if (!response.ok || !payload.answer) {
+        setAiError(payload.error || "L'assistant IA n'a pas pu répondre.");
+        return;
+      }
+      setAiMessages([...nextMessages, { role: "assistant", content: payload.answer }]);
+    } catch {
+      setAiError("Impossible de joindre l'assistant. Vérifiez votre connexion puis réessayez.");
+    } finally {
+      setAiBusy(false);
+    }
   }
 
   function submitNeed(event: FormEvent<HTMLFormElement>) {
@@ -365,7 +425,7 @@ export default function HomePage() {
                 <div><div className="eyebrow">DOSSIER · {activeProject.id}</div><h2>{activeProject.title}</h2><p>{getCategoryLabel(activeProject.category)} · Créé le {new Date(activeProject.createdAt).toLocaleDateString("fr-FR")}</p></div>
                 <button className="icon-button" onClick={() => setActiveProjectId(null)} aria-label="Retour à la liste">×</button>
               </div>
-              <div className="detail-status"><span className="status-dot" /> {statusLabels[activeProject.status]} <span className="status-note">· Pré-analyse locale, sans IA connectée</span></div>
+              <div className="detail-status"><span className="status-dot" /> {statusLabels[activeProject.status]} <span className="status-note">· Pistes locales et assistant IA si activé</span></div>
               <div className="detail-grid">
                 <article><span className="detail-label">LA SITUATION</span><p>{activeProject.problem}</p></article>
                 <article><span className="detail-label">LE RÉSULTAT SOUHAITÉ</span><p>{activeProject.desiredOutcome}</p></article>
@@ -381,7 +441,30 @@ export default function HomePage() {
                   </article>
                 ))}
               </div>
-              <div className="notice"><span>ⓘ</span><p>Ces pistes sont générées par des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation.</p></div>
+              <section className="panel ai-assistant-panel">
+                <div className="recommendation-heading">
+                  <div><div className="eyebrow">ÉTAPE 02 · ANALYSE ASSISTÉE</div><h3>Approfondissons votre besoin</h3></div>
+                  <span className="local-tag">Assistant MerKora</span>
+                </div>
+                <p className="ai-assistant-intro">L'assistant peut analyser votre situation et vous aider à préciser les options. Ses réponses ne valent ni devis, ni validation de réalisation.</p>
+                {aiMessages.length > 0 && (
+                  <div className="ai-chat-history" aria-live="polite">
+                    {aiMessages.map((message, index) => (
+                      <article className={`ai-chat-message ${message.role === "user" ? "user-message" : "assistant-message"}`} key={index}>
+                        <strong>{message.role === "user" ? "Vous" : "MerKora IA"}</strong>
+                        <p>{message.content}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                {aiError && <div className="form-errors" role="alert"><p>{aiError}</p></div>}
+                <form className="ai-chat-form" onSubmit={sendAiMessage}>
+                  <label htmlFor="ai-assistant-prompt">Votre question ou précision</label>
+                  <textarea id="ai-assistant-prompt" value={aiInput} onChange={(event) => setAiInput(event.target.value)} placeholder="Ex. Quelles options permettraient de mieux suivre les retards et les recettes ?" rows={3} maxLength={3000} disabled={aiBusy} />
+                  <div className="form-footer"><small>{currentUser ? "Votre session sécurisée sera utilisée." : "Connectez-vous pour utiliser l'assistant."}</small><button className="button button-primary" type="submit" disabled={aiBusy || !aiInput.trim()}>{aiBusy ? "Analyse en cours…" : "Interroger MerKora IA →"}</button></div>
+                </form>
+              </section>
+              <div className="notice"><span>ⓘ</span><p>Les premières pistes sont générées localement. L'assistant IA nécessite une activation et une configuration serveur ; aucune réponse IA n'est simulée si le service est indisponible.</p></div>
               <button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button>
             </section>
           ) : (
