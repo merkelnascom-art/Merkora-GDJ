@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { planAgentCollaboration, type AgentProviderConnection } from "./agent-collaboration";
 
 const providers: AgentProviderConnection[] = [
-  { providerId: "openai", status: "connected", capabilities: ["models.generate", "agents.analyze"] },
-  { providerId: "anthropic", status: "connected", capabilities: ["messages.create", "agents.review"] },
-  { providerId: "google-gemini", status: "not_configured", capabilities: ["generate_content", "agents.cross_check"] },
+  { providerId: "openai", status: "connected", capabilities: ["models.generate"] },
+  { providerId: "anthropic", status: "connected", capabilities: ["messages.create"] },
+  { providerId: "google-gemini", status: "not_configured", capabilities: ["generate_content"] },
 ];
 
 describe("agent collaboration planner", () => {
@@ -16,8 +16,8 @@ describe("agent collaboration planner", () => {
     });
 
     expect(plan.assignments).toEqual([
-      { role: "analyst", providerId: "openai", capability: "agents.analyze" },
-      { role: "reviewer", providerId: "anthropic", capability: "agents.review" },
+      { role: "analyst", providerId: "openai", capability: "models.generate" },
+      { role: "reviewer", providerId: "anthropic", capability: "messages.create" },
     ]);
     expect(plan.blockedRoles).toEqual([]);
   });
