@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { MERKORA_MCP_TOOLS, validateMcpToolArguments } from "@/lib/mcp/tools";
-import { validateMcpHttpRequest } from "@/lib/mcp/http-validation";
+import { validateMcpHttpRequest, MERKORA_MCP_PROTOCOL_VERSION } from "@/lib/mcp/http-validation";
+import { createMcpUnauthorizedHeaders } from "@/lib/mcp/oauth-resource";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MCP_PROTOCOL_VERSION = "2025-03-26";
 const MAX_BODY_BYTES = 16_384;
 
 type JsonRpcRequest = {
@@ -79,7 +79,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const auth = await authenticate(request);
-  if (!auth) return NextResponse.json({ error: "Authentification MerKora requise." }, { status: 401 });
+  if (!auth) {
+    const metadataUrl = new URL("/.well-known/oauth-protected-resource", request.url).toString();
+    const hasBearerToken = /^Bearer\\s+.+$/i.test(request.headers.get("authorization") ?? "");
+    return NextResponse.json(
+      { error: "Authentification MerKora requise." },
+      { status: 401, headers: createMcpUnauthorizedHeaders(metadataUrl, hasBearerToken) },
+    );
+  }
 
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
   if (declaredLength > MAX_BODY_BYTES) return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
