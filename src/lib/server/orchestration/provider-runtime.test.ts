@@ -5,6 +5,7 @@ describe("configured provider runtime", () => {
   it("registers only providers with a server key and explicit model allowlist", () => {
     const configured = createConfiguredAgentRuntime({
       MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_ORGANIZATION_ID: "merkora-gdj",
       OPENAI_API_KEY: "openai-secret",
       MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
       GEMINI_API_KEY: "gemini-secret",
@@ -31,6 +32,20 @@ describe("configured provider runtime", () => {
       ANTHROPIC_API_KEY: "anthropic-secret",
     });
     expect(configured.registeredProviders).toEqual([]);
+  });
+
+  it("can register tenant-owned providers through a server-only credential resolver", () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      MERKORA_ANTHROPIC_MODEL_REVIEW: "claude-approved",
+    }, {
+      resolveCredential: (providerId, connection) =>
+        connection.owner.type === "customer" && connection.owner.id === "customer-1"
+          ? `${providerId}-customer-secret`
+          : undefined,
+    });
+    expect(configured.registeredProviders).toEqual(["anthropic", "openai"]);
   });
 
   it("does not make provider calls during runtime construction", () => {
