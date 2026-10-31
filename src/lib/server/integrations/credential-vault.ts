@@ -7,7 +7,12 @@ import {
 
 const VERSION = "v1";
 const ALGORITHM = "aes-256-gcm";
-const AAD_PREFIX = "merkora-credential:v1:";
+const AAD_PREFIX = "merkora-credential:v1";
+
+export type CredentialContext = Readonly<{
+  connectionId: string;
+  providerId: string;
+}>;
 
 function readKey(getKey: () => string | undefined): Buffer {
   const encoded = getKey();
@@ -29,9 +34,24 @@ function decodePart(value: string): Buffer {
   return Buffer.from(value, "base64url");
 }
 
+function associatedData(keyId: string, context: CredentialContext): Buffer {
+  if (!context || typeof context.connectionId !== "string"
+    || !/^[A-Za-z0-9_-]{1,128}$/.test(context.connectionId)
+    || typeof context.providerId !== "string"
+    || !/^[a-z0-9-]{1,64}$/.test(context.providerId)) {
+    throw new Error("A valid credential context is required");
+  }
+  return Buffer.from(JSON.stringify([
+    AAD_PREFIX,
+    keyId,
+    context.connectionId,
+    context.providerId,
+  ]), "utf8");
+}
+
 export function createCredentialVault(getKey: () => string | undefined) {
   return {
-    seal(plaintext: string): string {
+    seal(plaintext: string, context: CredentialContext): string {
       if (typeof plaintext !== "string" || plaintext.length === 0) {
         throw new Error("Credential must be a non-empty string");
       }
@@ -40,7 +60,7 @@ export function createCredentialVault(getKey: () => string | undefined) {
       const keyId = createHash("sha256").update(key).digest("hex").slice(0, 12);
       const nonce = randomBytes(12);
       const cipher = createCipheriv(ALGORITHM, key, nonce);
-      cipher.setAAD(Buffer.from(AAD_PREFIX + keyId, "utf8"));
+      cipher.setAAD(associatedData(keyId, context));
       const ciphertext = Buffer.concat([
         cipher.update(plaintext, "utf8"),
         cipher.final(),
@@ -56,7 +76,7 @@ export function createCredentialVault(getKey: () => string | undefined) {
       ].join(".");
     },
 
-    open(envelope: string): string {
+    open(envelope: string, context: CredentialContext): string {
       const parts = envelope.split(".");
       if (parts.length !== 5 || parts[0] !== VERSION) {
         throw new Error("Invalid credential envelope");
@@ -82,7 +102,7 @@ export function createCredentialVault(getKey: () => string | undefined) {
         }
 
         const decipher = createDecipheriv(ALGORITHM, key, nonce);
-        decipher.setAAD(Buffer.from(AAD_PREFIX + keyId, "utf8"));
+        decipher.setAAD(associatedData(keyId, context));
         decipher.setAuthTag(tag);
         return Buffer.concat([
           decipher.update(ciphertext),
