@@ -3,7 +3,7 @@ name: Quality checks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feature/merkora-orchestration-v1]
 
 jobs:
   verify:
