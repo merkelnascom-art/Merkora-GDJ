@@ -1,0 +1,4 @@
+project_id = "tvwkickjtqjqwoiidmxj"
+
+[functions.factory-worker]
+verify_jwt = false
