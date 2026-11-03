@@ -21,12 +21,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  claim:
+  verify:
     if: github.repository == 'merkelnascom-art/Merkora-GDJ' && github.ref == 'refs/heads/feature/merkora-factory-unified-runtime'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Request short-lived GitHub OIDC identity and claim job
+      - name: Request short-lived GitHub OIDC identity and verify eligibility
         env:
           SUPABASE_URL: ${{ vars.MERKORA_SUPABASE_URL }}
           PROJECT_ID: ${{ inputs.project_id }}
