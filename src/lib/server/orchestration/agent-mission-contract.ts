@@ -1,0 +1,22 @@
+export type AgentMissionRole="analyst"|"architect"|"implementer"|"reviewer"|"tester"|"cross_checker";
+export type AgentMissionEnvelope={contractVersion:1;missionId:string;projectId:string;role:AgentMissionRole;objective:string;instructions:string[];contextReferences:string[];constraints:string[];expectedOutput:{summary:true;findings:true;artifacts:true;verification:true};approvalRequiredFor:string[]};
+export type AgentMissionResult={contractVersion:1;missionId:string;projectId:string;providerId:string;status:"completed"|"blocked"|"failed";summary:string;findings:Array<{severity:"info"|"warning"|"critical";title:string;detail:string}>;artifacts:Array<{kind:"patch"|"document"|"test_report"|"design"|"deployment_reference";reference:string}>;verification:{performed:string[];passed:string[];failed:string[];notPerformed:string[]};requiresHumanDecision:boolean};
+const roles=new Set<AgentMissionRole>(["analyst","architect","implementer","reviewer","tester","cross_checker"]);
+const record=(v:unknown):v is Record<string,unknown>=>typeof v==="object"&&v!==null&&!Array.isArray(v);
+function text(v:unknown,label:string,max:number){if(typeof v!=="string"||!v.trim()||v.trim().length>max)throw new Error(label+" is invalid.");return v.trim();}
+function list(v:unknown,label:string,maxItems=100,maxLength=240):string[]{if(!Array.isArray(v)||v.length>maxItems)throw new Error(label+" is invalid.");return v.map(x=>text(x,label,maxLength));}
+export function createAgentMissionEnvelope(i:{missionId:string;projectId:string;role:AgentMissionRole;objective:string;instructions:readonly string[];contextReferences?:readonly string[];constraints?:readonly string[];approvalRequiredFor?:readonly string[]}):AgentMissionEnvelope{
+ if(!roles.has(i.role))throw new Error("Unknown agent mission role.");const instructions=i.instructions.map(x=>text(x,"Instruction",2000));if(!instructions.length||instructions.length>20)throw new Error("Mission instruction limit exceeded.");
+ const unique=(v:readonly string[]|undefined,label:string)=>[...new Set((v??[]).map(x=>text(x,label,240)))].slice(0,30);
+ return {contractVersion:1,missionId:text(i.missionId,"Mission ID",160),projectId:text(i.projectId,"Project ID",160),role:i.role,objective:text(i.objective,"Objective",2000),instructions,contextReferences:unique(i.contextReferences,"Context reference"),constraints:unique(i.constraints,"Constraint"),expectedOutput:{summary:true,findings:true,artifacts:true,verification:true},approvalRequiredFor:unique(i.approvalRequiredFor,"Approval boundary")};
+}
+export function validateAgentMissionResult(m:Pick<AgentMissionEnvelope,"missionId"|"projectId">,v:unknown):AgentMissionResult{
+ if(!record(v)||v.contractVersion!==1||v.missionId!==m.missionId||v.projectId!==m.projectId)throw new Error("Mission result scope mismatch.");
+ const status=v.status;if(!["completed","blocked","failed"].includes(String(status)))throw new Error("Invalid status.");
+ if(typeof v.requiresHumanDecision!=="boolean"||!Array.isArray(v.findings)||v.findings.length>100||!Array.isArray(v.artifacts)||v.artifacts.length>50||!record(v.verification))throw new Error("Invalid mission result.");
+ const findings=v.findings.map(f=>{if(!record(f)||!["info","warning","critical"].includes(String(f.severity)))throw new Error("Invalid finding.");return {severity:f.severity as "info"|"warning"|"critical",title:text(f.title,"Finding title",240),detail:text(f.detail,"Finding detail",4000)};});
+ const artifacts=v.artifacts.map(a=>{if(!record(a)||!["patch","document","test_report","design","deployment_reference"].includes(String(a.kind)))throw new Error("Invalid artifact.");return {kind:a.kind as "patch"|"document"|"test_report"|"design"|"deployment_reference",reference:text(a.reference,"Artifact reference",1000)};});
+ const verification={performed:list(v.verification.performed,"Verification"),passed:list(v.verification.passed,"Verification"),failed:list(v.verification.failed,"Verification"),notPerformed:list(v.verification.notPerformed,"Verification")};
+ if(status==="completed"&&verification.failed.length)throw new Error("Failed verification cannot be completed.");
+ return {contractVersion:1,missionId:m.missionId,projectId:m.projectId,providerId:text(v.providerId,"Provider",100),status:status as AgentMissionResult["status"],summary:text(v.summary,"Summary",4000),findings,artifacts,verification,requiresHumanDecision:v.requiresHumanDecision};
+}
