@@ -19,7 +19,7 @@ describe("generateProjectSource", () => {
     expect(result.files.map((file) => file.path)).toContain("src/components/module-workspace.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("<ModuleWorkspace");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("localStorage");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");\n    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");\n    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("role=\\\"status\\\"");\n    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.1.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("Pointage et retards.");
