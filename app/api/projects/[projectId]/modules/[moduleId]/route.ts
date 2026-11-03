@@ -59,8 +59,11 @@ export async function PUT(
 
     const contentLength = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(contentLength) && contentLength > 70_000) return jsonError("Données trop volumineuses.", 413);
+    let rawBody: string;
+    try { rawBody = await request.text(); } catch { return jsonError("Corps JSON invalide.", 400); }
+    if (new TextEncoder().encode(rawBody).byteLength > 70_000) return jsonError("Données trop volumineuses.", 413);
     let body: unknown;
-    try { body = await request.json(); } catch { return jsonError("Corps JSON invalide.", 400); }
+    try { body = JSON.parse(rawBody); } catch { return jsonError("Corps JSON invalide.", 400); }
     if (!body || typeof body !== "object" || Array.isArray(body) ||
       !("payload" in body) || !validateModulePayload(body.payload)) {
       return jsonError("Le contenu du module doit être un objet JSON de 64 Ko maximum.", 400);
