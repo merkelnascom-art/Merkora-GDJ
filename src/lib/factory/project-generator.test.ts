@@ -21,7 +21,7 @@ describe("generateProjectSource", () => {
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("localStorage");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("role=\\\"status\\\"");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
     expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.1.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
