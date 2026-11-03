@@ -109,7 +109,10 @@ Deno.serve(async (request) => {
     .select("version,payload,payload_digest,scope_digest")
     .eq("project_id", job.project_id).eq("version", job.plan_version).limit(1);
   const plan = plans?.[0];
-  if (planError || !plan || plan.payload_digest !== job.plan_digest || plan.scope_digest !== job.scope_digest ||\n      await sha256(plan.payload) !== job.plan_digest ||\n      !Array.isArray((plan.payload as Record<string, unknown>).includedScope) ||\n      await sha256((plan.payload as Record<string, unknown>).includedScope) !== job.scope_digest) {
+  if (planError || !plan || plan.payload_digest !== job.plan_digest || plan.scope_digest !== job.scope_digest ||
+      await sha256(plan.payload) !== job.plan_digest ||
+      !Array.isArray((plan.payload as Record<string, unknown>).includedScope) ||
+      await sha256((plan.payload as Record<string, unknown>).includedScope) !== job.scope_digest) {
     return json({ error: "approved_plan_digest_mismatch" }, 409);
   }
 
