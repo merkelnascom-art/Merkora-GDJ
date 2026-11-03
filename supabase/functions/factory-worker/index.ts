@@ -8,6 +8,25 @@ const AUDIENCE = "merkora-gdj-factory";
 const ISSUER = "https://token.actions.githubusercontent.com";
 const JWKS = createRemoteJWKSet(new URL("https://token.actions.githubusercontent.com/.well-known/jwks"));
 
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new TypeError("non_finite_number");
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${canonicalize(record[key])}`).join(",")}}`;
+  }
+  throw new TypeError("unsupported_json_value");
+}
+async function sha256(value: unknown): Promise<string> {
+  const bytes = new TextEncoder().encode(canonicalize(value));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -62,7 +81,7 @@ Deno.serve(async (request) => {
   } catch {
     return json({ error: "invalid_json" }, 400);
   }
-  if (body.action !== "claim" || !isProjectId(body.projectId) || !isUuid(body.jobId)) {
+  if (body.action !== "verify" || !isProjectId(body.projectId) || !isUuid(body.jobId)) {
     return json({ error: "unsupported_action_or_invalid_identifiers" }, 400);
   }
 
@@ -87,10 +106,10 @@ Deno.serve(async (request) => {
 
   const { data: plans, error: planError } = await admin
     .from("project_memory_plan_versions")
-    .select("version,payload_digest,scope_digest")
+    .select("version,payload,payload_digest,scope_digest")
     .eq("project_id", job.project_id).eq("version", job.plan_version).limit(1);
   const plan = plans?.[0];
-  if (planError || !plan || plan.payload_digest !== job.plan_digest || plan.scope_digest !== job.scope_digest) {
+  if (planError || !plan || plan.payload_digest !== job.plan_digest || plan.scope_digest !== job.scope_digest ||\n      await sha256(plan.payload) !== job.plan_digest ||\n      !Array.isArray((plan.payload as Record<string, unknown>).includedScope) ||\n      await sha256((plan.payload as Record<string, unknown>).includedScope) !== job.scope_digest) {
     return json({ error: "approved_plan_digest_mismatch" }, 409);
   }
 
@@ -129,36 +148,14 @@ Deno.serve(async (request) => {
     Number(l.confirmed_amount_at_launch) >= Number(l.required_amount)
   )) return json({ error: "commercial_launch_or_payment_not_confirmed" }, 409);
 
-  // Atomic compare-and-set: a duplicate delivery or concurrent runner cannot claim twice.
-  const { data: claimed, error: claimError } = await admin
-    .from("project_factory_jobs")
-    .update({ status: "building", updated_at: new Date().toISOString() })
-    .eq("id", job.id).eq("project_id", job.project_id).eq("status", "queued")
-    .select("id,status").maybeSingle();
-  if (claimError || !claimed) return json({ error: "job_claim_conflict" }, 409);
-
-  const { error: eventError } = await admin.from("project_memory_events").insert({
-    project_id: job.project_id,
-    event_type: "factory_worker_claimed",
-    actor_user_id: null,
-    actor_role: "system",
-    correlation_id: job.correlation_id,
-    plan_version: job.plan_version,
-    summary: "Le worker GitHub a réclamé le travail de fabrication.",
-    payload: {
-      job_id: job.id,
-      github_run_id: identity.runId,
-      github_run_attempt: identity.runAttempt,
-      source_sha: identity.sha,
-      repository: REPOSITORY,
-    },
+  // Verification is intentionally read-only. The worker must not claim or
+  // advance a job until the isolated Vercel Sandbox execution stage is connected.
+  return json({
+    authorized: true,
+    jobId: job.id,
+    status: "queued",
+    eligible: true,
+    githubRunId: identity.runId,
+    next: "sandbox_execution_not_enabled",
   });
-  if (eventError) {
-    // Do not silently continue without an audit record. Mark the job blocked for admin review.
-    await admin.from("project_factory_jobs")
-      .update({ status: "blocked", updated_at: new Date().toISOString() })
-      .eq("id", job.id).eq("status", "building");
-    return json({ error: "audit_record_failed_job_blocked" }, 503);
-  }
-  return json({ claimed: true, jobId: job.id, status: "building", next: "build_execution_not_enabled" });
 });
