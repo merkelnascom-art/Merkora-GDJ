@@ -1,0 +1,94 @@
+import { describe, expect, it } from "vitest";
+import { createConfiguredAgentRuntime } from "./provider-runtime";
+import { createAgentMissionEnvelope } from "./agent-mission-contract";
+
+describe("configured provider runtime", () => {
+  it("registers only providers with a server key and explicit model allowlist", () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_ORGANIZATION_ID: "merkora-gdj",
+      OPENAI_API_KEY: "openai-secret",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      GEMINI_API_KEY: "gemini-secret",
+      MERKORA_GEMINI_MODEL_REVIEW: "gemini-approved",
+      MERKORA_ANTHROPIC_MODEL_FAST: "claude-model-without-key",
+    });
+    expect(configured.registeredProviders).toEqual(["gemini", "openai"]);
+  });
+
+  it("keeps every provider disabled unless the global runtime switch is explicitly true", () => {
+    const configured = createConfiguredAgentRuntime({
+      OPENAI_API_KEY: "openai-secret",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      ANTHROPIC_API_KEY: "anthropic-secret",
+      MERKORA_ANTHROPIC_MODEL_REVIEW: "claude-approved",
+    });
+    expect(configured.registeredProviders).toEqual([]);
+  });
+
+  it("registers no provider when no server credentials and model allowlists exist", () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      ANTHROPIC_API_KEY: "anthropic-secret",
+    });
+    expect(configured.registeredProviders).toEqual([]);
+  });
+
+  it("can register tenant-owned providers through a server-only credential resolver", () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      MERKORA_ANTHROPIC_MODEL_REVIEW: "claude-approved",
+    }, {
+      resolveCredential: (providerId, connection) =>
+        connection.owner.type === "customer" && connection.owner.id === "customer-1"
+          ? `${providerId}-customer-secret`
+          : undefined,
+    });
+    expect(configured.registeredProviders).toEqual(["anthropic", "openai"]);
+  });
+
+  it("never falls back to an organization key for a customer-owned connection", async () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_ORGANIZATION_ID: "merkora-gdj",
+      OPENAI_API_KEY: "platform-secret",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+    });
+    const mission = createAgentMissionEnvelope({
+      missionId: "customer-mission",
+      projectId: "customer-project",
+      role: "analyst",
+      objective: "Analyser le besoin",
+      instructions: ["Produire une synthèse"],
+    });
+    const outcome = await configured.runtime.invoke({
+      connection: {
+        connectionId: "customer-connection",
+        owner: { type: "customer", id: "customer-1" },
+        providerId: "openai",
+        status: "connected",
+        capabilities: ["models.generate"],
+      },
+      mission,
+      modelAlias: "balanced",
+      timeoutMs: 10_000,
+    });
+    expect(outcome).toEqual({ ok: false, code: "PROVIDER_ERROR" });
+  });
+
+  it("does not make provider calls during runtime construction", () => {
+    const configured = createConfiguredAgentRuntime({
+      MERKORA_AGENT_RUNTIME_ENABLED: "true",
+      MERKORA_ORGANIZATION_ID: "merkora-gdj",
+      OPENAI_API_KEY: "openai-secret",
+      MERKORA_OPENAI_MODEL_BALANCED: "gpt-approved",
+      ANTHROPIC_API_KEY: "anthropic-secret",
+      MERKORA_ANTHROPIC_MODEL_REVIEW: "claude-approved",
+      GEMINI_API_KEY: "gemini-secret",
+      MERKORA_GEMINI_MODEL_FAST: "gemini-approved",
+    });
+    expect(configured.registeredProviders).toEqual(["anthropic", "gemini", "openai"]);
+  });
+});
