@@ -1,0 +1,58 @@
+name: MerKora factory worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: MerKora project identifier
+        required: true
+        type: string
+      job_id:
+        description: Factory job UUID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: merkora-factory-${{ inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && github.ref == 'refs/heads/feature/merkora-factory-unified-runtime'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request short-lived GitHub OIDC identity and claim job
+        env:
+          OIDC_REQUEST_URL: ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          OIDC_REQUEST_TOKEN: ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+          SUPABASE_URL: ${{ vars.MERKORA_SUPABASE_URL }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          JOB_ID: ${{ inputs.job_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${OIDC_REQUEST_URL}"
+          test -n "${OIDC_REQUEST_TOKEN}"
+          test -n "${SUPABASE_URL}"
+          [[ "${PROJECT_ID}" =~ ^[A-Za-z0-9_-]{3,100}$ ]]
+          [[ "${JOB_ID}" =~ ^[0-9a-fA-F-]{36}$ ]]
+          oidc_response="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${OIDC_REQUEST_TOKEN}" \
+            "${OIDC_REQUEST_URL}&audience=merkora-gdj-factory")"
+          oidc_token="$(node -e 'const x=JSON.parse(process.argv[1]); if(!x.value) process.exit(1); process.stdout.write(x.value)' "${oidc_response}")"
+          response="$(curl --fail --silent --show-error \
+            -X POST "${SUPABASE_URL}/functions/v1/factory-worker" \
+            -H "Authorization: Bearer ${oidc_token}" \
+            -H "Content-Type: application/json" \
+            --data-binary "$(node -e 'process.stdout.write(JSON.stringify({action:"claim",projectId:process.env.PROJECT_ID,jobId:process.env.JOB_ID}))')")"
+          echo "${response}" | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const r=JSON.parse(s);
+              if(r.claimed!==true) { console.error("Factory job was not claimed."); process.exit(1); }
+              console.log("Factory job claimed. Build execution is not enabled by this workflow yet.");
+            });'
