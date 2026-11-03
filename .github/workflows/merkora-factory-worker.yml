@@ -28,16 +28,14 @@ jobs:
     steps:
       - name: Request short-lived GitHub OIDC identity and claim job
         env:
-          OIDC_REQUEST_URL: ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          OIDC_REQUEST_TOKEN: ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
           SUPABASE_URL: ${{ vars.MERKORA_SUPABASE_URL }}
           PROJECT_ID: ${{ inputs.project_id }}
           JOB_ID: ${{ inputs.job_id }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${OIDC_REQUEST_URL}"
-          test -n "${OIDC_REQUEST_TOKEN}"
+          : "${ACTIONS_ID_TOKEN_REQUEST_URL:?GitHub OIDC URL missing}"
+          : "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:?GitHub OIDC token missing}"
           test -n "${SUPABASE_URL}"
           [[ "${PROJECT_ID}" =~ ^[A-Za-z0-9_-]{3,100}$ ]]
           [[ "${JOB_ID}" =~ ^[0-9a-fA-F-]{36}$ ]]
