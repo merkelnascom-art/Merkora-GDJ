@@ -47,10 +47,10 @@ jobs:
             -X POST "${SUPABASE_URL}/functions/v1/factory-worker" \
             -H "Authorization: Bearer ${oidc_token}" \
             -H "Content-Type: application/json" \
-            --data-binary "$(node -e 'process.stdout.write(JSON.stringify({action:"claim",projectId:process.env.PROJECT_ID,jobId:process.env.JOB_ID}))')")"
+            --data-binary "$(node -e 'process.stdout.write(JSON.stringify({action:"verify",projectId:process.env.PROJECT_ID,jobId:process.env.JOB_ID}))')")"
           echo "${response}" | node -e '
             let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
               const r=JSON.parse(s);
-              if(r.claimed!==true) { console.error("Factory job was not claimed."); process.exit(1); }
-              console.log("Factory job claimed. Build execution is not enabled by this workflow yet.");
+              if(r.authorized!==true || r.eligible!==true) { console.error("Factory job is not eligible."); process.exit(1); }
+              console.log("OIDC identity and factory eligibility verified. No job state was changed.");
             });'
