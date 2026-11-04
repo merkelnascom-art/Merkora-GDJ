@@ -19,6 +19,11 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
   const [runningId, setRunningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
+  // Keep optimistic local updates, but reconcile them whenever the server refreshes the job list.
+  useEffect(() => {
+    setJobs(initialJobs);
+  }, [initialJobs]);
+
   useEffect(() => {
     if (!runningId) return;
     const refresh = window.setInterval(() => router.refresh(), 5000);
