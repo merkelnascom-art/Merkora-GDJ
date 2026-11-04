@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type FactoryJob = {
   id: string;
@@ -9,9 +10,11 @@ type FactoryJob = {
   status: string;
   createdAt: string;
   implementationStatus?: string;
+  tasks: Array<{ id: string; taskKey: string; state: string; updatedAt?: string }>;
 };
 
 export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: FactoryJob[]; aiEnabled: boolean }) {
+  const router = useRouter();
   const [jobs, setJobs] = useState(initialJobs);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -35,6 +38,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         item.id === job.id ? { ...item, status: result.status ?? "awaiting_approval" } : item,
       ));
       setMessage(result.message ?? "La base du projet a été compilée.");
+      router.refresh();
     } catch {
       setMessage("Le service de fabrication ne répond pas. Vérifiez le statut du travail avant de réessayer.");
     } finally {
@@ -63,6 +67,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         ));
       }
       setMessage(result.message ?? result.error ?? "L'implémentation IA n'a pas abouti.");
+      router.refresh();
     } catch {
       setMessage("Le service IA ne répond pas. Vérifiez le statut du travail avant de réessayer.");
     } finally {
@@ -78,7 +83,10 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
           <h2 style={styles.title}>Travaux autorisés</h2>
           <p style={styles.description}>Les travaux ne peuvent être construits qu'après les trois validations exactes du même plan.</p>
         </div>
-        <span style={styles.count}>{jobs.length} dossier(s)</span>
+        <div style={styles.headingActions}>
+          <button type="button" onClick={() => router.refresh()} style={styles.refreshButton}>Actualiser le suivi</button>
+          <span style={styles.count}>{jobs.length} dossier(s)</span>
+        </div>
       </div>
       {jobs.length === 0 ? (
         <p style={styles.empty}>Aucun travail de fabrication n'est actuellement en attente.</p>
@@ -90,6 +98,16 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
                 <strong style={styles.project}>Projet {job.projectId}</strong>
                 <p style={styles.meta}>Plan v{job.planVersion} · {job.status}</p>
                 <p style={styles.id}>Travail {job.id}</p>
+                {job.tasks.length > 0 ? (
+                  <ol style={styles.taskList} aria-label="Progression du travail">
+                    {job.tasks.map((task) => (
+                      <li key={task.id} style={styles.taskRow}>
+                        <span style={styles.taskName}>{taskLabel(task.taskKey)}</span>
+                        <span style={{ ...styles.taskState, ...(task.state === "completed" ? styles.taskComplete : task.state === "failed" || task.state === "blocked" ? styles.taskBlocked : {}) }}>{taskLabelState(task.state)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : <p style={styles.taskEmpty}>Étapes de réalisation non disponibles.</p>}
                 {job.status === "awaiting_approval" ? (
                   <a
                     href={`/api/admin/projects/${encodeURIComponent(job.projectId)}/factory/jobs/${encodeURIComponent(job.id)}/artifacts/source`}
@@ -134,12 +152,32 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
   );
 }
 
+function taskLabel(key: string): string {
+  const labels: Record<string, string> = {
+    prepare_specification: "Préparer le cahier des charges",
+    generate_application: "Générer l'application",
+    run_quality_checks: "Contrôler la qualité",
+    repair_and_retest: "Corriger et retester",
+    human_delivery_review: "Revue humaine avant livraison",
+  };
+  return labels[key] ?? key;
+}
+function taskLabelState(state: string): string {
+  const labels: Record<string, string> = {
+    not_started: "À venir", ready: "Prête", in_progress: "En cours",
+    blocked: "Bloquée", completed: "Terminée", failed: "Échec", cancelled: "Annulée",
+  };
+  return labels[state] ?? state;
+}
+
 const styles: Record<string, React.CSSProperties> = {
   panel: { maxWidth: 1100, margin: "28px auto", padding: 24, border: "1px solid #e7e2f0", borderRadius: 20, background: "#fff" },
   heading: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" },
   eyebrow: { color: "#6e56a5", fontSize: 10, fontWeight: 800, letterSpacing: 1.5 },
   title: { margin: "8px 0", fontSize: 22 },
   description: { margin: 0, maxWidth: 650, color: "#716c80", lineHeight: 1.6, fontSize: 13 },
+  headingActions: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  refreshButton: { border: "1px solid #ded7ec", borderRadius: 9, padding: "8px 10px", background: "#fff", color: "#5e35b1", fontWeight: 700, fontSize: 11, cursor: "pointer" },
   count: { borderRadius: 999, padding: "7px 10px", background: "#f1edfb", color: "#6e56a5", fontSize: 11, fontWeight: 700 },
   empty: { margin: "20px 0 0", color: "#716c80", fontSize: 13 },
   list: { display: "grid", gap: 10, marginTop: 20 },
@@ -147,6 +185,13 @@ const styles: Record<string, React.CSSProperties> = {
   project: { fontSize: 14 },
   meta: { margin: "5px 0", color: "#716c80", fontSize: 12 },
   id: { margin: 0, color: "#9992a8", fontSize: 10, overflowWrap: "anywhere" },
+  taskList: { listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6, maxWidth: 470 },
+  taskRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 11 },
+  taskName: { color: "#716c80" },
+  taskState: { color: "#716c80", fontWeight: 700, whiteSpace: "nowrap" },
+  taskComplete: { color: "#24634b" },
+  taskBlocked: { color: "#a33a3a" },
+  taskEmpty: { margin: "10px 0 0", color: "#9992a8", fontSize: 11 },
   button: { border: 0, borderRadius: 10, padding: "11px 14px", background: "#5e35b1", color: "#fff", fontWeight: 700, fontSize: 12 },
   download: { display: "inline-block", marginTop: 9, color: "#5e35b1", fontSize: 12, fontWeight: 700, textDecoration: "underline" },
   reviewNotice: { margin: "10px 0 0", color: "#24634b", fontSize: 12, fontWeight: 700 },
