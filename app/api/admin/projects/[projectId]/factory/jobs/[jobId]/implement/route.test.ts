@@ -103,6 +103,29 @@ describe("POST factory AI implementation", () => {
     expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
   });
 
+  it("prevents a second paid AI run while a candidate awaits human review", async () => {
+    vi.stubEnv("MERKORA_AI_ENABLED", "true");
+    vi.stubEnv("MERKORA_CODEGEN_MODEL", "openai/test-model");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "test-server-key");
+    vi.mocked(callUserData).mockResolvedValue({
+      ok: true, status: 200, data: [{
+        id: jobId, status: "awaiting_approval", plan_version: 2,
+        plan_digest: "a".repeat(64), scope_digest: "b".repeat(64),
+        approval_ids: ["approval-1", "approval-2", "approval-3"],
+        manifest: {
+          fullBusinessLogicImplementationPending: true,
+          sourceManifestPath: "p/j/source.json",
+          sourceDigest: "c".repeat(64),
+          implementationStatus: "candidate_ready_for_human_review",
+        },
+      }],
+    });
+    const response = await POST(request(true), context);
+    expect(response.status).toBe(409);
+    expect((await response.json()).code).toBe("IMPLEMENTATION_ALREADY_READY");
+    expect(requestAiGatewayCompletion).not.toHaveBeenCalled();
+  });
+
   it("rejects non-administrators before considering paid AI execution", async () => {
     vi.stubEnv("MERKORA_AI_ENABLED", "true");
     vi.mocked(getAdminAccess).mockResolvedValue({ ok: false, reason: "not_allowed" });
