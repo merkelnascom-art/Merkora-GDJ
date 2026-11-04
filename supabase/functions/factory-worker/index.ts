@@ -2,9 +2,6 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
 import { isTrustedGitHubWorkflowClaims } from "./identity.ts";
 
-const REPOSITORY = "merkelnascom-art/Merkora-GDJ";
-const WORKFLOW_REF = "merkelnascom-art/Merkora-GDJ/.github/workflows/merkora-factory-worker.yml@refs/heads/feature/merkora-factory-unified-runtime";
-const BRANCH_REF = "refs/heads/feature/merkora-factory-unified-runtime";
 const AUDIENCE = "merkora-gdj-factory";
 const ISSUER = "https://token.actions.githubusercontent.com";
 const JWKS = createRemoteJWKSet(new URL("https://token.actions.githubusercontent.com/.well-known/jwks"));
