@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
+import { isTrustedGitHubWorkflowClaims } from "./identity.ts";
 
 const REPOSITORY = "merkelnascom-art/Merkora-GDJ";
 const WORKFLOW_REF = "merkelnascom-art/Merkora-GDJ/.github/workflows/merkora-factory-worker.yml@refs/heads/feature/merkora-factory-unified-runtime";
@@ -51,16 +52,9 @@ async function verifyGitHubIdentity(request: Request) {
     algorithms: ["RS256"],
   });
   const p = payload as Record<string, unknown>;
-  if (
-    p.repository !== REPOSITORY ||
-    p.workflow_ref !== WORKFLOW_REF ||
-    p.ref !== BRANCH_REF ||
-    p.event_name !== "workflow_dispatch" ||
-    typeof p.run_id !== "string" ||
-    !/^\d+$/.test(p.run_id) ||
-    typeof p.run_attempt !== "string" ||
-    !/^\d+$/.test(p.run_attempt)
-  ) throw new Error("worker_identity_not_authorized");
+  if (!isTrustedGitHubWorkflowClaims(p)) {
+    throw new Error("worker_identity_not_authorized");
+  }
   return { runId: p.run_id, runAttempt: p.run_attempt, sha: String(p.sha ?? "") };
 }
 
