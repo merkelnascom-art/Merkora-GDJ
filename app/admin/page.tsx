@@ -50,7 +50,7 @@ export default async function AdminPage() {
 
   const token = await getAccessToken(await cookies());
   const factoryJobsResult = token
-    ? await callUserData("project_factory_jobs?select=id,project_id,plan_version,status,created_at&order=created_at.desc&limit=20", "GET", token)
+    ? await callUserData("project_factory_jobs?select=id,project_id,plan_version,status,created_at,manifest&order=created_at.desc&limit=20", "GET", token)
     : { ok: false, status: 401, data: [] };
   const factoryJobs = factoryJobsResult.ok && Array.isArray(factoryJobsResult.data)
     ? factoryJobsResult.data.flatMap((item) => {
@@ -62,6 +62,9 @@ export default async function AdminPage() {
         return [{
           id: job.id, projectId: job.project_id, status: job.status,
           planVersion: job.plan_version, createdAt: job.created_at,
+          implementationStatus: job.manifest && typeof job.manifest === "object" && !Array.isArray(job.manifest)
+            ? (job.manifest as Record<string, unknown>).implementationStatus === "candidate_ready_for_human_review" ? "candidate_ready_for_human_review" : undefined
+            : undefined,
         }];
       })
     : [];
