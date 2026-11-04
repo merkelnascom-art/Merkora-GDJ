@@ -69,6 +69,32 @@ export default async function AdminPage() {
       })
     : [];
 
+  const factoryJobIds = factoryJobs.map((job) => job.id).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  const factoryTasksResult = token && factoryJobIds.length
+    ? await callUserData(
+        `project_factory_tasks?select=id,job_id,task_key,state,updated_at&job_id=in.(${factoryJobIds.join(",")})&order=created_at.asc`,
+        "GET", token,
+      )
+    : { ok: true, status: 200, data: [] };
+  const tasksByJob = new Map<string, Array<{ id: string; taskKey: string; state: string; updatedAt?: string }>>();
+  if (factoryTasksResult.ok && Array.isArray(factoryTasksResult.data)) {
+    for (const item of factoryTasksResult.data) {
+      if (!item || typeof item !== "object") continue;
+      const task = item as Record<string, unknown>;
+      if (typeof task.job_id !== "string" || typeof task.id !== "string" ||
+        typeof task.task_key !== "string" || typeof task.state !== "string") continue;
+      const current = tasksByJob.get(task.job_id) ?? [];
+      current.push({
+        id: task.id, taskKey: task.task_key, state: task.state,
+        updatedAt: typeof task.updated_at === "string" ? task.updated_at : undefined,
+      });
+      tasksByJob.set(task.job_id, current);
+    }
+  }
+  const jobsWithTasks = factoryJobs.map((job) => ({
+    ...job, tasks: tasksByJob.get(job.id) ?? [],
+  }));
+
   return (
     <main style={styles.page}>
       <header style={styles.header}>
@@ -82,7 +108,7 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
-      <FactoryJobsPanel initialJobs={factoryJobs} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
+      <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
       <AdminQuotesPanel />
       <AdminPaymentsPanel />
       <CloudClientRequestsPanel />
