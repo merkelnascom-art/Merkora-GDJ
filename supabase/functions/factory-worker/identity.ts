@@ -9,6 +9,6 @@ export function isTrustedGitHubWorkflowClaims(claims: Record<string, unknown>): 
     claims.workflow_ref === TRUSTED_WORKFLOW_REF &&
     claims.ref === TRUSTED_BRANCH_REF &&
     claims.event_name === "workflow_dispatch" &&
-    typeof claims.run_id === "string" && /^\\d+$/.test(claims.run_id) &&
-    typeof claims.run_attempt === "string" && /^\\d+$/.test(claims.run_attempt);
+    typeof claims.run_id === "string" && /^\d+$/.test(claims.run_id) &&
+    typeof claims.run_attempt === "string" && /^\d+$/.test(claims.run_attempt);
 }
