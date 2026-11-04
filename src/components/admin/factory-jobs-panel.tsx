@@ -8,6 +8,7 @@ type FactoryJob = {
   planVersion: number;
   status: string;
   createdAt: string;
+  implementationStatus?: string;
 };
 
 export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: FactoryJob[]; aiEnabled: boolean }) {
@@ -54,11 +55,11 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmAiSpend: true }) },
       );
       const result = await response.json().catch(() => ({})) as {
-        status?: string; error?: string; message?: string; questions?: string[];
+        status?: string; error?: string; message?: string; questions?: string[]; implementationStatus?: string;
       };
       if (result.status) {
         setJobs((current) => current.map((item) =>
-          item.id === job.id ? { ...item, status: result.status! } : item,
+          item.id === job.id ? { ...item, status: result.status!, implementationStatus: result.implementationStatus } : item,
         ));
       }
       setMessage(result.message ?? result.error ?? "L'implémentation IA n'a pas abouti.");
@@ -97,7 +98,10 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
                     Télécharger le code généré
                   </a>
                 ) : null}
-                {aiEnabled && job.status === "awaiting_approval" ? (
+                {job.implementationStatus === "candidate_ready_for_human_review" ? (
+                  <p style={styles.reviewNotice}>Version candidate compilée · revue humaine requise</p>
+                ) : null}
+                {aiEnabled && job.status === "awaiting_approval" && job.implementationStatus !== "candidate_ready_for_human_review" ? (
                   <button
                     type="button"
                     disabled={runningId !== null}
@@ -145,6 +149,7 @@ const styles: Record<string, React.CSSProperties> = {
   id: { margin: 0, color: "#9992a8", fontSize: 10, overflowWrap: "anywhere" },
   button: { border: 0, borderRadius: 10, padding: "11px 14px", background: "#5e35b1", color: "#fff", fontWeight: 700, fontSize: 12 },
   download: { display: "inline-block", marginTop: 9, color: "#5e35b1", fontSize: 12, fontWeight: 700, textDecoration: "underline" },
+  reviewNotice: { margin: "10px 0 0", color: "#24634b", fontSize: 12, fontWeight: 700 },
   aiButton: { display: "block", marginTop: 9, border: "1px solid #b7a5df", borderRadius: 10, padding: "9px 12px", background: "#f7f4fc", color: "#5e35b1", fontWeight: 700, fontSize: 11 },
   message: { margin: "16px 0 0", color: "#4d3b73", fontSize: 13, lineHeight: 1.6 },
   warning: { margin: "16px 0 0", color: "#8b8498", fontSize: 11, lineHeight: 1.6 },
