@@ -52,7 +52,7 @@ async function verifyGitHubIdentity(request: Request) {
   if (!isTrustedGitHubWorkflowClaims(p)) {
     throw new Error("worker_identity_not_authorized");
   }
-  return { runId: p.run_id, runAttempt: p.run_attempt, sha: String(p.sha ?? "") };
+  return { runId: String(p.run_id), runAttempt: String(p.run_attempt), sha: String(p.sha ?? "") };
 }
 
 Deno.serve(async (request) => {
