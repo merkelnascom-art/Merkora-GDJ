@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type FactoryJob = {
@@ -18,6 +18,12 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
   const [jobs, setJobs] = useState(initialJobs);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!runningId) return;
+    const refresh = window.setInterval(() => router.refresh(), 5000);
+    return () => window.clearInterval(refresh);
+  }, [runningId, router]);
 
   async function build(job: FactoryJob) {
     setRunningId(job.id);
@@ -98,6 +104,19 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
                 <strong style={styles.project}>Projet {job.projectId}</strong>
                 <p style={styles.meta}>Plan v{job.planVersion} · {job.status}</p>
                 <p style={styles.id}>Travail {job.id}</p>
+                {job.tasks.length > 0 ? (
+                  <div style={styles.progressBlock}>
+                    <div style={styles.progressCaption}>
+                      <span>Progression</span>
+                      <strong>{job.tasks.filter((task) => task.state === "completed").length}/{job.tasks.length} étapes</strong>
+                    </div>
+                    <div style={styles.progressTrack} role="progressbar"
+                      aria-valuenow={job.tasks.filter((task) => task.state === "completed").length}
+                      aria-valuemin={0} aria-valuemax={job.tasks.length}>
+                      <span style={{ ...styles.progressFill, width: `${Math.round(job.tasks.filter((task) => task.state === "completed").length / job.tasks.length * 100)}%` }} />
+                    </div>
+                  </div>
+                ) : null}
                 {job.tasks.length > 0 ? (
                   <ol style={styles.taskList} aria-label="Progression du travail">
                     {job.tasks.map((task) => (
@@ -185,6 +204,10 @@ const styles: Record<string, React.CSSProperties> = {
   project: { fontSize: 14 },
   meta: { margin: "5px 0", color: "#716c80", fontSize: 12 },
   id: { margin: 0, color: "#9992a8", fontSize: 10, overflowWrap: "anywhere" },
+  progressBlock: { marginTop: 12, maxWidth: 470 },
+  progressCaption: { display: "flex", justifyContent: "space-between", gap: 12, color: "#716c80", fontSize: 10, marginBottom: 6 },
+  progressTrack: { height: 6, borderRadius: 999, overflow: "hidden", background: "#eeeaf5" },
+  progressFill: { display: "block", height: "100%", borderRadius: 999, background: "#6e56a5", transition: "width .2s ease" },
   taskList: { listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 6, maxWidth: 470 },
   taskRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 11 },
   taskName: { color: "#716c80" },
