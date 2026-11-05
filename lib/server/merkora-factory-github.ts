@@ -47,7 +47,7 @@ export async function dispatchMerkoraFactoryWorkflow(
   const installationId = process.env.MERKORA_GITHUB_APP_INSTALLATION_ID;
   const privateKey = process.env.MERKORA_GITHUB_APP_PRIVATE_KEY;
   if (!appId || !installationId || !privateKey) return { ok: false, reason: "not_configured" };
-  if (!/^\\d+$/.test(appId) || !/^\\d+$/.test(installationId) || privateKey.length < 100) {
+  if (!/^\d+$/.test(appId) || !/^\d+$/.test(installationId) || privateKey.length < 100) {
     return { ok: false, reason: "invalid_configuration" };
   }
 
