@@ -43,7 +43,7 @@ supabase functions deploy factory-worker --project-ref tvwkickjtqjqwoiidmxj
 
 ## Déclenchement serveur via GitHub App
 
-Le serveur Next.js dispose d'un helper `lib/server/merkora-factory-github.ts` et d'un endpoint administrateur `POST /api/admin/projects/{projectId}/factory/jobs/{jobId}/dispatch`. L'endpoint n'accepte le déclenchement que si le corps contient `confirmSandboxCost: true`, si l'utilisateur est administrateur, si la requête est same-origin et si le job existe encore en statut `queued`.
+Le serveur Next.js dispose d'un helper `lib/server/merkora-factory-github.ts` et d'un endpoint administrateur `POST /api/admin/projects/{projectId}/factory/jobs/{jobId}/dispatch`. L'ancienne route `/build` qui lançait un Sandbox directement depuis Next.js est désactivée (HTTP 410) afin que le chemin normal passe par le worker OIDC GitHub. L'endpoint n'accepte le déclenchement que si le corps contient `confirmSandboxCost: true`, si l'utilisateur est administrateur, si la requête est same-origin et si le job existe encore en statut `queued`.
 
 Créer une GitHub App dédiée à MerKora (ne pas réutiliser l'installation de l'application ChatGPT/connecteur). La limiter au dépôt `merkelnascom-art/Merkora-GDJ` et lui accorder `Actions: Read and write` ainsi que `Metadata: Read-only`. Installer cette App sur le dépôt et générer une clé privée. Configurer côté serveur Vercel, sans préfixe `NEXT_PUBLIC_` :
 
