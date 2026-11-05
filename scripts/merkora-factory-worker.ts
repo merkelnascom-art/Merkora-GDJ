@@ -122,6 +122,7 @@ async function main() {
     throw new Error("The factory job was not claimed with a complete approved payload.");
   }
 
+  try {
   const project = claim.project as Record<string, unknown>;
   const plan = claim.plan as Record<string, unknown>;
   const scope = Array.isArray(plan.includedScope) ? plan.includedScope : [];
@@ -173,6 +174,17 @@ async function main() {
   if (completed.completed !== true) throw new Error("The factory result was not persisted.");
   if (!build.ok) throw new Error(build.reason ?? "Factory build failed.");
   console.log("MerKora factory build completed; evidence persisted; no deployment performed.");
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.slice(0, 500) : "worker_execution_failed";
+    try {
+      await callWorker(supabaseUrl, token, {
+        action: "fail", projectId, jobId, reason,
+      });
+    } catch {
+      console.error("Worker failed after claiming the job; administrator reconciliation is required.");
+    }
+    throw error;
+  }
 }
 
 main().catch((error) => {
