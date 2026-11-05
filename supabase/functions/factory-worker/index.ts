@@ -174,7 +174,7 @@ Deno.serve(async (request) => {
     const archiveBase64 = body.archiveBase64;
     if (!isRecord(report) || !validGeneratedSource(source) ||
         typeof archiveBase64 !== "string" || archiveBase64.length < 100 ||
-        archiveBase64.length > 8_000_000 ||
+        archiveBase64.length > 3_000_000 ||
         report.projectId !== job.project_id || report.jobId !== job.id ||
         report.sourceDigest !== source.digest ||
         !["passed", "failed"].includes(String(report.result)) ||
@@ -188,7 +188,7 @@ Deno.serve(async (request) => {
     if (actualSourceDigest !== source.digest) return json({ error: "source_digest_mismatch" }, 409);
 
     const archiveBytes = decodeBase64(archiveBase64);
-    if (archiveBytes.byteLength > 6_000_000) return json({ error: "source_archive_too_large" }, 413);
+    if (archiveBytes.byteLength > 2_000_000) return json({ error: "source_archive_too_large" }, 413);
     const archiveBuffer = archiveBytes.buffer.slice(
       archiveBytes.byteOffset, archiveBytes.byteOffset + archiveBytes.byteLength,
     ) as ArrayBuffer;
@@ -428,7 +428,12 @@ Deno.serve(async (request) => {
   const { error: taskUpdateError } = await admin.from("project_factory_tasks")
     .update({ state: "in_progress", updated_at: new Date().toISOString() })
     .eq("id", firstTask.id).eq("state", "not_started");
-  if (taskUpdateError) return json({ error: "factory_task_claim_failed" }, 503);
+  if (taskUpdateError) {
+    await admin.from("project_factory_jobs")
+      .update({ status: "queued", manifest: job.manifest, updated_at: new Date().toISOString() })
+      .eq("id", job.id).eq("status", "building");
+    return json({ error: "factory_task_claim_failed" }, 503);
+  }
 
   const { error: eventError } = await admin.from("project_memory_events").insert({
     project_id: job.project_id,
@@ -441,7 +446,19 @@ Deno.serve(async (request) => {
     summary: "Le worker GitHub Actions a réservé le travail et démarre la fabrication isolée.",
     payload: { githubRunId: identity.runId, githubRunAttempt: identity.runAttempt, engine: "github-actions-vercel-sandbox" },
   });
-  if (eventError) return json({ error: "factory_claim_audit_failed" }, 503);
+  if (eventError) {
+    await admin.from("project_factory_tasks")
+      .update({ state: "failed", last_error_safe: "Événement de réservation non enregistré.", updated_at: new Date().toISOString() })
+      .eq("id", firstTask.id).eq("job_id", job.id);
+    await admin.from("project_factory_jobs")
+      .update({
+        status: "failed",
+        manifest: { ...manifest, failureStage: "claim_audit_event" },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id).eq("status", "building");
+    return json({ error: "factory_claim_audit_failed" }, 503);
+  }
 
   return json({
     claimed: true,
