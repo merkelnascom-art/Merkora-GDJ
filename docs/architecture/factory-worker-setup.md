@@ -1,43 +1,56 @@
-# Déploiement contrôlé du worker MerKora
+# Worker de fabrication MerKora GDJ
 
-## État de cette étape
+## Architecture raccordée dans le dépôt
 
-Cette première intégration est volontairement limitée à une vérification en lecture seule :
-- vérification cryptographique du jeton GitHub Actions OIDC ;
-- restriction au dépôt, au workflow et à la branche MerKora autorisés ;
-- contrôle du statut `queued` ;
-- relecture du propriétaire du projet, du plan et de ses empreintes SHA-256 ;
-- contrôle des trois validations et du consentement IA ;
-- contrôle du lancement commercial et du seuil de paiement confirmé.
+Le workflow `.github/workflows/merkora-factory-worker.yml` est le déclencheur manuel. Il obtient une identité GitHub OIDC à durée courte et appelle l'Edge Function `factory-worker`.
 
-Elle ne réclame pas le travail, ne modifie aucune ligne et ne démarre aucune compilation. L'exécution Vercel Sandbox sera raccordée dans une étape distincte, après vérification du handshake.
+Le worker :
+1. vérifie l'identité du dépôt, du workflow et de la branche ;
+2. revalide le propriétaire, le plan et ses empreintes, les trois validations, le consentement IA et le lancement commercial avec acompte confirmé ;
+3. réserve atomiquement le travail en passant `queued` à `building` ;
+4. génère le squelette à partir du seul périmètre approuvé ;
+5. exécute installation, TypeScript et build dans un Vercel Sandbox éphémère ;
+6. ferme le réseau du Sandbox après installation ;
+7. enregistre l'archive, le manifeste, le rapport, les preuves, les états des tâches et l'événement d'audit dans Supabase ;
+8. place un build réussi en `awaiting_approval`. Il ne déploie jamais le projet et ne déclenche aucun appel IA.
 
-## Configuration GitHub
+Render n'est plus dans le chemin d'exécution de ce workflow.
 
-Créer une variable d'action au niveau du dépôt :
-- Nom : `MERKORA_SUPABASE_URL`
-- Valeur : URL du projet Supabase MerKora.
+## Paramètres externes utilisés
 
-Aucun secret Supabase n'est à ajouter dans GitHub. Le jeton OIDC est court-vivant et obtenu directement par le runner. La clé serveur Supabase reste exclusivement dans l'environnement Edge Function.
+Le workflow lit les valeurs suivantes ; il ne les affiche jamais dans les logs :
 
-## Déploiement Supabase à effectuer séparément
+| Emplacement GitHub | Nom |
+| --- | --- |
+| Actions variable | `MERKORA_SUPABASE_URL` |
+| Actions secret | `VERCEL_TOKEN` |
+| Actions secret | `VERCEL_TEAM_ID` |
+| Actions secret | `VERCEL_PROJECT_ID` |
 
-Depuis un environnement de confiance connecté au projet `tvwkickjtqjqwoiidmxj`, déployer uniquement la fonction :
+La clé `SUPABASE_SERVICE_ROLE_KEY` reste exclusivement dans l'environnement de l'Edge Function Supabase. Elle n'est jamais transmise à GitHub Actions ni au Sandbox. Le runner obtient un jeton OIDC GitHub court-vivant pour appeler l'Edge Function.
+
+Les paramètres Vercel sont consommés uniquement par le processus runner qui crée le Sandbox. Aucun secret n'est injecté dans la machine virtuelle de code client.
+
+## Prérequis côté Supabase
+
+La fonction `factory-worker` doit être déployée sur le projet `tvwkickjtqjqwoiidmxj`, avec `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` dans ses secrets d'environnement. Le fichier `supabase/config.toml` désactive la vérification JWT générique uniquement pour cette fonction ; le handler vérifie lui-même la signature GitHub OIDC, l'émetteur, l'audience, l'expiration, le dépôt, le workflow et la branche.
+
+Commande de déploiement, à exécuter seulement après validation de la PR et approbation explicite de mise en production :
 
 ```bash
 supabase functions deploy factory-worker --project-ref tvwkickjtqjqwoiidmxj
 ```
 
-Le fichier `supabase/config.toml` désactive le contrôle JWT générique de la passerelle pour cette seule fonction ; le handler vérifie lui-même la signature GitHub OIDC, l'émetteur, l'audience, l'expiration, le dépôt, le workflow et la branche. Ne pas désactiver la vérification JWT pour d'autres fonctions.
+## Lancement contrôlé
 
-## Vérification
+Lancer manuellement `MerKora factory worker` depuis `feature/merkora-factory-unified-runtime`, avec un `project_id` existant et un UUID de job en statut `queued`. Le workflow reste manuel : aucun lancement automatique à la création d'un job.
 
-Lancer manuellement le workflow `MerKora factory worker` depuis la branche `feature/merkora-factory-unified-runtime`, avec un identifiant de projet et un UUID de job réellement existants et en statut `queued`.
+Un job est réclamé par comparaison atomique `status = queued`. Une seconde exécution ne peut pas prendre le même travail. Les erreurs après réservation marquent le job en échec lorsque le worker peut encore joindre l'Edge Function ; sinon, une réconciliation administrateur est nécessaire.
 
-Résultat attendu : `authorized: true` et `eligible: true`. Le statut du job doit rester `queued`. Aucun build ni appel IA ne doit être déclenché.
+## Limites de cette version
 
-## Étape suivante avant toute exécution réelle
-
-Raccorder l'exécution Vercel Sandbox au worker avec une identité serveur Vercel dédiée, une durée maximale, des ressources bornées, un réseau fermé après installation, des preuves de build et un retour d'état idempotent. Ajouter ensuite la réclamation atomique et les transitions de tâches dans une opération contrôlée, avec audit valide selon les contraintes existantes.
-
-Aucune migration SQL n'est requise pour ce handshake en lecture seule. Aucune fonction n'a été déployée depuis cette modification GitHub.
+- Elle fabrique et compile un squelette Next.js à partir des modules approuvés ; elle n'implémente pas encore toute la logique métier spécifique du client.
+- Le build réussi passe en revue humaine (`awaiting_approval`), jamais en livraison automatique.
+- La génération IA métier est distincte et reste soumise au consentement client et à une confirmation de dépense.
+- Vercel Sandbox est un service à l'utilisation. Le workflow n'est pas exécuté automatiquement par les tests CI ; un lancement réel doit être décidé séparément.
+- Aucune migration SQL n'est ajoutée ou appliquée par ce raccordement.
