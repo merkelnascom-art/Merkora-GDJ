@@ -30,25 +30,26 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
     return () => window.clearInterval(refresh);
   }, [runningId, router]);
 
-  async function build(job: FactoryJob) {
+  async function launchWorker(job: FactoryJob) {
+    const confirmed = window.confirm(
+      "Lancer la fabrication dans un Vercel Sandbox ? Ce service est facturé à l'utilisation. Le worker générera et compilera le squelette, sans publier ni livrer l'application. Confirmez uniquement si le coût potentiel est accepté.",
+    );
+    if (!confirmed) return;
     setRunningId(job.id);
     setMessage("");
     try {
       const response = await fetch(
-        `/api/admin/projects/${encodeURIComponent(job.projectId)}/factory/jobs/${encodeURIComponent(job.id)}/build`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+        `/api/admin/projects/${encodeURIComponent(job.projectId)}/factory/jobs/${encodeURIComponent(job.id)}/dispatch`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmSandboxCost: true }) },
       );
       const result = await response.json().catch(() => ({})) as {
-        status?: string; error?: string; message?: string; implementationLevel?: string;
+        status?: string; error?: string; message?: string; dispatched?: boolean; runRequested?: boolean;
       };
       if (!response.ok) {
         setMessage(result.error ?? "La fabrication n'a pas abouti. Consultez le dossier du travail.");
         return;
       }
-      setJobs((current) => current.map((item) =>
-        item.id === job.id ? { ...item, status: result.status ?? "awaiting_approval" } : item,
-      ));
-      setMessage(result.message ?? "La base du projet a été compilée.");
+      setMessage(result.message ?? "GitHub Actions a accepté la demande. Le worker doit maintenant réclamer le travail.");
       router.refresh();
     } catch {
       setMessage("Le service de fabrication ne répond pas. Vérifiez le statut du travail avant de réessayer.");
@@ -157,21 +158,21 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
               <button
                 type="button"
                 disabled={job.status !== "queued" || runningId !== null}
-                onClick={() => void build(job)}
+                onClick={() => void launchWorker(job)}
                 style={{
                   ...styles.button,
                   opacity: job.status !== "queued" || runningId !== null ? 0.55 : 1,
                   cursor: job.status !== "queued" || runningId !== null ? "not-allowed" : "pointer",
                 }}
               >
-                {runningId === job.id ? "Construction…" : job.status === "queued" ? "Construire la base" : "Déjà pris en charge"}
+                {runningId === job.id ? "Déclenchement…" : job.status === "queued" ? "Lancer la fabrication" : "Déjà pris en charge"}
               </button>
             </article>
           ))}
         </div>
       )}
       {message ? <p role="status" style={styles.message}>{message}</p> : null}
-      <p style={styles.warning}>Cette étape génère et compile un squelette applicatif isolé. L'IA externe reste désactivée en mode zéro dépense ; sa mise en route exigera le consentement client et une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
+      <p style={styles.warning}>Le lancement déclenche GitHub Actions puis un Vercel Sandbox facturé à l'utilisation, après confirmation explicite. Le worker compile un squelette isolé ; l'IA externe reste séparée et soumise au consentement client et à une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
     </section>
   );
 }
