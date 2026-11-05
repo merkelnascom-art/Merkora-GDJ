@@ -28,6 +28,16 @@ Deno.test("rejects a different workflow path", () => {
   }
 });
 
+Deno.test("accepts the production-hardening and main branches for the same pinned workflow", () => {
+  for (const branch of ["feature/merkora-production-security-hardening", "main"]) {
+    const ref = `refs/heads/${branch}`;
+    const workflowRef = `merkelnascom-art/Merkora-GDJ/.github/workflows/merkora-factory-worker.yml@${ref}`;
+    if (!isTrustedGitHubWorkflowClaims({ ...validClaims, ref, workflow_ref: workflowRef })) {
+      throw new Error(`the approved workflow should be trusted on ${branch}`);
+    }
+  }
+});
+
 Deno.test("rejects a different branch or event", () => {
   if (isTrustedGitHubWorkflowClaims({ ...validClaims, ref: "refs/heads/main" })) {
     throw new Error("an unapproved branch must never be trusted");
