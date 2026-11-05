@@ -34,7 +34,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install locked application dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Install pinned TypeScript runner without changing the lockfile
         run: npm install --no-save --package-lock=false tsx@4.20.6
       - name: Validate external worker configuration before claiming the job
