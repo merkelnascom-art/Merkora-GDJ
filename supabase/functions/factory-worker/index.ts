@@ -189,7 +189,10 @@ Deno.serve(async (request) => {
 
     const archiveBytes = decodeBase64(archiveBase64);
     if (archiveBytes.byteLength > 6_000_000) return json({ error: "source_archive_too_large" }, 413);
-    const archiveHash = await crypto.subtle.digest("SHA-256", archiveBytes);
+    const archiveBuffer = archiveBytes.buffer.slice(
+      archiveBytes.byteOffset, archiveBytes.byteOffset + archiveBytes.byteLength,
+    ) as ArrayBuffer;
+    const archiveHash = await crypto.subtle.digest("SHA-256", archiveBuffer);
     const archiveDigest = Array.from(new Uint8Array(archiveHash), (b) => b.toString(16).padStart(2, "0")).join("");
     const reportPayload = {
       ...report,
@@ -273,6 +276,7 @@ Deno.serve(async (request) => {
 
     for (const [key, state] of taskStates) {
       const task = taskByKey.get(key);
+      if (!task) return json({ error: "factory_task_missing", taskKey: key }, 409);
       const { error } = await admin.from("project_factory_tasks")
         .update({ state, updated_at: new Date().toISOString() })
         .eq("id", task.id).eq("job_id", job.id);
@@ -420,6 +424,7 @@ Deno.serve(async (request) => {
   if (claimError || !claimed) return json({ error: "factory_job_claim_conflict" }, 409);
 
   const firstTask = tasks.find((task) => task.task_key === "prepare_specification");
+  if (!firstTask) return json({ error: "factory_initial_task_missing" }, 409);
   const { error: taskUpdateError } = await admin.from("project_factory_tasks")
     .update({ state: "in_progress", updated_at: new Date().toISOString() })
     .eq("id", firstTask.id).eq("state", "not_started");
