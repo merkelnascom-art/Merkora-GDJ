@@ -55,7 +55,7 @@ Créer une GitHub App dédiée à MerKora (ne pas réutiliser l'installation de 
 
 Le serveur signe un JWT d'application de courte durée, échange ce JWT contre un jeton d'installation temporaire limité à `actions: write`, puis appelle `workflow_dispatch` sur `merkora-factory-worker.yml`. Le jeton d'installation n'est jamais renvoyé au navigateur ni écrit dans les logs. Le déclenchement est explicitement séparé de la création du job afin qu'aucun Sandbox payant ne démarre sans confirmation distincte.
 
-Le endpoint de dispatch est préparé côté serveur ; le bouton de confirmation du dashboard doit encore l'appeler après affichage de l'avertissement de coût. Tant que la GitHub App dédiée et les variables Vercel ne sont pas configurées, le endpoint répond `not_configured` et le job reste `queued`.
+Le panneau administrateur `FactoryJobsPanel` appelle cet endpoint après affichage d'une confirmation explicite du coût du Sandbox. Tant que la GitHub App dédiée et les variables Vercel ne sont pas configurées, le endpoint répond `not_configured` et le job reste `queued`.
 
 ## Lancement contrôlé
 
