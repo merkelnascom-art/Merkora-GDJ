@@ -41,9 +41,25 @@ Commande de déploiement, à exécuter seulement après validation de la PR et a
 supabase functions deploy factory-worker --project-ref tvwkickjtqjqwoiidmxj
 ```
 
+## Déclenchement serveur via GitHub App
+
+Le serveur Next.js dispose d'un helper `lib/server/merkora-factory-github.ts` et d'un endpoint administrateur `POST /api/admin/projects/{projectId}/factory/jobs/{jobId}/dispatch`. L'endpoint n'accepte le déclenchement que si le corps contient `confirmSandboxCost: true`, si l'utilisateur est administrateur, si la requête est same-origin et si le job existe encore en statut `queued`.
+
+Créer une GitHub App dédiée à MerKora (ne pas réutiliser l'installation de l'application ChatGPT/connecteur). La limiter au dépôt `merkelnascom-art/Merkora-GDJ` et lui accorder `Actions: Read and write` ainsi que `Metadata: Read-only`. Installer cette App sur le dépôt et générer une clé privée. Configurer côté serveur Vercel, sans préfixe `NEXT_PUBLIC_` :
+
+| Variable Vercel | Valeur |
+| --- | --- |
+| `MERKORA_GITHUB_APP_ID` | App ID de la GitHub App dédiée |
+| `MERKORA_GITHUB_APP_INSTALLATION_ID` | ID de son installation sur le dépôt |
+| `MERKORA_GITHUB_APP_PRIVATE_KEY` | Clé privée PEM complète, conservant ses retours à la ligne (ou `\\n`) |
+
+Le serveur signe un JWT d'application de courte durée, échange ce JWT contre un jeton d'installation temporaire limité à `actions: write`, puis appelle `workflow_dispatch` sur `merkora-factory-worker.yml`. Le jeton d'installation n'est jamais renvoyé au navigateur ni écrit dans les logs. Le déclenchement est explicitement séparé de la création du job afin qu'aucun Sandbox payant ne démarre sans confirmation distincte.
+
+Le endpoint de dispatch est préparé côté serveur ; le bouton de confirmation du dashboard doit encore l'appeler après affichage de l'avertissement de coût. Tant que la GitHub App dédiée et les variables Vercel ne sont pas configurées, le endpoint répond `not_configured` et le job reste `queued`.
+
 ## Lancement contrôlé
 
-Lancer manuellement `MerKora factory worker` depuis `feature/merkora-factory-unified-runtime`, `feature/merkora-production-security-hardening` ou `main` (branches autorisées par la vérification OIDC), avec un `project_id` existant et un UUID de job en statut `queued`. Le workflow reste manuel : aucun lancement automatique à la création d'un job.
+Lancer `MerKora factory worker` depuis `feature/merkora-factory-unified-runtime`, `feature/merkora-production-security-hardening` ou `main` (branches autorisées par la vérification OIDC), avec un `project_id` existant et un UUID de job en statut `queued`. Le workflow reste manuel : aucun lancement automatique à la création d'un job.
 
 Un job est réclamé par comparaison atomique `status = queued`. Une seconde exécution ne peut pas prendre le même travail. Les erreurs après réservation marquent le job en échec lorsque le worker peut encore joindre l'Edge Function ; sinon, une réconciliation administrateur est nécessaire.
 
