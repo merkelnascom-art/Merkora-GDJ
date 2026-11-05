@@ -102,7 +102,7 @@ Deno.serve(async (request) => {
   } catch { return json({ error: "invalid_json" }, 400); }
 
   const action = body.action;
-  if (!["verify", "claim", "complete"].includes(String(action)) ||
+  if (!["verify", "claim", "complete", "fail"].includes(String(action)) ||
       !isProjectId(body.projectId) || !isUuid(body.jobId)) {
     return json({ error: "unsupported_action_or_invalid_identifiers" }, 400);
   }
@@ -119,6 +119,48 @@ Deno.serve(async (request) => {
     .select("id,project_id,status,plan_version,plan_digest,scope_digest,approval_ids,correlation_id,manifest,requested_by,authorized_by")
     .eq("id", body.jobId).eq("project_id", body.projectId).maybeSingle();
   if (jobError || !job) return json({ error: "factory_job_not_found" }, 404);
+
+  // A claimed run can report a safe failure without leaving the job indefinitely in building.
+  if (action === "fail") {
+    if (job.status !== "building" || !isRecord(job.manifest) ||
+        job.manifest.workerRunId !== identity.runId ||
+        job.manifest.workerRunAttempt !== identity.runAttempt ||
+        typeof body.reason !== "string" || !body.reason.trim()) {
+      return json({ error: "factory_job_claim_mismatch" }, 409);
+    }
+    const { data: tasks, error: tasksError } = await admin
+      .from("project_factory_tasks").select("id,task_key")
+      .eq("job_id", job.id).eq("project_id", job.project_id);
+    if (tasksError || !tasks) return json({ error: "factory_tasks_unavailable" }, 503);
+    for (const task of tasks) {
+      const state = task.task_key === "prepare_specification" ? "failed" : "blocked";
+      const { error } = await admin.from("project_factory_tasks")
+        .update({ state, last_error_safe: body.reason.slice(0, 500), updated_at: new Date().toISOString() })
+        .eq("id", task.id).eq("job_id", job.id);
+      if (error) return json({ error: "factory_task_failure_persistence_failed" }, 503);
+    }
+    const failureManifest = {
+      ...job.manifest,
+      failureStage: "worker_execution",
+      failureReasonSafe: body.reason.slice(0, 500),
+      workerFailedAt: new Date().toISOString(),
+    };
+    const { data: failedJob, error: failError } = await admin
+      .from("project_factory_jobs")
+      .update({ status: "failed", manifest: failureManifest, updated_at: new Date().toISOString() })
+      .eq("id", job.id).eq("project_id", job.project_id).eq("status", "building")
+      .select("id,status").maybeSingle();
+    if (failError || !failedJob) return json({ error: "factory_failure_status_persistence_failed" }, 503);
+    const { error: eventError } = await admin.from("project_memory_events").insert({
+      project_id: job.project_id, event_type: "task_failed",
+      actor_user_id: null, actor_role: "system", correlation_id: job.correlation_id,
+      plan_version: job.plan_version, task_key: "prepare_specification",
+      summary: "Le worker a signalé un échec avant la fin de la fabrication.",
+      payload: { githubRunId: identity.runId, reason: body.reason.slice(0, 500) },
+    });
+    if (eventError) return json({ error: "factory_failure_audit_failed", status: "failed" }, 503);
+    return json({ completed: true, status: "failed" });
+  }
 
   // Completion is bound to the exact workflow run that atomically claimed this job.
   if (action === "complete") {
