@@ -17,6 +17,11 @@ export async function POST(
   context: { params: Promise<{ projectId: string; jobId: string }> },
 ) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
+  let body: unknown;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Confirmation de coût manquante." }, { status: 400 }); }
+  if (!body || typeof body !== "object" || (body as { confirmSandboxCost?: unknown }).confirmSandboxCost !== true) {
+    return NextResponse.json({ error: "Confirmez explicitement le lancement du Sandbox payant avant de continuer." }, { status: 409 });
+  }
   try {
     const store = await cookies();
     const [user, token, admin] = await Promise.all([
