@@ -1,1 +1,1 @@
-export { dispatchMerkoraFactoryWorkflow } from "../../../lib/server/merkora-factory-github";
+export { dispatchMerkoraFactoryWorkflow, verifyMerkoraGitHubApp } from "../../../lib/server/merkora-factory-github";
