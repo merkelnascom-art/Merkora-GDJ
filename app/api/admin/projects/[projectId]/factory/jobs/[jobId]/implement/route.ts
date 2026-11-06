@@ -104,6 +104,12 @@ export async function POST(
       typeof job.manifest.sourceDigest !== "string") {
       return NextResponse.json({ error: "Ce travail n'est pas prêt pour une implémentation métier assistée." }, { status: 409 });
     }
+    if (job.manifest.implementationStatus === "candidate_ready_for_human_review") {
+      return NextResponse.json({
+        error: "Une version candidate a déjà été générée. Elle doit être examinée par un administrateur avant toute nouvelle implémentation IA.",
+        code: "IMPLEMENTATION_ALREADY_READY",
+      }, { status: 409, headers: { "Cache-Control": "no-store" } });
+    }
 
     const planResult = await callUserData(
       `project_memory_plan_versions?select=version,payload,payload_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&version=eq.${job.plan_version}&limit=1`,
@@ -345,6 +351,7 @@ export async function POST(
 
     return NextResponse.json({
       status: finalStatus, implementationLevel: "business_logic_candidate",
+      implementationStatus: build.ok ? "candidate_ready_for_human_review" : "build_failed",
       buildPassed: build.ok, deployed: false, humanReviewRequired: true,
       fullBusinessLogicImplementationPending: true,
       sourceDigest: nextSource.digest, reportDigest, fileCount: nextSource.files.length,

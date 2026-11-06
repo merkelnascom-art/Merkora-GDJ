@@ -19,6 +19,14 @@ jobs:
         run: npm install
       - name: Type check
         run: npm run typecheck
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Supabase Edge Functions
+        run: deno check --node-modules-dir=auto supabase/functions/factory-worker/index.ts
+      - name: Test factory worker identity
+        run: deno test --node-modules-dir=auto supabase/functions/factory-worker/identity_test.ts
       - name: Unit tests
         run: npm test
       - name: Production build
