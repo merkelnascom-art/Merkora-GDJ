@@ -63,6 +63,9 @@ describe("verifyMerkoraGitHubApp", () => {
   });
 
   it("reports missing configuration without making a network request", async () => {
+    vi.stubEnv("MERKORA_GITHUB_APP_ID", "");
+    vi.stubEnv("MERKORA_GITHUB_APP_INSTALLATION_ID", "");
+    vi.stubEnv("MERKORA_GITHUB_APP_PRIVATE_KEY", "");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
