@@ -39,6 +39,59 @@ async function githubRequest(url: string, token: string, body?: unknown): Promis
   });
 }
 
+export type GitHubAppVerificationResult =
+  | { ok: true; workflowActive: true }
+  | { ok: false; reason: "not_configured" | "invalid_configuration" | "github_rejected" | "insufficient_permissions" | "workflow_unavailable" | "network_error" };
+
+/**
+ * Read-only connectivity check: mint a short-lived installation token and
+ * inspect the configured workflow. It never dispatches a run or claims a job.
+ */
+export async function verifyMerkoraGitHubApp(): Promise<GitHubAppVerificationResult> {
+  const appId = process.env.MERKORA_GITHUB_APP_ID;
+  const installationId = process.env.MERKORA_GITHUB_APP_INSTALLATION_ID;
+  const privateKey = process.env.MERKORA_GITHUB_APP_PRIVATE_KEY;
+  if (!appId || !installationId || !privateKey) return { ok: false, reason: "not_configured" };
+  if (!/^\\d+$/.test(appId) || !/^\\d+$/.test(installationId) || privateKey.length < 100) {
+    return { ok: false, reason: "invalid_configuration" };
+  }
+
+  try {
+    const jwt = appJwt(appId, privateKey);
+    const tokenResponse = await githubRequest(
+      `${API}/app/installations/${installationId}/access_tokens`,
+      jwt,
+      { permissions: { actions: "write" } },
+    );
+    if (!tokenResponse.ok) return { ok: false, reason: "github_rejected" };
+
+    const tokenData: unknown = await tokenResponse.json();
+    if (!tokenData || typeof tokenData !== "object") return { ok: false, reason: "github_rejected" };
+    const token = (tokenData as { token?: unknown }).token;
+    const permissions = (tokenData as { permissions?: unknown }).permissions;
+    if (typeof token !== "string" || !token) return { ok: false, reason: "github_rejected" };
+    if (!permissions || typeof permissions !== "object" ||
+        (permissions as { actions?: unknown }).actions !== "write") {
+      return { ok: false, reason: "insufficient_permissions" };
+    }
+
+    const workflowResponse = await githubRequest(
+      `${API}/repos/${OWNER}/${REPOSITORY}/actions/workflows/${WORKFLOW}`,
+      token,
+    );
+    if (!workflowResponse.ok) return { ok: false, reason: "github_rejected" };
+    const workflowData: unknown = await workflowResponse.json();
+    if (!workflowData || typeof workflowData !== "object" ||
+        (workflowData as { state?: unknown }).state !== "active" ||
+        (workflowData as { path?: unknown }).path !== `.github/workflows/${WORKFLOW}`) {
+      return { ok: false, reason: "workflow_unavailable" };
+    }
+    return { ok: true, workflowActive: true };
+  } catch {
+    return { ok: false, reason: "network_error" };
+  }
+}
+
 export async function dispatchMerkoraFactoryWorkflow(
   projectId: string,
   jobId: string,
