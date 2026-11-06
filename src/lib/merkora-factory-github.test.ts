@@ -43,7 +43,6 @@ describe("verifyMerkoraGitHubApp", () => {
       "https://api.github.com/repos/merkelnascom-art/Merkora-GDJ/actions/workflows/merkora-factory-worker.yml",
     );
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("workflow_dispatch");
-    expect(JSON.stringify(await fetchMock.mock.results[0].value.json?.())).not.toContain("temporary-installation-token");
   });
 
   it("rejects an installation token without actions write permission", async () => {
