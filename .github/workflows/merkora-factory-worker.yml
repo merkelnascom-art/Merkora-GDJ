@@ -1,0 +1,60 @@
+name: MerKora factory worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: MerKora project identifier
+        required: true
+        type: string
+      job_id:
+        description: Factory job UUID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: merkora-factory-${{ inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && contains(fromJSON('["refs/heads/feature/merkora-factory-unified-runtime","refs/heads/feature/merkora-production-security-hardening","refs/heads/main"]'), github.ref)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout approved factory code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install application dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install pinned TypeScript runner without changing the lockfile
+        run: npm install --no-save --package-lock=false tsx@4.20.6
+      - name: Validate external worker configuration before claiming the job
+        env:
+          SUPABASE_URL: ${{ vars.MERKORA_SUPABASE_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_URL:?MERKORA_SUPABASE_URL variable is missing}"
+          test -n "${VERCEL_TOKEN:?VERCEL_TOKEN secret is missing}"
+          test -n "${VERCEL_TEAM_ID:?VERCEL_TEAM_ID secret is missing}"
+          test -n "${VERCEL_PROJECT_ID:?VERCEL_PROJECT_ID secret is missing}"
+      - name: Claim, build in an isolated Vercel Sandbox, and report evidence
+        env:
+          SUPABASE_URL: ${{ vars.MERKORA_SUPABASE_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: node_modules/.bin/tsx scripts/merkora-factory-worker.ts
