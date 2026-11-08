@@ -45,6 +45,39 @@ describe("verifyMerkoraGitHubApp", () => {
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("workflow_dispatch");
   });
 
+  it("identifies an installation-token rejection and exposes only its HTTP status", async () => {
+    vi.stubEnv("MERKORA_GITHUB_APP_ID", "5627977");
+    vi.stubEnv("MERKORA_GITHUB_APP_INSTALLATION_ID", "178929095");
+    vi.stubEnv("MERKORA_GITHUB_APP_PRIVATE_KEY", privateKey);
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response("sensitive GitHub error body", { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(verifyMerkoraGitHubApp()).resolves.toEqual({
+      ok: false,
+      reason: "installation_token_rejected",
+      httpStatus: 401,
+    });
+  });
+
+  it("identifies workflow-access rejection separately from token creation", async () => {
+    vi.stubEnv("MERKORA_GITHUB_APP_ID", "5627977");
+    vi.stubEnv("MERKORA_GITHUB_APP_INSTALLATION_ID", "178929095");
+    vi.stubEnv("MERKORA_GITHUB_APP_PRIVATE_KEY", privateKey);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        token: "temporary-installation-token",
+        permissions: { actions: "write" },
+      }), { status: 201 }))
+      .mockResolvedValueOnce(new Response("sensitive GitHub error body", { status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(verifyMerkoraGitHubApp()).resolves.toEqual({
+      ok: false,
+      reason: "workflow_access_rejected",
+      httpStatus: 404,
+    });
+  });
+
   it("rejects an installation token without actions write permission", async () => {
     vi.stubEnv("MERKORA_GITHUB_APP_ID", "5627977");
     vi.stubEnv("MERKORA_GITHUB_APP_INSTALLATION_ID", "178929095");
