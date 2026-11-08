@@ -41,7 +41,7 @@ async function githubRequest(url: string, token: string, body?: unknown): Promis
 
 export type GitHubAppVerificationResult =
   | { ok: true; workflowActive: true }
-  | { ok: false; reason: "not_configured" | "invalid_configuration" | "github_rejected" | "insufficient_permissions" | "workflow_unavailable" | "network_error" };
+  | { ok: false; reason: "not_configured" | "invalid_configuration" | "installation_token_rejected" | "workflow_access_rejected" | "invalid_installation_token_response" | "insufficient_permissions" | "workflow_unavailable" | "network_error"; httpStatus?: number };
 
 /**
  * Read-only connectivity check: mint a short-lived installation token and
@@ -63,13 +63,13 @@ export async function verifyMerkoraGitHubApp(): Promise<GitHubAppVerificationRes
       jwt,
       { permissions: { actions: "write" } },
     );
-    if (!tokenResponse.ok) return { ok: false, reason: "github_rejected" };
+    if (!tokenResponse.ok) return { ok: false, reason: "installation_token_rejected", httpStatus: tokenResponse.status };
 
     const tokenData: unknown = await tokenResponse.json();
-    if (!tokenData || typeof tokenData !== "object") return { ok: false, reason: "github_rejected" };
+    if (!tokenData || typeof tokenData !== "object") return { ok: false, reason: "invalid_installation_token_response" };
     const token = (tokenData as { token?: unknown }).token;
     const permissions = (tokenData as { permissions?: unknown }).permissions;
-    if (typeof token !== "string" || !token) return { ok: false, reason: "github_rejected" };
+    if (typeof token !== "string" || !token) return { ok: false, reason: "invalid_installation_token_response" };
     if (!permissions || typeof permissions !== "object" ||
         (permissions as { actions?: unknown }).actions !== "write") {
       return { ok: false, reason: "insufficient_permissions" };
@@ -79,7 +79,7 @@ export async function verifyMerkoraGitHubApp(): Promise<GitHubAppVerificationRes
       `${API}/repos/${OWNER}/${REPOSITORY}/actions/workflows/${WORKFLOW}`,
       token,
     );
-    if (!workflowResponse.ok) return { ok: false, reason: "github_rejected" };
+    if (!workflowResponse.ok) return { ok: false, reason: "workflow_access_rejected", httpStatus: workflowResponse.status };
     const workflowData: unknown = await workflowResponse.json();
     if (!workflowData || typeof workflowData !== "object" ||
         (workflowData as { state?: unknown }).state !== "active" ||
