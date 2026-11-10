@@ -38,7 +38,7 @@ export function ProjectMockupStudio({ project }: Props) {
   const [clientQuoteResponse, setClientQuoteResponse] = useState<ClientQuoteResponse>("undecided");
   const [clientQuoteNote, setClientQuoteNote] = useState("");
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
-  const brandInitials = model.title.trim().split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
+  const brandInitials = model.title.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
   useEffect(() => {
