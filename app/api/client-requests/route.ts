@@ -23,6 +23,13 @@ function validPayload(value: unknown): value is Record<string, unknown> {
   if (!["website", "mobile", "dashboard"].includes(String(studio.format)) ||
       !["violet", "blue", "emerald", "amber"].includes(String(studio.palette)) ||
       !maxText(studio.reviewStatus, 30) || !statuses.has(String(studio.reviewStatus))) return false;
+  if (studio.enabledModules !== undefined &&
+      (!Array.isArray(studio.enabledModules) || studio.enabledModules.length > 30 ||
+       !studio.enabledModules.every((id) => typeof id === "string" && id.length <= 120))) return false;
+  if (studio.selectedRecommendationIds !== undefined &&
+      (!Array.isArray(studio.selectedRecommendationIds) || studio.selectedRecommendationIds.length > 20 ||
+       !studio.selectedRecommendationIds.every((id) => typeof id === "string" && id.length <= 160))) return false;
+  if (p.recordType !== undefined && p.recordType !== "mockup_version") return false;
   if (!p.quote || typeof p.quote !== "object" || Array.isArray(p.quote)) return false;
   const quote = p.quote as Record<string, unknown>;
   if (!maxText(quote.amount, 40) || (quote.amount && !/^\d+$/.test(quote.amount)) ||
@@ -79,6 +86,23 @@ export async function POST(request: Request) {
     if (!user || !token || !user.email) return NextResponse.json({ error: "Connectez-vous à votre compte MerKora avant d’envoyer le dossier." }, { status: 401 });
 
     const project = body.project as Record<string, unknown>;
+    let payloadToSave: Record<string, unknown> = body;
+    if (body.recordType === "mockup_version") {
+      // Count only this authenticated user's previous snapshots for the same project.
+      // Every submission creates a new immutable inbox row; no existing row is overwritten.
+      const previous = await callUserData(
+        `client_requests?select=id&user_id=eq.${encodeURIComponent(user.id)}&project_id=eq.${encodeURIComponent(String(project.id))}&order=created_at.desc&limit=100`,
+        "GET",
+        token,
+      );
+      if (!previous.ok) return NextResponse.json({ error: "Impossible de vérifier l’historique des versions. Rien n’a été enregistré." }, { status: 502 });
+      const count = Array.isArray(previous.data) ? previous.data.length : 0;
+      payloadToSave = {
+        ...body,
+        version: count + 1,
+        snapshotCreatedAt: new Date().toISOString(),
+      };
+    }
     const result = await callUserData(
       "client_requests",
       "POST",
@@ -88,7 +112,7 @@ export async function POST(request: Request) {
         user_email: user.email,
         project_id: project.id,
         project_title: project.title,
-        payload: body,
+        payload: payloadToSave,
         admin_status: "to_review",
         admin_note: "",
         updated_at: new Date().toISOString(),
