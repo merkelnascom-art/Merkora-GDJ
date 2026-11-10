@@ -32,7 +32,6 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>(readOnlySnapshot?.reviewStatus ?? "draft");
   const [reviewNote, setReviewNote] = useState(readOnlySnapshot?.reviewNote ?? "");
-  const [submittingVersion, setSubmittingVersion] = useState(false);
   const [versionMessage, setVersionMessage] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDays, setQuoteDays] = useState("");
