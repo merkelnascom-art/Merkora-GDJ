@@ -11,7 +11,7 @@ export type MockupConfig = {
 };
 export type MockupModule = { id: string; title: string; description: string };
 export type MockupRecommendation = MockupModule & { reason: string };
-export type MockupDomain = "education" | "operations" | "creative" | "digital" | "general";
+export type MockupDomain = "bakery" | "education" | "operations" | "creative" | "digital" | "general";
 export type MockupModel = {
   title: string;
   headline: string;
@@ -35,12 +35,21 @@ const formatLabels: Record<MockupFormat, string> = {
 };
 
 const domainLabels: Record<MockupDomain, string> = {
-  education: "Orientation et éducation",
+  bakery: "Pâtisserie et commandes",
+  education: "Éducation et formation",
   operations: "Organisation et opérations",
   creative: "Création et communication",
   digital: "Service numérique",
   general: "Concept général",
 };
+
+const bakeryModules: MockupModule[] = [
+  { id: "product-catalog", title: "Nos créations", description: "Parcourir les gâteaux, cakes et pâtisseries avec photos, formats et prix." },
+  { id: "custom-order", title: "Créer ma commande", description: "Décrire le gâteau souhaité, choisir les saveurs, la taille, la décoration et la quantité." },
+  { id: "cart-checkout", title: "Mon panier et ma commande", description: "Vérifier les produits, les quantités, le prix estimé et les informations de retrait ou livraison." },
+  { id: "order-tracking", title: "Suivre ma commande", description: "Retrouver la confirmation, la préparation et le statut de chaque commande." },
+  { id: "customer-contact", title: "Conseil et contact", description: "Échanger avec la pâtisserie pour préciser une demande spéciale ou un événement." },
+];
 
 const educationModules: MockupModule[] = [
   { id: "student-profile", title: "Mon profil", description: "Intérêts, matières appréciées, compétences et objectifs à explorer." },
