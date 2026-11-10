@@ -51,6 +51,12 @@ const bakeryModules: MockupModule[] = [
   { id: "customer-contact", title: "Conseil et contact", description: "Échanger avec la pâtisserie pour préciser une demande spéciale ou un événement." },
 ];
 
+const bakeryRecommendations: MockupRecommendation[] = [
+  { id: "catalogue-produits", title: "Catalogue de gâteaux et pâtisseries", description: "Présenter les créations avec leurs photos, formats et prix.", reason: "Les visiteurs peuvent découvrir les produits et comparer les prix avant de commander." },
+  { id: "commande-personnalisee", title: "Commande personnalisée", description: "Permettre de choisir le type de gâteau, les saveurs, la taille, la décoration et la date souhaitée.", reason: "Chaque client peut expliquer précisément ce qu’il souhaite, même pour une création spéciale." },
+  { id: "panier-validation", title: "Panier et validation de commande", description: "Récapituler les produits, quantités, prix et modalités de retrait ou de livraison.", reason: "Le client vérifie sa demande avant de la transmettre à Asho Sweet." },
+];
+
 const educationModules: MockupModule[] = [
   { id: "student-profile", title: "Mon profil", description: "Intérêts, matières appréciées, compétences et objectifs à explorer." },
   { id: "aptitude-tests", title: "Tests et activités", description: "Questionnaires et exercices de réflexion à interpréter avec prudence." },
@@ -130,7 +136,7 @@ export function buildMockupModel(
     ? modules.filter((item) => requested.includes(item.id))
     : modules;
 
-  const recommendations: MockupRecommendation[] = project.recommendations.map((item) => ({
+  const recommendations: MockupRecommendation[] = domain === "bakery" ? bakeryRecommendations : project.recommendations.map((item) => ({
     id: recommendationId(item.title),
     title: item.title,
     description: item.description,
