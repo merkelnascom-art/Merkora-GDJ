@@ -77,6 +77,11 @@ export function CloudClientRequestsPanel() {
       {error && <p role="alert" style={{ color: "#b42318", padding: 12, background: "#fff2f0", borderRadius: 10 }}>{error}</p>}
       {message && <p role="status" style={{ color: "#176b45" }}>{message}</p>}
       {!error && items.length === 0 && <p style={{ padding: 18, color: "#716c80", background: "#f8f7fb", borderRadius: 12 }}>Aucune demande en ligne pour le moment.</p>}
+      {mockupVersions.length === 0 && <section style={{ marginTop: 24, padding: 18, border: "1px dashed #c9bfdc", borderRadius: 16, background: "#fbfaff" }}>
+        <div style={{ color: "#6e56a5", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }}>STUDIO & PROPOSITIONS</div>
+        <h3 style={{ margin: "8px 0" }}>Aucune maquette transmise pour le moment</h3>
+        <p style={{ color: "#716c80", fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>Les maquettes enregistrées uniquement dans le navigateur du client ne sont pas visibles ici. Pour alimenter cet historique, le client doit ouvrir son projet, terminer ses choix dans le Studio, puis utiliser « Valider ce concept » ou « Demander des modifications ». Chaque transmission apparaîtra ici avec son aperçu exact et sa version.</p>
+      </section>}
       {mockupVersions.length > 0 && <section style={{ marginTop: 24, padding: 18, border: "1px solid #d8d0e8", borderRadius: 16, background: "#fbfaff" }}>
         <div style={{ marginBottom: 16 }}><div style={{ color: "#6e56a5", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }}>CONTRÔLE AVANT LIVRAISON</div><h2 style={{ margin: "6px 0" }}>Historique des maquettes client</h2><p style={{ color: "#716c80", fontSize: 14, margin: 0 }}>Chaque envoi est conservé comme une version distincte. Ouvre les versions pour comparer exactement le format, les couleurs, les blocs et les pistes retenues.</p></div>
         <div style={{ display: "grid", gap: 18 }}>
