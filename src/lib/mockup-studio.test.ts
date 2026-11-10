@@ -46,6 +46,21 @@ describe("buildMockupModel", () => {
     expect(model.modules.map((item) => item.id)).not.toContain("career-explorer");
   });
 
+
+  it("suggests a project-appropriate palette and respects an explicit color preference", () => {
+    expect(suggestPalette(studentProject)).toBe("blue");
+    expect(suggestPalette({
+      ...teamProject,
+      title: "Suivi financier",
+      problem: "Je veux une interface verte pour suivre ma trésorerie et mes dépenses.",
+      desiredOutcome: "Visualiser les budgets, les entrées et les sorties.",
+    })).toBe("emerald");
+    expect(suggestPalette({
+      ...studentProject,
+      problem: "Je souhaite une identité bleu marine.",
+    })).toBe("blue");
+  });
+
   it("accepts all supported formats and palettes", () => {
     const formats: MockupConfig["format"][] = ["website", "mobile", "dashboard"];
     const palettes: MockupConfig["palette"][] = ["violet", "blue", "emerald", "amber"];
