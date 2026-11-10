@@ -87,7 +87,7 @@ export function CloudClientRequestsPanel() {
               id: item.project_id, title: item.project_title, category: p.category,
               problem: p.problem || "", desiredOutcome: p.desiredOutcome || "",
               budget: p.budget || "", urgency: p.urgency || "normal",
-              recommendations: Array.isArray(p.recommendations) ? p.recommendations : [],
+              recommendations: (Array.isArray(p.recommendations) ? p.recommendations : []) as Project["recommendations"],
               createdAt: item.created_at, status: "draft" as Project["status"],
             } as Project;
             const config: MockupConfig = {
