@@ -87,19 +87,21 @@ export async function POST(request: Request) {
 
     const project = body.project as Record<string, unknown>;
     let payloadToSave: Record<string, unknown> = body;
+    let versionNumber: number | null = null;
     if (body.recordType === "mockup_version") {
       // Count only this authenticated user's previous snapshots for the same project.
       // Every submission creates a new immutable inbox row; no existing row is overwritten.
       const previous = await callUserData(
-        `client_requests?select=id&user_id=eq.${encodeURIComponent(user.id)}&project_id=eq.${encodeURIComponent(String(project.id))}&order=created_at.desc&limit=100`,
+        `client_requests?select=id&user_id=eq.${encodeURIComponent(user.id)}&project_id=eq.${encodeURIComponent(String(project.id))}&payload->>recordType=eq.mockup_version&order=created_at.desc&limit=100`,
         "GET",
         token,
       );
       if (!previous.ok) return NextResponse.json({ error: "Impossible de vérifier l’historique des versions. Rien n’a été enregistré." }, { status: 502 });
       const count = Array.isArray(previous.data) ? previous.data.length : 0;
+      versionNumber = count + 1;
       payloadToSave = {
         ...body,
-        version: count + 1,
+        version: versionNumber,
         snapshotCreatedAt: new Date().toISOString(),
       };
     }
@@ -124,7 +126,7 @@ export async function POST(request: Request) {
         ? "La boîte de réception centrale n’est pas encore installée. La demande n’a pas été envoyée."
         : "Impossible d’envoyer la demande pour le moment. Votre dossier local est conservé.",
     }, { status: result.status === 401 ? 401 : 502 });
-    return NextResponse.json({ sent: true, message: "Demande transmise à MerKora. Elle est enregistrée en ligne." });
+    return NextResponse.json({ sent: true, version: versionNumber, message: versionNumber ? `Version ${versionNumber} transmise à MerKora et enregistrée dans l’historique.` : "Demande transmise à MerKora. Elle est enregistrée en ligne." });
   } catch (error) {
     const notConfigured = error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED";
     return NextResponse.json({ error: notConfigured ? "La sauvegarde en ligne n’est pas configurée." : "Le service est momentanément indisponible." }, { status: notConfigured ? 503 : 502 });
