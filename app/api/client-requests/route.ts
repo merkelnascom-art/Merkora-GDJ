@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
+import { createOfficialMockupSnapshot, type OwnedProjectSnapshot } from "@/lib/mockup-approval";
 
 export const dynamic = "force-dynamic";
 const statuses = new Set(["draft", "changes_requested", "approved"]);
@@ -52,7 +53,7 @@ export async function GET() {
     // Never return admin_note here: it is an internal-only field.
     const [result, launchResult] = await Promise.all([
       callUserData(
-        `client_requests?select=id,project_id,project_title,admin_status,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=100`,
+        `client_requests?select=id,project_id,project_title,payload,admin_status,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=100`,
         "GET",
         token,
       ),
@@ -85,25 +86,48 @@ export async function POST(request: Request) {
     const token = await getAccessToken(store);
     if (!user || !token || !user.email) return NextResponse.json({ error: "Connectez-vous à votre compte MerKora avant d’envoyer le dossier." }, { status: 401 });
 
-    const project = body.project as Record<string, unknown>;
-    let payloadToSave: Record<string, unknown> = body;
+    const submittedProject = body.project as Record<string, unknown>;
+    // The browser may submit only a project ID; all project details are reloaded
+    // through the signed-in user's RLS-scoped session before anything is recorded.
+    const ownedResult = await callUserData(
+      `user_projects?select=id,title,category,problem,desired_outcome,budget,urgency,recommendations&id=eq.${encodeURIComponent(String(submittedProject.id))}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+      "GET",
+      token,
+    );
+    if (!ownedResult.ok) return NextResponse.json({ error: "Impossible de vérifier l’accès à ce projet. Rien n’a été transmis." }, { status: 502 });
+    const ownedProject = Array.isArray(ownedResult.data) ? ownedResult.data[0] as OwnedProjectSnapshot | undefined : undefined;
+    if (!ownedProject) return NextResponse.json({ error: "Ce projet n’est pas enregistré dans votre compte ou vous n’y avez pas accès. Enregistrez d’abord le projet puis réessayez." }, { status: 404 });
+
+    let payloadToSave: Record<string, unknown> = {
+      ...body,
+      project: {
+        id: ownedProject.id,
+        title: ownedProject.title,
+        category: ownedProject.category,
+        problem: ownedProject.problem,
+        desiredOutcome: ownedProject.desired_outcome,
+        budget: ownedProject.budget,
+        urgency: ownedProject.urgency,
+        recommendations: ownedProject.recommendations,
+      },
+    };
     let versionNumber: number | null = null;
     if (body.recordType === "mockup_version") {
-      // Count only this authenticated user's previous snapshots for the same project.
-      // Every submission creates a new immutable inbox row; no existing row is overwritten.
+      // Immutable snapshots are counted only inside the authenticated owner's project.
       const previous = await callUserData(
-        `client_requests?select=id&user_id=eq.${encodeURIComponent(user.id)}&project_id=eq.${encodeURIComponent(String(project.id))}&payload->>recordType=eq.mockup_version&order=created_at.desc&limit=100`,
+        `client_requests?select=id&user_id=eq.${encodeURIComponent(user.id)}&project_id=eq.${encodeURIComponent(String(ownedProject.id))}&payload->>recordType=eq.mockup_version&order=created_at.desc&limit=1000`,
         "GET",
         token,
       );
       if (!previous.ok) return NextResponse.json({ error: "Impossible de vérifier l’historique des versions. Rien n’a été enregistré." }, { status: 502 });
-      const count = Array.isArray(previous.data) ? previous.data.length : 0;
-      versionNumber = count + 1;
-      payloadToSave = {
-        ...body,
-        version: versionNumber,
-        snapshotCreatedAt: new Date().toISOString(),
-      };
+      versionNumber = (Array.isArray(previous.data) ? previous.data.length : 0) + 1;
+      payloadToSave = createOfficialMockupSnapshot(
+        body,
+        ownedProject,
+        user.id,
+        versionNumber,
+        new Date().toISOString(),
+      );
     }
     const result = await callUserData(
       "client_requests",
@@ -126,7 +150,7 @@ export async function POST(request: Request) {
         ? "La boîte de réception centrale n’est pas encore installée. La demande n’a pas été envoyée."
         : "Impossible d’envoyer la demande pour le moment. Votre dossier local est conservé.",
     }, { status: result.status === 401 ? 401 : 502 });
-    return NextResponse.json({ sent: true, version: versionNumber, message: versionNumber ? `Version ${versionNumber} transmise à MerKora et enregistrée dans l’historique.` : "Demande transmise à MerKora. Elle est enregistrée en ligne." });
+    return NextResponse.json({ sent: true, version: versionNumber, message: versionNumber ? `Version ${versionNumber} enregistrée officiellement côté serveur et transmise à MerKora.` : "Demande transmise à MerKora. Elle est enregistrée en ligne." });
   } catch (error) {
     const notConfigured = error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED";
     return NextResponse.json({ error: notConfigured ? "La sauvegarde en ligne n’est pas configurée." : "Le service est momentanément indisponible." }, { status: notConfigured ? 503 : 502 });
