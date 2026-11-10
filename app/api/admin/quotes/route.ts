@@ -29,8 +29,27 @@ export async function GET() {
     if (![requests, groups, versions, decisions].every(r => r.ok)) {
       return NextResponse.json({ error: "Impossible de charger les devis. Vérifiez les politiques d’accès Supabase." }, { status: 502 });
     }
+    const allRequests = Array.isArray(requests.data) ? requests.data as Array<Record<string, unknown>> : [];
+    const mockupRows = allRequests.filter((item) =>
+      isRecord(item.payload) && item.payload.recordType === "mockup_version",
+    );
+    const clientRows = allRequests.filter((item) =>
+      !(isRecord(item.payload) && item.payload.recordType === "mockup_version"),
+    );
+    const visibleRequests = clientRows.map((item) => {
+      const latestMockup = mockupRows.find((mockup) =>
+        mockup.user_id === item.user_id && mockup.project_id === item.project_id,
+      );
+      const payload = latestMockup && isRecord(latestMockup.payload) ? latestMockup.payload : {};
+      const decision = isRecord(payload.officialDecision) ? payload.officialDecision : {};
+      return {
+        ...item,
+        conceptApprovalStatus: typeof decision.status === "string" ? decision.status : "not_submitted",
+        conceptApprovalAt: typeof decision.recordedAt === "string" ? decision.recordedAt : null,
+      };
+    });
     return NextResponse.json({
-      requests: Array.isArray(requests.data) ? requests.data : [],
+      requests: visibleRequests,
       quotes: Array.isArray(groups.data) ? groups.data : [],
       versions: Array.isArray(versions.data) ? versions.data : [],
       decisions: Array.isArray(decisions.data) ? decisions.data : [],
@@ -90,13 +109,34 @@ export async function POST(request: Request) {
     if (!token) return NextResponse.json({ error: "Session expirée. Reconnectez-vous." }, { status: 401 });
 
     const requestResult = await callUserData(
-      `client_requests?select=id,user_id,user_email,project_id,project_title&id=eq.${encodeURIComponent(body.requestId)}`,
+      `client_requests?select=id,user_id,user_email,project_id,project_title,payload&id=eq.${encodeURIComponent(body.requestId)}`,
       "GET", token,
     );
     if (!requestResult.ok || !Array.isArray(requestResult.data) || !requestResult.data.length) {
       return NextResponse.json({ error: "Dossier client introuvable ou inaccessible." }, { status: 404 });
     }
-    const clientRequest = requestResult.data[0] as { id: string; user_id: string; user_email: string; project_id: string; project_title: string };
+    const clientRequest = requestResult.data[0] as { id: string; user_id: string; user_email: string; project_id: string; project_title: string; payload?: unknown };
+    if (isRecord(clientRequest.payload) && clientRequest.payload.recordType === "mockup_version") {
+      return NextResponse.json({ error: "Sélectionnez le dossier client, pas une ligne d’historique de maquette." }, { status: 400 });
+    }
+
+    // The newest transmitted mockup decision must be an official server-recorded approval.
+    // A later change request or review submission invalidates an older approval for quoting.
+    const mockupHistory = await callUserData(
+      `client_requests?select=id,payload,created_at&user_id=eq.${encodeURIComponent(clientRequest.user_id)}&project_id=eq.${encodeURIComponent(clientRequest.project_id)}&order=created_at.desc&limit=100`,
+      "GET", token,
+    );
+    if (!mockupHistory.ok) return NextResponse.json({ error: "Impossible de vérifier la validation officielle du concept." }, { status: 502 });
+    const latestMockup = Array.isArray(mockupHistory.data)
+      ? mockupHistory.data.find((row) => isRecord(row) && isRecord(row.payload) && row.payload.recordType === "mockup_version")
+      : undefined;
+    const latestPayload = isRecord(latestMockup) && isRecord(latestMockup.payload) ? latestMockup.payload : {};
+    const latestDecision = isRecord(latestPayload.officialDecision) ? latestPayload.officialDecision : {};
+    if (latestDecision.status !== "approved") {
+      return NextResponse.json({
+        error: "Le client doit d’abord valider officiellement la dernière version de la maquette. Aucun devis n’a été créé.",
+      }, { status: 409 });
+    }
 
     const existingGroup = await callUserData(
       `client_quotes?select=id&request_id=eq.${encodeURIComponent(body.requestId)}&limit=1`, "GET", token,
