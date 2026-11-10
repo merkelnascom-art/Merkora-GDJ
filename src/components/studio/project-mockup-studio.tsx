@@ -283,9 +283,9 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
       "Pistes de solution retenues :",
       ...model.visibleRecommendations.map((item) => `- ${item.title} : ${item.description} (raison : ${item.reason})`),
-      `État du concept : ${serverApproved ? "Concept validé officiellement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
+      `État du concept : ${serverApproved ? "Concept validé officiellement côté serveur" : reviewStatus === "changes_requested" ? "Modifications demandées" : "Aucune validation officielle"}`,
       ...(reviewNote.trim() ? [`Note de retour : ${reviewNote.trim()}`] : []),
-      "Attention : cet état et cette note sont enregistrés uniquement dans ce navigateur; ils ne sont pas transmis à MerKora ni au cloud.",
+      "La validation officielle est conservée côté serveur uniquement après confirmation de transmission. Les modifications non transmises restent locales.",
       model.conceptNotice,
     ].join("\n");
     try {
