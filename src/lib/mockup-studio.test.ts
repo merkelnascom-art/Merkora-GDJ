@@ -57,8 +57,16 @@ describe("buildMockupModel", () => {
     })).toBe("emerald");
     expect(suggestPalette({
       ...studentProject,
+      category: "creative",
+      title: "Identité visuelle",
       problem: "Je souhaite une identité bleu marine.",
     })).toBe("blue");
+    expect(suggestPalette({
+      ...studentProject,
+      category: "creative",
+      title: "Logo et identité de marque",
+      problem: "Je veux une palette verte pour cette marque.",
+    })).toBe("emerald");
   });
 
   it("accepts all supported formats and palettes", () => {
