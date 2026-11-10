@@ -46,6 +46,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
 
   useEffect(() => {
     if (readOnlySnapshot) { setReady(true); return; }
+    let active = true;
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (raw) {
@@ -75,27 +76,44 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
     } finally {
       setReady(true);
     }
-    if (!readOnlySnapshot) {
+
+    const loadOfficialDecision = async () => {
       try {
         const response = await fetch("/api/client-requests", { cache: "no-store" });
-        if (response.ok) {
-          const data = await response.json() as { requests?: Array<{ project_id: string; payload?: Record<string, unknown> }> };
-          const latest = (data.requests ?? []).find((item) =>
-            item.project_id === project.id && item.payload?.recordType === "mockup_version" && item.payload?.officialDecision,
-          );
-          if (latest?.payload) {
-            const savedStudio = latest.payload.studio as StoredMockupConfig | undefined;
-            const decision = latest.payload.officialDecision as { status?: string } | undefined;
-            const status = decision?.status === "approved" || decision?.status === "changes_requested" ? decision.status : "draft";
-            setReviewStatus(status);
-            setServerApproved(status === "approved");
-            if (typeof savedStudio?.reviewNote === "string") setReviewNote(savedStudio.reviewNote);
-          }
+        if (!response.ok) return;
+        const data = await response.json() as { requests?: Array<{ project_id: string; payload?: Record<string, unknown> }> };
+        const latest = (data.requests ?? []).find((item) =>
+          item.project_id === project.id && item.payload?.recordType === "mockup_version" && item.payload?.officialDecision,
+        );
+        if (!active || !latest?.payload) return;
+        const savedStudio = latest.payload.studio as StoredMockupConfig | undefined;
+        const decision = latest.payload.officialDecision as { status?: string } | undefined;
+        const status = decision?.status === "approved" || decision?.status === "changes_requested" ? decision.status : "draft";
+        setReviewStatus(status);
+        setServerApproved(status === "approved");
+        if (typeof savedStudio?.reviewNote === "string") setReviewNote(savedStudio.reviewNote);
+        if (savedStudio) {
+          const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
+          const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
+          setConfig({
+            format: formats.includes(savedStudio.format as MockupFormat) ? savedStudio.format as MockupFormat : "website",
+            palette: palettes.includes(savedStudio.palette as MockupPalette) ? savedStudio.palette as MockupPalette : "violet",
+            enabledModules: Array.isArray(savedStudio.enabledModules) ? savedStudio.enabledModules : [],
+            ...(Array.isArray(savedStudio.selectedRecommendationIds) ? { selectedRecommendationIds: savedStudio.selectedRecommendationIds } : {}),
+          });
+        }
+        const savedQuote = latest.payload.quote as { amount?: string; days?: string; paymentTerms?: string } | undefined;
+        if (savedQuote) {
+          setQuoteAmount(savedQuote.amount ?? "");
+          setQuoteDays(savedQuote.days ?? "");
+          setQuotePaymentTerms(savedQuote.paymentTerms ?? "À convenir après échange avec le client");
         }
       } catch {
-        // An unavailable network must never turn a local browser state into an official approval.
+        // An unavailable network must never turn local browser data into an official approval.
       }
-    }
+    };
+    void loadOfficialDecision();
+    return () => { active = false; };
   }, [storageKey, Boolean(readOnlySnapshot), project.id]);
 
   useEffect(() => {
@@ -349,10 +367,10 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
                 <span className="mockup-control-title">Étape 03 · Retour sur le concept</span>
                 <h4 id="mockup-review-title">Le concept correspond-il au besoin ?</h4>
               </div>
-              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
+              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Validé officiellement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
             </div>
             <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
-            <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
+            <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") { setReviewStatus("draft"); setServerApproved(false); } }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
             <div className="mockup-review-actions">
               <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("draft")}>À examiner</button>
               <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("changes_requested")}>Demander des modifications</button>
@@ -369,7 +387,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
                 </div>
                 <span className="mockup-review-status status-draft">Brouillon</span>
               </div>
-              <p className="mockup-local-note">Le concept étant marqué comme validé dans ce navigateur, tu peux préparer une première proposition. Aucun prix n'est inventé : laisse le montant vide tant que le travail n'a pas été estimé. Le brouillon n'est pas envoyé au client.</p>
+              <p className="mockup-local-note">Le serveur a confirmé la validation officielle du concept. Tu peux maintenant préparer une première proposition. Aucun prix n'est inventé : laisse le montant vide tant que le travail n'a pas été estimé. Le brouillon n'est pas envoyé au client.</p>
               <label className="mockup-review-note-label" htmlFor={`mockup-quote-amount-${project.id}`}>Montant proposé (FCFA, facultatif)</label>
               <input id={`mockup-quote-amount-${project.id}`} className="mockup-quote-input" type="number" min="0" step="500" value={quoteAmount} onChange={(event) => setQuoteAmount(event.target.value)} placeholder="À chiffrer après estimation" />
               <label className="mockup-review-note-label" htmlFor={`mockup-quote-days-${project.id}`}>Délai estimé en jours (facultatif)</label>
