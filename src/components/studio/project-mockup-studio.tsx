@@ -270,7 +270,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
       </div>
 
       <div className="mockup-studio-layout">
-        <aside className="mockup-controls" aria-label="Personnaliser la maquette">
+        {!readOnlySnapshot && <aside className="mockup-controls" aria-label="Personnaliser la maquette">
           <div className="mockup-control-group">
             <span className="mockup-control-title">Format de présentation</span>
             <div className="mockup-format-options">
@@ -380,7 +380,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
           <p className="mockup-local-note">Les préférences de présentation sont enregistrées localement jusqu’à leur transmission explicite.</p>
-        </aside>
+        </aside>}
 
         <div className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}>
           <div className="mockup-preview-toolbar"><span><i /> Aperçu généré par MerKora</span><span>{model.formatLabel}</span></div>
