@@ -92,10 +92,10 @@ export function suggestPalette(
     .toLocaleLowerCase("fr");
 
   // A color explicitly requested in the client's brief always wins.
-  if (/\\b(bleu|bleue|blue|marine|navy)\\b/.test(brief)) return "blue";
-  if (/\\b(vert|verte|verts|vertes|émeraude|emeraude|green)\\b/.test(brief)) return "emerald";
-  if (/\\b(violet|violette|purple|prune)\\b/.test(brief)) return "violet";
-  if (/\\b(ambre|orange|doré|dorée|or|gold|jaune)\\b/.test(brief)) return "amber";
+  if (/\b(bleu|bleue|blue|marine|navy)\b/.test(brief)) return "blue";
+  if (/\b(vert|verte|verts|vertes|émeraude|emeraude|green)\b/.test(brief)) return "emerald";
+  if (/\b(violet|violette|purple|prune)\b/.test(brief)) return "violet";
+  if (/\b(ambre|orange|doré|dorée|or|gold|jaune)\b/.test(brief)) return "amber";
 
   const domain = detectDomain(project);
   if (domain === "education" || domain === "digital") return "blue";
