@@ -259,7 +259,13 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mockup-module-toggle small{color:#8a879b;font-size:10px;line-height:1.6}
 .mockup-copy-button{width:100%;justify-content:center;margin-top:18px;font-size:11px}
 .mockup-local-note{margin:12px 0 0;color:#89869a;font-size:10px;line-height:1.7}
-.mockup-preview-wrap{--mockup-accent:#7865dc;--mockup-accent-soft:#f0edff;--mockup-accent-deep:#40317e;min-width:0;overflow:hidden;border:1px solid #e6e3f0;border-radius:16px;background:#f5f4fa}\n/* Keep the selected project palette stronger than the preview container defaults. */\n.mockup-preview-wrap.palette-violet{--mockup-accent:#7865dc;--mockup-accent-soft:#f0edff;--mockup-accent-deep:#40317e}\n.mockup-preview-wrap.palette-blue{--mockup-accent:#3278ce;--mockup-accent-soft:#eaf3ff;--mockup-accent-deep:#173d70}\n.mockup-preview-wrap.palette-emerald{--mockup-accent:#159477;--mockup-accent-soft:#e7f8f2;--mockup-accent-deep:#075d4b}\n.mockup-preview-wrap.palette-amber{--mockup-accent:#c88322;--mockup-accent-soft:#fff4df;--mockup-accent-deep:#75420b}\n.mockup-brand-mark{display:inline-grid;place-items:center;flex:0 0 auto;width:27px;height:27px;border-radius:8px;background:var(--mockup-accent);color:#fff;font-size:11px;font-weight:900;letter-spacing:0}
+.mockup-preview-wrap{--mockup-accent:#7865dc;--mockup-accent-soft:#f0edff;--mockup-accent-deep:#40317e;min-width:0;overflow:hidden;border:1px solid #e6e3f0;border-radius:16px;background:#f5f4fa}
+/* Keep the selected project palette stronger than the preview container defaults. */
+.mockup-preview-wrap.palette-violet{--mockup-accent:#7865dc;--mockup-accent-soft:#f0edff;--mockup-accent-deep:#40317e}
+.mockup-preview-wrap.palette-blue{--mockup-accent:#3278ce;--mockup-accent-soft:#eaf3ff;--mockup-accent-deep:#173d70}
+.mockup-preview-wrap.palette-emerald{--mockup-accent:#159477;--mockup-accent-soft:#e7f8f2;--mockup-accent-deep:#075d4b}
+.mockup-preview-wrap.palette-amber{--mockup-accent:#c88322;--mockup-accent-soft:#fff4df;--mockup-accent-deep:#75420b}
+.mockup-brand-mark{display:inline-grid;place-items:center;flex:0 0 auto;width:27px;height:27px;border-radius:8px;background:var(--mockup-accent);color:#fff;font-size:11px;font-weight:900;letter-spacing:0}
 .mockup-preview-toolbar{display:flex;justify-content:space-between;gap:12px;padding:12px 15px;border-bottom:1px solid #e8e5f1;background:#fff;color:#78758a;font-size:10px;font-weight:750}
 .mockup-preview-toolbar>span:first-child{display:flex;align-items:center;gap:7px}
 .mockup-preview-toolbar i{width:7px;height:7px;border-radius:50%;background:#37ad87;box-shadow:0 0 0 4px #37ad8718}

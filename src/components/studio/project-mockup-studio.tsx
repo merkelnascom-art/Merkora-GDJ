@@ -13,7 +13,7 @@ type Props = { project: Project };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
 type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
-const STORAGE_PREFIX = "merkora-gdj-mockup-v2:";
+const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
   { value: "mobile", label: "Mobile", icon: "▯" },
@@ -360,7 +360,7 @@ export function ProjectMockupStudio({ project }: Props) {
               <div className="mockup-browser-body">
                 {model.format === "dashboard" && <aside className="mockup-demo-sidebar"><div className="mockup-demo-logo"><b className="mockup-brand-mark">{brandInitials}</b> <span>{model.title}</span></div><span className="is-active">Vue d’ensemble</span><span>Mes espaces</span><span>Ressources</span><span>Paramètres</span><div className="mockup-demo-user">Profil de démonstration</div></aside>}
                 <div className="mockup-demo-main">
-                  {model.format === "website" && <nav className="mockup-demo-nav"><div className="mockup-demo-logo">M <span>{model.title}</span></div><div><span>Découvrir</span><span>Parcours</span><span>À propos</span></div><button type="button">Commencer ↗</button></nav>}
+                  {model.format === "website" && <nav className="mockup-demo-nav"><div className="mockup-demo-logo"><b className="mockup-brand-mark">{brandInitials}</b> <span>{model.title}</span></div><div><span>Découvrir</span><span>Parcours</span><span>À propos</span></div><button type="button">Commencer ↗</button></nav>}
                   <div className="mockup-hero"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.format === "dashboard" ? "Continuer le parcours" : "Découvrir les pistes"} <span>→</span></button><div className="mockup-hero-orbit" aria-hidden="true"><span>✳</span></div></div>
                   <div className="mockup-preview-section-title"><div><span>VOTRE ESPACE</span><h5>Ce que vous pourrez explorer</h5></div><span className="mockup-section-counter">{model.visibleModules.length} bloc(s) conceptuels</span></div>
                   <div className="mockup-module-grid">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><h5>{item.title}</h5><p>{item.description}</p><span className="mockup-card-arrow">↗</span></article>)}</div>
