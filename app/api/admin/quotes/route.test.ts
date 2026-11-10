@@ -37,7 +37,7 @@ function makeRequest() {
 }
 beforeEach(() => {
   vi.mocked(isSameOrigin).mockReturnValue(true);
-  vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user: { id: "admin-1", email: "admin@example.com" } });
+  vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user: { id: "admin-1", email: "admin@example.com", fullName: "Admin" } });
   vi.mocked(getAccessToken).mockResolvedValue("admin-token");
 });
 afterEach(() => vi.clearAllMocks());
