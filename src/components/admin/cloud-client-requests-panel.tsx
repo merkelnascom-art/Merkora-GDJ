@@ -8,7 +8,7 @@ import type { MockupConfig, MockupFormat, MockupPalette } from "@/lib/mockup-stu
 type RequestItem = {
   id: string; user_id: string; user_email: string; project_id: string; project_title: string;
   payload: {
-    recordType?: string; version?: number; snapshotCreatedAt?: string;
+    recordType?: string; version?: number; snapshotCreatedAt?: string; officialDecision?: { status?: string; actorUserId?: string; recordedAt?: string };
     project?: { category?: string; problem?: string; desiredOutcome?: string; budget?: string; urgency?: string; recommendations?: Array<{title?:string;description?:string;reason?:string}> };
     studio?: { format?: string; palette?: string; reviewStatus?: string; reviewNote?: string; enabledModules?: string[]; selectedRecommendationIds?: string[] };
     quote?: { amount?: string; days?: string; paymentTerms?: string };
@@ -107,6 +107,7 @@ export function CloudClientRequestsPanel() {
                 <div><h3 style={{ margin: "0 0 4px" }}>{item.project_title} · Version {item.payload.version || "—"}</h3><p style={{ margin: 0, color: "#716c80", fontSize: 13 }}>{item.user_email} · {item.project_id} · {new Date(item.payload.snapshotCreatedAt || item.created_at).toLocaleString("fr-FR")}</p></div>
                 <strong style={{ color: reviewStatus === "approved" ? "#176b45" : reviewStatus === "changes_requested" ? "#a15c00" : "#6e56a5" }}>{reviewStatus === "approved" ? "Validée par le client" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</strong>
               </div>
+              {item.payload.officialDecision?.recordedAt && <p style={{ margin: "6px 0 10px", color: "#176b45", fontSize: 13 }}>Décision officiellement enregistrée par le serveur le {new Date(item.payload.officialDecision.recordedAt).toLocaleString("fr-FR")}. Cette trace est liée au compte client connecté.</p>}
               {studio.reviewNote && <p style={{ padding: 12, background: "#f8f7fb", borderRadius: 10, whiteSpace: "pre-wrap" }}><strong>Commentaire du client :</strong> {studio.reviewNote}</p>}
               <details><summary style={{ cursor: "pointer", fontWeight: 700, color: "#6e56a5" }}>Ouvrir la maquette exacte de cette version</summary>
                 <ProjectMockupStudio project={previewProject} readOnlySnapshot={{ config, reviewStatus, reviewNote: studio.reviewNote || "" }} />
