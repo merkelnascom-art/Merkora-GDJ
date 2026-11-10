@@ -269,7 +269,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
         <span className="mockup-concept-badge">Concept · non fonctionnel</span>
       </div>
 
-      <div className="mockup-studio-layout">
+      <div className={readOnlySnapshot ? "mockup-studio-layout is-readonly" : "mockup-studio-layout"}>
         {!readOnlySnapshot && <aside className="mockup-controls" aria-label="Personnaliser la maquette">
           <div className="mockup-control-group">
             <span className="mockup-control-title">Format de présentation</span>
