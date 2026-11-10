@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./project-types";
-import { buildMockupModel, type MockupConfig } from "./mockup-studio";
+import { buildMockupModel, suggestPalette, type MockupConfig } from "./mockup-studio";
 
 const studentProject: Project = {
   id: "MK-STUDENT-1",
