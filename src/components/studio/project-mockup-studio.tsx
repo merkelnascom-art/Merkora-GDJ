@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Project } from "@/lib/project-types";
+import { submitClientRequest } from "@/lib/client-request-submission";
 import {
   buildMockupModel,
   type MockupConfig,
@@ -32,6 +33,8 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>(readOnlySnapshot?.reviewStatus ?? "draft");
   const [reviewNote, setReviewNote] = useState(readOnlySnapshot?.reviewNote ?? "");
+  const [serverApproved, setServerApproved] = useState(false);
+  const [submittingVersion, setSubmittingVersion] = useState(false);
   const [versionMessage, setVersionMessage] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDays, setQuoteDays] = useState("");
@@ -49,7 +52,9 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
         const parsed = JSON.parse(raw) as StoredMockupConfig;
         const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
         const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
-        setReviewStatus(parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested" ? parsed.reviewStatus : "draft");
+        // Browser storage is editable and cannot establish an official approval.
+        setReviewStatus("draft");
+        setServerApproved(false);
         setReviewNote(typeof parsed.reviewNote === "string" ? parsed.reviewNote.slice(0, 1200) : "");
         setQuoteAmount(typeof parsed.quoteAmount === "string" ? parsed.quoteAmount : "");
         setQuoteDays(typeof parsed.quoteDays === "string" ? parsed.quoteDays : "");
@@ -70,7 +75,28 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
     } finally {
       setReady(true);
     }
-  }, [storageKey, Boolean(readOnlySnapshot)]);
+    if (!readOnlySnapshot) {
+      try {
+        const response = await fetch("/api/client-requests", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json() as { requests?: Array<{ project_id: string; payload?: Record<string, unknown> }> };
+          const latest = (data.requests ?? []).find((item) =>
+            item.project_id === project.id && item.payload?.recordType === "mockup_version" && item.payload?.officialDecision,
+          );
+          if (latest?.payload) {
+            const savedStudio = latest.payload.studio as StoredMockupConfig | undefined;
+            const decision = latest.payload.officialDecision as { status?: string } | undefined;
+            const status = decision?.status === "approved" || decision?.status === "changes_requested" ? decision.status : "draft";
+            setReviewStatus(status);
+            setServerApproved(status === "approved");
+            if (typeof savedStudio?.reviewNote === "string") setReviewNote(savedStudio.reviewNote);
+          }
+        }
+      } catch {
+        // An unavailable network must never turn a local browser state into an official approval.
+      }
+    }
+  }, [storageKey, Boolean(readOnlySnapshot), project.id]);
 
   useEffect(() => {
     if (!ready || readOnlySnapshot) return;
@@ -81,19 +107,39 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
     }
   }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey, Boolean(readOnlySnapshot)]);
 
-  function submitVersion(nextStatus: LocalReviewStatus) {
-    if (readOnlySnapshot) return;
-    setReviewStatus(nextStatus);
-    setVersionMessage(
-      nextStatus === "approved"
-        ? "Concept marqué comme validé dans ce navigateur uniquement. Cette action n'est pas une validation officielle."
-        : nextStatus === "changes_requested"
-          ? "Demande de modifications enregistrée dans ce navigateur uniquement."
-          : "État enregistré dans ce navigateur uniquement.",
-    );
+  async function submitVersion(nextStatus: LocalReviewStatus) {
+    if (readOnlySnapshot || submittingVersion) return;
+    setSubmittingVersion(true);
+    setVersionMessage("");
+    const payload = {
+      recordType: "mockup_version",
+      project: { id: project.id, title: project.title },
+      studio: {
+        format: config.format,
+        palette: config.palette,
+        reviewStatus: nextStatus,
+        reviewNote: reviewNote.trim().slice(0, 1200),
+        enabledModules: config.enabledModules,
+        selectedRecommendationIds: config.selectedRecommendationIds ?? model.recommendations.map((item) => item.id),
+      },
+      quote: { amount: quoteAmount.trim(), days: quoteDays.trim(), paymentTerms: quotePaymentTerms.trim().slice(0, 500) },
+      clientResponse: { choice: clientQuoteResponse, comment: clientQuoteNote.trim().slice(0, 1200) },
+    };
+    try {
+      const message = await submitClientRequest(project, payload);
+      setReviewStatus(nextStatus);
+      setServerApproved(nextStatus === "approved");
+      setVersionMessage(message);
+      window.dispatchEvent(new Event("merkora:request-sent"));
+    } catch (error) {
+      setVersionMessage(error instanceof Error ? error.message : "La validation n’a pas pu être enregistrée.");
+    } finally {
+      setSubmittingVersion(false);
+    }
   }
 
   function toggleModule(id: string) {
+    setReviewStatus("draft"); setServerApproved(false);
     setConfig((current) => {
       const selected = current.enabledModules.length > 0
         ? current.enabledModules
@@ -105,6 +151,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
   }
 
   function toggleRecommendation(id: string) {
+    setReviewStatus("draft"); setServerApproved(false);
     setConfig((current) => {
       const selected = current.selectedRecommendationIds ?? model.recommendations.map((item) => item.id);
       return {
@@ -124,7 +171,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
       "",
       `Projet : ${model.title}`,
       `Catégorie : ${model.domainLabel}`,
-      `Concept : ${reviewStatus === "approved" ? "validé localement" : "non validé"}`,
+      `Concept : ${serverApproved ? "validé officiellement côté serveur" : "non validé"}`,
       `Format envisagé : ${model.formatLabel}`,
       "",
       "PÉRIMÈTRE ENVISAGÉ",
@@ -218,7 +265,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
       "Pistes de solution retenues :",
       ...model.visibleRecommendations.map((item) => `- ${item.title} : ${item.description} (raison : ${item.reason})`),
-      `État local du concept : ${reviewStatus === "approved" ? "Concept validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
+      `État du concept : ${serverApproved ? "Concept validé officiellement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
       ...(reviewNote.trim() ? [`Note de retour : ${reviewNote.trim()}`] : []),
       "Attention : cet état et cette note sont enregistrés uniquement dans ce navigateur; ils ne sont pas transmis à MerKora ni au cloud.",
       model.conceptNotice,
@@ -249,7 +296,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
             <span className="mockup-control-title">Format de présentation</span>
             <div className="mockup-format-options">
               {formatOptions.map((option) => (
-                <button key={option.value} type="button" className={config.format === option.value ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={config.format === option.value} onClick={() => setConfig((current) => ({ ...current, format: option.value }))}>
+                <button key={option.value} type="button" className={config.format === option.value ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={config.format === option.value} onClick={() => { setConfig((current) => ({ ...current, format: option.value })); setReviewStatus("draft"); setServerApproved(false); }}>
                   <span>{option.icon}</span>{option.label}
                 </button>
               ))}
@@ -260,7 +307,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
             <span className="mockup-control-title">Ambiance visuelle</span>
             <div className="mockup-palette-options">
               {paletteOptions.map((option) => (
-                <button key={option.value} type="button" className={`mockup-palette palette-${option.value}${config.palette === option.value ? " is-selected" : ""}`} aria-pressed={config.palette === option.value} onClick={() => setConfig((current) => ({ ...current, palette: option.value }))}>
+                <button key={option.value} type="button" className={`mockup-palette palette-${option.value}${config.palette === option.value ? " is-selected" : ""}`} aria-pressed={config.palette === option.value} onClick={() => { setConfig((current) => ({ ...current, palette: option.value })); setReviewStatus("draft"); setServerApproved(false); }}>
                   <span aria-hidden="true" />{option.label}
                 </button>
               ))}
@@ -307,13 +354,13 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
             <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
             <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
             <div className="mockup-review-actions">
-              <button type="button" className="button button-quiet" onClick={() => submitVersion("draft")}>À examiner</button>
-              <button type="button" className="button button-quiet" onClick={() => submitVersion("changes_requested")}>Demander des modifications</button>
-              <button type="button" className="button button-primary" onClick={() => submitVersion("approved")}>Valider ce concept</button>
+              <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("draft")}>À examiner</button>
+              <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("changes_requested")}>Demander des modifications</button>
+              <button type="button" className="button button-primary" disabled={submittingVersion} onClick={() => void submitVersion("approved")}>{submittingVersion ? "Enregistrement sécurisé…" : "Valider officiellement ce concept"}</button>
             </div>
-            <p className="mockup-local-note">Prototype uniquement : le statut et les commentaires sont enregistrés dans ce navigateur. Rien n’est envoyé à l’administrateur, au client ou au cloud. La validation officielle nécessitera ensuite un parcours sécurisé côté serveur.</p>{versionMessage && <p className="mockup-local-note" role="status">{versionMessage}</p>}
+            <p className="mockup-local-note">Votre décision et vos commentaires sont transmis de manière sécurisée à MerKora. Le serveur vérifie votre compte et votre accès au projet, puis conserve une version horodatée du concept. Cette validation porte sur la maquette uniquement : elle ne vaut pas acceptation du devis ni autorisation de fabrication.</p>{versionMessage && <p className="mockup-local-note" role="status">{versionMessage}</p>}
           </section>
-          {reviewStatus === "approved" && (
+          {serverApproved && (
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
               <div className="mockup-review-heading">
                 <div>
