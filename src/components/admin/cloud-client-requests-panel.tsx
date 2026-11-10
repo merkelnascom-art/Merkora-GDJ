@@ -8,8 +8,9 @@ import type { MockupConfig, MockupFormat, MockupPalette } from "@/lib/mockup-stu
 type RequestItem = {
   id: string; user_id: string; user_email: string; project_id: string; project_title: string;
   payload: {
-    project?: { category?: string; problem?: string; desiredOutcome?: string; budget?: string; urgency?: string; recommendations?: Array<{title?:string;description?:string}> };
-    studio?: { format?: string; palette?: string; reviewStatus?: string; reviewNote?: string };
+    recordType?: string; version?: number; snapshotCreatedAt?: string;
+    project?: { category?: string; problem?: string; desiredOutcome?: string; budget?: string; urgency?: string; recommendations?: Array<{title?:string;description?:string;reason?:string}> };
+    studio?: { format?: string; palette?: string; reviewStatus?: string; reviewNote?: string; enabledModules?: string[]; selectedRecommendationIds?: string[] };
     quote?: { amount?: string; days?: string; paymentTerms?: string };
     clientResponse?: { choice?: string; comment?: string };
   };
@@ -87,7 +88,7 @@ export function CloudClientRequestsPanel() {
               problem: p.problem || "", desiredOutcome: p.desiredOutcome || "",
               budget: p.budget || "", urgency: p.urgency || "normal",
               recommendations: Array.isArray(p.recommendations) ? p.recommendations : [],
-              createdAt: item.created_at, status: "draft",
+              createdAt: item.created_at, status: "draft" as Project["status"],
             } as Project;
             const config: MockupConfig = {
               format: (studio.format || "website") as MockupFormat,
