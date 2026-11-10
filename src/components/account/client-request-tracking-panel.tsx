@@ -38,6 +38,7 @@ export function ClientRequestTrackingPanel() {
       const data = await response.json().catch(() => ({})) as { requests?: RequestItem[]; launches?: Launch[]; error?: string };
       if (!response.ok) throw new Error(data.error || "Impossible de charger le suivi.");
       setItems(Array.isArray(data.requests) ? data.requests : []);
+      setLaunches(Array.isArray(data.launches) ? data.launches : []);
       setLoaded(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Le suivi est indisponible.");
