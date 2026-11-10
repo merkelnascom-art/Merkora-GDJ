@@ -13,12 +13,10 @@ function validPayload(value: unknown): value is Record<string, unknown> {
   const p = value as Record<string, unknown>;
   if (!p.project || typeof p.project !== "object" || Array.isArray(p.project)) return false;
   const project = p.project as Record<string, unknown>;
+  // Only the project identifier is accepted from the browser. The server
+  // reloads all descriptive fields from the authenticated owner's saved row.
   if (!maxText(project.id, 160) || project.id.trim().length < 3 ||
-      !maxText(project.title, 160) || !project.title.trim() ||
-      !maxText(project.category, 40) ||
-      !maxText(project.problem, 2500) || !maxText(project.desiredOutcome, 1500) ||
-      !maxText(project.budget, 100) || !maxText(project.urgency, 20) ||
-      !Array.isArray(project.recommendations) || project.recommendations.length > 20) return false;
+      !maxText(project.title, 160) || !project.title.trim()) return false;
   if (!p.studio || typeof p.studio !== "object" || Array.isArray(p.studio)) return false;
   const studio = p.studio as Record<string, unknown>;
   if (!["website", "mobile", "dashboard"].includes(String(studio.format)) ||
