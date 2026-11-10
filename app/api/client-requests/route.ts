@@ -134,8 +134,8 @@ export async function POST(request: Request) {
       {
         user_id: user.id,
         user_email: user.email,
-        project_id: project.id,
-        project_title: project.title,
+        project_id: ownedProject.id,
+        project_title: ownedProject.title,
         payload: payloadToSave,
         admin_status: "to_review",
         admin_note: "",
