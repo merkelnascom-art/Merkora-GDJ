@@ -369,3 +369,9 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mockup-quote-response-options small{color:#77728b;font-size:11px;line-height:1.5}
 .mockup-quote-panel>.button-primary,.mockup-client-response>.button-primary{justify-self:start}
 @media(max-width:620px){.mockup-quote-panel,.mockup-client-response{padding:12px}.mockup-quote-panel>.button-primary,.mockup-client-response>.button-primary{width:100%}}
+
+
+/* Read-only client snapshot displayed inside the administrator history. */
+.mockup-studio-layout.is-readonly {
+  grid-template-columns: minmax(0, 1fr);
+}
