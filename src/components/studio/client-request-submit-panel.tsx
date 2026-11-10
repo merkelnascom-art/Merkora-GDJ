@@ -75,7 +75,7 @@ export function ClientRequestSubmitPanel({ project }: Props) {
       <div className="eyebrow">TRANSMISSION EN LIGNE</div>
       <h3 style={{ margin: "8px 0" }}>Envoyer ce dossier à MerKora</h3>
       <p style={{ color: "#716c80", lineHeight: 1.65, fontSize: 14 }}>
-        Cette action transmet le besoin, les choix du studio, le brouillon de proposition et votre réponse au serveur central. Connectez-vous d’abord à votre compte. L’envoi en ligne ne remplace pas la vérification humaine d’un devis ou d’un accord.
+        Connectez-vous d’abord à votre compte. MerKora enregistrera automatiquement ce projet dans votre espace client avant de transmettre le besoin, les choix du studio et votre réponse à l’administration. L’envoi ne remplace pas la vérification humaine d’un devis ou d’un accord.
       </p>
       <button className="button button-primary" disabled={busy} onClick={sendRequest}>{busy ? "Transmission en cours…" : "Envoyer ma demande à MerKora →"}</button>
       {message && <p role="status" style={{ color: "#176b45", marginTop: 12 }}>{message}</p>}
