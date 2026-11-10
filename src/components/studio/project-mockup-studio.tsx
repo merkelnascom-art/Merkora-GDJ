@@ -5,6 +5,7 @@ import type { Project } from "@/lib/project-types";
 import { submitClientRequest } from "@/lib/client-request-submission";
 import {
   buildMockupModel,
+  suggestPalette,
   type MockupConfig,
   type MockupFormat,
   type MockupPalette,
@@ -13,7 +14,7 @@ import {
 type Props = { project: Project; readOnlySnapshot?: { config: MockupConfig; reviewStatus: LocalReviewStatus; reviewNote?: string } };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
-type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
+type StoredMockupConfig = Partial<MockupConfig> & { paletteManuallySelected?: boolean; reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -28,7 +29,9 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
 ];
 
 export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
-  const [config, setConfig] = useState<MockupConfig>(readOnlySnapshot?.config ?? { format: "website", palette: "violet", enabledModules: [] });
+  const suggestedPalette = suggestPalette(project);
+  const [config, setConfig] = useState<MockupConfig>(readOnlySnapshot?.config ?? { format: "website", palette: suggestedPalette, enabledModules: [] });
+  const [paletteManuallySelected, setPaletteManuallySelected] = useState(false);
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>(readOnlySnapshot?.reviewStatus ?? "draft");
@@ -62,9 +65,15 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
         setQuotePaymentTerms(typeof parsed.quotePaymentTerms === "string" ? parsed.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
         setClientQuoteResponse(parsed.clientQuoteResponse === "accepted" || parsed.clientQuoteResponse === "changes_requested" || parsed.clientQuoteResponse === "negotiate" ? parsed.clientQuoteResponse : "undecided");
         setClientQuoteNote(typeof parsed.clientQuoteNote === "string" ? parsed.clientQuoteNote.slice(0, 1200) : "");
+        const storedPaletteIsValid = palettes.includes(parsed.palette as MockupPalette);
+        // Older saved configs defaulted to violet without recording whether the client chose it.
+        // Preserve explicit non-violet choices; migrate an old untouched violet default to the new suggestion.
+        const hasManualPalette = parsed.paletteManuallySelected === true ||
+          (storedPaletteIsValid && parsed.palette !== "violet");
+        setPaletteManuallySelected(hasManualPalette);
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
-          palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
+          palette: hasManualPalette && storedPaletteIsValid ? parsed.palette as MockupPalette : suggestedPalette,
           enabledModules: Array.isArray(parsed.enabledModules) ? parsed.enabledModules.filter((id): id is string => typeof id === "string") : [],
           ...(Array.isArray(parsed.selectedRecommendationIds)
             ? { selectedRecommendationIds: parsed.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
@@ -95,9 +104,11 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
         if (savedStudio) {
           const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
           const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
+          const savedPaletteIsValid = palettes.includes(savedStudio.palette as MockupPalette);
+          setPaletteManuallySelected(savedPaletteIsValid);
           setConfig({
             format: formats.includes(savedStudio.format as MockupFormat) ? savedStudio.format as MockupFormat : "website",
-            palette: palettes.includes(savedStudio.palette as MockupPalette) ? savedStudio.palette as MockupPalette : "violet",
+            palette: savedPaletteIsValid ? savedStudio.palette as MockupPalette : suggestedPalette,
             enabledModules: Array.isArray(savedStudio.enabledModules) ? savedStudio.enabledModules : [],
             ...(Array.isArray(savedStudio.selectedRecommendationIds) ? { selectedRecommendationIds: savedStudio.selectedRecommendationIds } : {}),
           });
@@ -119,11 +130,11 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
   useEffect(() => {
     if (!ready || readOnlySnapshot) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, paletteManuallySelected, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey, Boolean(readOnlySnapshot)]);
+  }, [config, paletteManuallySelected, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey, Boolean(readOnlySnapshot)]);
 
   async function submitVersion(nextStatus: LocalReviewStatus) {
     if (readOnlySnapshot || submittingVersion) return;
@@ -325,11 +336,12 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
             <span className="mockup-control-title">Ambiance visuelle</span>
             <div className="mockup-palette-options">
               {paletteOptions.map((option) => (
-                <button key={option.value} type="button" className={`mockup-palette palette-${option.value}${config.palette === option.value ? " is-selected" : ""}`} aria-pressed={config.palette === option.value} onClick={() => { setConfig((current) => ({ ...current, palette: option.value })); setReviewStatus("draft"); setServerApproved(false); }}>
+                <button key={option.value} type="button" className={`mockup-palette palette-${option.value}${config.palette === option.value ? " is-selected" : ""}`} aria-pressed={config.palette === option.value} onClick={() => { setConfig((current) => ({ ...current, palette: option.value })); setPaletteManuallySelected(true); setReviewStatus("draft"); setServerApproved(false); }}>
                   <span aria-hidden="true" />{option.label}
                 </button>
               ))}
             </div>
+            <p className="mockup-control-hint">Suggestion MerKora : <strong>{paletteOptions.find((item) => item.value === suggestedPalette)?.label}</strong>, choisie selon l’activité et le besoin décrits. La préférence du client reste prioritaire.</p>
           </div>
 
           <div className="mockup-control-group">
