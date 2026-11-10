@@ -9,7 +9,7 @@ import {
   type MockupPalette,
 } from "@/lib/mockup-studio";
 
-type Props = { project: Project };
+type Props = { project: Project; readOnlySnapshot?: { config: MockupConfig; reviewStatus: LocalReviewStatus; reviewNote?: string } };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
 type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
@@ -26,12 +26,14 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
   { value: "amber", label: "Ambre" },
 ];
 
-export function ProjectMockupStudio({ project }: Props) {
-  const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [] });
+export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
+  const [config, setConfig] = useState<MockupConfig>(readOnlySnapshot?.config ?? { format: "website", palette: "violet", enabledModules: [] });
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>("draft");
-  const [reviewNote, setReviewNote] = useState("");
+  const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>(readOnlySnapshot?.reviewStatus ?? "draft");
+  const [reviewNote, setReviewNote] = useState(readOnlySnapshot?.reviewNote ?? "");
+  const [submittingVersion, setSubmittingVersion] = useState(false);
+  const [versionMessage, setVersionMessage] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDays, setQuoteDays] = useState("");
   const [quotePaymentTerms, setQuotePaymentTerms] = useState("À convenir après échange avec le client");
@@ -41,6 +43,7 @@ export function ProjectMockupStudio({ project }: Props) {
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
   useEffect(() => {
+    if (readOnlySnapshot) { setReady(true); return; }
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (raw) {
@@ -68,16 +71,53 @@ export function ProjectMockupStudio({ project }: Props) {
     } finally {
       setReady(true);
     }
-  }, [storageKey]);
+  }, [storageKey, Boolean(readOnlySnapshot)]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || readOnlySnapshot) return;
     try {
       window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey]);
+  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey, Boolean(readOnlySnapshot)]);
+
+  async function submitVersion(nextStatus: LocalReviewStatus) {
+    if (readOnlySnapshot || submittingVersion) return;
+    setSubmittingVersion(true);
+    setVersionMessage("");
+    const payload = {
+      recordType: "mockup_version",
+      project: {
+        id: project.id, title: project.title, category: project.category,
+        problem: project.problem, desiredOutcome: project.desiredOutcome,
+        budget: project.budget, urgency: project.urgency,
+        recommendations: project.recommendations,
+      },
+      studio: {
+        format: config.format, palette: config.palette, reviewStatus: nextStatus,
+        reviewNote: reviewNote.trim().slice(0, 1200),
+        enabledModules: config.enabledModules,
+        selectedRecommendationIds: config.selectedRecommendationIds ?? model.recommendations.map((item) => item.id),
+      },
+      quote: { amount: quoteAmount.trim(), days: quoteDays.trim(), paymentTerms: quotePaymentTerms.trim().slice(0, 500) },
+      clientResponse: { choice: clientQuoteResponse, comment: clientQuoteNote.trim().slice(0, 1200) },
+    };
+    try {
+      const response = await fetch("/api/client-requests", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({})) as { error?: string; message?: string };
+      if (!response.ok) throw new Error(data.error || "La version n’a pas pu être transmise.");
+      setReviewStatus(nextStatus);
+      setVersionMessage(data.message || "Version transmise à l’administration.");
+    } catch (error) {
+      setVersionMessage(error instanceof Error ? error.message : "La version n’a pas pu être transmise.");
+    } finally {
+      setSubmittingVersion(false);
+    }
+  }
 
   function toggleModule(id: string) {
     setConfig((current) => {
@@ -223,8 +263,8 @@ export function ProjectMockupStudio({ project }: Props) {
       <div className="mockup-studio-heading">
         <div>
           <div className="eyebrow">ÉTAPE 02 · CONCEPTION VISUELLE</div>
-          <h3 id="mockup-studio-title">Studio de maquettes MerKora</h3>
-          <p>MerKora assemble un premier aperçu à partir du dossier. Le client pourra comparer les directions, demander des changements et valider le concept avant le devis.</p>
+          <h3 id="mockup-studio-title">{readOnlySnapshot ? "Maquette transmise par le client" : "Studio de maquettes MerKora"}</h3>
+          <p>{readOnlySnapshot ? "Aperçu en lecture seule de la version enregistrée dans le dossier client." : "MerKora assemble un premier aperçu à partir du dossier. Le client pourra comparer les directions, demander des changements et valider le concept avant le devis."}</p>
         </div>
         <span className="mockup-concept-badge">Concept · non fonctionnel</span>
       </div>
@@ -293,11 +333,11 @@ export function ProjectMockupStudio({ project }: Props) {
             <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
             <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
             <div className="mockup-review-actions">
-              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("draft")}>À examiner</button>
-              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("changes_requested")}>Demander des modifications</button>
-              <button type="button" className="button button-primary" onClick={() => setReviewStatus("approved")}>Valider ce concept</button>
+              <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("draft")}>À examiner</button>
+              <button type="button" className="button button-quiet" disabled={submittingVersion} onClick={() => void submitVersion("changes_requested")}>Demander des modifications</button>
+              <button type="button" className="button button-primary" disabled={submittingVersion} onClick={() => void submitVersion("approved")}>{submittingVersion ? "Transmission…" : "Valider ce concept"}</button>
             </div>
-            <p className="mockup-local-note">Prototype uniquement : le statut et les commentaires sont enregistrés dans ce navigateur. Rien n’est envoyé à l’administrateur, au client connecté ou au cloud. La validation officielle nécessitera ensuite un parcours sécurisé côté serveur.</p>
+            <p className="mockup-local-note">Chaque décision envoyée crée une nouvelle version dans le dossier client. Les versions précédentes restent consultables par l’administration.</p>{versionMessage && <p className="mockup-local-note" role="status">{versionMessage}</p>}
           </section>
           {reviewStatus === "approved" && (
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
@@ -339,7 +379,7 @@ export function ProjectMockupStudio({ project }: Props) {
             </section>
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
-          <p className="mockup-local-note">Les préférences de présentation sont enregistrées dans ce navigateur uniquement. Elles ne sont pas encore synchronisées dans le cloud.</p>
+          <p className="mockup-local-note">Les préférences de présentation sont enregistrées localement jusqu’à leur transmission explicite.</p>
         </aside>
 
         <div className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}>
