@@ -86,6 +86,7 @@ function detectDomain(project: Pick<Project, "title" | "category" | "problem" | 
     ...project.recommendations.flatMap((item) => [item.title, item.description, item.reason]),
   ].join(" ").toLocaleLowerCase("fr");
 
+  if (/pâtisserie|patisserie|gâteau|gateau|cake|cupcake|tarte|biscuit|boulangerie|crème|creme|génoise|genoise|ganache|commande de gâteau|commande de gateau/.test(text)) return "bakery";
   if (/élève|eleve|étudiant|etudiant|orientation|métier|metier|bac\b|formation|école|ecole|scolaire|aptitude|bulletin/.test(text)) return "education";
   if (/équipe|equipe|employé|employe|personnel|présence|presence|retard|tâche|tache|stock|caisse|vente|boutique|horaire|responsable/.test(text) || project.category === "organization" || project.category === "business") return "operations";
   if (/logo|affiche|identité visuelle|identite visuelle|communication|créatif|creatif|graphique|impression|vidéo|video|marque/.test(text) || project.category === "creative") return "creative";
@@ -104,6 +105,7 @@ function recommendationId(title: string): string {
 
 function modulesFor(domain: MockupDomain): MockupModule[] {
   switch (domain) {
+    case "bakery": return bakeryModules;
     case "education": return educationModules;
     case "operations": return operationsModules;
     case "creative": return creativeModules;
