@@ -59,6 +59,9 @@ export function ClientRequestTrackingPanel() {
     };
   }, [load]);
 
+  const ordinaryItems = items.filter((item) => item.payload?.recordType !== "mockup_version");
+  const mockupVersions = items.filter((item) => item.payload?.recordType === "mockup_version");
+
   return (
     <section className="panel" style={{ maxWidth: 1100, margin: "18px auto 0", padding: 22, border: "1px solid #e7e2f0", borderRadius: 18, background: "#fff" }}>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
