@@ -84,6 +84,34 @@ function detectDomain(project: Pick<Project, "title" | "category" | "problem" | 
   return "general";
 }
 
+export function suggestPalette(
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">,
+): MockupPalette {
+  const brief = [project.title, project.problem, project.desiredOutcome]
+    .join(" ")
+    .toLocaleLowerCase("fr");
+
+  // A color explicitly requested in the client's brief always wins.
+  if (/\\b(bleu|bleue|blue|marine|navy)\\b/.test(brief)) return "blue";
+  if (/\\b(vert|verte|verts|vertes|émeraude|emeraude|green)\\b/.test(brief)) return "emerald";
+  if (/\\b(violet|violette|purple|prune)\\b/.test(brief)) return "violet";
+  if (/\\b(ambre|orange|doré|dorée|or|gold|jaune)\\b/.test(brief)) return "amber";
+
+  const domain = detectDomain(project);
+  if (domain === "education" || domain === "digital") return "blue";
+  if (domain === "operations") {
+    return /finance|financier|financière|trésorerie|tresorerie|budget|comptab|caisse|revenu|dépense|depense|vente|chiffre d'affaires/.test(brief)
+      ? "emerald"
+      : "blue";
+  }
+  if (domain === "creative") {
+    return /mode|vêtement|vetement|beauté|beaute|luxe|bijou|cosmétique|cosmetique/.test(brief)
+      ? "amber"
+      : "violet";
+  }
+  return "blue";
+}
+
 function recommendationId(title: string): string {
   return title
     .normalize("NFD")
