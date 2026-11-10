@@ -18,6 +18,8 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
   const [jobs, setJobs] = useState(initialJobs);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [githubStatus, setGithubStatus] = useState<{ verified: boolean; message: string } | null>(null);
+  const [checkingGithub, setCheckingGithub] = useState(false);
 
   // Keep optimistic local updates, but reconcile them whenever the server refreshes the job list.
   useEffect(() => {
@@ -29,6 +31,23 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
     const refresh = window.setInterval(() => router.refresh(), 5000);
     return () => window.clearInterval(refresh);
   }, [runningId, router]);
+
+  async function verifyGitHubConnection() {
+    setCheckingGithub(true);
+    setGithubStatus(null);
+    try {
+      const response = await fetch("/api/admin/factory/github-app/verify", { cache: "no-store" });
+      const result = await response.json().catch(() => ({})) as { verified?: boolean; message?: string };
+      setGithubStatus({
+        verified: response.ok && result.verified === true,
+        message: result.message ?? "La vérification GitHub n'a pas abouti.",
+      });
+    } catch {
+      setGithubStatus({ verified: false, message: "Le service de vérification GitHub ne répond pas." });
+    } finally {
+      setCheckingGithub(false);
+    }
+  }
 
   async function launchWorker(job: FactoryJob) {
     const confirmed = window.confirm(
@@ -96,10 +115,18 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
           <p style={styles.description}>Les travaux ne peuvent être construits qu'après les trois validations exactes du même plan.</p>
         </div>
         <div style={styles.headingActions}>
+          <button type="button" onClick={() => void verifyGitHubConnection()} disabled={checkingGithub} style={styles.refreshButton}>
+            {checkingGithub ? "Vérification…" : "Vérifier GitHub"}
+          </button>
           <button type="button" onClick={() => router.refresh()} style={styles.refreshButton}>Actualiser le suivi</button>
           <span style={styles.count}>{jobs.length} dossier(s)</span>
         </div>
       </div>
+      {githubStatus ? (
+        <p role="status" style={{ ...styles.message, color: githubStatus.verified ? "#176b45" : "#b42318" }}>
+          {githubStatus.message}
+        </p>
+      ) : null}
       {jobs.length === 0 ? (
         <p style={styles.empty}>Aucun travail de fabrication n'est actuellement en attente.</p>
       ) : (
