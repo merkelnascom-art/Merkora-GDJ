@@ -292,7 +292,7 @@ export async function POST(request: Request) {
       factoryHandoff,
       statusUpdated: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0,
       message: statusUpdate.ok && Array.isArray(statusUpdate.data) && statusUpdate.data.length > 0
-        ? "Le lancement officiel est enregistré. MerKora prépare automatiquement la fabrication si le projet, le plan et les validations sont prêts."
+        ? "Le lancement officiel est enregistré. Le dossier entre dans la file interne de planification ; l’administration préparera le plan et validera les étapes avant la fabrication."
         : "Le lancement officiel est enregistré et visible du client. Le statut administratif du dossier n’a pas pu être actualisé automatiquement.",
     });
   } catch {
