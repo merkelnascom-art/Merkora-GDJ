@@ -66,8 +66,10 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       item.plan_digest === plan.payload_digest && item.scope_digest === plan.scope_digest);
     const exactApproved = new Set(exactApprovalRows.map((item) => item.approval_kind));
     const missing = REQUIRED_APPROVALS.filter((kind) => !exactApproved.has(kind));
-    const internalApprovalRows = exactApprovalRows.filter((item) =>
-      REQUIRED_APPROVALS.includes(item.approval_kind as typeof REQUIRED_APPROVALS[number]));
+    const internalApprovalRows = REQUIRED_APPROVALS.flatMap((kind) => {
+      const approval = exactApprovalRows.find((item) => item.approval_kind === kind);
+      return approval ? [approval] : [];
+    });
     if (missing.length) {
       return NextResponse.json({ error: "La préparation du travail exige les deux validations administratives exactes du même plan.", missingApprovals: missing }, { status: 409 });
     }
