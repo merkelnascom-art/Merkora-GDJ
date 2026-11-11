@@ -54,6 +54,9 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       !isRecord(plan.payload)) {
       return NextResponse.json({ error: "Version de plan introuvable ou invalide." }, { status: 404 });
     }
+    if (!Array.isArray(plan.payload.tasks) || plan.payload.tasks.length === 0 || plan.payload.status === "needs_clarification") {
+      return NextResponse.json({ error: "Le plan doit être clarifié et contenir des étapes de travail avant toute préparation de fabrication." }, { status: 409 });
+    }
 
     const approvalResult = await callUserData(
       `project_memory_approvals?select=id,approval_kind,decision,actor_role,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
