@@ -56,7 +56,7 @@ export async function GET() {
     }
 
     const approvalResult = await callUserData(
-      "project_memory_approvals?select=id,project_id,plan_version,approval_kind,decision,plan_digest,scope_digest,created_at&project_id=in.(" + filter + ")",
+      "project_memory_approvals?select=id,project_id,plan_version,approval_kind,decision,actor_role,plan_digest,scope_digest,created_at&project_id=in.(" + filter + ")",
       "GET", token,
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Impossible de charger les validations internes." }, { status: 502 });
@@ -81,7 +81,7 @@ export async function GET() {
       const plan = planByProject.get(projectId) ?? null;
       const exactApprovals = plan ? approvals.filter((approval) =>
         approval.project_id === projectId && approval.plan_version === plan.version &&
-        approval.plan_digest === plan.payload_digest && approval.scope_digest === plan.scope_digest,
+        approval.plan_digest === plan.payload_digest && approval.scope_digest === plan.scope_digest && approval.actor_role === "admin",
       ) : [];
       const job = plan ? jobByProjectAndVersion.get(projectId + ":" + String(plan.version)) ?? null : null;
       return [{ launch, request, plan, approvals: exactApprovals, job }];
