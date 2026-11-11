@@ -28,7 +28,7 @@ export async function GET() {
     if (!requestIds.length) return NextResponse.json({ projects: [] }, { headers: { "Cache-Control": "no-store" } });
 
     const requestResult = await callUserData(
-      "client_requests?select=id,user_id,project_id,project_title,payload,admin_status,created_at& id=in.(" + requestIds.join(",") + ")",
+      "client_requests?select=id,user_id,project_id,project_title,payload,admin_status,created_at&id=in.(" + requestIds.join(",") + ")",
       "GET", token,
     );
     if (!requestResult.ok) return NextResponse.json({ error: "Impossible de rapprocher les lancements des dossiers clients." }, { status: 502 });
