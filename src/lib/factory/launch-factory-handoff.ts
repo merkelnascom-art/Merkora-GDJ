@@ -65,7 +65,7 @@ export function evaluateLaunchFactoryHandoff(
 
   const exactApprovals = input.approvals.filter((value) =>
     isRecord(value) && value.project_id === input.projectId &&
-    value.plan_version === plan.version && value.decision === "approved" &&
+    value.plan_version === plan.version && value.decision === "approved" && value.actor_role === "admin" &&
     value.plan_digest === plan.payload_digest && value.scope_digest === plan.scope_digest &&
     typeof value.id === "string",
   ) as Row[];
