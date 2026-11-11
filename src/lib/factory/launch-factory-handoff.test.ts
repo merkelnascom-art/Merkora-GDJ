@@ -5,7 +5,7 @@ import { evaluateLaunchFactoryHandoff } from "./launch-factory-handoff";
 const projectId = "MK-PROJECT-001";
 const ownerId = "owner-1";
 const requestId = "d1c2d3e4-f567-4890-8abc-1234567890ab";
-const payload = { includedScope: [{ id: "staff", title: "Personnel", description: "Gestion du personnel." }] };
+const payload = { includedScope: [{ id: "staff", title: "Personnel", description: "Gestion du personnel." }], status: "ready_for_review", tasks: [{ id: "task-1" }] };
 const plan = {
   version: 2, payload,
   payload_digest: createProjectMemoryDigest(payload),
@@ -40,6 +40,17 @@ describe("evaluateLaunchFactoryHandoff", () => {
 
   it("waits when the project has no plan", () => {
     expect(evaluateLaunchFactoryHandoff({ ...base, plans: [] }))
+      .toMatchObject({ status: "awaiting_plan" });
+  });
+
+  it("does not authorize a plan that still needs clarification or has no executable tasks", () => {
+    const incompletePayload = { ...payload, status: "needs_clarification", tasks: [] };
+    const incompletePlan = {
+      ...plan, payload: incompletePayload,
+      payload_digest: createProjectMemoryDigest(incompletePayload),
+      scope_digest: createProjectMemoryDigest(incompletePayload.includedScope),
+    };
+    expect(evaluateLaunchFactoryHandoff({ ...base, plans: [incompletePlan] }))
       .toMatchObject({ status: "awaiting_plan" });
   });
 
