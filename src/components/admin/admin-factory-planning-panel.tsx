@@ -33,6 +33,7 @@ type QueueItem = {
   request: ProjectRequest;
   plan: SavedPlan | null;
   approvals: Approval[];
+  job?: { id: string; status: string } | null;
 };
 
 const approvalLabels: Record<string, string> = {
@@ -203,9 +204,13 @@ export function AdminFactoryPlanningPanel() {
                       </div>
                     ))}
                   </div>
-                  <button type="button" style={styles.primaryButton} disabled={busy !== null || !hasApproval("admin_review") || !hasApproval("execution_authorization")} onClick={() => void prepareJob(item)}>
-                    {busyThis ? "Préparation…" : "Préparer le travail de fabrication"}
-                  </button>
+                  {item.job ? (
+                    <p style={styles.success}>Travail déjà préparé · {item.job.status} · {item.job.id}. Le lancement éventuel du worker se contrôle séparément dans la Fabrique logicielle.</p>
+                  ) : (
+                    <button type="button" style={styles.primaryButton} disabled={busy !== null || !hasApproval("admin_review") || !hasApproval("execution_authorization")} onClick={() => void prepareJob(item)}>
+                      {busyThis ? "Préparation…" : "Préparer le travail de fabrication"}
+                    </button>
+                  )}
                   <p style={styles.note}>Cette action prépare le dossier et ses tâches. Elle ne lance ni GitHub Actions, ni Vercel Sandbox, ni déploiement.</p>
                 </div>
               )}
