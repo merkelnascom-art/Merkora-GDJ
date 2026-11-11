@@ -10,7 +10,7 @@ type ProjectRequest = {
   project_id: string;
   project_title: string;
   payload: {
-    project?: { title?: string; recommendations?: Recommendation[] };
+    project?: { title?: string; problem?: string; desiredOutcome?: string; recommendations?: Recommendation[] };
     studio?: { selectedRecommendationIds?: string[]; format?: string; palette?: string };
   };
 };
