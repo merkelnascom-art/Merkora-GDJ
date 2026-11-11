@@ -56,13 +56,13 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const approvalResult = await callUserData(
-      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
+      `project_memory_approvals?select=id,approval_kind,decision,actor_role,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
       "GET", token,
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Impossible de vérifier les validations." }, { status: 502 });
     const approvals = Array.isArray(approvalResult.data) ? approvalResult.data : [];
     const exactApprovalRows = approvals.filter((item) => isRecord(item) &&
-      typeof item.id === "string" && item.decision === "approved" &&
+      typeof item.id === "string" && item.decision === "approved" && item.actor_role === "admin" &&
       item.plan_digest === plan.payload_digest && item.scope_digest === plan.scope_digest);
     const exactApproved = new Set(exactApprovalRows.map((item) => item.approval_kind));
     const missing = REQUIRED_APPROVALS.filter((kind) => !exactApproved.has(kind));
