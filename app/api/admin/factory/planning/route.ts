@@ -37,7 +37,8 @@ export async function GET() {
     const latestLaunchByProject = new Map<string, Row>();
     for (const launch of launches) {
       const request = requestById.get(String(launch.request_id));
-      if (!request || typeof request.project_id !== "string") continue;
+      if (!request || typeof request.project_id !== "string" ||
+        request.user_id !== launch.client_user_id || request.id !== launch.request_id) continue;
       if (!latestLaunchByProject.has(request.project_id)) latestLaunchByProject.set(request.project_id, launch);
     }
     const projectIds = [...latestLaunchByProject.keys()];
