@@ -112,7 +112,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         <div>
           <div style={styles.eyebrow}>FABRIQUE LOGICIELLE</div>
           <h2 style={styles.title}>Travaux autorisés</h2>
-          <p style={styles.description}>Les travaux ne peuvent être construits qu'après les trois validations exactes du même plan.</p>
+          <p style={styles.description}>Les travaux ne peuvent être préparés qu'après les deux validations administratives exactes du même plan.</p>
         </div>
         <div style={styles.headingActions}>
           <button type="button" onClick={() => void verifyGitHubConnection()} disabled={checkingGithub} style={styles.refreshButton}>
