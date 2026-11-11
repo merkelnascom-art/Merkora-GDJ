@@ -213,9 +213,9 @@ export async function POST(request: Request) {
                     ? "Le lancement est enregistré, mais le projet doit être associé au compte client exact avant fabrication."
                     : readiness.status === "awaiting_plan"
                       ? "Le lancement est enregistré. MerKora attend le plan de projet versionné."
-                      : "Le lancement est enregistré. MerKora attend les trois validations exactes et le consentement IA du client.",
+                      : "Le lancement est enregistré. MerKora attend les deux validations administratives exactes du même plan.",
                   ...(readiness.status === "awaiting_approval"
-                    ? { missingApprovals: readiness.missingApprovals, missingConsent: readiness.missingConsent === true }
+                    ? { missingApprovals: readiness.missingApprovals }
                     : {}),
                 };
               } else {
