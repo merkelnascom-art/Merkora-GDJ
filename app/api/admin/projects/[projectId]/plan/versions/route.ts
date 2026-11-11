@@ -103,7 +103,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     const selectedIds = Array.isArray(requestStudio.selectedRecommendationIds)
       ? requestStudio.selectedRecommendationIds.filter((value): value is string => typeof value === "string")
       : [];
-    const slugify = (value: string) => value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+    const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const selectedOptions: PlanSelectedOption[] = recommendations.flatMap((value) => {
       if (!record(value) || !text(value.title, 160, 1) || !text(value.description, 800)) return [];
