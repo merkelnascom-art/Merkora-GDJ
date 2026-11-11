@@ -190,7 +190,7 @@ export async function POST(request: Request) {
             const latestPlan = planRows[0];
             const approvalResult = latestPlan && Number.isSafeInteger(latestPlan.version)
               ? await callUserData(
-                  `project_memory_approvals?select=id,project_id,plan_version,approval_kind,decision,plan_digest,scope_digest,ai_processing_consent&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${latestPlan.version}`,
+                  `project_memory_approvals?select=id,project_id,plan_version,approval_kind,decision,actor_role,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${latestPlan.version}`,
                   "GET", token,
                 )
               : { ok: true, data: [] };
