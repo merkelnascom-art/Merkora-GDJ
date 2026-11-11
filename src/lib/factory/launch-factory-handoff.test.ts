@@ -13,7 +13,7 @@ const plan = {
   source_brief_version: 1,
 };
 const approvals = ["admin_review", "execution_authorization"].map((approval_kind, index) => ({
-  id: `approval-${index + 1}`, approval_kind, decision: "approved",
+  id: `approval-${index + 1}`, approval_kind, decision: "approved", actor_role: "admin",
   project_id: projectId, plan_version: 2, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
 }));
 const base = {
