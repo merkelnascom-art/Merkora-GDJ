@@ -12,10 +12,9 @@ const plan = {
   scope_digest: createProjectMemoryDigest(payload.includedScope),
   source_brief_version: 1,
 };
-const approvals = ["client_scope", "admin_review", "execution_authorization"].map((approval_kind, index) => ({
+const approvals = ["admin_review", "execution_authorization"].map((approval_kind, index) => ({
   id: `approval-${index + 1}`, approval_kind, decision: "approved",
   project_id: projectId, plan_version: 2, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
-  ai_processing_consent: approval_kind === "client_scope",
 }));
 const base = {
   projectId, ownerId, requestId,
@@ -25,10 +24,10 @@ const base = {
 };
 
 describe("evaluateLaunchFactoryHandoff", () => {
-  it("returns a ready handoff only for an exact request, project owner, plan and approvals", () => {
+  it("allows the factory handoff with the two exact internal approvals and no client plan approval", () => {
     expect(evaluateLaunchFactoryHandoff(base)).toMatchObject({
       status: "ready", planVersion: 2, planDigest: plan.payload_digest,
-      scopeDigest: plan.scope_digest, approvalIds: ["approval-1", "approval-2", "approval-3"],
+      scopeDigest: plan.scope_digest, approvalIds: ["approval-1", "approval-2"],
     });
   });
 
@@ -44,20 +43,22 @@ describe("evaluateLaunchFactoryHandoff", () => {
       .toMatchObject({ status: "awaiting_plan" });
   });
 
-  it("waits when approvals are incomplete or belong to another plan digest", () => {
-    expect(evaluateLaunchFactoryHandoff({ ...base, approvals: approvals.slice(0, 2) }))
+  it("waits when either internal approval is missing or belongs to another plan digest", () => {
+    expect(evaluateLaunchFactoryHandoff({ ...base, approvals: approvals.slice(0, 1) }))
       .toMatchObject({ status: "awaiting_approval" });
     expect(evaluateLaunchFactoryHandoff({
       ...base, approvals: approvals.map((item) => ({ ...item, plan_digest: "f".repeat(64) })),
     })).toMatchObject({ status: "awaiting_approval" });
   });
 
-  it("never treats missing client AI-processing consent as an approval", () => {
+  it("does not treat a legacy client_scope approval as an internal approval", () => {
     expect(evaluateLaunchFactoryHandoff({
       ...base,
-      approvals: approvals.map((item) => item.approval_kind === "client_scope"
-        ? { ...item, ai_processing_consent: false } : item),
-    })).toMatchObject({ status: "awaiting_approval", missingConsent: true });
+      approvals: [
+        { ...approvals[0], approval_kind: "client_scope" },
+        approvals[1],
+      ],
+    })).toMatchObject({ status: "awaiting_approval" });
   });
 
   it("rejects a plan whose payload digest no longer matches", () => {
