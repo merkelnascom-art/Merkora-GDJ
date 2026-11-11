@@ -199,7 +199,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         </div>
       )}
       {message ? <p role="status" style={styles.message}>{message}</p> : null}
-      <p style={styles.warning}>Le lancement déclenche GitHub Actions puis un Vercel Sandbox facturé à l'utilisation, après confirmation explicite. Le worker compile un squelette isolé ; l'IA externe reste séparée et soumise au consentement client et à une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
+      <p style={styles.warning}>Le lancement déclenche GitHub Actions puis un Vercel Sandbox facturé à l'utilisation, après confirmation explicite. L'IA externe reste désactivée dans ce parcours jusqu'à la mise en place d'un consentement client distinct et d'une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
     </section>
   );
 }
