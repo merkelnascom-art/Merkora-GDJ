@@ -18,6 +18,7 @@ type SavedPlan = {
   version: number;
   payload: {
     summary?: string;
+    status?: string;
     includedScope?: Array<{ id: string; title: string; description: string }>;
     tasks?: Array<{ id: string; title: string; purpose: string; deliverable: string; acceptanceCriteria: string[]; priority: string }>;
     milestones?: Array<{ id: string; title: string; taskIds: string[] }>;
@@ -163,6 +164,7 @@ export function AdminFactoryPlanningPanel() {
           const project = item.request.payload.project ?? {};
           const chosen = selectedOptions(item.request);
           const plan = item.plan;
+          const planActionable = Boolean(plan && plan.payload.status !== "needs_clarification" && (plan.payload.tasks?.length ?? 0) > 0);
           const hasApproval = (kind: string) => item.approvals.some((approval) => approval.approval_kind === kind && approval.decision === "approved");
           const busyThis = busy === item.request.project_id;
           return (
@@ -189,6 +191,7 @@ export function AdminFactoryPlanningPanel() {
                 <div style={styles.plan}>
                   <h4>{plan.payload.summary || "Plan interne de réalisation"}</h4>
                   <p style={styles.meta}>Version {plan.version} · plan enregistré et réservé à l'administration</p>
+                  {!planActionable ? <div style={styles.warning}><strong>Plan à clarifier</strong><p>Complétez les informations métier nécessaires et régénérez le plan avant de valider ou préparer la fabrication.</p></div> : null}
                   <strong>Périmètre retenu</strong>
                   <ul>{(plan.payload.includedScope ?? []).map((scope) => <li key={scope.id}><b>{scope.title}</b>{scope.description ? " — " + scope.description : ""}</li>)}</ul>
                   <strong>Étapes de travail</strong>
@@ -200,14 +203,14 @@ export function AdminFactoryPlanningPanel() {
                       <div key={kind} style={styles.approvalRow}>
                         <span>{approvalLabels[kind]}</span>
                         <strong style={{ color: hasApproval(kind) ? "#176b45" : "#9a6700" }}>{hasApproval(kind) ? "Validée" : "À valider"}</strong>
-                        {!hasApproval(kind) ? <button type="button" style={styles.smallButton} disabled={busy !== null} onClick={() => void approve(item, kind)}>{busyThis ? "Enregistrement…" : "Valider"}</button> : null}
+                        {!hasApproval(kind) ? <button type="button" style={styles.smallButton} disabled={busy !== null || !planActionable} onClick={() => void approve(item, kind)}>{busyThis ? "Enregistrement…" : "Valider"}</button> : null}
                       </div>
                     ))}
                   </div>
                   {item.job ? (
                     <p style={styles.success}>Travail déjà préparé · {item.job.status} · {item.job.id}. Le lancement éventuel du worker se contrôle séparément dans la Fabrique logicielle.</p>
                   ) : (
-                    <button type="button" style={styles.primaryButton} disabled={busy !== null || !hasApproval("admin_review") || !hasApproval("execution_authorization")} onClick={() => void prepareJob(item)}>
+                    <button type="button" style={styles.primaryButton} disabled={busy !== null || !planActionable || !hasApproval("admin_review") || !hasApproval("execution_authorization")} onClick={() => void prepareJob(item)}>
                       {busyThis ? "Préparation…" : "Préparer le travail de fabrication"}
                     </button>
                   )}
