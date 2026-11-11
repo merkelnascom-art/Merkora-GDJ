@@ -15,7 +15,7 @@ export type LaunchFactoryHandoffInput = {
 export type LaunchFactoryHandoffResult =
   | { status: "needs_project_link" }
   | { status: "awaiting_plan" }
-  | { status: "awaiting_approval"; missingApprovals: string[]; missingConsent?: true }
+  | { status: "awaiting_approval"; missingApprovals: string[] }
   | {
       status: "ready";
       planVersion: number;
@@ -25,7 +25,7 @@ export type LaunchFactoryHandoffResult =
       approvalIds: string[];
     };
 
-const REQUIRED_APPROVALS = ["client_scope", "admin_review", "execution_authorization"] as const;
+const REQUIRED_APPROVALS = ["admin_review", "execution_authorization"] as const;
 
 function isRecord(value: unknown): value is Row {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -36,8 +36,9 @@ function digestMatches(value: unknown): value is string {
 }
 
 /**
- * Decides whether an officially launched commercial request can be handed to
- * the factory. No data is written and no job is started by this function.
+ * Checks whether a launched commercial request is ready for internal factory
+ * execution. The client never approves an internal plan. No data is written and
+ * no job is started by this function.
  */
 export function evaluateLaunchFactoryHandoff(
   input: LaunchFactoryHandoffInput,
@@ -76,14 +77,8 @@ export function evaluateLaunchFactoryHandoff(
   }
 
   const missingApprovals = REQUIRED_APPROVALS.filter((kind) => !approvalByKind.has(kind));
-  const clientApproval = approvalByKind.get("client_scope");
-  const missingConsent = clientApproval?.ai_processing_consent !== true;
-  if (missingApprovals.length || missingConsent) {
-    return {
-      status: "awaiting_approval",
-      missingApprovals: [...missingApprovals],
-      ...(missingConsent ? { missingConsent: true as const } : {}),
-    };
+  if (missingApprovals.length) {
+    return { status: "awaiting_approval", missingApprovals: [...missingApprovals] };
   }
 
   return {
