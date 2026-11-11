@@ -55,6 +55,8 @@ export function evaluateLaunchFactoryHandoff(
   const plan = input.plans.find((value) => {
     if (!isRecord(value) || !Number.isSafeInteger(value.version) || Number(value.version) < 1 ||
       !isRecord(value.payload) || !Array.isArray(value.payload.includedScope) ||
+      !Array.isArray(value.payload.tasks) || value.payload.tasks.length < 1 ||
+      value.payload.status === "needs_clarification" ||
       !digestMatches(value.payload_digest) || !digestMatches(value.scope_digest)) return false;
     return createProjectMemoryDigest(value.payload) === value.payload_digest &&
       createProjectMemoryDigest(value.payload.includedScope) === value.scope_digest;
