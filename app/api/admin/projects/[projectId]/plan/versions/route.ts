@@ -92,8 +92,10 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     );
     if (!launchResult.ok) return NextResponse.json({ error: "Impossible de vérifier le lancement commercial." }, { status: 502 });
     const officialLaunch = Array.isArray(launchResult.data) ? launchResult.data[0] : null;
-    if (!record(officialLaunch) || officialLaunch.request_id !== body.requestId) {
-      return NextResponse.json({ error: "Plan interne réservé aux projets officiellement lancés." }, { status: 409 });
+    if (!record(officialLaunch) || officialLaunch.request_id !== body.requestId ||
+      officialLaunch.client_user_id !== sourceRequest.user_id ||
+      typeof officialLaunch.quote_version_id !== "string" || typeof officialLaunch.invoice_id !== "string") {
+      return NextResponse.json({ error: "Plan interne réservé aux lancements commerciaux vérifiés." }, { status: 409 });
     }
 
     const requestPayload = sourceRequest.payload;
