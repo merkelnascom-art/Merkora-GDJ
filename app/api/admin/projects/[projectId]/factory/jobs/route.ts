@@ -6,7 +6,7 @@ import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/li
 export const dynamic = "force-dynamic";
 
 type LaunchBody = { planVersion: number; correlationId: string };
-const REQUIRED_APPROVALS = ["client_scope", "admin_review", "execution_authorization"] as const;
+const REQUIRED_APPROVALS = ["admin_review", "execution_authorization"] as const;
 const TASKS = [
   { task_key: "prepare_specification", state: "not_started", dependencies: [], evidence_required: true, external_side_effect: false, result_is_known: true },
   { task_key: "generate_application", state: "not_started", dependencies: ["prepare_specification"], evidence_required: true, external_side_effect: false, result_is_known: true },
@@ -56,7 +56,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const approvalResult = await callUserData(
-      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest,ai_processing_consent&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
+      `project_memory_approvals?select=id,approval_kind,decision,plan_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}`,
       "GET", token,
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Impossible de vérifier les validations." }, { status: 502 });
@@ -66,10 +66,10 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       item.plan_digest === plan.payload_digest && item.scope_digest === plan.scope_digest);
     const exactApproved = new Set(exactApprovalRows.map((item) => item.approval_kind));
     const missing = REQUIRED_APPROVALS.filter((kind) => !exactApproved.has(kind));
-    const hasExplicitAiConsent = exactApprovalRows.some((item) =>
-      item.approval_kind === "client_scope" && item.ai_processing_consent === true);
-    if (missing.length || !hasExplicitAiConsent) {
-      return NextResponse.json({ error: "Le lancement est bloqué : les trois validations exactes sont obligatoires.", missingApprovals: missing, ...(hasExplicitAiConsent ? {} : { missingConsent: "client_scope" }) }, { status: 409 });
+    const internalApprovalRows = exactApprovalRows.filter((item) =>
+      REQUIRED_APPROVALS.includes(item.approval_kind as typeof REQUIRED_APPROVALS[number]));
+    if (missing.length) {
+      return NextResponse.json({ error: "La préparation du travail exige les deux validations administratives exactes du même plan.", missingApprovals: missing }, { status: 409 });
     }
 
     const existing = await callUserData(
@@ -88,13 +88,13 @@ export async function POST(request: Request, context: { params: Promise<{ projec
         schemaVersion: 1, kind: "merkora_project_factory_job",
         projectId, planVersion: body.planVersion,
         sourceBriefVersion: plan.source_brief_version,
-        approvalIds: exactApprovalRows.map((approval) => approval.id),
+        approvalIds: internalApprovalRows.map((approval) => approval.id),
         stages: TASKS.map((task) => task.task_key),
         executionMode: "manual_worker_required",
         deliveryRequiresHumanReview: true,
       },
       requested_by: user.id, authorized_by: user.id,
-      approval_ids: exactApprovalRows.map((approval) => approval.id), correlation_id: body.correlationId,
+      approval_ids: internalApprovalRows.map((approval) => approval.id), correlation_id: body.correlationId,
     };
     const handoffResult = await callUserData("rpc/create_factory_job_with_tasks", "POST", token, {
       p_job: jobPayload,
