@@ -19,17 +19,17 @@ const requestId = "d1c2d3e4-f567-4890-8abc-1234567890ab";
 const launchId = "e1c2d3e4-f567-4890-8abc-1234567890ab";
 const projectId = "MK-PROJECT-001";
 const ownerId = "owner-1";
-const payload = { includedScope: [{ id: "staff", title: "Personnel", description: "Gestion du personnel." }] };
+const payload = { status: "ready_for_review", includedScope: [{ id: "staff", title: "Personnel", description: "Gestion du personnel." }], tasks: [{ id: "task-1" }] };
 const plan = {
   version: 2, payload,
   payload_digest: createProjectMemoryDigest(payload),
   scope_digest: createProjectMemoryDigest(payload.includedScope),
   source_brief_version: 1,
 };
-const approvals = ["client_scope", "admin_review", "execution_authorization"].map((approval_kind, index) => ({
+const approvals = ["admin_review", "execution_authorization"].map((approval_kind, index) => ({
   id: `approval-${index + 1}`, project_id: projectId, plan_version: 2,
-  approval_kind, decision: "approved", plan_digest: plan.payload_digest,
-  scope_digest: plan.scope_digest, ai_processing_consent: approval_kind === "client_scope",
+  approval_kind, decision: "approved", actor_role: "admin",
+  plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
 }));
 const body = { invoiceId, requiredAmount: 20_000, message: "Démarrage du projet après acompte confirmé." };
 
@@ -40,10 +40,10 @@ function makeRequest() {
   });
 }
 
-function mockCommercialFlow(options: { projectLinked?: boolean; consent?: boolean; existingJob?: boolean } = {}) {
+function mockCommercialFlow(options: { projectLinked?: boolean; legacyClientApproval?: boolean; existingJob?: boolean } = {}) {
   const projectLinked = options.projectLinked !== false;
-  const approvalRows = options.consent === false
-    ? approvals.map((item) => item.approval_kind === "client_scope" ? { ...item, ai_processing_consent: false } : item)
+  const approvalRows = options.legacyClientApproval
+    ? [{ ...approvals[0], approval_kind: "client_scope", actor_role: "client" }, approvals[1]]
     : approvals;
   vi.mocked(callUserData).mockImplementation(async (path, method) => {
     if (method === "GET" && path.startsWith("client_invoices?")) return { ok: true, status: 200, data: [{
@@ -78,7 +78,7 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks());
 
 describe("POST /api/admin/project-launches", () => {
-  it("atomically queues factory work after a valid official launch and exact client approvals", async () => {
+  it("atomically queues legacy-ready work only after exact administrator approvals", async () => {
     mockCommercialFlow();
     const response = await POST(makeRequest());
     const result = await response.json();
@@ -87,7 +87,7 @@ describe("POST /api/admin/project-launches", () => {
     const rpcCall = vi.mocked(callUserData).mock.calls.find(([path]) => path === "rpc/create_factory_job_with_tasks");
     expect(rpcCall).toBeDefined();
     const rpcPayload = rpcCall?.[3] as { p_job: Record<string, unknown>; p_tasks: Array<Record<string, unknown>> };
-    expect(rpcPayload.p_job).toMatchObject({ project_id: projectId, correlation_id: launchId, approval_ids: ["approval-1", "approval-2", "approval-3"] });
+    expect(rpcPayload.p_job).toMatchObject({ project_id: projectId, correlation_id: launchId, approval_ids: ["approval-1", "approval-2"] });
     expect((rpcPayload.p_job.manifest as Record<string, unknown>).commercialLaunchId).toBe(launchId);
     expect(rpcPayload.p_tasks).toHaveLength(5);
   });
@@ -110,12 +110,12 @@ describe("POST /api/admin/project-launches", () => {
     expect(vi.mocked(callUserData).mock.calls.some(([path]) => path === "rpc/create_factory_job_with_tasks")).toBe(false);
   });
 
-  it("records the launch but waits when client AI-processing consent is absent", async () => {
-    mockCommercialFlow({ consent: false });
+  it("does not count a legacy client_scope approval as an administrator approval", async () => {
+    mockCommercialFlow({ legacyClientApproval: true });
     const response = await POST(makeRequest());
     const result = await response.json();
     expect(response.status).toBe(200);
-    expect(result.factoryHandoff).toMatchObject({ status: "awaiting_approval", missingConsent: true });
+    expect(result.factoryHandoff).toMatchObject({ status: "awaiting_approval", missingApprovals: ["admin_review"] });
     expect(vi.mocked(callUserData).mock.calls.some(([path]) => path === "rpc/create_factory_job_with_tasks")).toBe(false);
   });
 });
