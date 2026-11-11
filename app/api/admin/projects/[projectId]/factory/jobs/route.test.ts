@@ -10,11 +10,14 @@ import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/li
 import { POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
-const plan = { version: 3, source_brief_version: 2, payload: { includedScope: [{ id: "attendance" }] }, payload_digest: "a".repeat(64), scope_digest: "b".repeat(64) };
-const approvalRows = ["client_scope", "admin_review", "execution_authorization"].map((approval_kind, index) => ({
-  id: `approval-${index + 1}`, approval_kind, decision: "approved",
+const plan = {
+  version: 3, source_brief_version: 2,
+  payload: { status: "ready_for_review", includedScope: [{ id: "attendance" }], tasks: [{ id: "task-1" }] },
+  payload_digest: "a".repeat(64), scope_digest: "b".repeat(64),
+};
+const approvalRows = ["admin_review", "execution_authorization"].map((approval_kind, index) => ({
+  id: `approval-${index + 1}`, approval_kind, decision: "approved", actor_role: "admin",
   plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
-  ai_processing_consent: approval_kind === "client_scope",
 }));
 const body = { planVersion: 3, correlationId: "b2c3d4e5-f678-4123-8abc-1234567890ab" };
 const context = { params: Promise.resolve({ projectId: "MK-PROJECT-001" }) };
@@ -53,26 +56,36 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect(callUserData).not.toHaveBeenCalled();
   });
 
-  it("blocks job creation until all three exact approvals exist", async () => {
+  it("blocks job creation until both exact administrator approvals exist", async () => {
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
-      .mockResolvedValueOnce({ ok: true, status: 200, data: approvalRows.slice(0, 2) });
+      .mockResolvedValueOnce({ ok: true, status: 200, data: approvalRows.slice(0, 1) });
     const response = await POST(makeRequest(), context);
     expect(response.status).toBe(409);
     expect((await response.json()).missingApprovals).toEqual(["execution_authorization"]);
     expect(callUserData).toHaveBeenCalledTimes(2);
   });
 
-  it("blocks factory creation when client AI-processing consent is absent", async () => {
-    const approvalsWithoutConsent = approvalRows.map((row) =>
-      row.approval_kind === "client_scope" ? { ...row, ai_processing_consent: false } : row);
+  it("does not count a legacy client_scope approval as an administrator approval", async () => {
+    const approvalsWithLegacyClient = [
+      { ...approvalRows[0], approval_kind: "client_scope", actor_role: "client" },
+      approvalRows[1],
+    ];
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
-      .mockResolvedValueOnce({ ok: true, status: 200, data: approvalsWithoutConsent });
+      .mockResolvedValueOnce({ ok: true, status: 200, data: approvalsWithLegacyClient });
     const response = await POST(makeRequest(), context);
     expect(response.status).toBe(409);
-    expect((await response.json()).missingConsent).toBe("client_scope");
+    expect((await response.json()).missingApprovals).toEqual(["admin_review"]);
     expect(callUserData).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects a plan that still needs clarification or has no tasks", async () => {
+    vi.mocked(callUserData).mockReset()
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [{ ...plan, payload: { ...plan.payload, status: "needs_clarification", tasks: [] } }] });
+    const response = await POST(makeRequest(), context);
+    expect(response.status).toBe(409);
+    expect(callUserData).toHaveBeenCalledTimes(1);
   });
 
   it("creates a queued job and five tasks without starting execution", async () => {
@@ -86,20 +99,21 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect(rpcPayload.p_job).toMatchObject({
       plan_version: 3, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
       requested_by: user.id, authorized_by: user.id,
-      approval_ids: ["approval-1", "approval-2", "approval-3"],
+      approval_ids: ["approval-1", "approval-2"],
     });
-    expect((rpcPayload.p_job.manifest as Record<string, unknown>).approvalIds).toEqual(["approval-1", "approval-2", "approval-3"]);
+    expect((rpcPayload.p_job.manifest as Record<string, unknown>).approvalIds).toEqual(["approval-1", "approval-2"]);
     expect(rpcPayload.p_tasks).toHaveLength(5);
     expect(rpcPayload.p_tasks[1]).toMatchObject({ task_key: "generate_application", dependencies: ["prepare_specification"] });
   });
 
-  it("does not create a second job for an existing correlation id", async () => {
+  it("returns the existing work item instead of creating a duplicate for the same plan version", async () => {
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: approvalRows })
-      .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "job-existing" }] });
+      .mockResolvedValueOnce({ ok: true, status: 200, data: [{ id: "job-existing", status: "queued" }] });
     const response = await POST(makeRequest(), context);
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ created: false, alreadyExists: true, jobId: "job-existing", status: "queued", executionStarted: false });
     expect(callUserData).toHaveBeenCalledTimes(3);
   });
 });
