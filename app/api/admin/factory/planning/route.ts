@@ -61,6 +61,18 @@ export async function GET() {
     );
     if (!approvalResult.ok) return NextResponse.json({ error: "Impossible de charger les validations internes." }, { status: 502 });
     const approvals = Array.isArray(approvalResult.data) ? approvalResult.data.filter(isRecord) : [];
+    const jobsResult = await callUserData(
+      "project_factory_jobs?select=id,project_id,plan_version,status,created_at&project_id=in.(" + filter + ")&order=created_at.desc",
+      "GET", token,
+    );
+    if (!jobsResult.ok) return NextResponse.json({ error: "Impossible de vérifier les travaux déjà préparés." }, { status: 502 });
+    const jobByProjectAndVersion = new Map<string, Row>();
+    for (const job of (Array.isArray(jobsResult.data) ? jobsResult.data.filter(isRecord) : [])) {
+      if (typeof job.project_id === "string" && Number.isSafeInteger(job.plan_version)) {
+        const key = job.project_id + ":" + String(job.plan_version);
+        if (!jobByProjectAndVersion.has(key)) jobByProjectAndVersion.set(key, job);
+      }
+    }
 
     const projects = projectIds.flatMap((projectId) => {
       const launch = latestLaunchByProject.get(projectId);
@@ -71,7 +83,8 @@ export async function GET() {
         approval.project_id === projectId && approval.plan_version === plan.version &&
         approval.plan_digest === plan.payload_digest && approval.scope_digest === plan.scope_digest,
       ) : [];
-      return [{ launch, request, plan, approvals: exactApprovals }];
+      const job = plan ? jobByProjectAndVersion.get(projectId + ":" + String(plan.version)) ?? null : null;
+      return [{ launch, request, plan, approvals: exactApprovals, job }];
     });
 
     return NextResponse.json({ projects }, { headers: { "Cache-Control": "no-store" } });
