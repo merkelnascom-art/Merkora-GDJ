@@ -7,6 +7,7 @@ import { CloudClientRequestsPanel } from "@/components/admin/cloud-client-reques
 import { AdminQuotesPanel } from "@/components/admin/admin-quotes-panel";
 import { AdminPaymentsPanel } from "@/components/admin/admin-payments-panel";
 import { FactoryJobsPanel } from "@/components/admin/factory-jobs-panel";
+import { AdminFactoryPlanningPanel } from "@/components/admin/admin-factory-planning-panel";
 import { callUserData, getAccessToken } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
@@ -108,6 +109,7 @@ export default async function AdminPage() {
       <section style={styles.grid}>
         {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
       </section>
+      <AdminFactoryPlanningPanel />
       <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
       <AdminQuotesPanel />
       <AdminPaymentsPanel />
