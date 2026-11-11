@@ -75,12 +75,16 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const existing = await callUserData(
-      `project_factory_jobs?select=id,status&project_id=eq.${encodeURIComponent(projectId)}&correlation_id=eq.${body.correlationId}&limit=1`,
+      `project_factory_jobs?select=id,status&project_id=eq.${encodeURIComponent(projectId)}&plan_version=eq.${body.planVersion}&limit=1`,
       "GET", token,
     );
-    if (!existing.ok) return NextResponse.json({ error: "Impossible de vérifier une demande précédente." }, { status: 502 });
+    if (!existing.ok) return NextResponse.json({ error: "Impossible de vérifier si ce plan possède déjà un travail." }, { status: 502 });
     if (Array.isArray(existing.data) && existing.data.length) {
-      return NextResponse.json({ error: "Cette demande de lancement existe déjà." }, { status: 409 });
+      const existingJob = isRecord(existing.data[0]) ? existing.data[0] : {};
+      return NextResponse.json({
+        created: false, alreadyExists: true, jobId: existingJob.id, status: existingJob.status,
+        executionStarted: false, message: "Un travail existe déjà pour cette version du plan. Aucun doublon n’a été créé.",
+      }, { headers: { "Cache-Control": "no-store" } });
     }
 
     const jobPayload = {
