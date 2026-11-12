@@ -77,7 +77,7 @@ describe("generateProjectSource", () => {
   it("generates Asho Sweet catalogue, custom-order, and cart workflows instead of generic local task lists", () => {
     const sweetShop = generateProjectSource({
       projectId: "MK-MWAWRAVH-1FWG",
-      projectName: "Asho Sweet",
+      projectName: "Asho Sweet 🧁🎂",
       projectDescription: "Catalogue de gâteaux, commandes personnalisées et validation de panier.",
       modules: [
         { id: "catalogue-de-gateau-et-de-patisserie", title: "Catalogue de gâteaux et pâtisseries", description: "Présenter les produits et leurs prix." },
