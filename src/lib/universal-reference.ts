@@ -260,7 +260,7 @@ export const MERKORA_UNIVERSAL_FAMILIES = [
 ] as const satisfies readonly UniversalFamily[];
 
 export const MERKORA_UNIVERSAL_SECTORS: readonly UniversalSector[] =
-  MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors);
+  MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => [...family.sectors] as UniversalSector[]);
 
 export function getUniversalFamilyById(id: string): UniversalFamily | null {
   return MERKORA_UNIVERSAL_FAMILIES.find((family) => family.id === id) ?? null;
