@@ -119,7 +119,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
       path: "src/app/globals.css",
       content: `:root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #172033; background: #f5f7fb; }\n* { box-sizing: border-box; }\nbody { margin: 0; }\na { color: inherit; text-decoration: none; }\nmain { max-width: 1120px; margin: 0 auto; padding: 48px 24px; }\n.eyebrow { color: #64748b; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }\nh1 { margin: 12px 0; font-size: clamp(32px, 5vw, 52px); letter-spacing: -.04em; }\n.lead { max-width: 680px; color: #64748b; line-height: 1.7; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; }\n.card { display: block; padding: 24px; border: 1px solid #e2e8f0; border-radius: 18px; background: white; box-shadow: 0 8px 28px #1720330a; }\n.card h2 { margin: 0 0 10px; font-size: 18px; }\n.card p { margin: 0; color: #64748b; line-height: 1.6; }\nfooter { margin-top: 48px; color: #94a3b8; font-size: 12px; }\n.module-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }\n`,
     },
-    { path: ".env.example", content: "NEXT_PUBLIC_SUPABASE_URL=\\nNEXT_PUBLIC_SUPABASE_ANON_KEY=\\n" },
+    { path: ".env.example", content: "NEXT_PUBLIC_SUPABASE_URL=\nNEXT_PUBLIC_SUPABASE_ANON_KEY=\n" },
     { path: "src/components/module-workspace.tsx", content: genericModuleWorkspaceSource },
     {
       path: "src/app/page.tsx",
