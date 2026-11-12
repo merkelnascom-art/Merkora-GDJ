@@ -130,7 +130,7 @@ export function buildMockupModel(
   const requested = config.enabledModules.filter((id) => allowedIds.has(id));
   const visibleModules = config.moduleSelectionConfirmed
     ? allOptions.filter((item) => requested.includes(item.id))
-    : allOptions;
+    : modules;
 
   const recommendations: MockupRecommendation[] = project.recommendations.map((item) => ({
     id: recommendationId(item.title),
