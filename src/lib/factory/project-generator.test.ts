@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { generateProjectSource, type ProjectSourceInput } from "./project-generator";
 
 const input: ProjectSourceInput = {
+  projectId: "MK-TEST-000001",
   projectName: "Gestion de présence",
   projectDescription: "Suivre les arrivées et retards du personnel.",
   modules: [
@@ -75,6 +76,7 @@ describe("generateProjectSource", () => {
 
   it("generates Asho Sweet catalogue, custom-order, and cart workflows instead of generic local task lists", () => {
     const sweetShop = generateProjectSource({
+      projectId: "MK-MWAWRAVH-1FWG",
       projectName: "Asho Sweet",
       projectDescription: "Catalogue de gâteaux, commandes personnalisées et validation de panier.",
       modules: [
@@ -91,6 +93,7 @@ describe("generateProjectSource", () => {
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/panier-et-validation-de-commande/page.tsx")?.content).toContain('mode="cart"');
     const workspace = sweetShop.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
     expect(workspace).toContain("Prix en FCFA");
+    expect(workspace).toContain('const STOREFRONT_SLUG = "asho-sweet-vh1fwg"');
     expect(workspace).toContain("createClient");
     expect(workspace).toContain("signInWithPassword");
     expect(workspace).toContain("project_store_orders");
