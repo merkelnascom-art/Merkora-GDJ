@@ -114,6 +114,8 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain('storage.from("project-store-references").upload');
     expect(workspace).toContain("reference_image_path");
     expect(workspace).toContain("createSignedUrl");
+    expect(workspace).toContain('select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at")');
+    expect(workspace).not.toContain('.select("*")');
     expect(workspace).toContain("Photo d'exemple");
     expect(workspace).toContain('storage.from("project-store-product-images").upload');
     expect(workspace).toContain("productImageFile");
