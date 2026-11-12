@@ -419,11 +419,56 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
       <section className="sweet-panel">
         <div className="sweet-inline"><h2>Espace Asho Sweet</h2><button className="sweet-secondary" type="button" onClick={() => setAdminOpen((value) => !value)}>{adminOpen ? "Fermer" : "Gestion de la boutique"}</button></div>
         {adminOpen && !userEmail && <form className="sweet-form" onSubmit={signIn}><label>Email du propriétaire<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form>}
-        {adminOpen && userEmail && <div className="sweet-history"><div className="sweet-inline"><span>Connecté : {userEmail}</span><button type="button" onClick={signOut}>Déconnexion</button><button type="button" onClick={togglePublication}>{store.is_published ? "Masquer la boutique" : "Publier la boutique"}</button></div>
-          <h3>Ajouter un produit</h3><form className="sweet-form" onSubmit={addProduct}><label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label><label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label><label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label><label>Photo de votre réalisation (facultative)<input key={productImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label><label>Ou URL de l'image<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label><label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label><button type="submit" disabled={busy}>Enregistrer le produit</button></form>
-          <h3>Catalogue à gérer</h3>{products.map((product) => <article key={product.id}><strong>{product.name} · {money(Number(product.price_xof))}</strong><span>{product.is_active ? "Visible" : "Masqué"}</span><div className="sweet-inline"><button type="button" onClick={() => { const next = window.prompt("Nouveau prix en FCFA", String(product.price_xof)); if (next && Number.isSafeInteger(Number(next)) && Number(next) > 0) void updateProduct(product, { price_xof: Number(next) }); }}>Modifier le prix</button><button type="button" onClick={() => void updateProduct(product, { is_active: !product.is_active })}>{product.is_active ? "Masquer" : "Réactiver"}</button></div></article>)}
-          <h3>Commandes reçues</h3>{orders.length === 0 ? <p>Aucune commande pour le moment.</p> : orders.map((order) => <article key={order.id}><strong>{order.customer_name} · {money(Number(order.total_amount_xof))}</strong><span>{order.customer_phone} · {new Date(order.created_at).toLocaleString("fr-FR")}</span><span>{order.fulfillment_method === "delivery" ? "Livraison : " + order.delivery_address : "Retrait sur place"}</span><span>{order.items.map((item) => item.quantity + " × " + item.name).join(", ")}</span><div className="sweet-inline"><select aria-label="Statut de commande" value={order.status} onChange={(event) => void updateOrderStatus(order, event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div></article>)}
-          <h3>Demandes personnalisées</h3>{requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}><strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong><span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span><span>{request.flavour} · {request.decoration}</span><small>{request.notes}</small>{request.reference_image_url ? <a href={request.reference_image_url} target="_blank" rel="noreferrer"><img className="sweet-reference-image" src={request.reference_image_url} alt="Photo d'exemple envoyée par le client" /></a> : request.reference_image_path ? <small>Photo de référence indisponible.</small> : null}<select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select></article>)}
+        {adminOpen && userEmail && <div className="sweet-history">
+          <div className="sweet-inline">
+            <span>Connecté : {userEmail}</span>
+            <button type="button" onClick={signOut}>Déconnexion</button>
+            {teamAccess.isOwner ? <button type="button" onClick={togglePublication}>{store.is_published ? "Masquer la boutique" : "Publier la boutique"}</button> : null}
+            {teamAccess.isOwner ? <a className="sweet-secondary" href="/team">Gérer mon équipe</a> : null}
+          </div>
+          {teamAccess.catalogueView ? <div>
+            <h3>Catalogue et réalisations</h3>
+            {teamAccess.catalogueEdit ? <form className="sweet-form" onSubmit={addProduct}>
+              <label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label>
+              <label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label>
+              <label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label>
+              <label>Photo de votre réalisation (facultative)<input key={productImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label>
+              <label>Ou URL de l'image<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label>
+              <label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label>
+              <button type="submit" disabled={busy}>Enregistrer le produit</button>
+            </form> : <p>Accès en consultation uniquement pour le catalogue.</p>}
+            {products.length === 0 ? <p>Aucun produit ajouté pour le moment.</p> : products.map((product) => <article key={product.id}>
+              <strong>{product.name} · {money(Number(product.price_xof))}</strong><span>{product.is_active ? "Visible" : "Masqué"}</span>
+              {teamAccess.catalogueEdit ? <div className="sweet-inline">
+                <button type="button" onClick={() => { const next = window.prompt("Nouveau prix en FCFA", String(product.price_xof)); if (next && Number.isSafeInteger(Number(next)) && Number(next) > 0) void updateProduct(product, { price_xof: Number(next) }); }}>Modifier le prix</button>
+                <button type="button" onClick={() => void updateProduct(product, { is_active: !product.is_active })}>{product.is_active ? "Masquer" : "Réactiver"}</button>
+              </div> : null}
+            </article>)}
+          </div> : null}
+          {teamAccess.ordersView ? <div>
+            <h3>Commandes reçues</h3>
+            {orders.length === 0 ? <p>Aucune commande pour le moment.</p> : orders.map((order) => <article key={order.id}>
+              <strong>{order.customer_name} · {money(Number(order.total_amount_xof))}</strong>
+              <span>{order.customer_phone} · {new Date(order.created_at).toLocaleString("fr-FR")}</span>
+              <span>{order.fulfillment_method === "delivery" ? "Livraison : " + order.delivery_address : "Retrait sur place"}</span>
+              <span>{order.items.map((item) => item.quantity + " × " + item.name).join(", ")}</span>
+              {teamAccess.ordersEdit ? <div className="sweet-inline"><select aria-label="Statut de commande" value={order.status} onChange={(event) => void updateOrderStatus(order, event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div> : <small>Consultation uniquement · Statut : {statusLabels[order.status] ?? order.status}</small>}
+            </article>)}
+          </div> : null}
+          {teamAccess.customView ? <div>
+            <h3>Demandes personnalisées</h3>
+            {requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}>
+              <strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong>
+              <span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span>
+              <span>{request.flavour} · {request.decoration}</span>
+              <small>{request.notes}</small>
+              {request.reference_image_url ? <a href={request.reference_image_url} target="_blank" rel="noreferrer"><img className="sweet-reference-image" src={request.reference_image_url} alt="Photo d'exemple envoyée par le client" /></a> : request.reference_image_path ? <small>Photo de référence indisponible.</small> : null}
+              {teamAccess.customEdit ? <select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select> : <small>Consultation uniquement · Statut : {requestStatusLabels[request.status] ?? request.status}</small>}
+            </article>)}
+          </div> : null}
+          {!teamAccess.isOwner && !teamAccess.catalogueView && !teamAccess.ordersView && !teamAccess.customView
+            ? <p>La propriétaire ne vous a pas encore attribué de module de gestion.</p>
+            : null}
         </div>}
       </section>
       {feedback && <p className="sweet-feedback" role="status" aria-live="polite">{feedback}</p>}
