@@ -47,6 +47,6 @@ describe("analyzeBusinessSignals", () => {
     const result = analyzeBusinessSignals("Je ne sais pas où est passé l'argent.");
     expect(result.signals[0].confidence).toBe("suggested");
     expect(result.caution).toMatch(/pas des faits comptables vérifiés/);
-    expect(result.signals[0].followUp).toMatch(/écart apparaît-il/);
+    expect(result.signals.find((signal) => signal.id === "cashflow")?.followUp).toMatch(/écart apparaît-il/);
   });
 });
