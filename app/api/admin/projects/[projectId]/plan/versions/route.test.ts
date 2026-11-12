@@ -97,6 +97,7 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
     const calls = vi.mocked(callUserData).mock.calls;
     expect(calls[0][0]).toContain("client_requests?");
     expect(calls[1][0]).toContain("client_project_launches?");
+    expect(calls[1][0]).toContain("client_user_id");
     expect(calls[3][0]).toBe("project_memory_brief_versions");
     expect(calls[3][3]).toMatchObject({ project_id: project.id, version: 1, created_by: admin.id });
     expect(calls[5][0]).toBe("project_memory_plan_versions");
