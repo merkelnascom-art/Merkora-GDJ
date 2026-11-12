@@ -70,6 +70,63 @@ describe("generateProjectPlan", () => {
     expect(plan.proposedArchitecture).toBeNull();
   });
 
+  it("carries domain 11 into the intervention plan", () => {
+    const need: NeedInput = {
+      title: "Service de plomberie",
+      category: "other",
+      problem: "Je suis plombier et je veux planifier les dépannages à domicile pour mes clients.",
+      desiredOutcome: "Affecter les techniciens et suivre les interventions terminées.",
+      budget: "À définir",
+      urgency: "normal",
+    };
+    const plan = generateProjectPlan({
+      projectId: "MK-ARTISAN-001", briefVersion: 1, planVersion: 1, plannerVersion: "1.0.0",
+      need, discovery: analyzeNeed(need),
+      selectedOptions: [{ id: "interventions", title: "Planning des interventions", description: "Planifier les dépannages." }],
+    });
+    expect(plan.domainId).toBe("artisanat-services");
+    expect(plan.tasks.some((task) => task.title === "Configurer les demandes et interventions")).toBe(true);
+  });
+
+  it("carries domain 12 into a human-reviewed citizen-service workflow", () => {
+    const need: NeedInput = {
+      title: "Portail de la mairie",
+      category: "other",
+      problem: "Notre mairie veut gérer les demandes d'actes de naissance des citoyens et suivre les dossiers.",
+      desiredOutcome: "Permettre le dépôt et le suivi des demandes avec validation par un agent habilité.",
+      budget: "À définir",
+      urgency: "normal",
+    };
+    const plan = generateProjectPlan({
+      projectId: "MK-COMMUNE-001", briefVersion: 1, planVersion: 1, plannerVersion: "1.0.0",
+      need, discovery: analyzeNeed(need),
+      selectedOptions: [{ id: "citizen-cases", title: "Dossiers citoyens", description: "Dépôt et suivi." }],
+    });
+    expect(plan.domainId).toBe("administration-services-publics");
+    expect(plan.tasks.some((task) => /validation par les agents habilités/i.test(task.purpose))).toBe(true);
+    expect(plan.proposedArchitecture?.components).toContain("Instruction et validations humaines");
+  });
+
+  it("carries domain 13 game design into a playable-prototype plan", () => {
+    const need: NeedInput = {
+      title: "Jeu éducatif",
+      category: "other",
+      problem: "Je veux concevoir un jeu vidéo éducatif avec des niveaux, des missions et des personnages.",
+      desiredOutcome: "Permettre aux jeunes d'apprendre en jouant et de suivre leur progression.",
+      budget: "À définir",
+      urgency: "normal",
+    };
+    const plan = generateProjectPlan({
+      projectId: "MK-GAME-001", briefVersion: 1, planVersion: 1, plannerVersion: "1.0.0",
+      need, discovery: analyzeNeed(need),
+      selectedOptions: [{ id: "game-core-loop", title: "Boucle de jeu et règles", description: "Définir les actions et objectifs." }],
+    });
+    expect(plan.domainId).toBe("voyage-tourisme-creation-jeux");
+    expect(plan.specializationId).toBe("game-design");
+    expect(plan.tasks.some((task) => task.title === "Construire un prototype jouable")).toBe(true);
+    expect(plan.proposedArchitecture?.components).toContain("Boucle de jeu et règles");
+  });
+
   it("includes only explicitly selected options and approved scope, not unselected recommendations", () => {
     const plan = generateProjectPlan(makeInput({}, {
       selectedOptions: [{ id: "attendance", title: "Suivi des présences", description: "Enregistrer les arrivées." }],
