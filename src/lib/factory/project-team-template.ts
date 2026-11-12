@@ -1,6 +1,6 @@
 export const projectTeamManagementSource = String.raw`"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type ModuleOption = { id: string; title: string };
@@ -112,7 +112,7 @@ export function ProjectTeamManagement({
     });
   }
 
-  async function invite(event: React.FormEvent<HTMLFormElement>) {
+  async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !isOwner) return;
     const grants = modules
