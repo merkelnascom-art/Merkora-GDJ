@@ -23,6 +23,7 @@ export function buildSelectedPlanOptions(
     enabledModules: Array.isArray(saved.enabledModules)
       ? saved.enabledModules.filter((id): id is string => typeof id === "string")
       : [],
+    moduleSelectionConfirmed: saved.moduleSelectionConfirmed === true,
     ...(Array.isArray(saved.selectedRecommendationIds)
       ? { selectedRecommendationIds: saved.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
       : {}),
@@ -30,7 +31,7 @@ export function buildSelectedPlanOptions(
   const model = buildMockupModel(project, config);
   const options: NonNullable<ProjectPlanInput["selectedOptions"]> = [];
 
-  if ((saved.enabledModules?.length ?? 0) > 0) {
+  if (saved.moduleSelectionConfirmed === true || (saved.enabledModules?.length ?? 0) > 0) {
     for (const item of model.modules) {
       if (saved.enabledModules?.includes(item.id)) {
         options.push({ id: `module:${item.id}`, title: item.title, description: item.description });
