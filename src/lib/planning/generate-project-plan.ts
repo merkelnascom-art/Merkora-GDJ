@@ -1,5 +1,6 @@
 import { analyzeNeed, type DiscoveryDomain } from "../discovery";
 import type { NeedInput } from "../solution-recommendations";
+import type { DomainId } from "../domain-registry";
 import type {
   PlanEffortBand,
   PlanMilestone,
@@ -45,7 +46,7 @@ function inferDomain(need: NeedInput, suppliedDomain?: DiscoveryDomain): Discove
   }
 }
 
-function taskTemplates(domain: DiscoveryDomain): TaskTemplate[] {
+function taskTemplates(domain: DiscoveryDomain, domainId: DomainId | null, specializationId: string | null): TaskTemplate[] {
   const base: TaskTemplate[] = [
     {
       kind: "analysis",
@@ -73,23 +74,47 @@ function taskTemplates(domain: DiscoveryDomain): TaskTemplate[] {
     },
   ];
 
-  if (domain === "creative") {
+  const audiovisual = domainId === "voyage-tourisme-creation-jeux" && specializationId === "audiovisual";
+  if (domain === "creative" || audiovisual) {
     base.push({
       kind: "production",
-      title: "Produire les éléments créatifs",
-      purpose: "Réaliser les supports prévus dans le périmètre créatif validé.",
-      deliverable: "Éléments créatifs préparés pour examen et validation.",
+      title: audiovisual ? "Produire les éléments audiovisuels" : "Produire les éléments créatifs",
+      purpose: "Réaliser les supports, médias et livrables prévus dans le périmètre créatif validé.",
+      deliverable: "Éléments créatifs ou audiovisuels préparés pour examen et validation.",
       acceptanceCriteria: commonCriteria.production,
       effort: "unknown",
     });
   } else {
-    base.push({
+    const implementation: TaskTemplate = {
       kind: "implementation",
       title: "Réaliser la solution approuvée",
       purpose: "Construire ou configurer uniquement les éléments numériques ou opérationnels autorisés.",
       deliverable: "Version de travail correspondant au périmètre approuvé.",
       acceptanceCriteria: commonCriteria.implementation,
       effort: "unknown",
+    };
+    const domainCopy: Partial<Record<DomainId, Pick<TaskTemplate, "title" | "purpose" | "deliverable">>> = {
+      sport: { title: "Configurer les activités sportives", purpose: "Mettre en place les adhésions, calendriers, entraînements et compétitions validés.", deliverable: "Espace de gestion sportive prêt à être vérifié." },
+      sante: { title: "Configurer les parcours de santé autorisés", purpose: "Mettre en place les rendez-vous et fonctions administratives avec des accès strictement contrôlés.", deliverable: "Parcours de service et contrôles d'accès prêts à être examinés par les responsables habilités." },
+      "agriculture-environnement": { title: "Configurer le suivi de production", purpose: "Mettre en place les campagnes, opérations, intrants et éléments de traçabilité validés.", deliverable: "Suivi de production et de ressources prêt à être vérifié sur un cas pilote." },
+      commerce: { title: "Configurer les opérations commerciales", purpose: "Mettre en place les catalogues, ventes, stocks et validations retenus.", deliverable: "Parcours commercial prêt à être vérifié avec des données de test." },
+      "entrepreneuriat-finance": { title: "Configurer le pilotage financier", purpose: "Mettre en place les mouvements, budgets, contrôles et rapports de gestion convenus.", deliverable: "Tableaux de bord financiers avec règles de calcul documentées." },
+      "immobilier-btp": { title: "Configurer les biens et opérations immobilières", purpose: "Mettre en place les biens, contrats, échéances, chantiers ou travaux retenus.", deliverable: "Suivi immobilier ou chantier prêt à être vérifié." },
+      "education-formation": { title: "Configurer les parcours d'apprentissage", purpose: "Mettre en place les apprenants, contenus, évaluations et suivis pédagogiques validés.", deliverable: "Parcours pédagogique et espace de suivi prêts à être examinés." },
+      "transport-logistique": { title: "Configurer les opérations de transport", purpose: "Mettre en place les missions, affectations, véhicules, livraisons et preuves retenus.", deliverable: "Parcours de transport et de livraison prêt à être testé." },
+      "restauration-hotellerie-evenementiel": { title: "Configurer les opérations d'accueil et de service", purpose: "Mettre en place les réservations, commandes, prestations, stocks et capacités validés.", deliverable: "Parcours de réservation et d'exploitation prêt à être vérifié." },
+      "ressources-humaines": { title: "Configurer les processus RH", purpose: "Mettre en place les dossiers, temps, absences et validations selon les règles de l'organisation.", deliverable: "Espace RH avec rôles et historiques de contrôle prêt à être vérifié." },
+      "artisanat-services": { title: "Configurer les demandes et interventions", purpose: "Mettre en place les devis, plannings, affectations, travaux et preuves de service retenus.", deliverable: "Parcours d'intervention client prêt à être testé." },
+      "administration-services-publics": { title: "Configurer l'instruction des demandes citoyennes", purpose: "Mettre en place le dépôt, le suivi et le circuit de validation par les agents habilités; aucune décision administrative n'est automatisée.", deliverable: "Circuit de dossier avec traçabilité et validation humaine prêt à être examiné." },
+      "voyage-tourisme-creation-jeux": { title: "Configurer l'expérience et les réservations", purpose: "Mettre en place les destinations, activités, contenus, participants et réservations selon les confirmations disponibles.", deliverable: "Parcours d'expérience ou de réservation prêt à être vérifié." },
+    };
+    const gameCopy = specializationId === "game-design"
+      ? { title: "Construire un prototype jouable", purpose: "Implémenter une boucle de jeu courte, ses règles, une mission et une progression de démonstration avant de multiplier les niveaux.", deliverable: "Prototype jouable permettant de tester les commandes, règles et conditions de réussite." }
+      : null;
+    base.push({
+      ...implementation,
+      ...(domainId ? domainCopy[domainId] : {}),
+      ...(gameCopy && domainId === "voyage-tourisme-creation-jeux" ? gameCopy : {}),
     });
   }
 
@@ -162,8 +187,8 @@ function unknownAssumptions(input: ProjectPlanInput): string[] {
   return assumptions;
 }
 
-function makeTasks(domain: DiscoveryDomain): PlanTask[] {
-  const templates = taskTemplates(domain);
+function makeTasks(domain: DiscoveryDomain, domainId: DomainId | null, specializationId: string | null): PlanTask[] {
+  const templates = taskTemplates(domain, domainId, specializationId);
   return templates.map((template, index) => ({
     id: `task-${template.kind}-${String(index + 1).padStart(2, "0")}`,
     kind: template.kind,
@@ -201,9 +226,12 @@ function makeMilestones(tasks: PlanTask[]): PlanMilestone[] {
 export function generateProjectPlan(input: ProjectPlanInput): ProjectPlan {
   const discovery = input.discovery ?? analyzeNeed(input.need);
   const domain = inferDomain(input.need, discovery.domain);
+  const domainId = discovery.domainId;
+  const specializationId = discovery.specializationId;
+  const isAudiovisual = domainId === "voyage-tourisme-creation-jeux" && specializationId === "audiovisual";
   const incomplete = discovery.state === "incomplete" || discovery.state === "needs_clarification";
   const includedScope = normalizedScope(input);
-  const tasks = incomplete ? [] : makeTasks(domain);
+  const tasks = incomplete ? [] : makeTasks(domain, domainId, specializationId);
   const assumptions = unknownAssumptions(input);
   const openQuestions = [...new Set(discovery.questions.map((question) => question.trim()).filter(Boolean))];
 
@@ -211,12 +239,30 @@ export function generateProjectPlan(input: ProjectPlanInput): ProjectPlan {
     assumptions.push("Aucun module ni fonctionnalité n'est encore inclus comme choix confirmé.");
   }
 
-  const proposedArchitecture = domain === "creative"
+  const domainComponents: Partial<Record<DomainId, string[]>> = {
+    sport: ["Adhésions et profils sportifs", "Calendriers et affectations", "Résultats et statistiques"],
+    sante: ["Rendez-vous et accueil", "Accès aux dossiers selon habilitation", "Traçabilité des opérations"],
+    "agriculture-environnement": ["Parcelles, cycles et productions", "Intrants et équipements", "Lots et traçabilité"],
+    commerce: ["Catalogue, ventes et caisse", "Stocks et approvisionnement", "Accès par rôle"],
+    "entrepreneuriat-finance": ["Mouvements financiers", "Budgets et contrôles", "Rapports et indicateurs"],
+    "immobilier-btp": ["Biens, contrats et échéances", "Chantiers et interventions", "Dépenses et documents"],
+    "education-formation": ["Apprenants et parcours", "Cours et ressources", "Évaluations et progression"],
+    "transport-logistique": ["Missions et affectations", "Flotte et maintenance", "Livraisons et preuves"],
+    "restauration-hotellerie-evenementiel": ["Réservations et capacités", "Opérations et prestations", "Stocks et encaissements"],
+    "ressources-humaines": ["Dossiers et contrats", "Temps, absences et validations", "Rapports RH"],
+    "artisanat-services": ["Demandes et devis", "Planning et interventions", "Matériaux, preuves et garanties"],
+    "administration-services-publics": ["Portail et dossiers citoyens", "Instruction et validations humaines", "Archives et traçabilité"],
+    "voyage-tourisme-creation-jeux": specializationId === "game-design"
+      ? ["Boucle de jeu et règles", "Niveaux, missions et contenus", "Profils, progression et sauvegardes"]
+      : ["Destinations et contenus", "Réservations et participants", "Expériences et retours"],
+  };
+
+  const proposedArchitecture = domain === "creative" || isAudiovisual
     ? null
     : {
         style: "À déterminer après validation du besoin et des contraintes.",
         description: "Architecture fonctionnelle préliminaire, sans choix de fournisseur, d'hébergement ou de technologie imposé.",
-        components: domain === "education"
+        components: domainId ? domainComponents[domainId] ?? ["Interface adaptée aux utilisateurs", "Logique métier à préciser", "Stockage et intégrations à déterminer"] : domain === "education"
           ? ["Parcours de questionnaires et d'exercices", "Exploration des métiers et formations", "Restitution des résultats à examiner"]
           : domain === "commerce"
             ? ["Suivi des opérations et responsabilités", "Gestion des accès par rôle", "Indicateurs et restitutions"]
@@ -236,6 +282,9 @@ export function generateProjectPlan(input: ProjectPlanInput): ProjectPlan {
     plannerVersion: input.plannerVersion,
     status: incomplete ? "needs_clarification" : "draft",
     domain,
+    domainId,
+    specializationId,
+    domainLabel: discovery.domainLabel,
     summary: `Plan préliminaire pour « ${input.need.title.trim()} », fondé sur le besoin enregistré et les seuls choix explicitement transmis.`,
     goals: [input.need.desiredOutcome.trim()].filter(Boolean),
     includedScope,
