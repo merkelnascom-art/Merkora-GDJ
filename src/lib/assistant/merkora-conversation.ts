@@ -1,7 +1,8 @@
 export type ConversationRole = "user" | "assistant";
 export type ConversationMessage = { role: ConversationRole; content: string };
 export type ConversationInput = { message: string; history: ConversationMessage[] };
-import { identifyDomain, getDomainModules, getDomainQuestions, type DomainId } from "../domain-registry";
+import { identifyDomain, getDomainQuestions, type DomainId } from "../domain-registry";
+import { getDomainOptionCatalog } from "../domain-options";
 export type SuggestedModule = { id: string; title: string; description: string; reason: string };
 export type ConversationReply = {
   assistantMessage: string;
@@ -84,9 +85,9 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   const legacyModules = MODULE_RULES.filter((rule) => containsKeyword(text, rule.keywords))
     .map((rule) => rule.module);
   const domainModules = match.domain && match.confidence !== "low"
-    ? getDomainModules(match).map((module) => ({
+    ? getDomainOptionCatalog(match).domainOptions.slice(0, 5).map((module) => ({
         ...module,
-        reason: `Module de départ proposé pour le domaine ${match.domain?.label ?? "identifié"}; à confirmer avec le client.`,
+        reason: `Option métier proposée pour le domaine ${match.domain?.label ?? "identifié"}; à confirmer avec le client.`,
       }))
     : [];
   const suggestedModules = [...domainModules, ...legacyModules]
