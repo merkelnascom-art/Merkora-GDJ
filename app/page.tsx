@@ -14,6 +14,7 @@ import { ClientPaymentsPanel } from "@/components/account/client-payments-panel"
 import { MerkoraAssistantPanel } from "@/components/assistant/merkora-assistant-panel";
 import type { Project } from "@/lib/project-types";
 import { analyzeNeed } from "@/lib/discovery";
+import { MERKORA_DOMAIN_VERSION } from "@/lib/domain-registry";
 import {
   buildRecommendations,
   getCategoryLabel,
@@ -228,10 +229,16 @@ export default function HomePage() {
               <ClientRequestSubmitPanel key={`send-${activeProject.id}`} project={activeProject} />
 
               {(() => {
-                const discovery = activeProject.discovery ?? analyzeNeed(activeProject);
+                const discovery = activeProject.discovery?.registryVersion === MERKORA_DOMAIN_VERSION
+                  ? activeProject.discovery
+                  : analyzeNeed(activeProject);
+                const recommendations = activeProject.discovery?.registryVersion === MERKORA_DOMAIN_VERSION
+                  ? activeProject.recommendations
+                  : buildRecommendations(activeProject);
                 return (
                   <section className="discovery-summary" aria-labelledby="discovery-title">
                     <div className="discovery-summary-head"><div><div className="eyebrow">LECTURE PRÉLIMINAIRE</div><h3 id="discovery-title">{discovery.domainLabel}</h3></div><span className="local-tag">{discovery.state === "needs_clarification" ? "À préciser" : discovery.state === "incomplete" ? "Informations manquantes" : "À confirmer"}</span></div>
+                    <p className="local-tag">{discovery.domainId ? "Domaine identifié" : "Domaine à confirmer"} · Confiance {discovery.confidence === "high" ? "forte" : discovery.confidence === "medium" ? "moyenne" : "à confirmer"}{discovery.specializationId ? ` · Spécialisation : ${discovery.specializationId.replace(/-/g, " ")}` : ""}</p>
                     <p className="discovery-notice">{discovery.notice}</p>
                     {discovery.understood.length > 0 && <div className="understood-list"><strong>Ce que nous avons compris</strong>{discovery.understood.map((item, index) => <p key={index}>{item}</p>)}</div>}
                     {discovery.questions.length > 0 && <div className="clarification-list"><strong>Questions à examiner ensuite</strong><ol>{discovery.questions.map((question) => <li key={question}>{question}</li>)}</ol></div>}
@@ -240,7 +247,7 @@ export default function HomePage() {
               })()}
 
               <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
-              <div className="recommendation-list">{activeProject.recommendations.map((recommendation, index) => <article className="recommendation-card" key={recommendation.title}><span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span><div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div></article>)}</div>
+              <div className="recommendation-list">{recommendations.map((recommendation, index) => <article className="recommendation-card" key={recommendation.title}><span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span><div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div></article>)}</div>
               <div className="notice"><span>ⓘ</span><p>Ces pistes reposent sur des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation. Les points incertains doivent être confirmés.</p></div>
               <AiProposalPanel key={activeProject.id} project={activeProject} onApply={(recommendations) => updateProjectRecommendations(activeProject.id, recommendations)} />
               <div className="detail-actions"><button className="button button-quiet" onClick={() => { setForm({ title: activeProject.title, category: activeProject.category, problem: activeProject.problem, desiredOutcome: activeProject.desiredOutcome, budget: activeProject.budget, urgency: activeProject.urgency }); setShowForm(true); setActiveProjectId(null); }}>Modifier le besoin</button><button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button></div>
