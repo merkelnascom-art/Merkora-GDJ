@@ -56,6 +56,29 @@ describe("analyzeNeed", () => {
     expect(result.understood.some((item) => item.includes("Indice métier/financier"))).toBe(true);
   });
 
+  it("recognizes families 16–20 without forcing a legacy operational domain", () => {
+    const result = analyzeNeed(makeNeed({
+      title: "Gestion d'un cabinet juridique",
+      category: "business",
+      problem: "Notre cabinet avocat suit les dossiers juridiques, les audiences et les échéances des clients.",
+      desiredOutcome: "Organiser les dossiers, pièces et rendez-vous avec un suivi confidentiel.",
+    }));
+    expect(result.unmappedUniversalFamilyCandidates).toContain("family-16");
+    expect(result.universalSectorCandidates).toContain("S16-01");
+    expect(result.universalFamilyCandidates).toContain("family-16");
+    expect(result.questions.some((question) => question.includes("juridiction"))).toBe(true);
+  });
+
+  it("keeps hybrid unmapped family evidence distinct", () => {
+    const result = analyzeNeed(makeNeed({
+      title: "ONG et sécurité",
+      category: "organization",
+      problem: "Notre ONG organise la solidarité et la gestion de crise avec des équipes de sécurité incendie.",
+      desiredOutcome: "Suivre les bénéficiaires, les alertes et les interventions.",
+    }));
+    expect(result.unmappedUniversalFamilyCandidates).toEqual(expect.arrayContaining(["family-19", "family-20"]));
+  });
+
   it("does not mark an incomplete need as ready for analysis", () => {
     const result = analyzeNeed(makeNeed({ title: "  ", problem: "  ", desiredOutcome: "" }));
     expect(result.state).toBe("incomplete");
