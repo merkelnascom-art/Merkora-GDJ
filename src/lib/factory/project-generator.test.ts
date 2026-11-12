@@ -72,4 +72,28 @@ describe("generateProjectSource", () => {
   it("produces a deterministic manifest digest for identical input", () => {
     expect(generateProjectSource(input).digest).toBe(generateProjectSource(input).digest);
   });
+
+  it("generates Asho Sweet catalogue, custom-order, and cart workflows instead of generic local task lists", () => {
+    const sweetShop = generateProjectSource({
+      projectName: "Asho Sweet",
+      projectDescription: "Catalogue de gâteaux, commandes personnalisées et validation de panier.",
+      modules: [
+        { id: "catalogue-de-gateau-et-de-patisserie", title: "Catalogue de gâteaux et pâtisseries", description: "Présenter les produits et leurs prix." },
+        { id: "commande-personnalisee", title: "Commande personnalisée", description: "Recueillir les demandes de créations sur mesure." },
+        { id: "panier-et-validation-de-commande", title: "Panier et validation de commande", description: "Récapituler et valider les commandes." },
+      ],
+    });
+    const paths = sweetShop.files.map((file) => file.path);
+    expect(paths).toContain("src/components/sweet-shop-workspace.tsx");
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/catalogue-de-gateau-et-de-patisserie/page.tsx")?.content).toContain('mode="catalogue"');
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/commande-personnalisee/page.tsx")?.content).toContain('mode="custom-order"');
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/panier-et-validation-de-commande/page.tsx")?.content).toContain('mode="cart"');
+    const workspace = sweetShop.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    expect(workspace).toContain("Prix en FCFA");
+    expect(workspace).toContain("localStorage");
+    expect(workspace).toContain("Commande enregistrée sur cet appareil");
+    expect(workspace).toContain("Aucun produit");
+    expect(workspace).toContain("sans paiement");
+  });
+
 });
