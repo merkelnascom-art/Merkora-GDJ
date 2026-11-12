@@ -25,6 +25,20 @@ describe("analyzeBusinessSignals", () => {
     expect(ids).toContain("payments");
   });
 
+  it("asks what a generic money mention means instead of assuming a financial module", () => {
+    const result = analyzeBusinessSignals("Je dispose de 300 000 FCFA pour démarrer.");
+    expect(result.signals).toHaveLength(1);
+    expect(result.signals[0].id).toBe("financial_context");
+    expect(result.signals[0].confidence).toBe("suggested");
+    expect(result.signals[0].followUp).toMatch(/budget destiné à créer la solution/);
+  });
+
+  it("checks whether a company wants financial tracking even when no money term was mentioned", () => {
+    const result = analyzeBusinessSignals("Je dirige une petite entreprise de services.", { includeBusinessBaseline: true });
+    expect(result.signals[0].id).toBe("financial_context");
+    expect(result.signals[0].followUp).toMatch(/recettes, dépenses, caisse/);
+  });
+
   it("keeps the financial analysis empty when no financial cue is present", () => {
     expect(analyzeBusinessSignals("Je veux organiser les horaires des cours et les présences des apprenants.").signals).toEqual([]);
   });
