@@ -118,6 +118,12 @@ describe("generateProjectSource", () => {
     const workspace = sweetShop.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
     expect(workspace).toContain("Prix en FCFA");
     expect(workspace).toContain('const STOREFRONT_SLUG = "asho-sweet-vh1fwg"');
+    expect(workspace).toContain('const PROJECT_ID = "MK-MWAWRAVH-1FWG"');
+    expect(workspace).toContain("loadTeamAccess");
+    expect(workspace).toContain("teamAccess.catalogueEdit");
+    expect(workspace).toContain("teamAccess.ordersView");
+    expect(workspace).toContain("teamAccess.customView");
+    expect(workspace).toContain("Gérer mon équipe");
     expect(workspace).toContain("createClient");
     expect(workspace).toContain("signInWithPassword");
     expect(workspace).toContain("project_store_orders");
@@ -134,7 +140,7 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("Le catalogue sera affiché ici");
 
     expect(workspace).toContain("if (store.is_published) void loadPublicProducts(store.id)");
-    expect(workspace).toContain("if (adminOpen && userEmail) void loadAdminData(store.id)");
+    expect(workspace).toContain("if (adminOpen && userId && (teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView)) void loadAdminData(store.id)");
     expect(workspace).toContain('storage.from("project-store-references").upload');
     expect(workspace).toContain("reference_image_path");
     expect(workspace).toContain("createSignedUrl");
