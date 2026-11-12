@@ -39,6 +39,7 @@ export const sweetShopStyles = `
 .sweet-product h3, .sweet-history h3 { margin: 4px 0; }
 .sweet-product p { flex: 1; margin: 0; color: #64748b; line-height: 1.55; }
 .sweet-product img { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; }
+.sweet-reference-image { display: block; width: min(100%, 280px); max-height: 220px; object-fit: cover; border-radius: 12px; }
 .sweet-product > strong { font-size: 18px; }
 .sweet-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
 .sweet-form label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 650; }
@@ -71,7 +72,7 @@ type Store = { id: string; display_name: string; description: string; is_publish
 type Product = { id: string; name: string; description: string; category: string; price_xof: number; image_url: string; is_active: boolean };
 type CartLine = { productId: string; quantity: number };
 type Order = { id: string; customer_name: string; customer_phone: string; desired_date: string | null; notes: string; fulfillment_method: string; delivery_address: string; items: Array<{ name: string; quantity: number; unit_price_xof: number; line_total_xof: number }>; total_amount_xof: number; status: string; created_at: string };
-type CustomRequest = { id: string; customer_name: string; customer_phone: string; creation_type: string; occasion: string; desired_date: string; portions: number; flavour: string; decoration: string; notes: string; status: string; created_at: string };
+type CustomRequest = { id: string; customer_name: string; customer_phone: string; creation_type: string; occasion: string; desired_date: string; portions: number; flavour: string; decoration: string; notes: string; reference_image_path: string | null; reference_image_url?: string; status: string; created_at: string };
 
 const STOREFRONT_SLUG = "__STOREFRONT_SLUG__";
 const CART_KEY = "merkora-asho-sweet-cart-v1";
@@ -116,6 +117,8 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   const [flavour, setFlavour] = useState("");
   const [decoration, setDecoration] = useState("");
   const [note, setNote] = useState("");
+  const [referenceImage, setReferenceImage] = useState<File | null>(null);
+  const [referenceImageInputKey, setReferenceImageInputKey] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -149,7 +152,13 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     }
     setProducts((productResult.data ?? []) as Product[]);
     setOrders((orderResult.data ?? []) as Order[]);
-    setRequests((requestResult.data ?? []) as CustomRequest[]);
+    const requestRows = (requestResult.data ?? []) as CustomRequest[];
+    const requestsWithImages = await Promise.all(requestRows.map(async (request) => {
+      if (!request.reference_image_path) return request;
+      const { data } = await supabase.storage.from("project-store-references").createSignedUrl(request.reference_image_path, 3600);
+      return { ...request, reference_image_url: data?.signedUrl ?? "" };
+    }));
+    setRequests(requestsWithImages);
   }, [supabase]);
 
   useEffect(() => {
@@ -190,10 +199,10 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
 
   useEffect(() => {
     if (!store || !supabase) return;
-    if (userEmail) void loadAdminData(store.id);
-    else if (store.is_published) void loadPublicProducts(store.id);
+    if (store.is_published) void loadPublicProducts(store.id);
     else setProducts([]);
-  }, [store, userEmail, supabase, loadAdminData, loadPublicProducts]);
+    if (adminOpen && userEmail) void loadAdminData(store.id);
+  }, [store, userEmail, adminOpen, supabase, loadAdminData, loadPublicProducts]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => item.id === line.productId);
@@ -287,16 +296,29 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     if (!supabase || !store || !customer.trim() || !phone.trim() || !creationType.trim() || !occasion.trim() || !date || Number(portions) < 1) {
       setFeedback("Complétez votre nom, téléphone, occasion, date et nombre de portions."); return;
     }
+    if (referenceImage && (!["image/jpeg", "image/png", "image/webp"].includes(referenceImage.type) || referenceImage.size > 5 * 1024 * 1024)) {
+      setFeedback("La photo doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo."); return;
+    }
     setBusy(true);
+    let referenceImagePath: string | null = null;
+    if (referenceImage) {
+      const extension = referenceImage.type === "image/png" ? "png" : referenceImage.type === "image/webp" ? "webp" : "jpg";
+      referenceImagePath = store.id + "/custom-requests/" + crypto.randomUUID() + "." + extension;
+      const { error: uploadError } = await supabase.storage.from("project-store-references").upload(referenceImagePath, referenceImage, {
+        cacheControl: "3600", contentType: referenceImage.type, upsert: false,
+      });
+      if (uploadError) { setBusy(false); setFeedback("Envoi de la photo impossible : " + uploadError.message); return; }
+    }
     const { error } = await supabase.from("project_store_custom_requests").insert({
       storefront_id: store.id, customer_name: customer.trim(), customer_phone: phone.trim(),
       creation_type: creationType.trim(), occasion: occasion.trim(), desired_date: date, portions: Number(portions),
-      flavour: flavour.trim(), decoration: decoration.trim(), notes: note.trim(),
+      flavour: flavour.trim(), decoration: decoration.trim(), notes: note.trim(), reference_image_path: referenceImagePath,
     });
     setBusy(false);
     if (error) { setFeedback("Demande non transmise : " + error.message); return; }
     setCustomer(""); setPhone(""); setDate(""); setOccasion(""); setCreationType("Gâteau"); setFlavour(""); setDecoration(""); setNote("");
-    setFeedback("Votre demande personnalisée a été transmise à Asho Sweet.");
+    setReferenceImage(null); setReferenceImageInputKey((value) => value + 1);
+    setFeedback("Votre demande personnalisée et sa photo ont été transmises à Asho Sweet.");
   }
 
   async function updateOrderStatus(order: Order, status: string) {
@@ -329,7 +351,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
       {mode === "cart" && <section className="sweet-panel"><p className="eyebrow">Asho Sweet · Votre sélection</p><h2>Panier</h2>{cartLines.length === 0 ? <p className="sweet-empty">Votre panier est vide. Ajoutez des produits depuis le catalogue.</p> : <div className="sweet-cart">{cartLines.map((line) => <div className="sweet-cart-line" key={line.id}><div><strong>{line.name}</strong><span>{money(Number(line.price_xof))} l'unité</span></div><input aria-label={"Quantité " + line.name} type="number" min="0" max="99" value={line.quantity} onChange={(event) => changeQuantity(line.id, Number(event.target.value))} /><strong>{money(Number(line.price_xof) * line.quantity)}</strong></div>)}<div className="sweet-total"><span>Total estimatif</span><strong>{money(estimatedTotal)}</strong></div></div>}
           <form className="sweet-form" onSubmit={submitOrder}><label>Nom complet<input required maxLength={120} value={customer} onChange={(event) => setCustomer(event.target.value)} /></label><label>Téléphone<input required type="tel" maxLength={40} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+229…" /></label><label>Date souhaitée<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Réception<select value={fulfillmentMethod} onChange={(event) => setFulfillmentMethod(event.target.value as "pickup" | "delivery")}><option value="pickup">Retrait sur place</option><option value="delivery">Livraison</option></select></label>{fulfillmentMethod === "delivery" ? <label className="sweet-wide">Adresse de livraison<input required maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} /></label> : null}<label className="sweet-wide">Précisions<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button type="submit" disabled={busy || !cartLines.length}>Transmettre la commande (sans paiement)</button></form>
         </section>}
-      {mode === "custom-order" && <section className="sweet-panel"><p className="eyebrow">Asho Sweet · Sur mesure</p><h2>Imaginons votre création</h2><p>Décrivez votre gâteau ou votre commande spéciale.</p><form className="sweet-form" onSubmit={submitCustomRequest}><label>Votre nom<input required maxLength={120} value={customer} onChange={(event) => setCustomer(event.target.value)} /></label><label>Téléphone<input required type="tel" maxLength={40} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+229…" /></label><label>Type de création<input required maxLength={160} value={creationType} onChange={(event) => setCreationType(event.target.value)} placeholder="Gâteau, pizza, pâtisserie…" /></label><label>Occasion<input required maxLength={160} value={occasion} onChange={(event) => setOccasion(event.target.value)} placeholder="Anniversaire, mariage…" /></label><label>Date souhaitée<input required type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Nombre de portions<input required type="number" min="1" max="500" value={portions} onChange={(event) => setPortions(event.target.value)} /></label><label>Saveur souhaitée<input maxLength={160} value={flavour} onChange={(event) => setFlavour(event.target.value)} /></label><label className="sweet-wide">Décoration souhaitée<input maxLength={500} value={decoration} onChange={(event) => setDecoration(event.target.value)} /></label><label className="sweet-wide">Autres précisions<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button type="submit" disabled={busy}>Transmettre ma demande</button></form></section>}
+      {mode === "custom-order" && <section className="sweet-panel"><p className="eyebrow">Asho Sweet · Sur mesure</p><h2>Imaginons votre création</h2><p>Décrivez votre gâteau ou votre commande spéciale.</p><form className="sweet-form" onSubmit={submitCustomRequest}><label>Votre nom<input required maxLength={120} value={customer} onChange={(event) => setCustomer(event.target.value)} /></label><label>Téléphone<input required type="tel" maxLength={40} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+229…" /></label><label>Type de création<input required maxLength={160} value={creationType} onChange={(event) => setCreationType(event.target.value)} placeholder="Gâteau, pizza, pâtisserie…" /></label><label>Occasion<input required maxLength={160} value={occasion} onChange={(event) => setOccasion(event.target.value)} placeholder="Anniversaire, mariage…" /></label><label>Date souhaitée<input required type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Nombre de portions<input required type="number" min="1" max="500" value={portions} onChange={(event) => setPortions(event.target.value)} /></label><label>Saveur souhaitée<input maxLength={160} value={flavour} onChange={(event) => setFlavour(event.target.value)} /></label><label className="sweet-wide">Décoration souhaitée<input maxLength={500} value={decoration} onChange={(event) => setDecoration(event.target.value)} /></label><label className="sweet-wide">Photo d'exemple (facultative)<input key={referenceImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setReferenceImage(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label><label className="sweet-wide">Autres précisions<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button type="submit" disabled={busy}>Transmettre ma demande</button></form></section>}
       <section className="sweet-panel">
         <div className="sweet-inline"><h2>Espace Asho Sweet</h2><button className="sweet-secondary" type="button" onClick={() => setAdminOpen((value) => !value)}>{adminOpen ? "Fermer" : "Gestion de la boutique"}</button></div>
         {adminOpen && !userEmail && <form className="sweet-form" onSubmit={signIn}><label>Email du propriétaire<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form>}
@@ -337,7 +359,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
           <h3>Ajouter un produit</h3><form className="sweet-form" onSubmit={addProduct}><label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label><label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label><label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label><label>Image (URL facultative)<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label><label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label><button type="submit" disabled={busy}>Enregistrer le produit</button></form>
           <h3>Catalogue à gérer</h3>{products.map((product) => <article key={product.id}><strong>{product.name} · {money(Number(product.price_xof))}</strong><span>{product.is_active ? "Visible" : "Masqué"}</span><div className="sweet-inline"><button type="button" onClick={() => { const next = window.prompt("Nouveau prix en FCFA", String(product.price_xof)); if (next && Number.isSafeInteger(Number(next)) && Number(next) > 0) void updateProduct(product, { price_xof: Number(next) }); }}>Modifier le prix</button><button type="button" onClick={() => void updateProduct(product, { is_active: !product.is_active })}>{product.is_active ? "Masquer" : "Réactiver"}</button></div></article>)}
           <h3>Commandes reçues</h3>{orders.length === 0 ? <p>Aucune commande pour le moment.</p> : orders.map((order) => <article key={order.id}><strong>{order.customer_name} · {money(Number(order.total_amount_xof))}</strong><span>{order.customer_phone} · {new Date(order.created_at).toLocaleString("fr-FR")}</span><span>{order.fulfillment_method === "delivery" ? "Livraison : " + order.delivery_address : "Retrait sur place"}</span><span>{order.items.map((item) => item.quantity + " × " + item.name).join(", ")}</span><div className="sweet-inline"><select aria-label="Statut de commande" value={order.status} onChange={(event) => void updateOrderStatus(order, event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div></article>)}
-          <h3>Demandes personnalisées</h3>{requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}><strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong><span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span><span>{request.flavour} · {request.decoration}</span><small>{request.notes}</small><select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select></article>)}
+          <h3>Demandes personnalisées</h3>{requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}><strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong><span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span><span>{request.flavour} · {request.decoration}</span><small>{request.notes}</small>{request.reference_image_url ? <a href={request.reference_image_url} target="_blank" rel="noreferrer"><img className="sweet-reference-image" src={request.reference_image_url} alt="Photo d'exemple envoyée par le client" /></a> : request.reference_image_path ? <small>Photo de référence indisponible.</small> : null}<select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select></article>)}
         </div>}
       </section>
       {feedback && <p className="sweet-feedback" role="status" aria-live="polite">{feedback}</p>}
