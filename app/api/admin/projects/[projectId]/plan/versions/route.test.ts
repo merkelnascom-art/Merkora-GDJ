@@ -20,7 +20,12 @@ const requestId = "d1c2d3e4-f567-4890-8abc-1234567890ab";
 const sourceRequest = {
   id: requestId, user_id: project.user_id, project_id: project.id,
   payload: {
-    project: { recommendations: [{ title: "Présences", description: "Suivre les arrivées." }] },
+    project: {
+      id: project.id, title: project.title, category: project.category,
+      problem: project.problem, desiredOutcome: project.desired_outcome,
+      budget: project.budget, urgency: project.urgency,
+      recommendations: [{ title: "Présences", description: "Suivre les arrivées." }],
+    },
     studio: { selectedRecommendationIds: ["presences"] },
   },
 };
@@ -46,7 +51,6 @@ beforeEach(() => {
   vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user: admin });
   vi.mocked(getAccessToken).mockResolvedValue("admin-token");
   vi.mocked(callUserData)
-    .mockResolvedValueOnce({ ok: true, status: 200, data: [project] })
     .mockResolvedValueOnce({ ok: true, status: 200, data: [sourceRequest] })
     .mockResolvedValueOnce({ ok: true, status: 200, data: [officialLaunch] })
     .mockResolvedValueOnce({ ok: true, status: 200, data: [] })
@@ -75,7 +79,6 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
 
   it("requires an official launch linked to the exact client request", async () => {
     vi.mocked(callUserData).mockReset()
-      .mockResolvedValueOnce({ ok: true, status: 200, data: [project] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [sourceRequest] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [] });
     const response = await POST(request(), context);
@@ -92,23 +95,21 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
       { id: "presences", title: "Présences", description: "Suivre les arrivées.", source: "selected_option" },
     ]);
     const calls = vi.mocked(callUserData).mock.calls;
-    expect(calls[0][0]).toContain("user_projects?");
-    expect(calls[1][0]).toContain("client_requests?");
-    expect(calls[2][0]).toContain("client_project_launches?");
-    expect(calls[4][0]).toBe("project_memory_brief_versions");
-    expect(calls[4][3]).toMatchObject({ project_id: project.id, version: 1, created_by: admin.id });
-    expect(calls[6][0]).toBe("project_memory_plan_versions");
-    expect(calls[6][3]).toMatchObject({
+    expect(calls[0][0]).toContain("client_requests?");
+    expect(calls[1][0]).toContain("client_project_launches?");
+    expect(calls[3][0]).toBe("project_memory_brief_versions");
+    expect(calls[3][3]).toMatchObject({ project_id: project.id, version: 1, created_by: admin.id });
+    expect(calls[5][0]).toBe("project_memory_plan_versions");
+    expect(calls[5][3]).toMatchObject({
       project_id: project.id, version: 1, source_brief_version: 1,
       created_by: admin.id, payload_digest: body.planDigest, scope_digest: body.scopeDigest,
     });
-    expect(calls[7][0]).toBe("project_memory_events");
-    expect(calls[7][3]).toMatchObject({ actor_user_id: admin.id, actor_role: "admin", plan_version: 1 });
+    expect(calls[6][0]).toBe("project_memory_events");
+    expect(calls[6][3]).toMatchObject({ actor_user_id: admin.id, actor_role: "admin", plan_version: 1 });
   });
 
   it("does not create a plan when the brief snapshot insert fails", async () => {
     vi.mocked(callUserData).mockReset()
-      .mockResolvedValueOnce({ ok: true, status: 200, data: [project] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [sourceRequest] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [officialLaunch] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [] })
@@ -120,7 +121,6 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
 
   it("reports a partial save if the plan insert fails and never starts execution", async () => {
     vi.mocked(callUserData).mockReset()
-      .mockResolvedValueOnce({ ok: true, status: 200, data: [project] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [sourceRequest] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [officialLaunch] })
       .mockResolvedValueOnce({ ok: true, status: 200, data: [] })
