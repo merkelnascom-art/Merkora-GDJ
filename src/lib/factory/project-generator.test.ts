@@ -20,6 +20,8 @@ describe("generateProjectSource", () => {
     expect(result.files.map((file) => file.path)).toContain("src/components/module-workspace.tsx");
     expect(result.files.map((file) => file.path)).toContain(".env.example");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("<ModuleWorkspace");
+    expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain('projectId={"MK-TEST-000001"}');
+    expect(result.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("project_module_data");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("signInWithPassword");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("upsert");
