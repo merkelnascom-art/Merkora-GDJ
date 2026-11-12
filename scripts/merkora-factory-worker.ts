@@ -65,6 +65,9 @@ async function runSandbox(files: Array<{ path: string; content: string }>) {
   });
 
   try {
+    // The Sandbox image may not have its workspace directory provisioned yet.
+    // Create it explicitly before writing files or starting commands in it.
+    await sandbox.mkDir("/vercel/sandbox");
     await sandbox.writeFiles(files.map((file) => ({
       path: file.path,
       content: Buffer.from(file.content, "utf8"),
