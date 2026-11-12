@@ -197,6 +197,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Projet : ${model.title}`,
       `Format : ${model.formatLabel}`,
       `Direction : ${model.domainLabel}`,
+      ...(model.universalFamilyCandidates.length > 0 ? [`Familles de référence possibles : ${model.universalFamilyCandidates.map((family) => family.label).join(" · ")}`] : []),
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
       "Blocs retenus :",
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
@@ -253,6 +254,7 @@ export function ProjectMockupStudio({ project }: Props) {
 
           <div className="mockup-control-group">
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
+            {model.universalFamilyCandidates.length > 0 && <p className="mockup-control-hint">Familles de référence possibles : {model.universalFamilyCandidates.map((family) => family.label).join(" · ")}. Cette correspondance aide à élargir l’analyse ; elle ne remplace pas la confirmation du métier et du secteur par le client.</p>}
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
               const selected = (config.moduleSelectionConfirmed === true || config.enabledModules.length > 0) && config.enabledModules.includes(item.id);
