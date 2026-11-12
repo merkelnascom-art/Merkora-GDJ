@@ -19,6 +19,30 @@ function makeClient(): SupabaseClient | null {
   return url && key ? createClient(url, key) : null;
 }
 
+export function ProjectTeamLink({ projectId }: { projectId: string }) {
+  const supabase = useMemo(() => makeClient(), []);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    const check = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) { if (alive) setVisible(false); return; }
+      const { data: owner } = await supabase.from("user_projects").select("id")
+        .eq("id", projectId).eq("user_id", userId).maybeSingle();
+      if (owner) { if (alive) setVisible(true); return; }
+      const { data: membership } = await supabase.from("project_team_memberships").select("id")
+        .eq("project_id", projectId).eq("user_id", userId).in("status", ["pending", "active"]).maybeSingle();
+      if (alive) setVisible(Boolean(membership));
+    };
+    void check();
+    const { data } = supabase.auth.onAuthStateChange(() => { void check(); });
+    return () => { alive = false; data.subscription.unsubscribe(); };
+  }, [projectId, supabase]);
+  return visible ? <p><a href="/team">Espace équipe</a></p> : null;
+}
+
 export function ProjectTeamManagement({
   projectId,
   modules,
