@@ -6,6 +6,9 @@ export type ImplementationModule = { id: string; title: string; description: str
 export type ImplementationBrief = {
   projectName: string;
   projectDescription: string;
+  domainId?: string | null;
+  domainLabel?: string | null;
+  specializationId?: string | null;
   planVersion: number;
   planDigest: string;
   modules: ImplementationModule[];
@@ -39,6 +42,15 @@ export type CodePatchValidation =
   | { ok: true; fileCount: number; totalBytes: number }
   | { ok: false; reason: CodePatchValidationReason };
 
+const DOMAIN_SAFEGUARDS: Record<string, string> = {
+  sante: "Santé : utiliser uniquement des données de test dans le prototype; protéger les informations de santé; ne pas produire de diagnostic, prescription ou décision clinique.",
+  "entrepreneuriat-finance": "Finance : documenter les formules et hypothèses; ne pas déclencher de transfert, paiement ou mouvement bancaire réel; faire valider les rapprochements et résultats.",
+  "ressources-humaines": "RH : protéger les dossiers individuels; ne pas automatiser une décision d'embauche, licenciement, sanction ou rémunération.",
+  "administration-services-publics": "Services publics : conserver une validation humaine pour les décisions administratives, l'éligibilité et les autorisations; tracer les accès et décisions; prévoir un canal hors ligne.",
+  "voyage-tourisme-creation-jeux": "Voyage et jeux : ne pas présenter un tarif ou une disponibilité fournisseur comme confirmé sans preuve; protéger les mineurs et éviter les mécanismes de monétisation trompeurs.",
+  "transport-logistique": "Transport : ne pas activer de suivi de localisation sans base légitime, information et contrôle adaptés; distinguer une position estimée d'une preuve de livraison.",
+};
+ 
 const SYSTEM_PROMPT = [
   "Tu es l'agent d'implémentation logiciel de MerKora GDJ.",
   "Ne jamais inventer de besoin, de rôle, de règle métier, de donnée ou de permission absent du périmètre approuvé.",
@@ -65,6 +77,10 @@ export function buildProjectImplementationPrompt(
 ): ProjectImplementationPrompt {
   const projectName = requiredText(brief.projectName, "nom du projet", 120);
   const projectDescription = requiredText(brief.projectDescription, "description", 1000);
+  const domainId = typeof brief.domainId === "string" && brief.domainId.trim() ? requiredText(brief.domainId, "identifiant du domaine", 100) : null;
+  const domainLabel = typeof brief.domainLabel === "string" && brief.domainLabel.trim() ? requiredText(brief.domainLabel, "domaine métier", 160) : "Domaine à confirmer";
+  const specializationId = typeof brief.specializationId === "string" && brief.specializationId.trim() ? requiredText(brief.specializationId, "spécialisation", 100) : null;
+  const domainSafeguard = domainId ? DOMAIN_SAFEGUARDS[domainId] ?? "Respecter les règles métier et réglementaires applicables, à confirmer avec le client et les responsables habilités." : "Le domaine reste à confirmer; ne pas inventer de règles sectorielles.";
   if (!Number.isSafeInteger(brief.planVersion) || brief.planVersion < 1 ||
     !/^[a-f0-9]{64}$/.test(brief.planDigest) ||
     !Array.isArray(brief.modules) || brief.modules.length < 1 || brief.modules.length > 30) {
@@ -89,7 +105,8 @@ export function buildProjectImplementationPrompt(
     "PROJET APPROUVÉ",
     JSON.stringify({
       projectName, projectDescription, planVersion: brief.planVersion,
-      planDigest: brief.planDigest, modules, confirmedConstraints: constraints,
+      planDigest: brief.planDigest, domainId, domainLabel, specializationId,
+      domainSafeguard, modules, confirmedConstraints: constraints,
       acceptanceCriteria, openQuestions,
     }, null, 2),
     "",
@@ -101,7 +118,7 @@ export function buildProjectImplementationPrompt(
     "5. Retourner seulement les fichiers à créer ou modifier dans les répertoires autorisés.",
   ].join("\n");
 
-  return { schemaVersion: 1, systemPrompt: SYSTEM_PROMPT, userPrompt };
+  return { schemaVersion: 1, systemPrompt: `${SYSTEM_PROMPT}\\n\\nGARDE-FOU DU DOMAINE : ${domainSafeguard}`, userPrompt };
 }
 
 function safePatchPath(path: string): boolean {
