@@ -1,5 +1,6 @@
 import type { DiscoveryDomain, DiscoveryResult } from "../discovery";
 import type { NeedInput, Recommendation } from "../solution-recommendations";
+import type { DomainId } from "../domain-registry";
 
 export type ProjectPlanStatus = "needs_clarification" | "draft" | "ready_for_review";
 
@@ -81,6 +82,9 @@ export type ProjectPlan = {
   plannerVersion: string;
   status: ProjectPlanStatus;
   domain: DiscoveryDomain;
+  domainId: DomainId | null;
+  specializationId: string | null;
+  domainLabel: string;
   summary: string;
   goals: string[];
   includedScope: Array<{ id: string; title: string; description: string; source: "selected_option" | "approved_scope" }>;
