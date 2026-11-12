@@ -9,13 +9,12 @@ MerKora GDJ doit être une **plateforme universelle de compréhension, de concep
 
 Les 13 domaines sont des portes d'entrée métier et des référentiels de connaissance. Ils ne sont ni 13 applications indépendantes, ni des limites imposées à l'utilisateur. Un projet peut relever de plusieurs domaines.
 
-## Document directeur — à lire en premier
+## Documents directeurs — à lire en premier
 
-La conception générale unifiée rassemble la vision complète de MerKora, la classification hybride, le diagnostic adaptatif, les limites détectées, les options à cocher, les champs libres, les rôles, les accès, les communications, les notifications, les intégrations, les maquettes, la fabrication, les contrôles et la livraison.
+1. **[Conception générale unifiée de MerKora GDJ](./08-conception-generale-unifiee-merkora.md)** — vision, parcours adaptatif, classification hybride, rôles, données, propositions, maquettes, fabrication, sécurité et livraison.
+2. **[Référentiel universel des domaines, secteurs et métiers](./09-referentiel-universel-domaines-secteurs-metiers.md)** — 20 familles, cartographie initiale de 100 secteurs, capacités transversales, modèle de fiche métier et méthode d'expansion vers 2 000 à 3 000 métiers/spécialisations.
 
-**[Lire la conception générale unifiée de MerKora GDJ](./08-conception-generale-unifiee-merkora.md)**
-
-Ce document distingue les 13 dossiers métiers existants, la taxonomie cible proposée de 20 familles et le référentiel progressif visé d'environ 500 secteurs. Il décrit la cible fonctionnelle et ne prétend pas que toutes les fonctions sont déjà développées.
+Le référentiel 09 est une première cartographie structurée, pas encore un catalogue de 2 000 à 3 000 fiches métier approfondies. Ces fiches doivent être enrichies et validées progressivement. Les 13 dossiers métiers historiques restent disponibles et ne sont pas remplacés.
 
 ---
 
@@ -30,6 +29,7 @@ Ce document distingue les 13 dossiers métiers existants, la taxonomie cible pro
 7. [Plan de mise en œuvre](./05-plan-de-mise-en-oeuvre-et-criteres-de-reussite.md)
 8. [Glossaire et décisions ouvertes](./06-glossaire-et-decisions-ouvertes.md)
 9. [Conception hybride et parcours client adaptatif](./07-conception-hybride-et-parcours-client.md)
+10. [Référentiel universel des 20 familles et 100 secteurs](./09-referentiel-universel-domaines-secteurs-metiers.md)
 
 ## Les 13 dossiers métiers
 
