@@ -94,9 +94,9 @@
 - Studio displays only modules the client explicitly selected or confirmed.
 - Hybrid projects can combine compatible capabilities without collapsing their distinct business contexts.
 
-- [ ] Add integration tests for a simple activity, a hybrid activity, a vague request and a regulated-domain request.
-- [ ] Implement the smallest compatible changes to diagnosis and recommendations.
-- [ ] Ensure Studio updates from the selected project scope and does not auto-enable proposed modules.
+- [x] Add focused integration tests for known family candidates, ambiguous finance/management candidates, vague requests, and Studio family context. Broader hybrid and regulated-domain scenarios remain to be expanded.
+- [x] Implement the compatible discovery-to-family bridge and expose family candidates without auto-selecting a family or module.
+- [x] Display the possible universal family context in the Studio and its exported summary; preserve the existing client-controlled module selection.
 - [ ] Run focused tests, typecheck and full build checks.
 - [ ] Commit as `feat: connect universal reference to diagnosis and studio`.
 
@@ -107,8 +107,8 @@
 - Task 1 implementation committed: `src/lib/universal-reference.ts` and `src/lib/universal-reference.test.ts`.
 - Task 2 implementation committed: 484 source candidate entries, 20 detailed unreviewed profiles and focused tests in `src/lib/profession-reference.ts` / `.test.ts`.
 - Task 3 implementation committed: explicit family-to-operational-domain mapping and discovery family-candidate output, with focused tests.
-- Task 4 has started: discovery now carries possible universal family IDs without forcing a final choice; Studio integration and broader end-to-end verification remain open.
-- Automated execution of Vitest/typecheck is still pending; no passing-test claim is made.
+- Task 4 first slice committed: discovery carries possible family candidates, Studio displays the possible families, and the exported concept summary includes them. Profession-specific question selection, sector confirmation and broader hybrid/regulatory end-to-end cases remain open.
+- Focused Vitest, full Vitest, typecheck and production build execution are still pending; no passing-test claim is made.
 - No Supabase changes, Sandbox runs, merges or deployments were performed.
 
 ## Product decisions deliberately preserved
