@@ -114,3 +114,10 @@ export function mapUniversalReferences(input: UniversalReferenceInput): Universa
     evidence,
   };
 }
+
+export function getUniversalFamilyCandidatesForOperationalDomain(domainId: DomainId): string[] {
+  return Object.entries(UNIVERSAL_FAMILY_OPERATIONAL_DOMAINS)
+    .filter(([, domainIds]) => domainIds.includes(domainId))
+    .map(([familyId]) => familyId)
+    .sort();
+}
