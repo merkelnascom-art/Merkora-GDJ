@@ -98,6 +98,8 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("fulfillment_method");
     expect(workspace).toContain("Adresse de livraison");
     expect(workspace).toContain("Retrait sur place");
+    expect(workspace).toContain("En préparation");
+    expect(workspace).toContain("Devis proposé");
     expect(workspace).not.toContain("localStorage");
     expect(workspace).toContain("Le catalogue sera affiché ici");
     expect(workspace).toContain("sans paiement");
