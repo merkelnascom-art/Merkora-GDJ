@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./project-types";
 import { buildMockupModel, type MockupConfig } from "./mockup-studio";
+import { analyzeBusinessSignals } from "./business-signal-analysis";
 
 const studentProject: Project = {
   id: "MK-STUDENT-1",
@@ -64,6 +65,7 @@ describe("buildMockupModel", () => {
         specializationId: null,
         domainLabel: "Éducation et formation",
         universalFamilyCandidates: ["family-08"],
+        businessSignals: analyzeBusinessSignals(""),
         professionCandidates: [
           { id: "candidate-08-001", title: "Conseiller d’orientation", familyId: "family-08", sourceGroup: "Éducation", reviewStatus: "candidate" },
           { id: "candidate-08-002", title: "Formateur professionnel", familyId: "family-08", sourceGroup: "Éducation", reviewStatus: "candidate" },
@@ -85,6 +87,20 @@ describe("buildMockupModel", () => {
       selectedProfessionCandidateIds: ["candidate-08-002"],
     });
     expect(selected.selectedProfessionCandidates.map((item) => item.title)).toEqual(["Formateur professionnel"]);
+  });
+
+  it("keeps financial signal families visible in Studio for mixed business projects", () => {
+    const project: Project = {
+      ...teamProject,
+      title: "Pilotage de mon entreprise",
+      problem: "Je vends beaucoup, mais je ne sais pas où passe l'argent. Je dois suivre les recettes, dépenses et bénéfices.",
+      desiredOutcome: "Avoir un rapport financier hebdomadaire.",
+      discovery: undefined,
+    };
+    const model = buildMockupModel(project, { format: "dashboard", palette: "blue", enabledModules: [] });
+    expect(model.businessSignals.signals.map((signal) => signal.id)).toContain("cashflow");
+    expect(model.businessSignals.signals.map((signal) => signal.id)).toContain("revenue");
+    expect(model.universalFamilyCandidates.map((family) => family.id)).toContain("family-05");
   });
 
   it("builds operational modules for team management, not education", () => {
