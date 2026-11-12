@@ -257,16 +257,32 @@ export function generateProjectPlan(input: ProjectPlanInput): ProjectPlan {
       : ["Destinations et contenus", "Réservations et participants", "Expériences et retours"],
   };
 
+  const specializationComponents: Record<string, string[]> = {
+    "artisan-workshop": ["Commandes sur mesure et étapes de fabrication", "Matières premières et temps passé"],
+    "home-services": ["Tournées et créneaux d'intervention", "Preuves de passage et comptes rendus"],
+    "personal-services": ["Rendez-vous et professionnels", "Prestations, commissions et fidélité"],
+    "civil-status": ["Vérification des pièces par un agent habilité", "Délivrance et archivage contrôlés"],
+    "municipal-services": ["Signalements des habitants", "Affectation des équipes et suivi des interventions"],
+    "travel-agency": ["Dossiers voyageurs et prestations", "Confirmation des fournisseurs avant engagement"],
+    tourism: ["Destinations et circuits", "Guides, capacités et créneaux de visite"],
+    audiovisual: ["Production et versions des médias", "Droits, crédits et validations"],
+    "game-design": ["Boucle de jeu, règles et objectifs", "Niveaux, missions et sauvegardes"],
+    "leisure-events": ["Sessions et capacités", "Billetterie et contrôle d'accès"],
+    "career-guidance": ["Profil d'intérêts et questionnaires", "Exploration de métiers et parcours à examiner avec un conseiller"],
+  };
+  const baseComponents = domainId
+    ? domainComponents[domainId] ?? ["Interface adaptée aux utilisateurs", "Logique métier à préciser", "Stockage et intégrations à déterminer"]
+    : domain === "education"
+      ? ["Parcours de questionnaires et d'exercices", "Exploration des métiers et formations", "Restitution des résultats à examiner"]
+      : domain === "commerce"
+        ? ["Suivi des opérations et responsabilités", "Gestion des accès par rôle", "Indicateurs et restitutions"]
+        : ["Interface adaptée aux utilisateurs", "Logique métier à préciser", "Stockage et intégrations à déterminer"];
   const proposedArchitecture = domain === "creative" || isAudiovisual
     ? null
     : {
         style: "À déterminer après validation du besoin et des contraintes.",
         description: "Architecture fonctionnelle préliminaire, sans choix de fournisseur, d'hébergement ou de technologie imposé.",
-        components: domainId ? domainComponents[domainId] ?? ["Interface adaptée aux utilisateurs", "Logique métier à préciser", "Stockage et intégrations à déterminer"] : domain === "education"
-          ? ["Parcours de questionnaires et d'exercices", "Exploration des métiers et formations", "Restitution des résultats à examiner"]
-          : domain === "commerce"
-            ? ["Suivi des opérations et responsabilités", "Gestion des accès par rôle", "Indicateurs et restitutions"]
-            : ["Interface adaptée aux utilisateurs", "Logique métier à préciser", "Stockage et intégrations à déterminer"],
+        components: [...baseComponents, ...(specializationId ? specializationComponents[specializationId] ?? [] : []), ...includedScope.map((item) => `Option retenue : ${item.title}`)],
       };
 
   const estimateNotes = [
