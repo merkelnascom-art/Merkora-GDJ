@@ -9,6 +9,16 @@ MerKora GDJ doit être une **plateforme universelle de compréhension, de concep
 
 Les 13 domaines sont des portes d'entrée métier et des référentiels de connaissance. Ils ne sont ni 13 applications indépendantes, ni des limites imposées à l'utilisateur. Un projet peut relever de plusieurs domaines.
 
+## Document directeur — à lire en premier
+
+La conception générale unifiée rassemble la vision complète de MerKora, la classification hybride, le diagnostic adaptatif, les limites détectées, les options à cocher, les champs libres, les rôles, les accès, les communications, les notifications, les intégrations, les maquettes, la fabrication, les contrôles et la livraison.
+
+**[Lire la conception générale unifiée de MerKora GDJ](./08-conception-generale-unifiee-merkora.md)**
+
+Ce document distingue les 13 dossiers métiers existants, la taxonomie cible proposée de 20 familles et le référentiel progressif visé d'environ 500 secteurs. Il décrit la cible fonctionnelle et ne prétend pas que toutes les fonctions sont déjà développées.
+
+---
+
 ## Lire le dossier dans cet ordre
 
 1. [Vision, principes et périmètre](./00-vision-principes-et-perimetre.md)
