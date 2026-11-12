@@ -90,7 +90,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
         reason: `Option métier proposée pour le domaine ${match.domain?.label ?? "identifié"}; à confirmer avec le client.`,
       }))
     : [];
-  const suggestedModules = [...domainModules, ...legacyModules]
+  const suggestedModules = [...legacyModules, ...domainModules]
     .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
     .slice(0, 5);
   const domainContext = {
