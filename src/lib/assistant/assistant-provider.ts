@@ -4,9 +4,9 @@ import {
   type AssistantRuntimeConfig,
   type ExternalAssistantAuthorization,
 } from "./assistant-runtime";
-import type { ConversationMessage, ConversationReply, SuggestedModule } from "./merkora-conversation";
+import { createMerkoraConversationReply, type ConversationMessage, type ConversationReply, type SuggestedModule } from "./merkora-conversation";
 
-type ExternalReply = Omit<ConversationReply, "disclaimer" | "nextAction">;
+type ExternalReply = Pick<ConversationReply, "assistantMessage" | "status" | "clarifyingQuestions" | "extractedNeeds" | "suggestedModules">;
 
 type CompleteInput = {
   config: AssistantRuntimeConfig;
@@ -74,10 +74,22 @@ export async function completeWithExternalAssistant(input: CompleteInput): Promi
     "Retourne uniquement un objet JSON : assistantMessage, status ('needs_clarification' ou 'draft'), clarifyingQuestions (tableau), extractedNeeds (tableau), suggestedModules (tableau d'objets id/title/description/reason).",
     "Limite la réponse à des informations utiles au besoin du client. Ne prétends pas avoir accès à des connaissances privées ou à des systèmes qui ne sont pas fournis.",
   ].join("\n");
+  const localContext = createMerkoraConversationReply({
+    message: [input.message, (input.projectContext ?? "").slice(0, 3000)].filter(Boolean).join("\n"),
+    history: input.history,
+  });
   const userPrompt = JSON.stringify({
     currentMessage: input.message,
     projectContext: (input.projectContext ?? "").slice(0, 3000),
     recentHistory: history,
+    merkoraDomainContext: {
+      domainId: localContext.domainId,
+      domainLabel: localContext.domainLabel,
+      specializationId: localContext.specializationId,
+      confidence: localContext.confidence,
+      clarifyingQuestions: localContext.clarifyingQuestions,
+      allowedStarterModules: localContext.suggestedModules,
+    },
   });
   try {
     const response = await requestAiGatewayCompletion({
@@ -106,7 +118,14 @@ export async function completeWithExternalAssistant(input: CompleteInput): Promi
       model: input.config.model,
       reply: {
         ...parsed,
-        nextAction: parsed.status === "draft" ? "review_modules" : "clarify_need",
+        status: localContext.status === "needs_clarification" ? "needs_clarification" : parsed.status,
+        clarifyingQuestions: [...new Set([...localContext.clarifyingQuestions, ...parsed.clarifyingQuestions])].slice(0, 12),
+        suggestedModules: localContext.suggestedModules,
+        domainId: localContext.domainId,
+        domainLabel: localContext.domainLabel,
+        specializationId: localContext.specializationId,
+        confidence: localContext.confidence,
+        nextAction: localContext.status === "needs_clarification" || parsed.status === "needs_clarification" ? "clarify_need" : "review_modules",
         disclaimer: "Réponse générée par un modèle externe autorisé. Vérifiez les faits et validez chaque choix : aucune action n'a été exécutée.",
       },
     };
