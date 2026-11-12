@@ -24,9 +24,11 @@ jobs:
         with:
           deno-version: v2.x
       - name: Check Supabase Edge Functions
-        run: deno check --node-modules-dir=auto supabase/functions/factory-worker/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/factory-worker/index.ts supabase/functions/project-team-invite/index.ts supabase/functions/project-team-accept/index.ts supabase/functions/project-team-revoke/index.ts
       - name: Test factory worker identity
         run: deno test --node-modules-dir=auto supabase/functions/factory-worker/identity_test.ts
+      - name: Project team function tests
+        run: deno test --node-modules-dir=auto supabase/functions/project-team-invite/index_test.ts supabase/functions/project-team-accept/index_test.ts supabase/functions/project-team-revoke/index_test.ts
       - name: Unit tests
         run: npm test
       - name: Production build
