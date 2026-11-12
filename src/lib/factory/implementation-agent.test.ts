@@ -98,6 +98,7 @@ describe("applyProjectCodePatch", () => {
 
   it("refuses patches that change dependency manifests or escape approved folders", () => {
     const source = generateProjectSource({
+      projectId: "MK-TEST-RH-002",
       projectName: "Gestion RH",
       projectDescription: "Gérer le personnel.",
       modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
