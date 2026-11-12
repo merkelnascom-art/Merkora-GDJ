@@ -3745,3 +3745,19 @@ export const MERKORA_DETAILED_PROFESSION_PROFILES = [
     "clientValidation": "Confirmer le périmètre, les rôles réels, les règles locales, les données à collecter et les modules retenus avant toute maquette détaillée ou fabrication."
   }
 ] as const satisfies readonly ProfessionProfile[];
+
+
+/**
+ * Returns source-index titles for client confirmation. These are candidates,
+ * not validated job classifications or professional recommendations.
+ */
+export function getProfessionCandidatesForFamilies(
+  familyIds: readonly string[],
+  limit = 12,
+): ProfessionCandidate[] {
+  const allowed = new Set(familyIds);
+  const safeLimit = Number.isFinite(limit) ? Math.max(0, Math.min(50, Math.floor(limit))) : 12;
+  return MERKORA_PROFESSION_CANDIDATES
+    .filter((candidate) => allowed.has(candidate.familyId))
+    .slice(0, safeLimit);
+}
