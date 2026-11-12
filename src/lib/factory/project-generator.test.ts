@@ -94,6 +94,10 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("signInWithPassword");
     expect(workspace).toContain("project_store_orders");
     expect(workspace).toContain("project_store_custom_requests");
+    expect(workspace).toContain("creation_type");
+    expect(workspace).toContain("fulfillment_method");
+    expect(workspace).toContain("Adresse de livraison");
+    expect(workspace).toContain("Retrait sur place");
     expect(workspace).not.toContain("localStorage");
     expect(workspace).toContain("Le catalogue sera affiché ici");
     expect(workspace).toContain("sans paiement");
