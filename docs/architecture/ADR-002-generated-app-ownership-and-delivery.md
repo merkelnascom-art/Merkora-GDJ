@@ -9,11 +9,11 @@
 
 MerKora must not depend on an operator manually creating each customer's application, administrator account, user accounts, or follow-up workflow. The factory is responsible for generating, configuring, testing, delivering, and (when included in the offer) hosting and maintaining each solution.
 
-The current generator has two different maturity levels:
-- The Asho Sweet vertical template has a real Supabase-backed catalogue, products, custom requests, and orders.
-- The generic module workspace still stores task lists in browser localStorage. It is a prototype, not a shared operational application.
-- The existing `project_module_data` migration is explicitly staged only and has owner/admin-only RLS. It is not yet a general end-user membership system.
-- Asho Sweet orders currently have no customer account ownership field or customer-facing order-history screen. A submitted guest order cannot safely become a private account-tracked order without a schema and access-model change.
+At the time this decision was drafted, the generator had two different maturity levels:
+- The Asho Sweet vertical template already had a Supabase-backed catalogue, products, custom requests, and orders.
+- The generic module workspace was initially a browser-local prototype.
+- The Asho Sweet customer-account and order-history migration was being added.
+- The generic persistent runtime and its owner/admin RLS are now implemented (see implementation updates below), but staff invitations and granular project roles are still outstanding.
 
 These distinctions must be visible to the factory's quality gate. A generated UI must never be labelled a complete deliverable merely because it builds.
 
