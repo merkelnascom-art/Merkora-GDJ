@@ -35,6 +35,27 @@ describe("analyzeNeed", () => {
     expect(result.isPreliminary).toBe(true);
   });
 
+  it("detects financial needs inside a broader business story and asks targeted questions", () => {
+    const result = analyzeNeed(makeNeed({
+      title: "Pilotage de mon entreprise",
+      category: "business",
+      problem: "Je vends beaucoup, mais je ne sais pas où passe l'argent. J'ai des dépenses, des dettes et des clients qui me doivent encore de l'argent.",
+      desiredOutcome: "Suivre les recettes, les paiements, les bénéfices et obtenir un rapport chaque semaine.",
+    }));
+    const signalIds = result.businessSignals.signals.map((signal) => signal.id);
+    expect(signalIds).toContain("sales");
+    expect(signalIds).toContain("cashflow");
+    expect(signalIds).toContain("expenses");
+    expect(signalIds).toContain("debt");
+    expect(signalIds).toContain("receivables");
+    expect(signalIds).toContain("revenue");
+    expect(signalIds).toContain("profitability");
+    expect(result.universalFamilyCandidates).toContain("family-05");
+    expect(result.questions.some((question) => question.includes("sources de recettes"))).toBe(true);
+    expect(result.recommendations.some((item) => item.title.includes("flux financiers"))).toBe(true);
+    expect(result.understood.some((item) => item.includes("Indice métier/financier"))).toBe(true);
+  });
+
   it("does not mark an incomplete need as ready for analysis", () => {
     const result = analyzeNeed(makeNeed({ title: "  ", problem: "  ", desiredOutcome: "" }));
     expect(result.state).toBe("incomplete");
