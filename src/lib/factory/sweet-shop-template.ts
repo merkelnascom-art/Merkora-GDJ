@@ -305,6 +305,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     setBusy(false);
     if (error) { setFeedback("Commande non transmise : " + error.message); return; }
     setCart([]); setCustomer(""); setPhone(""); setDate(""); setNote(""); setFulfillmentMethod("pickup"); setDeliveryAddress("");
+    window.dispatchEvent(new Event("merkora-store-order-submitted"));
     setFeedback("Commande transmise à Asho Sweet. L'équipe doit encore la confirmer. Aucun paiement n'a été effectué.");
   }
 
@@ -335,6 +336,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     if (error) { setFeedback("Demande non transmise : " + error.message); return; }
     setCustomer(""); setPhone(""); setDate(""); setOccasion(""); setCreationType("Gâteau"); setFlavour(""); setDecoration(""); setNote("");
     setReferenceImage(null); setReferenceImageInputKey((value) => value + 1);
+    window.dispatchEvent(new Event("merkora-store-order-submitted"));
     setFeedback("Votre demande personnalisée et sa photo ont été transmises à Asho Sweet.");
   }
 
