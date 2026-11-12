@@ -1,4 +1,5 @@
 import { createProjectMemoryDigest } from "./project-memory-digest";
+import { createSweetShopModulePage, createSweetShopWorkspaceFile, sweetShopModeForModule, sweetShopStyles } from "./sweet-shop-template";
 
 export type ProjectSourceModule = {
   id: string;
@@ -118,11 +119,20 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     },
   ];
 
+  const hasSweetShopModules = modules.some((module) => sweetShopModeForModule(module.id) !== null);
+  if (hasSweetShopModules) {
+    files.push(createSweetShopWorkspaceFile());
+    const stylesheet = files.find((file) => file.path === "src/app/globals.css");
+    if (stylesheet) stylesheet.content += sweetShopStyles;
+  }
+
   for (const module of modules) {
     const component = componentName(module.id);
     files.push({
       path: `src/app/modules/${module.id}/page.tsx`,
-      content: `import { ModuleWorkspace } from "@/components/module-workspace";\n\nexport default function ${component}ModulePage() {\n  return (\n    <main>\n      <p className="eyebrow">Module du projet</p>\n      <h1>{${jsString(module.title)}}</h1>\n      <p className="lead">{${jsString(module.description)}}</p>\n      <ModuleWorkspace storageKey={${jsString("merkora-module-" + module.id)}} title={${jsString(module.title)}} description={${jsString(module.description)}} />\n      <p><a href="/">← Retour à l’espace de travail</a></p>\n    </main>\n  );\n}\n`,
+      content: sweetShopModeForModule(module.id)
+        ? createSweetShopModulePage(module.id, module.title, module.description)
+        : `import { ModuleWorkspace } from "@/components/module-workspace";\n\nexport default function ${component}ModulePage() {\n  return (\n    <main>\n      <p className="eyebrow">Module du projet</p>\n      <h1>{${jsString(module.title)}}</h1>\n      <p className="lead">{${jsString(module.description)}}</p>\n      <ModuleWorkspace storageKey={${jsString("merkora-module-" + module.id)}} title={${jsString(module.title)}} description={${jsString(module.description)}} />\n      <p><a href="/">← Retour à l’espace de travail</a></p>\n    </main>\n  );\n}\n`,
     });
   }
 
