@@ -85,6 +85,7 @@ describe("generateProjectSource", () => {
     });
     const paths = sweetShop.files.map((file) => file.path);
     expect(paths).toContain("src/components/sweet-shop-workspace.tsx");
+    expect(paths).toContain(".env.example");
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/catalogue-de-gateau-et-de-patisserie/page.tsx")?.content).toContain('mode="catalogue"');
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/commande-personnalisee/page.tsx")?.content).toContain('mode="custom-order"');
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/panier-et-validation-de-commande/page.tsx")?.content).toContain('mode="cart"');
