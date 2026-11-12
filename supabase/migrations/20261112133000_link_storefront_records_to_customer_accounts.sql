@@ -67,6 +67,8 @@ begin
 end;
 $function$;
 
+drop trigger if exists calculate_project_store_order_before_insert on public.project_store_orders;
+drop trigger if exists normalize_project_store_custom_request_before_insert on public.project_store_custom_requests;
 drop trigger if exists set_customer_account_on_store_order on public.project_store_orders;
 create trigger set_customer_account_on_store_order
 before insert on public.project_store_orders
