@@ -8,7 +8,9 @@ MerKora GDJ est une plateforme de découverte de besoins : elle commence par la 
 - Espace de travail conservé pour créer, consulter et modifier les dossiers locaux.
 - Inscription et connexion par e-mail/mot de passe via routes serveur; jetons de session conservés dans des cookies HttpOnly.
 - Synchronisation manuelle des dossiers avec la table `public.user_projects`, protégée par les politiques RLS existantes.
-- Pré-analyse contextuelle pour l’orientation scolaire et professionnelle, le commerce et la gestion d’équipe, la création/communication et certains besoins numériques.
+- Référentiel métier versionné couvrant 13 domaines : sport; santé; agriculture/environnement; commerce; entrepreneuriat/finance; immobilier/BTP; éducation/formation; transport/logistique; restauration/hôtellerie/événementiel; ressources humaines; artisanat/services; administration/services publics; voyages/tourisme/loisirs/création/jeux.
+- Détection du domaine et de la spécialisation à partir du besoin exprimé, avec niveau de confiance et questions adaptatives; les demandes ambiguës restent en clarification.
+- Modules de départ et recommandations contextualisés par domaine, partagés entre le diagnostic et l’assistant conversationnel local.
 - Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
 - Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
 - Intégration du moteur d’analyse IA via Vercel AI Gateway, avec propositions modifiables et validation manuelle avant application au dossier.
@@ -45,6 +47,14 @@ L’interface permet de relire, modifier, retirer ou ajouter des pistes et des a
 
 L’analyse concurrentielle accepte jusqu’à cinq entrées fournies par l’utilisateur (nom, URL/source, offre observée, prix et notes). En mode local, MerKora n’effectue aucune recherche web, ne vérifie pas les prix et ne prétend pas connaître les offres actuelles. Les informations manquantes doivent être vérifiées à partir de sources publiques datées.
 
+## Référentiel métier universel
+
+Le catalogue des 13 domaines est implémenté dans `src/lib/domain-registry.ts`. Chaque profil décrit son périmètre, ses mots-clés, ses questions métier, ses modules de départ et, lorsque nécessaire, ses spécialisations (par exemple : services à domicile, état civil, agence de voyages, production audiovisuelle et conception de jeux).
+
+Le moteur `src/lib/discovery.ts` utilise ce référentiel pour orienter le diagnostic. L'assistant local `src/lib/assistant/merkora-conversation.ts` réutilise la même classification et les mêmes questions. Une correspondance incertaine doit déclencher une clarification plutôt qu'une proposition présentée comme certaine.
+
+Le référentiel est une base de départ à enrichir avec des cas réels et des tests. Il ne remplace pas la validation du métier, des règles locales, des exigences réglementaires ni l'approbation du client. Les 13 domaines ne sont pas 13 applications séparées : ils alimentent le même noyau et les mêmes mécanismes de conception.
+
 ## Stack
 
 - Next.js App Router
@@ -74,7 +84,7 @@ npm run build
 - Les clés privées d’un fournisseur IA doivent rester côté serveur.
 - Ne pas supprimer ni réinitialiser les données Supabase existantes.
 - Ne pas modifier les autres projets, notamment WALL Trade.
-- Développer et vérifier sur `feature/merkora-rebuild-foundation`.
+- Développer et vérifier sur `feature/merkora-factory-unified-runtime`.
 - Aucun changement ne doit être fusionné dans `main` ni promu en production sans autorisation explicite.
 
 ## Aperçu Vercel
