@@ -139,7 +139,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
 
   const hasSweetShopModules = modules.some((module) => sweetShopModeForModule(module.id) !== null);
   if (hasSweetShopModules) {
-    files.push(createSweetShopWorkspaceFile(storefrontSlugFor(projectName, projectId)));
+    files.push(createSweetShopWorkspaceFile(storefrontSlugFor(projectName, projectId), projectId));
     files.push({ path: "src/components/customer-account-panel.tsx", content: customerAccountPanelSource });
     
     const stylesheet = files.find((file) => file.path === "src/app/globals.css");
