@@ -123,6 +123,11 @@ describe("generateProjectSource", () => {
 
     expect(workspace).toContain("sans paiement");
     expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
+    const workspaceOutput = ts.transpileModule(workspace, {
+      compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+      reportDiagnostics: true,
+    });
+    expect(workspaceOutput.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)).toEqual([]);
   });
 
   it("isolates storefront slugs across projects that reuse the same store modules", () => {
