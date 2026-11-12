@@ -36,7 +36,7 @@ Deno.serve(async (request: Request) => {
 
   const { data: project, error: projectError } = await admin
     .from("user_projects")
-    .select("id,user_id,title")
+    .select("id,user_id")
     .eq("id", payload.projectId)
     .maybeSingle();
   if (projectError) return jsonError("project_lookup_failed", 503, origin);
