@@ -190,6 +190,9 @@ export async function POST(
     const prompt = buildProjectImplementationPrompt({
       projectName: project.title,
       projectDescription: `${project.problem} Objectif : ${project.desired_outcome}`.slice(0, 1000),
+      domainId: typeof plan.payload.domainId === "string" ? plan.payload.domainId : null,
+      domainLabel: typeof plan.payload.domainLabel === "string" ? plan.payload.domainLabel : String(plan.payload.domain ?? "Domaine à confirmer"),
+      specializationId: typeof plan.payload.specializationId === "string" ? plan.payload.specializationId : null,
       planVersion: Number(job.plan_version),
       planDigest: job.plan_digest,
       modules: modules as Array<{ id: string; title: string; description: string }>,
