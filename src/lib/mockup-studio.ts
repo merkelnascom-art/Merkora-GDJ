@@ -128,7 +128,7 @@ export function buildMockupModel(
   const allOptions = [...modules, ...transversalOptions];
   const allowedIds = new Set(allOptions.map((item) => item.id));
   const requested = config.enabledModules.filter((id) => allowedIds.has(id));
-  const visibleModules = config.moduleSelectionConfirmed
+  const visibleModules = config.moduleSelectionConfirmed || requested.length > 0
     ? allOptions.filter((item) => requested.includes(item.id))
     : modules;
 
