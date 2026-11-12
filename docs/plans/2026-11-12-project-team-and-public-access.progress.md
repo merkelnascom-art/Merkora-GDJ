@@ -5,7 +5,7 @@ Updated: 2026-11-12
 ## Completed and verified
 
 - [x] Saved the public access and owner-managed team design.
-- [x] Applied Supabase migration `20261112163000_project_team_memberships`.
+- [x] Applied Supabase migration `20261112163528_project_team_memberships`.
 - [x] Verified membership and module permission tables exist with RLS enabled.
 - [x] Transactionally verified view-only, edit, ungranted-module, revocation, and rollback behavior. No probe rows remain.
 - [x] Transactionally verified anonymous visitors can read active products from a published store but not inactive products. Rollback restored Asho Sweet to unpublished and left no probe products.
