@@ -11,6 +11,7 @@ import {
   type DomainId,
   type DomainMatch,
 } from "./domain-registry";
+import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
 
 export type DiscoveryDomain =
   | "education"
@@ -29,6 +30,8 @@ export type DiscoveryResult = {
   domainId: DomainId | null;
   specializationId: string | null;
   domainLabel: string;
+  /** Possible universal families linked to the operational match; not a client-approved classification. */
+  universalFamilyCandidates: string[];
   confidence: "high" | "medium" | "low";
   isPreliminary: true;
   understood: string[];
@@ -80,6 +83,7 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     domainId,
     specializationId,
     domainLabel,
+    universalFamilyCandidates: domainId ? getUniversalFamilyCandidatesForOperationalDomain(domainId) : [],
     confidence: match.confidence,
     isPreliminary: true as const,
   };
