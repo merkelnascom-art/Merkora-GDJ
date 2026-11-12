@@ -172,7 +172,9 @@ function keywordMatches(text: string, keywords: string[]): number {
   return keywords.reduce((score, keyword) => {
     const needle = normalize(keyword);
     if (!needle) return score;
-    return haystack.includes(` ${needle} `) ? score + (needle.includes(" ") ? 3 : 2) : score;
+    const flexible = needle.split(" ").map((part) => `${part}s?`).join("\\s+");
+    const pattern = new RegExp(`(^| )${flexible}( |$)`);
+    return pattern.test(haystack) ? score + (needle.includes(" ") ? 3 : 2) : score;
   }, 0);
 }
 
