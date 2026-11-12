@@ -88,6 +88,7 @@ export function ProjectPlanPreview({ project }: Props) {
             <span className="local-tag">Version {plan.version} · dossier v{plan.briefVersion}</span>
           </div>
           <p style={{ lineHeight: 1.65 }}>{plan.summary}</p>
+          <p className="local-tag">Domaine : {plan.domainLabel}{plan.specializationId ? ` · Spécialisation : ${plan.specializationId.replace(/-/g, " ")}` : ""} · Confiance : {plan.domainId ? "correspondance identifiée" : "à confirmer"}</p>
 
           <h4>Périmètre explicitement retenu</h4>
           {plan.includedScope.length > 0 ? (
