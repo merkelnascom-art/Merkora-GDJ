@@ -9,6 +9,9 @@ export type ProjectSourceModule = {
 export type ProjectSourceInput = {
   projectName: string;
   projectDescription: string;
+  domainId?: string | null;
+  domainLabel?: string | null;
+  specializationId?: string | null;
   modules: ProjectSourceModule[];
 };
 
@@ -18,9 +21,12 @@ export type GeneratedProjectSource = {
   files: GeneratedProjectFile[];
   digest: string;
   moduleIds: string[];
+  domainId: string | null;
+  domainLabel: string;
+  specializationId: string | null;
 };
 
-const GENERATOR_VERSION = "merkora-nextjs-scaffold/1.1.0";
+const GENERATOR_VERSION = "merkora-nextjs-scaffold/1.2.0";
 
 function requiredText(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== "string" || !value.trim() || value.trim().length > maxLength) {
@@ -53,6 +59,10 @@ function componentName(id: string): string {
 export function generateProjectSource(input: ProjectSourceInput): GeneratedProjectSource {
   const projectName = requiredText(input.projectName, "nom du projet", 120);
   const projectDescription = requiredText(input.projectDescription, "description du projet", 500);
+  const domainLabel = typeof input.domainLabel === "string" && input.domainLabel.trim()
+    ? requiredText(input.domainLabel, "domaine métier", 160) : "Domaine à confirmer";
+  const domainId = input.domainId == null ? null : safeModuleId(input.domainId);
+  const specializationId = input.specializationId == null ? null : safeModuleId(input.specializationId);
   if (!Array.isArray(input.modules) || input.modules.length < 1 || input.modules.length > 30) {
     throw new Error("Au moins un module approuvé est requis (maximum 30).");
   }
@@ -110,7 +120,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     { path: "src/components/module-workspace.tsx", content: "\"use client\";\n\nimport { useEffect, useState, type FormEvent } from \"react\";\n\ntype WorkItem = { id: string; label: string; done: boolean };\n\nexport function ModuleWorkspace({ storageKey, title, description }: { storageKey: string; title: string; description: string }) {\n  const [items, setItems] = useState<WorkItem[]>([]);\n  const [draft, setDraft] = useState(\"\");\n  const [ready, setReady] = useState(false);\n  const [storageWarning, setStorageWarning] = useState<string | null>(null);\n\n  useEffect(() => {\n    try {\n      const saved = window.localStorage.getItem(storageKey);\n      if (saved) {\n        const parsed: unknown = JSON.parse(saved);\n        if (Array.isArray(parsed)) setItems(parsed.filter((item): item is WorkItem => item && typeof item.id === \"string\" && typeof item.label === \"string\" && typeof item.done === \"boolean\"));\n      }\n    } catch {\n      setItems([]);\n      setStorageWarning(\"Le stockage local est indisponible. Les actions ne seront pas conservées après fermeture.\");\n    } finally { setReady(true); }\n  }, [storageKey]);\n\n  useEffect(() => {\n    if (!ready) return;\n    try {\n      window.localStorage.setItem(storageKey, JSON.stringify(items));\n      setStorageWarning(null);\n    } catch {\n      setStorageWarning(\"Enregistrement impossible dans ce navigateur. Libérez de l’espace ou autorisez le stockage local.\");\n    }\n  }, [items, ready, storageKey]);\n\n  function addItem(event: FormEvent<HTMLFormElement>) {\n    event.preventDefault();\n    const label = draft.trim();\n    if (!label) return;\n    setItems((current) => [...current, { id: crypto.randomUUID(), label, done: false }]);\n    setDraft(\"\");\n  }\n\n  function toggleItem(id: string) {\n    setItems((current) => current.map((item) => item.id === id ? { ...item, done: !item.done } : item));\n  }\n\n  const completed = items.filter((item) => item.done).length;\n  return (\n    <section className=\"card\" aria-label={\"Espace de travail : \" + title}>\n      <p className=\"eyebrow\">Suivi local du module</p>\n      <h2>{title}</h2>\n      <p>{description}</p>\n      <p>{completed}/{items.length} action(s) terminée(s)</p>\n      <form onSubmit={addItem}>\n        <label htmlFor={storageKey + \"-new-item\"}>Nouvelle action</label>\n        <input id={storageKey + \"-new-item\"} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={180} placeholder=\"Ajouter une action à suivre…\" />\n        <button type=\"submit\" disabled={!draft.trim()}>Ajouter</button>\n      </form>\n      {items.length === 0 ? <p>Aucune action pour le moment.</p> : (\n        <ul>{items.map((item) => <li key={item.id}><label><input type=\"checkbox\" checked={item.done} onChange={() => toggleItem(item.id)} /> <span>{item.done ? <s>{item.label}</s> : item.label}</span></label></li>)}</ul>\n      )}\n      <p role=\"status\" aria-live=\"polite\">{storageWarning ?? \"Prototype : ces actions restent enregistrées dans ce navigateur uniquement. Elles ne sont pas encore partagées avec un compte ou une équipe.\"}</p>\n    </section>\n  );\n}" },
     {
       path: "src/app/page.tsx",
-      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>{${jsString(projectName)}}</h1>\n      <p className="lead">{${jsString(projectDescription)}}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={"/modules/" + module.id} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.1.0</footer>\n    </main>\n  );\n}\n`,
+      content: `const modules = [\n${moduleData}\n];\n\nexport default function HomePage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace de travail</p>\n      <h1>{${jsString(projectName)}}</h1>\n      <p className="lead">{${jsString(projectDescription)}}</p>\n      <section className="grid" aria-label="Modules du projet">\n        {modules.map((module) => (\n          <a className="card" href={"/modules/" + module.id} key={module.id}>\n            <h2>{module.title}</h2>\n            <p>{module.description}</p>\n          </a>\n        ))}\n      </section>\n      <footer>Première base générée par MerKora GDJ · Version de génération 1.2.0</footer>\n    </main>\n  );\n}\n`,
     },
     {
       path: "README.md",
@@ -127,5 +137,5 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
   }
 
   const digest = createProjectMemoryDigest({ generatorVersion: GENERATOR_VERSION, files });
-  return { generatorVersion: GENERATOR_VERSION, files, digest, moduleIds: modules.map((module) => module.id) };
+  return { generatorVersion: GENERATOR_VERSION, files, digest, moduleIds: modules.map((module) => module.id), domainId, domainLabel, specializationId };
 }
