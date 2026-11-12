@@ -101,6 +101,7 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("En préparation");
     expect(workspace).toContain("Devis proposé");
     expect(workspace).toContain("sessionStorage");
+    expect(workspace).toContain("Voir mon panier");
     expect(workspace).not.toContain("localStorage");
     expect(workspace).toContain("Le catalogue sera affiché ici");
     expect(workspace).toContain("sans paiement");
