@@ -62,6 +62,9 @@ export function ProjectMockupStudio({ project }: Props) {
           ...(Array.isArray(parsed.selectedRecommendationIds)
             ? { selectedRecommendationIds: parsed.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
             : {}),
+          ...(Array.isArray(parsed.selectedProfessionCandidateIds)
+            ? { selectedProfessionCandidateIds: parsed.selectedProfessionCandidateIds.filter((id): id is string => typeof id === "string") }
+            : {}),
         });
       }
     } catch {
@@ -85,6 +88,18 @@ export function ProjectMockupStudio({ project }: Props) {
       const selected = current.moduleSelectionConfirmed ? current.enabledModules : [];
       const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
       return { ...current, enabledModules: next, moduleSelectionConfirmed: true };
+    });
+  }
+
+  function toggleProfessionCandidate(id: string) {
+    setConfig((current) => {
+      const selected = current.selectedProfessionCandidateIds ?? [];
+      return {
+        ...current,
+        selectedProfessionCandidateIds: selected.includes(id)
+          ? selected.filter((item) => item !== id)
+          : [...selected, id],
+      };
     });
   }
 
@@ -112,6 +127,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Format envisagé : ${model.formatLabel}`,
       "",
       "PÉRIMÈTRE ENVISAGÉ",
+      ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
       ...model.visibleModules.map((item) => `- Fonction / bloc : ${item.title} — ${item.description}`),
       ...model.visibleRecommendations.map((item) => `- Piste retenue : ${item.title} — ${item.description}`),
       "",
@@ -198,6 +214,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Format : ${model.formatLabel}`,
       `Direction : ${model.domainLabel}`,
       ...(model.universalFamilyCandidates.length > 0 ? [`Familles de référence possibles : ${model.universalFamilyCandidates.map((family) => family.label).join(" · ")}`] : []),
+      ...(model.selectedProfessionCandidates.length > 0 ? [`Métiers confirmés par le client : ${model.selectedProfessionCandidates.map((item) => item.title).join(" · ")}`] : ["Métier : à confirmer avec le client"]),
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
       "Blocs retenus :",
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
@@ -255,6 +272,17 @@ export function ProjectMockupStudio({ project }: Props) {
           <div className="mockup-control-group">
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
             {model.universalFamilyCandidates.length > 0 && <p className="mockup-control-hint">Familles de référence possibles : {model.universalFamilyCandidates.map((family) => family.label).join(" · ")}. Cette correspondance aide à élargir l’analyse ; elle ne remplace pas la confirmation du métier et du secteur par le client.</p>}
+            {model.professionCandidates.length > 0 && <div className="mockup-profession-confirmation">
+              <span className="mockup-control-title" style={{ display: "block", marginTop: 12 }}>Métiers à confirmer avec le client</span>
+              <p className="mockup-control-hint">Voici des pistes issues du référentiel. Coche uniquement les métiers réellement concernés. Aucun métier n’est sélectionné automatiquement et cette liste ne constitue pas une qualification officielle.</p>
+              {model.professionCandidates.map((candidate) => {
+                const selected = model.selectedProfessionCandidates.some((item) => item.id === candidate.id);
+                return <label className="mockup-module-toggle" key={candidate.id}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleProfessionCandidate(candidate.id)} />
+                  <span><strong>{candidate.title}</strong><small>{candidate.sourceGroup} · candidat à confirmer</small></span>
+                </label>;
+              })}
+            </div>}
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
               const selected = (config.moduleSelectionConfirmed === true || config.enabledModules.length > 0) && config.enabledModules.includes(item.id);
