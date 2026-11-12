@@ -4,6 +4,12 @@ import {
   type NeedInput,
   type Recommendation,
 } from "./solution-recommendations";
+import {
+  identifyDomain,
+  getDomainQuestions,
+  type DomainId,
+  type DomainMatch,
+} from "./domain-registry";
 
 export type DiscoveryDomain =
   | "education"
@@ -18,7 +24,10 @@ export type DiscoveryState = "incomplete" | "needs_clarification" | "preliminary
 export type DiscoveryResult = {
   state: DiscoveryState;
   domain: DiscoveryDomain;
+  domainId: DomainId | null;
+  specializationId: string | null;
   domainLabel: string;
+  confidence: "high" | "medium" | "low";
   isPreliminary: true;
   understood: string[];
   questions: string[];
@@ -26,32 +35,18 @@ export type DiscoveryResult = {
   notice: string;
 };
 
-const domainLabels: Record<DiscoveryDomain, string> = {
-  education: "Orientation scolaire et professionnelle",
-  commerce: "Commerce et organisation d’activité",
-  creative: "Création et communication",
-  digital: "Solution numérique",
-  personal: "Objectif personnel",
-  general: "Domaine à préciser",
-};
-
-function classifyDomain(input: NeedInput): DiscoveryDomain {
-  const text = `${input.title} ${input.problem} ${input.desiredOutcome}`.toLocaleLowerCase("fr");
-
-  // Education must be checked before generic digital terms such as “plateforme”.
-  if (/élève|eleve|bac\b|métier|metier|relevé|releve|orientation|parcours scolaire|bulletin|notes scolaires|étudiant|etudiant|école|ecole|formation professionnelle|choix de carrière/.test(text)) {
-    return "education";
-  }
-  if (/boutique|magasin|vente|ventes|stock|caisse|recette|client|commerce|commande|personnel|employé|employe|équipe|equipe|horaire|présence|presence|retard|salaire|paie/.test(text)) {
-    return "commerce";
-  }
-  if (/logo|affiche|identité visuelle|identite visuelle|vidéo|video|visuel|marque|design graphique|impression textile|communication/.test(text)) {
-    return "creative";
-  }
-  if (/application|site web|logiciel|automatisation|outil numérique|outil numerique|base de données|base de donnees|espace client|plateforme de réservation|plateforme de reservation/.test(text)) {
-    return "digital";
-  }
-  if (input.category === "personal" && text.trim().length > 0) return "personal";
+function legacyDomain(match: DomainMatch, input: NeedInput): DiscoveryDomain {
+  if (match.domain?.id === "education-formation") return "education";
+  if (match.domain?.id === "commerce") return "commerce";
+  if (match.domain?.id === "voyage-tourisme-creation-jeux" &&
+      match.specialization?.id === "audiovisual") return "creative";
+  if (match.domain?.id === "ressources-humaines" ||
+      match.domain?.id === "entrepreneuriat-finance") return "commerce";
+  if (match.domain) return "digital";
+  if (input.category === "personal") return "personal";
+  if (input.category === "business" || input.category === "organization") return "commerce";
+  if (input.category === "creative") return "creative";
+  if (input.category === "digital") return "digital";
   return "general";
 }
 
@@ -62,19 +57,34 @@ function isVague(input: NeedInput): boolean {
 
 export function analyzeNeed(input: NeedInput): DiscoveryResult {
   const validation = validateNeed(input);
-  const domain = classifyDomain(input);
+  const fullText = `${input.title} ${input.problem} ${input.desiredOutcome}`;
+  const match = identifyDomain(fullText);
+  const domain = legacyDomain(match, input);
   const vague = isVague(input);
-  const questions: string[] = [];
+  const domainId = match.domain?.id ?? null;
+  const specializationId = match.specialization?.id ?? null;
+  const domainLabel = match.domain?.label ?? (domain === "general" ? "Domaine à préciser" :
+    domain === "education" ? "Éducation et formation" :
+    domain === "commerce" ? "Entreprise, commerce et organisation" :
+    domain === "creative" ? "Création et communication" :
+    domain === "digital" ? "Solution numérique" : "Objectif personnel");
+  const base = {
+    domain,
+    domainId,
+    specializationId,
+    domainLabel,
+    confidence: match.confidence,
+    isPreliminary: true as const,
+  };
 
   if (validation.length > 0) {
+    const questions: string[] = [];
     if (input.title.trim().length < 3) questions.push("Comment souhaitez-vous appeler ce projet ou ce besoin ?");
     if (input.problem.trim().length < 15) questions.push("Que se passe-t-il aujourd’hui, concrètement ?");
     if (input.desiredOutcome.trim().length < 8) questions.push("Quel changement aimeriez-vous obtenir ?");
     return {
+      ...base,
       state: "incomplete",
-      domain,
-      domainLabel: domainLabels[domain],
-      isPreliminary: true,
       understood: [],
       questions,
       recommendations: [],
@@ -82,45 +92,30 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     };
   }
 
-  if (domain === "general" || vague) {
-    questions.push("Qui rencontre ce problème : vous, des élèves, des clients, une équipe ou d’autres personnes ?");
-    questions.push("Dans quelle situation précise le problème apparaît-il le plus souvent ?");
-    questions.push("À quoi reconnaîtriez-vous que la situation s’est améliorée ?");
+  if (!match.domain || vague || match.confidence === "low" && match.score < 3) {
     return {
+      ...base,
       state: "needs_clarification",
-      domain,
-      domainLabel: domainLabels[domain],
-      isPreliminary: true,
       understood: [input.problem.trim(), `Résultat souhaité : ${input.desiredOutcome.trim()}`],
-      questions,
+      questions: getDomainQuestions(match),
       recommendations: buildRecommendations(input),
-      notice: "Le domaine ou le résultat reste trop incertain pour recommander une solution précise.",
+      notice: "Le domaine ou le sous-métier reste à confirmer. Les pistes sont exploratoires et ne constituent pas une décision.",
     };
   }
 
-  const understood = [input.problem.trim(), `Résultat souhaité : ${input.desiredOutcome.trim()}`];
-  if (domain === "education") {
-    questions.push("Quels éléments doivent compter dans l’orientation : matières préférées, résultats, intérêts, contraintes ou tous ces critères ?");
-    questions.push("Les recommandations doivent-elles couvrir les métiers, les formations, les écoles ou les trois ?");
-  } else if (domain === "commerce") {
-    questions.push("Quelles informations sont prioritaires : ventes, stocks, caisse, personnel ou plusieurs à la fois ?");
-    questions.push("Qui devra utiliser l’outil et quelles informations chaque personne pourra-t-elle voir ?");
-  } else if (domain === "creative") {
-    questions.push("Quels supports faut-il produire et quel style souhaitez-vous obtenir ?");
-  } else if (domain === "digital") {
-    questions.push("Qui utilisera la solution et sur quels appareils doit-elle fonctionner ?");
-  } else {
-    questions.push("Quel délai et quelles ressources avez-vous en tête ?");
-  }
-
+  const understood = [
+    input.problem.trim(),
+    `Résultat souhaité : ${input.desiredOutcome.trim()}`,
+    `Domaine repéré : ${domainLabel}`,
+    ...(match.specialization ? [`Spécialisation repérée : ${match.specialization.label}`] : []),
+  ];
+  const questions = getDomainQuestions(match);
   return {
+    ...base,
     state: "preliminary",
-    domain,
-    domainLabel: domainLabels[domain],
-    isPreliminary: true,
     understood,
     questions,
     recommendations: buildRecommendations(input),
-    notice: "Cette première lecture repose sur des règles locales. Elle doit être confirmée avec vous avant toute proposition définitive.",
+    notice: "Cette première lecture utilise le référentiel métier MerKora. Confirmez le domaine, la spécialisation et les pistes avant de préparer un cahier des charges.",
   };
 }
