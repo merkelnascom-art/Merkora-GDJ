@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && contains(fromJSON('["refs/heads/feature/merkora-factory-unified-runtime","refs/heads/feature/merkora-production-security-hardening","refs/heads/main"]'), github.ref)
+    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && contains(fromJSON('["refs/heads/feature/merkora-factory-unified-runtime","refs/heads/feature/admin-owned-factory-planning","refs/heads/feature/merkora-production-security-hardening","refs/heads/main"]'), github.ref)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
