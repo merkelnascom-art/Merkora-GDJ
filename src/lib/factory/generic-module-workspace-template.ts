@@ -154,7 +154,7 @@ export function ModuleWorkspace({
       <p className="eyebrow">Données partagées du projet</p>
       <h2>{title}</h2>
       <p>{description}</p>
-      <div className="sweet-inline"><span>Connecté : {userEmail}</span><button type="button" onClick={signOut}>Déconnexion</button></div>
+      <div className="module-inline"><span>Connecté : {userEmail}</span><button type="button" onClick={signOut}>Déconnexion</button></div>
       <p>{completed}/{items.length} action(s) terminée(s)</p>
       <form onSubmit={addItem}>
         <label htmlFor={moduleId + "-new-item"}>Nouvelle action</label>
