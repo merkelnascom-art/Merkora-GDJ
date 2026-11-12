@@ -74,6 +74,7 @@ type Order = { id: string; customer_name: string; customer_phone: string; desire
 type CustomRequest = { id: string; customer_name: string; customer_phone: string; creation_type: string; occasion: string; desired_date: string; portions: number; flavour: string; decoration: string; notes: string; status: string; created_at: string };
 
 const STOREFRONT_SLUG = "asho-sweet";
+const CART_KEY = "merkora-asho-sweet-cart-v1";
 const money = (value: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value) + " FCFA";
 const statuses = ["received", "confirmed", "preparing", "ready", "delivered", "cancelled"];
 const statusLabels: Record<string, string> = { received: "Reçue", confirmed: "Confirmée", preparing: "En préparation", ready: "Prête", delivered: "Livrée", cancelled: "Annulée" };
@@ -92,6 +93,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartReady, setCartReady] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [requests, setRequests] = useState<CustomRequest[]>([]);
   const [userEmail, setUserEmail] = useState("");
@@ -149,6 +151,25 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     setOrders((orderResult.data ?? []) as Order[]);
     setRequests((requestResult.data ?? []) as CustomRequest[]);
   }, [supabase]);
+
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem(CART_KEY);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCart(parsed.filter((item): item is CartLine => item && typeof item.productId === "string" && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99));
+      }
+    } catch {
+      setFeedback("Le panier temporaire ne peut pas être restauré dans ce navigateur.");
+    } finally {
+      setCartReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartReady) return;
+    try { window.sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch { setFeedback("Le panier ne peut pas être conservé pendant la navigation."); }
+  }, [cart, cartReady]);
 
   useEffect(() => {
     if (!supabase) return;
