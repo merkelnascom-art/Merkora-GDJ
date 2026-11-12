@@ -43,12 +43,19 @@ export type CodePatchValidation =
   | { ok: false; reason: CodePatchValidationReason };
 
 const DOMAIN_SAFEGUARDS: Record<string, string> = {
+  sport: "Sport : adapter les fonctions aux responsabilités des encadrants; ne pas produire de diagnostic médical ni de recommandation d'entraînement dangereuse; protéger les données des mineurs.",
   sante: "Santé : utiliser uniquement des données de test dans le prototype; protéger les informations de santé; ne pas produire de diagnostic, prescription ou décision clinique.",
+  "agriculture-environnement": "Agriculture et environnement : tracer les lots et opérations; ne pas inventer de dosage de produits chimiques ni de consigne dangereuse; faire valider les pratiques techniques par une personne compétente.",
+  commerce: "Commerce : distinguer commande, paiement confirmé et livraison; ne déclencher aucun paiement ou remboursement réel sans autorisation explicite; tracer les modifications de prix et de stock.",
   "entrepreneuriat-finance": "Finance : documenter les formules et hypothèses; ne pas déclencher de transfert, paiement ou mouvement bancaire réel; faire valider les rapprochements et résultats.",
-  "ressources-humaines": "RH : protéger les dossiers individuels; ne pas automatiser une décision d'embauche, licenciement, sanction ou rémunération.",
-  "administration-services-publics": "Services publics : conserver une validation humaine pour les décisions administratives, l'éligibilité et les autorisations; tracer les accès et décisions; prévoir un canal hors ligne.",
-  "voyage-tourisme-creation-jeux": "Voyage et jeux : ne pas présenter un tarif ou une disponibilité fournisseur comme confirmé sans preuve; protéger les mineurs et éviter les mécanismes de monétisation trompeurs.",
+  "immobilier-btp": "Immobilier et BTP : protéger les documents contractuels; faire vérifier les clauses et obligations par les responsables compétents; intégrer les validations de sécurité et de réception des travaux.",
+  "education-formation": "Éducation : protéger les données des apprenants et des mineurs; ne pas prendre seul de décision d'orientation ou d'évaluation à fort impact; rendre les critères pédagogiques explicites.",
   "transport-logistique": "Transport : ne pas activer de suivi de localisation sans base légitime, information et contrôle adaptés; distinguer une position estimée d'une preuve de livraison.",
+  "restauration-hotellerie-evenementiel": "Restauration et hôtellerie : ne pas inventer de disponibilité ou de confirmation; rendre visibles les allergènes et informations de sécurité alimentaire validées par l'établissement.",
+  "ressources-humaines": "RH : protéger les dossiers individuels; ne pas automatiser une décision d'embauche, licenciement, sanction ou rémunération.",
+  "artisanat-services": "Artisanat et services : encadrer l'accès aux domiciles, la sécurité des intervenants et les preuves photo; obtenir l'accord avant toute captation ou partage d'image.",
+  "administration-services-publics": "Services publics : conserver une validation humaine pour les décisions administratives, l'éligibilité et les autorisations; tracer les accès et décisions; prévoir un canal hors ligne.",
+  "voyage-tourisme-creation-jeux": "Voyage, tourisme, création et jeux : ne pas présenter un tarif ou une disponibilité fournisseur comme confirmé sans preuve; respecter les droits des médias; protéger les mineurs et éviter les mécanismes de monétisation trompeurs.",
 };
  
 const SYSTEM_PROMPT = [
