@@ -5,6 +5,7 @@ import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
 import { getUniversalFamilyById } from "./universal-reference";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
 import type { ProfessionCandidate } from "./profession-reference";
+import type { BusinessSignalAnalysis } from "./business-signal-analysis";
 import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
@@ -34,6 +35,7 @@ export type MockupModel = {
   specializationId: string | null;
   universalFamilyCandidates: Array<{ id: string; label: string }>;
   professionCandidates: ProfessionCandidate[];
+  businessSignals: BusinessSignalAnalysis;
   selectedProfessionCandidates: ProfessionCandidate[];
   activityDiagnostic: ActivityDiagnosticPlan;
   transversalOptions: MockupModule[];
@@ -127,27 +129,31 @@ function modulesFor(domain: MockupDomain): MockupModule[] {
 }
 
 export function buildMockupModel(
-  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations" | "budget" | "urgency"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates"> },
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations" | "budget" | "urgency"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates" | "universalFamilyCandidates" | "businessSignals"> },
   config: MockupConfig,
 ): MockupModel {
   const domain = detectDomain(project);
   const match = identifyDomain([project.title, project.problem, project.desiredOutcome].join(" "));
   const trustedMatch = match.domain && match.confidence !== "low" ? match : null;
   const catalog = getDomainOptionCatalog(trustedMatch ?? { domain: null, specialization: null, confidence: "low", score: 0 });
-  const universalFamilyCandidates = trustedMatch?.domain
-    ? getUniversalFamilyCandidatesForOperationalDomain(trustedMatch.domain.id).flatMap((id) => {
-      const family = getUniversalFamilyById(id);
-      return family ? [{ id: family.id, label: family.label }] : [];
-    })
-    : [];
-  const professionCandidates = project.discovery?.professionCandidates ?? analyzeNeed({
+  const freshDiscovery = analyzeNeed({
     title: project.title,
     category: project.category,
     problem: project.problem,
     desiredOutcome: project.desiredOutcome,
     budget: project.budget,
     urgency: project.urgency,
-  }).professionCandidates;
+  });
+  const discovery = project.discovery ?? freshDiscovery;
+  const familyIds = discovery.universalFamilyCandidates?.length
+    ? discovery.universalFamilyCandidates
+    : trustedMatch?.domain ? getUniversalFamilyCandidatesForOperationalDomain(trustedMatch.domain.id) : [];
+  const universalFamilyCandidates = familyIds.flatMap((id) => {
+    const family = getUniversalFamilyById(id);
+    return family ? [{ id: family.id, label: family.label }] : [];
+  });
+  const professionCandidates = discovery.professionCandidates ?? freshDiscovery.professionCandidates;
+  const businessSignals = discovery.businessSignals ?? freshDiscovery.businessSignals;
   const selectedProfessionIds = new Set(config.selectedProfessionCandidateIds ?? []);
   const selectedProfessionCandidates = professionCandidates.filter((candidate) => selectedProfessionIds.has(candidate.id));
   const activityDiagnostic = buildActivityDiagnosticPlan({ familyIds: universalFamilyCandidates.map((family) => family.id), sectorIds: config.selectedUniversalSectorIds ?? [], professionTitles: selectedProfessionCandidates.map((candidate) => candidate.title) });
@@ -185,6 +191,7 @@ export function buildMockupModel(
     specializationId: trustedMatch?.specialization?.id ?? null,
     universalFamilyCandidates,
     professionCandidates,
+    businessSignals,
     selectedProfessionCandidates,
     activityDiagnostic,
     transversalOptions,
