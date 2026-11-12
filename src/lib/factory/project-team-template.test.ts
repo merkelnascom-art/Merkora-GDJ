@@ -6,7 +6,9 @@ describe("generated project team management workspace", () => {
   it("lets only the owner invite people and choose module-level view/edit rights", () => {
     expect(projectTeamManagementSource).toContain("project-team-invite");
     expect(projectTeamManagementSource).toContain("export function ProjectTeamLink");
-    expect(projectTeamManagementSource).toContain("if (!visible)");
+    expect(projectTeamManagementSource).toContain("return visible ?");
+    expect(projectTeamManagementSource).toContain("setVisible(Boolean(membership))");
+    expect(projectTeamManagementSource).toContain("if (owner)");
     expect(projectTeamManagementSource).toContain("signInWithPassword");
     expect(projectTeamManagementSource).toContain("project-team-revoke");
     expect(projectTeamManagementSource).toContain("project_team_memberships");
