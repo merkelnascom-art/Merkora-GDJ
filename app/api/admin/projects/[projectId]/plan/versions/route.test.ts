@@ -83,7 +83,7 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
       .mockResolvedValueOnce({ ok: true, status: 200, data: [] });
     const response = await POST(request(), context);
     expect(response.status).toBe(409);
-    expect(callUserData).toHaveBeenCalledTimes(3);
+    expect(callUserData).toHaveBeenCalledTimes(2);
   });
 
   it("persists immutable brief and plan snapshots using only modules selected in the client Studio", async () => {
@@ -116,7 +116,7 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
       .mockResolvedValueOnce({ ok: false, status: 403, data: null });
     const response = await POST(request(), context);
     expect(response.status).toBe(502);
-    expect(callUserData).toHaveBeenCalledTimes(5);
+    expect(callUserData).toHaveBeenCalledTimes(4);
   });
 
   it("reports a partial save if the plan insert fails and never starts execution", async () => {
@@ -129,6 +129,6 @@ describe("POST /api/admin/projects/[projectId]/plan/versions", () => {
       .mockResolvedValueOnce({ ok: false, status: 409, data: null });
     const response = await POST(request(), context);
     expect(response.status).toBe(409);
-    expect(callUserData).toHaveBeenCalledTimes(7);
+    expect(callUserData).toHaveBeenCalledTimes(6);
   });
 });
