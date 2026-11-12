@@ -13,6 +13,7 @@ import {
 } from "./domain-registry";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
 import { getProfessionCandidatesForFamilies, type ProfessionCandidate } from "./profession-reference";
+import { analyzeBusinessSignals, type BusinessSignalAnalysis } from "./business-signal-analysis";
 
 export type DiscoveryDomain =
   | "education"
@@ -35,6 +36,8 @@ export type DiscoveryResult = {
   universalFamilyCandidates: string[];
   /** Candidate titles offered for client confirmation; never an automatic métier decision. */
   professionCandidates: ProfessionCandidate[];
+  /** Financial/business cues from client words; not a verified accounting diagnosis. */
+  businessSignals: BusinessSignalAnalysis;
   confidence: "high" | "medium" | "low";
   isPreliminary: true;
   understood: string[];
@@ -67,6 +70,7 @@ function isVague(input: NeedInput): boolean {
 export function analyzeNeed(input: NeedInput): DiscoveryResult {
   const validation = validateNeed(input);
   const fullText = `${input.title} ${input.problem} ${input.desiredOutcome}`;
+  const businessSignals = analyzeBusinessSignals(fullText);
   const match = identifyDomain(fullText);
   const trustedMatch: DomainMatch = match.confidence === "low"
     ? { ...match, domain: null, specialization: null }
@@ -80,16 +84,16 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     domain === "commerce" ? "Entreprise, commerce et organisation" :
     domain === "creative" ? "Création et communication" :
     domain === "digital" ? "Solution numérique" : "Objectif personnel");
+  const universalFamilyCandidates = [...new Set([...(domainId ? getUniversalFamilyCandidatesForOperationalDomain(domainId) : []), ...businessSignals.candidateFamilyIds])];
   const base = {
     registryVersion: MERKORA_DOMAIN_VERSION,
     domain,
     domainId,
     specializationId,
     domainLabel,
-    universalFamilyCandidates: domainId ? getUniversalFamilyCandidatesForOperationalDomain(domainId) : [],
-    professionCandidates: domainId
-      ? getProfessionCandidatesForFamilies(getUniversalFamilyCandidatesForOperationalDomain(domainId), 12)
-      : [],
+    universalFamilyCandidates,
+    professionCandidates: getProfessionCandidatesForFamilies(universalFamilyCandidates, 12),
+    businessSignals,
     confidence: match.confidence,
     isPreliminary: true as const,
   };
@@ -103,7 +107,7 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
       ...base,
       state: "incomplete",
       understood: [],
-      questions,
+      questions: [...questions, ...businessSignals.signals.map((signal) => signal.followUp)],
       recommendations: [],
       notice: "Il manque des informations essentielles. Aucune proposition n’est encore formulée.",
     };
@@ -114,8 +118,8 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
       ...base,
       state: "needs_clarification",
       understood: [input.problem.trim(), `Résultat souhaité : ${input.desiredOutcome.trim()}`],
-      questions: getDomainQuestions(trustedMatch),
-      recommendations: buildRecommendations(input),
+      questions: [...getDomainQuestions(trustedMatch), ...businessSignals.signals.map((signal) => signal.followUp)],
+      recommendations: [...buildRecommendations(input).slice(0, 3), ...(businessSignals.signals.length ? [{ title: "Analyser les flux financiers et les contrôles", description: businessSignals.transversalCapabilities.join(", "), reason: "Votre description contient des indices de suivi financier à clarifier avant de choisir les modules." }] : [])].slice(0, 4),
       notice: "Le domaine ou le sous-métier reste à confirmer. Les pistes sont exploratoires et ne constituent pas une décision.",
     };
   }
@@ -124,6 +128,7 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     input.problem.trim(),
     `Résultat souhaité : ${input.desiredOutcome.trim()}`,
     `Domaine repéré : ${domainLabel}`,
+    ...businessSignals.signals.map((signal) => `Indice métier/financier : ${signal.label} (${signal.confidence})`),
     ...(trustedMatch.specialization ? [`Spécialisation repérée : ${trustedMatch.specialization.label}`] : []),
   ];
   const questions = getDomainQuestions(trustedMatch);
@@ -131,8 +136,8 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     ...base,
     state: "preliminary",
     understood,
-    questions,
-    recommendations: buildRecommendations(input),
+    questions: [...questions, ...businessSignals.signals.map((signal) => signal.followUp)],
+    recommendations: [...buildRecommendations(input).slice(0, 3), ...(businessSignals.signals.length ? [{ title: "Analyser les flux financiers et les contrôles", description: businessSignals.transversalCapabilities.join(", "), reason: "Votre description contient des indices de suivi financier à clarifier avant de choisir les modules." }] : [])].slice(0, 4),
     notice: "Cette première lecture utilise le référentiel métier MerKora. Confirmez le domaine, la spécialisation et les pistes avant de préparer un cahier des charges.",
   };
 }
