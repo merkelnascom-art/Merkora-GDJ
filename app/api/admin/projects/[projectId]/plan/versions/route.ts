@@ -61,19 +61,6 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     const { projectId } = await context.params;
     if (!text(projectId, 100, 3)) return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
 
-    const projectResult = await callUserData(
-      `user_projects?select=id,user_id,title,category,problem,desired_outcome,budget,urgency&id=eq.${encodeURIComponent(projectId)}&limit=1`,
-      "GET", token,
-    );
-    if (!projectResult.ok) return NextResponse.json({ error: "Lecture du projet impossible." }, { status: 502 });
-    const project = Array.isArray(projectResult.data) ? projectResult.data[0] : null;
-    if (!record(project) || typeof project.user_id !== "string" ||
-      !text(project.title, 160, 1) || !text(project.category, 40, 1) ||
-      !text(project.problem, 2500, 1) || !text(project.desired_outcome, 1500, 1) ||
-      !text(project.budget, 100) || !text(project.urgency, 40)) {
-      return NextResponse.json({ error: "Projet introuvable ou incomplet." }, { status: 404 });
-    }
-
     const requestResult = await callUserData(
       "client_requests?select=id,user_id,project_id,payload&id=eq." + encodeURIComponent(body.requestId) + "&project_id=eq." + encodeURIComponent(projectId) + "&limit=1",
       "GET", token,
@@ -81,7 +68,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     if (!requestResult.ok) return NextResponse.json({ error: "Impossible de vérifier le dossier commercial source." }, { status: 502 });
     const sourceRequest = Array.isArray(requestResult.data) ? requestResult.data[0] : null;
     if (!record(sourceRequest) || sourceRequest.id !== body.requestId ||
-      sourceRequest.project_id !== projectId || sourceRequest.user_id !== project.user_id ||
+      sourceRequest.project_id !== projectId || typeof sourceRequest.user_id !== "string" ||
       !record(sourceRequest.payload)) {
       return NextResponse.json({ error: "Le dossier client ne correspond pas à ce projet." }, { status: 409 });
     }
@@ -99,7 +86,14 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const requestPayload = sourceRequest.payload;
-    const requestProject = record(requestPayload.project) ? requestPayload.project : {};
+    const requestProject = record(requestPayload.project) ? requestPayload.project : null;
+    if (!requestProject || requestProject.id !== projectId ||
+      !text(requestProject.title, 160, 1) || !text(requestProject.category, 40, 1) ||
+      !text(requestProject.problem, 2500, 1) || !text(requestProject.desiredOutcome, 1500, 1) ||
+      !text(requestProject.budget, 100) || !text(requestProject.urgency, 40)) {
+      return NextResponse.json({ error: "Le dossier commercial ne contient pas un besoin projet complet." }, { status: 409 });
+    }
+    const project = requestProject;
     const requestStudio = record(requestPayload.studio) ? requestPayload.studio : {};
     const recommendations = Array.isArray(requestProject.recommendations) ? requestProject.recommendations : [];
     const selectedIds = Array.isArray(requestStudio.selectedRecommendationIds)
@@ -118,12 +112,12 @@ export async function POST(request: Request, context: { params: Promise<{ projec
 
     const need: NeedInput = {
       title: project.title, category: project.category as NeedInput["category"],
-      problem: project.problem, desiredOutcome: project.desired_outcome,
+      problem: project.problem, desiredOutcome: project.desiredOutcome,
       budget: project.budget, urgency: project.urgency,
     };
     const briefPayload = {
       title: project.title, category: project.category, problem: project.problem,
-      desiredOutcome: project.desired_outcome, budget: project.budget, urgency: project.urgency,
+      desiredOutcome: project.desiredOutcome, budget: project.budget, urgency: project.urgency,
     };
     const briefLatest = await latestVersion(
       `project_memory_brief_versions?select=version&project_id=eq.${encodeURIComponent(projectId)}&order=version.desc&limit=1`, token,
