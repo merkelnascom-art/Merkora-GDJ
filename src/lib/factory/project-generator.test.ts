@@ -115,6 +115,9 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("reference_image_path");
     expect(workspace).toContain("createSignedUrl");
     expect(workspace).toContain("Photo d'exemple");
+    expect(workspace).toContain('storage.from("project-store-product-images").upload');
+    expect(workspace).toContain("productImageFile");
+    expect(workspace).toContain("Photo de votre réalisation");
 
     expect(workspace).toContain("sans paiement");
     expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
