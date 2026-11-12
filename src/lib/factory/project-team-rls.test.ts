@@ -41,10 +41,14 @@ describe("project team membership migration", () => {
     expect(migration).toMatch(/catalogue-de-gateau-et-de-patisserie/i);
     expect(migration).toMatch(/panier-et-validation-de-commande/i);
     expect(migration).toMatch(/commande-personnalisee/i);
-    expect(migration).toMatch(/store owners can read orders/i);
-    expect(migration).toMatch(/store owners can update order status/i);
-    expect(migration).toMatch(/store owners can read custom requests/i);
-    expect(migration).toMatch(/store owners can update custom request status/i);
+    expect(migration).toMatch(/create policy "Store collaborators can read assigned orders"/i);
+    expect(migration).toMatch(/create policy "Store collaborators can update assigned order status"/i);
+    expect(migration).toMatch(/create policy "Store collaborators can read assigned custom requests"/i);
+    expect(migration).toMatch(/create policy "Store collaborators can update assigned custom request status"/i);
+    expect(migration).not.toMatch(/drop policy .*Store owners can read orders/i);
+    expect(migration).not.toMatch(/drop policy .*Store owners can update order status/i);
+    expect(migration).not.toMatch(/drop policy .*Store owners can read custom requests/i);
+    expect(migration).not.toMatch(/drop policy .*Store owners can update custom request status/i);
     expect(migration).toMatch(/revoke update on table public\.project_store_orders from authenticated/i);
     expect(migration).toMatch(/grant update \(status\) on table public\.project_store_orders to authenticated/i);
     expect(migration).toMatch(/revoke update on table public\.project_store_custom_requests from authenticated/i);
