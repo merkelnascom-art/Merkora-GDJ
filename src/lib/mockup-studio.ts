@@ -3,6 +3,7 @@ import { identifyDomain } from "./domain-registry";
 import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
 import { getUniversalFamilyById } from "./universal-reference";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
+import type { ProfessionCandidate } from "./profession-reference";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
@@ -14,6 +15,8 @@ export type MockupConfig = {
   moduleSelectionConfirmed?: boolean;
   /** Missing means legacy/default behavior: show every proposed solution track. */
   selectedRecommendationIds?: string[];
+  /** Profession candidates are selected only after explicit client confirmation. */
+  selectedProfessionCandidateIds?: string[];
 };
 export type MockupModule = DomainOption;
 export type MockupRecommendation = MockupModule & { reason: string };
@@ -27,6 +30,8 @@ export type MockupModel = {
   domainId: string | null;
   specializationId: string | null;
   universalFamilyCandidates: Array<{ id: string; label: string }>;
+  professionCandidates: ProfessionCandidate[];
+  selectedProfessionCandidates: ProfessionCandidate[];
   transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
@@ -118,7 +123,7 @@ function modulesFor(domain: MockupDomain): MockupModule[] {
 }
 
 export function buildMockupModel(
-  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">,
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates"> },
   config: MockupConfig,
 ): MockupModel {
   const domain = detectDomain(project);
@@ -131,6 +136,9 @@ export function buildMockupModel(
       return family ? [{ id: family.id, label: family.label }] : [];
     })
     : [];
+  const professionCandidates = project.discovery?.professionCandidates ?? [];
+  const selectedProfessionIds = new Set(config.selectedProfessionCandidateIds ?? []);
+  const selectedProfessionCandidates = professionCandidates.filter((candidate) => selectedProfessionIds.has(candidate.id));
   const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
   const modules: MockupModule[] = trustedMatch ? catalog.domainOptions : legacyModules;
   const transversalOptions = trustedMatch ? catalog.transversalOptions : [];
@@ -164,6 +172,8 @@ export function buildMockupModel(
     domainId: trustedMatch?.domain?.id ?? null,
     specializationId: trustedMatch?.specialization?.id ?? null,
     universalFamilyCandidates,
+    professionCandidates,
+    selectedProfessionCandidates,
     transversalOptions,
     format: config.format,
     formatLabel: formatLabels[config.format],
