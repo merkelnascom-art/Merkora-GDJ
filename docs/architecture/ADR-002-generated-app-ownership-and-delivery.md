@@ -132,7 +132,7 @@ The human delivery review must fail closed if the app uses local-only persistenc
 - Vérification des données Asho Sweet après migration : 0 produit, 0 commande et 0 demande ; aucun enregistrement métier préexistant n'a été modifié.
 - Le catalogue Asho Sweet reste volontairement non publié et vide. La propriétaire devra ajouter ses propres réalisations, photos et tarifs.
 - Limite restante : les modules génériques hors template boutique utilisent encore le prototype localStorage. Ils ne doivent pas être livrés comme des espaces de travail multi-utilisateurs opérationnels avant l'implémentation du runtime persistant commun.
-- CI automatisée sur les derniers commits de cette branche : aucun résultat disponible à ce stade ; la revue de code et la vérification CI restent nécessaires avant livraison.
+- La Preview Vercel du commit `213551cd3f57bdd01992b3365dacab01660c5d3a` a terminé READY avec 62 fichiers de tests et 307 tests réussis, puis le build Next.js a abouti. Cette vérification ne remplace pas l'audit de l'artefact généré.
 
 - Preview Vercel de la branche sur le commit `213551cd3f57bdd01992b3365dacab01660c5d3a` : état `READY`.
 - Contrôle de compilation exécuté par Vercel : 62 fichiers de tests réussis, 307 tests réussis, puis build Next.js terminé.
