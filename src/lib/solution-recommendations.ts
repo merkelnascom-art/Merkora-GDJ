@@ -69,6 +69,21 @@ export function buildRecommendations(input: NeedInput): Recommendation[] {
     return suggestions.slice(0, 4);
   }
 
+  const domainMatch = identifyDomain(text);
+  if (domainMatch.domain && domainMatch.confidence !== "low" &&
+      domainMatch.domain.id !== "commerce" &&
+      domainMatch.domain.id !== "education-formation") {
+    const modules = getDomainModules(domainMatch);
+    for (const module of modules) {
+      suggestions.push({
+        title: module.title,
+        description: module.description,
+        reason: `Cette piste est issue du référentiel du domaine « ${domainMatch.domain.label} » et doit être confirmée avec vous.`,
+      });
+    }
+    if (modules.length > 0) return suggestions.slice(0, 4);
+  }
+
   if (/boutique|magasin|vente|ventes|stock|caisse|recette|client|commerce|commande|personnel|employé|employe|équipe|equipe|horaire|présence|presence|retard|salaire|paie/.test(text) || input.category === "business" || input.category === "organization") {
     suggestions.push({
       title: "Organiser les opérations commerciales",
@@ -99,19 +114,6 @@ export function buildRecommendations(input: NeedInput): Recommendation[] {
       reason: "La technologie doit être choisie après clarification des utilisateurs et des tâches à accomplir.",
     });
     return suggestions.slice(0, 4);
-  }
-
-  const domainMatch = identifyDomain(text);
-  if (domainMatch.domain && domainMatch.confidence !== "low") {
-    const modules = getDomainModules(domainMatch);
-    for (const module of modules) {
-      suggestions.push({
-        title: module.title,
-        description: module.description,
-        reason: `Cette piste est issue du référentiel du domaine « ${domainMatch.domain.label } » et doit être confirmée avec vous.`,
-      });
-    }
-    if (modules.length > 0) return suggestions.slice(0, 4);
   }
 
   if (input.category === "personal") {
