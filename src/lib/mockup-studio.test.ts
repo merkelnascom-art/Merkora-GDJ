@@ -65,6 +65,8 @@ describe("buildMockupModel", () => {
         specializationId: null,
         domainLabel: "Éducation et formation",
         universalFamilyCandidates: ["family-08"],
+      unmappedUniversalFamilyCandidates: [],
+      universalSectorCandidates: [],
         businessSignals: analyzeBusinessSignals(""),
         professionCandidates: [
           { id: "candidate-08-001", title: "Conseiller d’orientation", familyId: "family-08", sourceGroup: "Éducation", reviewStatus: "candidate" },
