@@ -90,7 +90,7 @@ export function CustomerAccountPanel({
       if (user) void loadHistory(user.id);
       else { setOrders([]); setRequests([]); }
     });
-    return () => { alive = false; data.subscription.unsubscribe(); };
+    return () => { alive = false; data.subscription.unsubscribe(); window.removeEventListener("merkora-store-order-submitted", refreshHistory); };
   }, [loadHistory, supabase]);
 
   async function authenticate(event: FormEvent<HTMLFormElement>) {
