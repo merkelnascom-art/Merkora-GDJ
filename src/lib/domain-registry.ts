@@ -112,7 +112,7 @@ export const MERKORA_DOMAINS: DomainProfile[] = [
   {
     id: "ressources-humaines", number: 10, label: "Ressources humaines et gestion du personnel",
     summary: "Dossiers salariés, recrutement, contrats, temps, congés, paie, formation et performance.",
-    keywords: ["ressources humaines", "rh", "employé", "employe", "salarié", "salarie", "personnel", "recrutement", "contrat de travail", "congé", "conge", "paie", "bulletin de salaire", "pointage", "présence", "presence", "retard", "planning du personnel"],
+    keywords: ["ressources humaines", "rh", "employé", "employe", "salarié", "salarie", "personnel", "recrutement", "contrat de travail", "congé", "conge", "paie", "bulletin de salaire", "pointage", "présence", "presence", "retard", "planning du personnel", "équipe", "equipe", "responsabilité", "responsabilite", "absence", "horaire", "effectif", "collaborateur"],
     questions: ["Combien de collaborateurs et de sites faut-il gérer ?", "Quels processus RH souhaitez-vous couvrir ?", "Faut-il suivre les contrats, horaires, absences, congés, paie ou recrutements ?", "Qui peut consulter les dossiers individuels et les rémunérations ?", "Quelles validations humaines et règles locales doivent être respectées ?"],
     modules: [moduleItem("hr-employees", "Dossiers du personnel", "Employés, contrats, affectations et documents."), moduleItem("hr-time", "Temps et absences", "Horaires, pointages, congés et corrections tracées."), moduleItem("hr-reports", "Pilotage RH", "Effectifs, indicateurs, formations et rapports.")],
     specializations: [],
