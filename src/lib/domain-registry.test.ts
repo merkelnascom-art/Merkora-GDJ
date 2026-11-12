@@ -29,6 +29,12 @@ describe("MerKora universal domain registry", () => {
     expect(match.confidence).not.toBe("low");
   });
 
+  it("recognizes the existing Student Vision career-orientation brief", () => {
+    const match = identifyDomain("Student Vision Les élèves après le bac ne savent pas quels métiers choisir selon leurs relevés et leurs résultats. Proposer des métiers adaptés après des tests d'orientation.");
+    expect(match.domain?.id).toBe("education-formation");
+    expect(match.confidence).not.toBe("low");
+  });
+
   it("recognizes game design as a specialization of domain 13", () => {
     const match = identifyDomain("Je veux concevoir un jeu vidéo éducatif avec des niveaux et des missions.");
     expect(match.domain?.id).toBe("voyage-tourisme-creation-jeux");
