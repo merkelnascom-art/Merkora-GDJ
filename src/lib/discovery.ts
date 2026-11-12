@@ -70,7 +70,7 @@ function isVague(input: NeedInput): boolean {
 export function analyzeNeed(input: NeedInput): DiscoveryResult {
   const validation = validateNeed(input);
   const fullText = `${input.title} ${input.problem} ${input.desiredOutcome}`;
-  const businessSignals = analyzeBusinessSignals(fullText);
+  const businessSignals = analyzeBusinessSignals(fullText, { includeBusinessBaseline: input.category === "business" || input.category === "organization" });
   const match = identifyDomain(fullText);
   const trustedMatch: DomainMatch = match.confidence === "low"
     ? { ...match, domain: null, specialization: null }
