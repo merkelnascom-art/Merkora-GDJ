@@ -143,3 +143,16 @@ The human delivery review must fail closed if the app uses local-only persistenc
 - Migration `20261112135510_project_module_data` appliquée au projet Supabase `tvwkickjtqjqwoiidmxj`. Vérification : table présente, RLS activé, trois politiques de lecture/création/mise à jour présentes.
 - Preview Vercel du commit `09e13ca95abc90e1f3be4b0e6e119ffc8a32fd8f` : `READY`, 63 fichiers de tests réussis, 311 tests réussis et build Next.js terminé.
 - Les données Asho Sweet restent inchangées ; aucun lancement Sandbox ni déploiement de production n'a été effectué.
+
+
+## Implementation update — generic persistent runtime — 2026-11-12
+
+- Générateur `merkora-nextjs-scaffold/1.7.0` : les modules génériques ne reposent plus sur `localStorage` pour leurs données métier.
+- Chaque espace de module reçoit l'identifiant réel du projet et l'identifiant du module ; il lit et enregistre son état dans `project_module_data` avec une clé composite projet/module.
+- Le propriétaire se connecte avec Supabase Auth. L'interface permet de récupérer les données et d'enregistrer explicitement les modifications.
+- Les variables Supabase publiques et la dépendance `@supabase/supabase-js` sont maintenant incluses dans tous les projets générés, pas uniquement dans le template boutique.
+- Migration appliquée au projet Supabase MerKora `tvwkickjtqjqwoiidmxj` : `20261112135510_project_module_data`.
+- Contrôle en base : table présente, RLS activé, trois politiques (lecture, insertion et mise à jour) limitées au propriétaire du projet et à l'administrateur MerKora ; aucun droit DELETE accordé aux applications générées.
+- Test transactionnel contrôlé : le propriétaire peut créer et relire un état de module ; un autre identifiant utilisateur ne voit pas cet état ; la transaction a été annulée et le nombre de lignes de test après rollback est resté à zéro.
+- Limites assumées de cette première étape : les membres du personnel et invitations d'équipe ne sont pas encore provisionnés ; le workspace générique reste une liste d'actions persistante, pas encore un module métier spécialisé. La fabrique ne doit donc pas qualifier ces applications de solutions métier entièrement terminées sur la seule base de ce runtime.
+- Contrôles CI sur le commit `9f3e9118089050fa83edecefc4688cac9429164e` : typecheck et tests unitaires terminés avec succès ; le build de production est encore en cours au moment de cette mise à jour.
