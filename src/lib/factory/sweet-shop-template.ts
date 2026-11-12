@@ -286,7 +286,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   }
 
   if (!supabase) return <section className="sweet-panel"><h2>Configuration requise</h2><p>La boutique doit être reliée à Supabase. Configurez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans l'environnement du projet.</p></section>;
-  if (!store) return <section className="sweet-panel"><h2>Boutique en préparation</h2><p>La boutique Asho Sweet n'est pas encore publiée ou sa configuration n'est pas disponible. L'espace de gestion doit se connecter avec le compte propriétaire du projet.</p>{feedback && <p role="status">{feedback}</p>}</section>;
+  if (!store) return <section className="sweet-panel"><h2>Boutique en préparation</h2><p>La boutique Asho Sweet n'est pas encore publiée. Le propriétaire peut se connecter pour ajouter les produits et gérer la boutique.</p>{!userEmail ? <form className="sweet-form" onSubmit={signIn}><label>Email du propriétaire<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form> : <p>Compte connecté : {userEmail}. Chargement de la boutique…</p>}{feedback && <p role="status">{feedback}</p>}</section>;
 
   return (
     <div className="sweet-workspace">
