@@ -81,6 +81,7 @@ describe("parseProjectCodePatchResponse", () => {
 describe("applyProjectCodePatch", () => {
   it("applies only validated source changes and recalculates the source digest", () => {
     const source = generateProjectSource({
+      projectId: "MK-TEST-RH-001",
       projectName: "Gestion RH",
       projectDescription: "Gérer le personnel.",
       modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
