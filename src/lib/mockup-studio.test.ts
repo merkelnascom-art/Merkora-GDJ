@@ -40,6 +40,13 @@ describe("buildMockupModel", () => {
     expect(JSON.stringify(model)).not.toMatch(/Université nationale|prix de scolarité|85%/i);
   });
 
+  it("reconstructs profession candidates for saved projects that do not retain discovery metadata", () => {
+    const model = buildMockupModel(studentProject, { format: "website", palette: "violet", enabledModules: [] });
+    expect(model.professionCandidates.length).toBeGreaterThan(0);
+    expect(model.professionCandidates.every((candidate) => candidate.reviewStatus === "candidate")).toBe(true);
+    expect(model.selectedProfessionCandidates).toEqual([]);
+  });
+
   it("shows profession candidates for confirmation without selecting them automatically", () => {
     const projectWithCandidates: Project = {
       ...studentProject,
