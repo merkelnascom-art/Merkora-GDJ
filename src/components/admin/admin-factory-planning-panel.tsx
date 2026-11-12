@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPlanGenerationAction } from "./plan-generation-action";
 
 type Recommendation = { id?: string; title: string; description: string; reason?: string };
 type ProjectRequest = {
@@ -183,11 +184,13 @@ export function AdminFactoryPlanningPanel() {
                   {chosen.length ? <ul>{chosen.map((option) => <li key={option.id}>{option.title}</li>)}</ul> : <p>Aucun module explicitement sélectionné dans ce dossier.</p>}
                 </div>
               </div>
-              {!plan ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 14 }}>
                 <button type="button" style={styles.primaryButton} disabled={busy !== null} onClick={() => void generate(item)}>
-                  {busyThis ? "Génération…" : "Générer le plan interne"}
+                  {busyThis ? "Génération…" : getPlanGenerationAction(Boolean(plan)).label}
                 </button>
-              ) : (
+                <span style={styles.meta}>{getPlanGenerationAction(Boolean(plan)).hint}</span>
+              </div>
+              {plan ? (
                 <div style={styles.plan}>
                   <h4>{plan.payload.summary || "Plan interne de réalisation"}</h4>
                   <p style={styles.meta}>Version {plan.version} · plan enregistré et réservé à l'administration</p>
