@@ -34,6 +34,7 @@ describe("buildMockupModel", () => {
   it("builds education-specific modules for Student Vision without inventing facts", () => {
     const model = buildMockupModel(studentProject, { format: "website", palette: "violet", enabledModules: [] });
     expect(model.domain).toBe("education");
+    expect(model.universalFamilyCandidates.map((family) => family.id)).toContain("family-08");
     expect(model.modules.map((item) => item.id)).toEqual(expect.arrayContaining(["student-profile", "career-explorer", "study-paths"]));
     expect(model.headline).toMatch(/Student Vision/);
     expect(JSON.stringify(model)).not.toMatch(/Université nationale|prix de scolarité|85%/i);
@@ -42,6 +43,7 @@ describe("buildMockupModel", () => {
   it("builds operational modules for team management, not education", () => {
     const model = buildMockupModel(teamProject, { format: "dashboard", palette: "blue", enabledModules: [] });
     expect(model.domain).toBe("operations");
+    expect(model.universalFamilyCandidates.map((family) => family.id)).toContain("family-12");
     expect(model.modules.map((item) => item.id)).toEqual(expect.arrayContaining(["team-overview", "attendance", "task-board"]));
     expect(model.modules.map((item) => item.id)).not.toContain("career-explorer");
   });
