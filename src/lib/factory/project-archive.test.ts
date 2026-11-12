@@ -4,6 +4,7 @@ import { generateProjectSource } from "./project-generator";
 import { createProjectArchive } from "./project-archive";
 
 const source = generateProjectSource({
+  projectId: "MK-TEST-ARCHIVE-001",
   projectName: "Gestion RH",
   projectDescription: "Gérer les équipes et les présences.",
   modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
