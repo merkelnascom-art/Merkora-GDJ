@@ -37,7 +37,14 @@ describe("buildSelectedPlanOptions", () => {
   });
 
   it("passes selected transversal options into the approved plan scope", () => {
-    const selected = buildSelectedPlanOptions(project, {
+    const commerceProject = {
+      ...project,
+      title: "Gestion de boutique",
+      category: "business" as const,
+      problem: "Je veux gérer les ventes, les stocks et la caisse de ma boutique.",
+      desiredOutcome: "Suivre les ventes et les niveaux de stock.",
+    };
+    const selected = buildSelectedPlanOptions(commerceProject, {
       moduleSelectionConfirmed: true,
       enabledModules: ["common-roles-permissions", "common-notifications"],
     });
