@@ -125,7 +125,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
     { path: "src/components/project-team-management.tsx", content: projectTeamManagementSource },
     {
       path: "src/app/team/page.tsx",
-      content: `import { ProjectTeamManagement } from "@/components/project-team-management";\n\nconst modules = [\n${modules.map((module) => `  { id: ${jsString(module.id)}, title: ${jsString(module.title)} },`).join("\\n")}\n];\n\nexport default function TeamPage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace propriétaire</p>\n      <h1>Gestion de l’équipe</h1>\n      <p className="lead">La propriétaire choisit les personnes invitées et leurs droits d’accès.</p>\n      <ProjectTeamManagement projectId={${jsString(projectId)}} modules={modules} />\n      <p><a href="/">← Retour à l’application</a></p>\n    </main>\n  );\n}\n`,
+      content: `import { ProjectTeamManagement } from "@/components/project-team-management";\n\nconst modules = [\n${modules.map((module) => `  { id: ${jsString(module.id)}, title: ${jsString(module.title)} },`).join("\n")}\n];\n\nexport default function TeamPage() {\n  return (\n    <main>\n      <p className="eyebrow">Espace propriétaire</p>\n      <h1>Gestion de l’équipe</h1>\n      <p className="lead">La propriétaire choisit les personnes invitées et leurs droits d’accès.</p>\n      <ProjectTeamManagement projectId={${jsString(projectId)}} modules={modules} />\n      <p><a href="/">← Retour à l’application</a></p>\n    </main>\n  );\n}\n`,
     },
     {
       path: "src/app/page.tsx",
