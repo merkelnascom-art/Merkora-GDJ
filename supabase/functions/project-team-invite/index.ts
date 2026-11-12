@@ -117,7 +117,7 @@ Deno.serve(async (request: Request) => {
         ok: true,
         membershipId,
         delivery: "existing_account",
-        message: "Invitation enregistrée. Cette personne possède déjà un compte : elle doit se connecter à l'application pour activer son accès.",
+        message: "Invitation enregistrée. Cette personne possède déjà un compte : elle doit se connecter à l'application puis ouvrir /team pour activer son accès.",
       }, 200, origin);
     }
     return jsonError("invitation_email_delivery_failed", 502, origin);
