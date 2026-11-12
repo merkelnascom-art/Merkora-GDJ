@@ -255,7 +255,7 @@ export function ProjectMockupStudio({ project }: Props) {
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
-              const selected = config.moduleSelectionConfirmed === true && config.enabledModules.includes(item.id);
+              const selected = (config.moduleSelectionConfirmed === true || config.enabledModules.length > 0) && config.enabledModules.includes(item.id);
               return (
                 <label className="mockup-module-toggle" key={item.id}>
                   <input type="checkbox" checked={selected} onChange={() => toggleModule(item.id)} />
