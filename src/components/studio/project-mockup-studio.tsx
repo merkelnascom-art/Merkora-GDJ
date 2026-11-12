@@ -13,7 +13,7 @@ import {
 type Props = { project: Project };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
-type StoredMockupConfig = Partial<MockupConfig> & { reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
+type StoredMockupConfig = Partial<MockupConfig> & { diagnosticResponses?: Record<string, string>; diagnosticSchemaVersion?: number; reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
@@ -38,6 +38,7 @@ export function ProjectMockupStudio({ project }: Props) {
   const [quotePaymentTerms, setQuotePaymentTerms] = useState("À convenir après échange avec le client");
   const [clientQuoteResponse, setClientQuoteResponse] = useState<ClientQuoteResponse>("undecided");
   const [clientQuoteNote, setClientQuoteNote] = useState("");
+  const [diagnosticResponses, setDiagnosticResponses] = useState<Record<string, string>>({});
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
@@ -55,6 +56,9 @@ export function ProjectMockupStudio({ project }: Props) {
         setQuotePaymentTerms(typeof parsed.quotePaymentTerms === "string" ? parsed.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
         setClientQuoteResponse(parsed.clientQuoteResponse === "accepted" || parsed.clientQuoteResponse === "changes_requested" || parsed.clientQuoteResponse === "negotiate" ? parsed.clientQuoteResponse : "undecided");
         setClientQuoteNote(typeof parsed.clientQuoteNote === "string" ? parsed.clientQuoteNote.slice(0, 1200) : "");
+        setDiagnosticResponses(parsed.diagnosticSchemaVersion === 1 && parsed.diagnosticResponses && typeof parsed.diagnosticResponses === "object" && !Array.isArray(parsed.diagnosticResponses)
+          ? Object.fromEntries(Object.entries(parsed.diagnosticResponses).filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([id, value]) => [id, value.slice(0, 4000)]))
+          : {});
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
@@ -81,11 +85,15 @@ export function ProjectMockupStudio({ project }: Props) {
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, diagnosticSchemaVersion: 1, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey]);
+  }, [config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey]);
+
+  function updateDiagnosticAnswer(questionId: string, value: string) {
+    setDiagnosticResponses((current) => ({ ...current, [questionId]: value.slice(0, 4000) }));
+  }
 
   function toggleModule(id: string) {
     setConfig((current) => {
@@ -138,7 +146,7 @@ export function ProjectMockupStudio({ project }: Props) {
       ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
       ...(model.activityDiagnostic.selectedSectors.length > 0 ? ["Secteurs confirmés :", ...model.activityDiagnostic.selectedSectors.map((item) => `- ${item.label}`)] : ["Secteur : à confirmer"]),
       "Questions de diagnostic à approfondir :",
-      ...model.activityDiagnostic.questions.map((item) => `- ${item.title} : ${item.prompt}`),
+      ...model.activityDiagnostic.questions.flatMap((item) => [`- ${item.title} : ${item.prompt}`, `  Réponse du client : ${diagnosticResponses[item.id]?.trim() || "Non renseignée"}`]),
       ...model.visibleModules.map((item) => `- Fonction / bloc : ${item.title} — ${item.description}`),
       ...model.visibleRecommendations.map((item) => `- Piste retenue : ${item.title} — ${item.description}`),
       "",
@@ -227,6 +235,8 @@ export function ProjectMockupStudio({ project }: Props) {
       ...(model.universalFamilyCandidates.length > 0 ? [`Familles de référence possibles : ${model.universalFamilyCandidates.map((family) => family.label).join(" · ")}`] : []),
       ...(model.selectedProfessionCandidates.length > 0 ? [`Métiers confirmés par le client : ${model.selectedProfessionCandidates.map((item) => item.title).join(" · ")}`] : ["Métier : à confirmer avec le client"]),
       ...(model.activityDiagnostic.selectedSectors.length > 0 ? [`Secteurs confirmés par le client : ${model.activityDiagnostic.selectedSectors.map((item) => item.label).join(" · ")}`] : ["Secteur : à confirmer avec le client"]),
+      "Réponses au diagnostic :",
+      ...model.activityDiagnostic.questions.map((item) => `- ${item.title} : ${diagnosticResponses[item.id]?.trim() || "Non renseignée"}`),
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
       "Blocs retenus :",
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
@@ -306,7 +316,8 @@ export function ProjectMockupStudio({ project }: Props) {
             <div className="mockup-profession-confirmation">
               <span className="mockup-control-title" style={{ display: "block", marginTop: 16 }}>Diagnostic du travail réel</span>
               <p className="mockup-control-hint">{model.activityDiagnostic.status === "sector_focused" ? "Questions affinées selon les secteurs confirmés." : "Questions exploratoires : confirme les secteurs pour affiner le diagnostic."}</p>
-              {model.activityDiagnostic.questions.map((question) => <div className="mockup-module-toggle" key={question.id}><span><strong>{question.stage} — {question.title}</strong><small>{question.prompt}</small><small>Objectif : {question.purpose}</small></span></div>)}
+              {model.activityDiagnostic.questions.map((question) => <div className="mockup-module-toggle" key={question.id}><span><strong>{question.stage} — {question.title}</strong><small>{question.prompt}</small><small>Objectif : {question.purpose}</small><label className="mockup-review-note-label" htmlFor={`diagnostic-answer-${project.id}-${question.id}`}>Réponse du client</label><textarea id={`diagnostic-answer-${project.id}-${question.id}`} className="mockup-review-note" maxLength={4000} rows={3} value={diagnosticResponses[question.id] ?? ""} onChange={(event) => updateDiagnosticAnswer(question.id, event.target.value)} placeholder="Décris comment cela se passe réellement dans ton activité…" /></span></div>)}
+              <p className="mockup-local-note">{model.activityDiagnostic.questions.filter((question) => diagnosticResponses[question.id]?.trim()).length} réponse(s) renseignée(s) sur {model.activityDiagnostic.questions.length}. Les réponses sont enregistrées localement dans ce navigateur, avec le schéma de diagnostic v1 ; elles ne sont pas encore synchronisées avec le compte ou le serveur.</p>
             </div>
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
