@@ -103,9 +103,10 @@
 - [x] Let the client explicitly confirm one or more sector IDs in Studio; reject unknown sectors and sectors outside the suggested families.
 - [x] Feed confirmed sectors and confirmed métier titles into a hybrid-aware diagnostic plan; preserve separate family contexts and shared transversal questions.
 - [x] Display the diagnostic prompts in Studio and include confirmed sectors and question prompts in the local concept/quote summary.
-- [ ] Add answer capture and persist diagnostic responses with project ownership and version history; do not treat displayed prompts as completed answers.
+- [x] Add answer capture for every displayed diagnostic question; persist locally in the browser with a versioned `diagnosticSchemaVersion: 1` map keyed by stable question IDs, include answers in concept/quote exports, and safely ignore unsupported/malformed stored versions.
+- [ ] Add authenticated server-side persistence with project ownership, audit/version history and cross-device synchronization; current answers remain browser-local and are not submitted to MerKora.
 - [ ] Expand discovery to recognize currently unmapped families 16–20 without forcing them into the 13 legacy operational domains.
-- [ ] Run focused tests, typecheck and full build checks for the latest Studio changes.
+- [ ] Add focused tests for diagnostic-response storage normalization and run typecheck, full Vitest suite, Edge checks, worker identity tests and production build for the latest Studio changes.
 
 ## Execution ledger
 
@@ -115,7 +116,8 @@
 - Task 2 implementation committed: 484 source candidate entries, 20 detailed unreviewed profiles and focused tests in `src/lib/profession-reference.ts` / `.test.ts`.
 - Task 3 implementation committed: explicit family-to-operational-domain mapping and discovery family-candidate output, with focused tests.
 - Task 4 first slice committed: discovery carries possible family candidates and Studio supports client confirmation of profession candidates.
-- Task 4 second slice committed: `activity-diagnostic.ts` defines shared process questions and family-specific question packs across all 20 families; Studio now allows explicit sector confirmation, builds a hybrid-aware question plan and includes confirmed sectors/questions in the local concept and quote summary. Answer capture and persistence remain open.
+- Task 4 second slice committed: `activity-diagnostic.ts` defines shared process questions and family-specific question packs across all 20 families; Studio allows explicit sector confirmation, builds a hybrid-aware question plan and includes confirmed sectors/questions in the local concept and quote summary.
+- Task 4 third slice committed: Studio now captures answers to each diagnostic question, stores them locally under schema version 1 and stable question IDs, and includes the answers in concept/quote exports. This is browser-local persistence only; authenticated server persistence, ownership and version history remain open.
 - Focused Vitest, full Vitest, typecheck and production build execution are still pending; no passing-test claim is made.
 - No Supabase changes, Sandbox runs, merges or deployments were performed.
 
