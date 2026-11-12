@@ -49,7 +49,7 @@ function jsString(value: string): string {
 }
 
 function storefrontSlugFor(projectName: string, projectId: string): string {
-  const base = projectName.normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48).replace(/-+$/g, "") || "boutique";
+  const base = projectName.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48).replace(/-+$/g, "") || "boutique";
   const suffix = projectId.toLowerCase().replace(/[^a-z0-9]/g, "").slice(-6);
   if (!suffix) throw new Error("Identifiant du projet invalide pour la boutique.");
   return `${base}-${suffix}`;
