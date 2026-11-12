@@ -22,12 +22,28 @@ describe("generateProjectSource", () => {
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
-    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.1.0");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.2.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("Pointage et retards.");
     expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("Présences");
     expect(result.files.every((file) => file.content.length > 0)).toBe(true);
+  });
+
+  it("carries the approved domain and specialization into the generated workspace", () => {
+    const result = generateProjectSource({
+      ...input,
+      domainId: "voyage-tourisme-creation-jeux",
+      domainLabel: "Voyages, tourisme, loisirs, création et jeux",
+      specializationId: "game-design",
+    });
+    const page = result.files.find((file) => file.path === "src/app/page.tsx")?.content ?? "";
+    const readme = result.files.find((file) => file.path === "README.md")?.content ?? "";
+    expect(result.domainId).toBe("voyage-tourisme-creation-jeux");
+    expect(result.domainLabel).toContain("Voyages");
+    expect(result.specializationId).toBe("game-design");
+    expect(page).toContain("Domaine métier");
+    expect(readme).toContain("game-design");
   });
 
   it("escapes untrusted text before placing it in generated JSX", () => {
