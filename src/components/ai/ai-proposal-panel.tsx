@@ -40,6 +40,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
   const [improvements, setImprovements] = useState<Improvement[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorInput[]>([]);
   const [busy, setBusy] = useState(false);
+  const [geminiConsent, setGeminiConsent] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -75,6 +76,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
           desiredOutcome: project.desiredOutcome,
           budget: project.budget,
           urgency: project.urgency,
+          consent: geminiConsent,
           competitors: competitors.filter((item) => Object.values(item).some((value) => value.trim())),
         }),
       });
@@ -85,7 +87,12 @@ export function AiProposalPanel({ project, onApply }: Props) {
       setImprovements(data.analysis.improvements.map((item) => ({ ...item, assumptions: [...item.assumptions] })));
       setMessage("Proposition générée. Relisez, modifiez, ajoutez ou retirez les pistes avant de les appliquer.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Le service IA est momentanément indisponible.");
+      const local = buildLocalAnalysis(project, competitors.filter((item) => Object.values(item).some((value) => value.trim())));
+      setAnalysis(local);
+      setEdited(local.recommendations.map((item) => ({ ...item })));
+      setImprovements(local.improvements.map((item) => ({ ...item, assumptions: [...item.assumptions] })));
+      setError(caught instanceof Error ? caught.message : "Le service Gemini est momentanément indisponible.");
+      setMessage("Une pré-analyse locale gratuite a été préparée en secours. Aucun résultat Gemini n'a été appliqué.");
     } finally {
       setBusy(false);
     }
@@ -175,11 +182,27 @@ export function AiProposalPanel({ project, onApply }: Props) {
         <button type="button" className="button button-quiet" onClick={() => setCompetitors((current) => current.length >= 5 ? current : [...current, { ...emptyCompetitor }])} disabled={competitors.length >= 5}>Ajouter une source ({competitors.length}/5)</button>
       </div>
 
+      {status?.enabled && (
+        <label className="ai-consent-note">
+          <input
+            type="checkbox"
+            checked={geminiConsent}
+            onChange={(event) => setGeminiConsent(event.target.checked)}
+          />
+          <span>
+            J'accepte d'envoyer à Google Gemini les informations de ce dossier pour produire l'analyse.
+            Le niveau gratuit de Google peut utiliser les données envoyées pour améliorer ses produits.
+            N'incluez pas de mots de passe ni de données personnelles ou confidentielles.
+          </span>
+        </label>
+      )}
+
       <div className="ai-proposal-actions">
-        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null}>
+        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null || (status.enabled && !geminiConsent)}>
           {busy ? "Analyse en cours…" : status?.enabled ? (analysis ? "Recommencer l’analyse IA" : "Analyser avec l’IA") : "Préparer une analyse locale gratuite"}
         </button>
         {!status?.enabled && <span>Mode local sans frais : aucune requête n’est envoyée à un fournisseur IA. Les résultats restent préliminaires.</span>}
+        {status?.enabled && !geminiConsent && <span>Donnez votre accord pour activer l’analyse Gemini de ce dossier.</span>}
       </div>
 
       {error && <p className="ai-feedback is-error" role="alert">{error}</p>}
