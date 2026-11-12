@@ -1,6 +1,6 @@
 -- MerKora generated applications: persistent, owner-scoped module state.
--- This migration is intentionally staged in Git only. Do not apply to production
--- until the API integration and RLS tests have been reviewed.
+-- Generic module workspace v1 supports project owners and platform administrators.
+-- Team memberships and granular staff roles are a separate additive phase.
 
 create table if not exists public.project_module_data (
   project_id text not null references public.user_projects(id) on delete cascade,
