@@ -83,7 +83,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     /^(bonjour|salut|bonsoir|je veux une application|je veux un site|aide-moi|aidez-moi)[.! ]*$/i.test(text);
   const legacyModules = MODULE_RULES.filter((rule) => containsKeyword(text, rule.keywords))
     .map((rule) => rule.module);
-  const domainModules = getDomainModules(match);
+  const domainModules = match.domain && match.confidence !== "low" ? getDomainModules(match) : [];
   const suggestedModules = [...domainModules, ...legacyModules]
     .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
     .slice(0, 5);
