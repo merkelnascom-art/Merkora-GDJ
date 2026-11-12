@@ -261,7 +261,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
 
   async function submitCustomRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || !store || !customer.trim() || !phone.trim() || !occasion.trim() || !date || Number(portions) < 1) {
+    if (!supabase || !store || !customer.trim() || !phone.trim() || !creationType.trim() || !occasion.trim() || !date || Number(portions) < 1) {
       setFeedback("Complétez votre nom, téléphone, occasion, date et nombre de portions."); return;
     }
     setBusy(true);
