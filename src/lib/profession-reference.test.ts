@@ -6,6 +6,7 @@ import {
   PROFESSION_CANDIDATE_IMPORTED_COUNT,
   PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT,
   PROFESSION_CANDIDATE_SOURCE_GAP,
+  getProfessionCandidatesForFamilies,
 } from "./profession-reference";
 
 describe("MerKora profession reference", () => {
@@ -23,6 +24,13 @@ describe("MerKora profession reference", () => {
     expect(MERKORA_PROFESSION_CANDIDATES.every((candidate) =>
       familyIds.has(candidate.familyId) && candidate.reviewStatus === "candidate"
     )).toBe(true);
+  });
+
+  it("returns only candidate titles from explicitly supplied families", () => {
+    const candidates = getProfessionCandidatesForFamilies(["family-01"], 5);
+    expect(candidates).toHaveLength(5);
+    expect(candidates.every((candidate) => candidate.familyId === "family-01" && candidate.reviewStatus === "candidate")).toBe(true);
+    expect(getProfessionCandidatesForFamilies(["unknown-family"])).toEqual([]);
   });
 
   it("keeps repeated profession titles as distinct family-specific candidates", () => {
