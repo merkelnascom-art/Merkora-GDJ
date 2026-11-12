@@ -1,4 +1,5 @@
 import { createProjectMemoryDigest } from "./project-memory-digest";
+import { customerAccountPanelSource } from "./customer-account-template";
 import { createSweetShopModulePage, createSweetShopWorkspaceFile, sweetShopModeForModule, sweetShopStyles } from "./sweet-shop-template";
 
 export type ProjectSourceModule = {
@@ -131,6 +132,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
   const hasSweetShopModules = modules.some((module) => sweetShopModeForModule(module.id) !== null);
   if (hasSweetShopModules) {
     files.push(createSweetShopWorkspaceFile(storefrontSlugFor(projectName, projectId)));
+    files.push({ path: "src/components/customer-account-panel.tsx", content: customerAccountPanelSource });
     files.push({ path: ".env.example", content: "NEXT_PUBLIC_SUPABASE_URL=\\nNEXT_PUBLIC_SUPABASE_ANON_KEY=\\n" });
     const stylesheet = files.find((file) => file.path === "src/app/globals.css");
     if (stylesheet) stylesheet.content += sweetShopStyles;
