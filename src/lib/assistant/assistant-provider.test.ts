@@ -19,7 +19,7 @@ describe("external MerKora assistant provider", () => {
     const result = await completeWithExternalAssistant({
       config,
       authorization: { ...allowed, clientConsent: false },
-      message: "Je veux suivre mon personnel",
+      message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages",
       history: [],
     });
     expect(result.ok).toBe(false);
@@ -41,12 +41,17 @@ describe("external MerKora assistant provider", () => {
     const result = await completeWithExternalAssistant({
       config,
       authorization: allowed,
-      message: "Je veux suivre mon personnel",
+      message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages",
       history: [{ role: "user", content: "Je gère une boutique." }],
       projectContext: "Boutique, suivi du personnel",
     });
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.reply.assistantMessage).toContain("horaires");
+    if (result.ok) {
+      expect(result.reply.assistantMessage).toContain("horaires");
+      expect(result.reply.domainId).toBe("ressources-humaines");
+      expect(result.reply.domainLabel).toContain("Ressources humaines");
+      expect(result.reply.confidence).not.toBe("low");
+    }
     expect(requestAiGatewayCompletion).toHaveBeenCalledTimes(1);
     expect(vi.mocked(requestAiGatewayCompletion).mock.calls[0][0].model).toBe("anthropic/claude-sonnet-4");
   });
@@ -56,7 +61,7 @@ describe("external MerKora assistant provider", () => {
       choices: [{ message: { content: "{not-json" } }],
     }), { status: 200 }));
     const result = await completeWithExternalAssistant({
-      config, authorization: allowed, message: "Je veux suivre mon personnel", history: [],
+      config, authorization: allowed, message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages", history: [],
     });
     expect(result).toEqual({ ok: false, reason: "invalid_provider_response" });
   });
