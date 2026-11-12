@@ -127,6 +127,28 @@ describe("generateProjectPlan", () => {
     expect(plan.proposedArchitecture?.components).toContain("Boucle de jeu et règles");
   });
 
+  it("adds selected transversal capabilities to the proposed architecture without selecting them automatically", () => {
+    const need: NeedInput = {
+      title: "Gestion de boutique",
+      category: "business",
+      problem: "Je veux gérer les ventes, les stocks et la caisse de ma boutique.",
+      desiredOutcome: "Suivre les ventes et les niveaux de stock.",
+      budget: "À définir",
+      urgency: "normal",
+    };
+    const plan = generateProjectPlan({
+      projectId: "MK-SHOP-001", briefVersion: 1, planVersion: 1, plannerVersion: "1.0.0",
+      need, discovery: analyzeNeed(need),
+      selectedOptions: [
+        { id: "module:common-notifications", title: "Notifications et rappels", description: "Alertes et rappels." },
+        { id: "module:common-audit-log", title: "Historique et audit", description: "Journal des actions." },
+      ],
+    });
+    expect(plan.includedScope.map((item) => item.id)).toEqual(["module:common-notifications", "module:common-audit-log"]);
+    expect(plan.proposedArchitecture?.components).toContain("Option retenue : Notifications et rappels");
+    expect(plan.proposedArchitecture?.components).toContain("Option retenue : Historique et audit");
+  });
+
   it("includes only explicitly selected options and approved scope, not unselected recommendations", () => {
     const plan = generateProjectPlan(makeInput({}, {
       selectedOptions: [{ id: "attendance", title: "Suivi des présences", description: "Enregistrer les arrivées." }],
