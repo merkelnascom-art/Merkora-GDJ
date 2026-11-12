@@ -74,7 +74,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     }
 
     const launchResult = await callUserData(
-      "client_project_launches?select=id,request_id,quote_version_id,invoice_id,launched_at&request_id=eq." + encodeURIComponent(body.requestId) + "&limit=1",
+      "client_project_launches?select=id,request_id,client_user_id,quote_version_id,invoice_id,launched_at&request_id=eq." + encodeURIComponent(body.requestId) + "&limit=1",
       "GET", token,
     );
     if (!launchResult.ok) return NextResponse.json({ error: "Impossible de vérifier le lancement commercial." }, { status: 502 });
