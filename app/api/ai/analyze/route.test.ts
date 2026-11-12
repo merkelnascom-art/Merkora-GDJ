@@ -118,7 +118,7 @@ describe("POST /api/ai/analyze Gemini safeguards", () => {
     const payload = await response.json();
     expect(payload.provider).toBe("gemini");
     expect(payload.analysis.understood.join(" ")).toMatch(/Ventes et suivi commercial/);
-    expect(payload.analysis.questions.join(" ")).toMatch(/Comment suivez-vous/);
+    expect(payload.analysis.questions.join(" ")).toMatch(/Quelles sont vos sources de recettes|À quel moment l'écart apparaît-il/);
     expect(JSON.stringify(payload)).not.toContain("test-only-secret");
   });
 
