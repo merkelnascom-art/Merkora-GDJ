@@ -78,7 +78,7 @@ type CustomRequest = { id: string; customer_name: string; customer_phone: string
 
 const STOREFRONT_SLUG = "__STOREFRONT_SLUG__";
 const CART_KEY = "merkora-asho-sweet-cart-v1";
-const PROJECT_ID = "__PROJECT_ID__";
+const PROJECT_ID = __PROJECT_ID__;
 const EMPTY_TEAM_ACCESS: TeamAccess = { isOwner: false, catalogueView: false, catalogueEdit: false, ordersView: false, ordersEdit: false, customView: false, customEdit: false };
 const money = (value: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value) + " FCFA";
 const statuses = ["received", "confirmed", "preparing", "ready", "delivered", "cancelled"];
@@ -481,6 +481,6 @@ export function createSweetShopWorkspaceFile(storefrontSlug: string, projectId: 
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storefrontSlug)) throw new Error("Identifiant public de boutique invalide.");
   return {
     path: "src/components/sweet-shop-workspace.tsx",
-    content: sweetShopWorkspaceSource.replace("__STOREFRONT_SLUG__", storefrontSlug).replace("__PROJECT_ID__", projectId),
+    content: sweetShopWorkspaceSource.replace("__STOREFRONT_SLUG__", storefrontSlug).replace("__PROJECT_ID__", JSON.stringify(projectId).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")),
   };
 }
