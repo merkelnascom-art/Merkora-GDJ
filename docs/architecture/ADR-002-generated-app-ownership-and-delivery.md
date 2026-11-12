@@ -133,3 +133,7 @@ The human delivery review must fail closed if the app uses local-only persistenc
 - Le catalogue Asho Sweet reste volontairement non publié et vide. La propriétaire devra ajouter ses propres réalisations, photos et tarifs.
 - Limite restante : les modules génériques hors template boutique utilisent encore le prototype localStorage. Ils ne doivent pas être livrés comme des espaces de travail multi-utilisateurs opérationnels avant l'implémentation du runtime persistant commun.
 - CI automatisée sur les derniers commits de cette branche : aucun résultat disponible à ce stade ; la revue de code et la vérification CI restent nécessaires avant livraison.
+
+- Preview Vercel de la branche sur le commit `213551cd3f57bdd01992b3365dacab01660c5d3a` : état `READY`.
+- Contrôle de compilation exécuté par Vercel : 62 fichiers de tests réussis, 307 tests réussis, puis build Next.js terminé.
+- Cette vérification porte sur le dépôt MerKora et la génération du code ; l'artefact Asho Sweet doit encore être régénéré avec le générateur 1.6.0 et soumis à sa revue humaine avant toute livraison.
