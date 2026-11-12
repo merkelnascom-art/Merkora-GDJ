@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+export const customerAccountPanelSource = String.raw`import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CustomerOrder = {
@@ -179,3 +179,4 @@ export function CustomerAccountPanel({
     </section>
   );
 }
+`;
