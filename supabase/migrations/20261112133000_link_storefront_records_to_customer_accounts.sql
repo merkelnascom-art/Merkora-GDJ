@@ -67,6 +67,16 @@ begin
 end;
 $function$;
 
+drop trigger if exists set_customer_account_on_store_order on public.project_store_orders;
+create trigger set_customer_account_on_store_order
+before insert on public.project_store_orders
+for each row execute function public.calculate_project_store_order();
+
+drop trigger if exists set_customer_account_on_store_request on public.project_store_custom_requests;
+create trigger set_customer_account_on_store_request
+before insert on public.project_store_custom_requests
+for each row execute function public.normalize_project_store_custom_request();
+
 drop policy if exists "Customers can read their own orders" on public.project_store_orders;
 create policy "Customers can read their own orders"
 on public.project_store_orders for select to authenticated
