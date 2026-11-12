@@ -19,6 +19,8 @@ describe("analyzeNeed", () => {
     expect(result.state).toBe("preliminary");
     expect(result.recommendations.some((item) => item.title.includes("orientation scolaire"))).toBe(true);
     expect(result.isPreliminary).toBe(true);
+    expect(result.professionCandidates.length).toBeGreaterThan(0);
+    expect(result.professionCandidates.every((candidate) => candidate.reviewStatus === "candidate")).toBe(true);
   });
 
   it("asks for clarification when the domain is ambiguous", () => {
