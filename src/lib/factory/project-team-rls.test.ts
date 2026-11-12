@@ -36,8 +36,9 @@ describe("project team membership migration", () => {
   });
 
   it("keeps storefront content public only when published and grants staff only assigned management access", () => {
-    expect(migration).toMatch(/is_published/i);
-    expect(migration).toMatch(/is_active/i);
+    expect(migration).not.toMatch(/drop policy .*Published storefronts are public/i);
+    expect(migration).not.toMatch(/drop policy .*Published active products are public/i);
+    expect(migration).toMatch(/Store collaborators can read assigned product catalogue/i);
     expect(migration).toMatch(/catalogue-de-gateau-et-de-patisserie/i);
     expect(migration).toMatch(/panier-et-validation-de-commande/i);
     expect(migration).toMatch(/commande-personnalisee/i);
