@@ -19,6 +19,17 @@ describe("13-domain discovery integration", () => {
     expect(result.questions.some((question) => /interventions|récurrentes|rendez-vous/i.test(question))).toBe(true);
   });
 
+  it("routes ordinary team attendance and responsibility tracking to domain 10", () => {
+    const result = analyzeNeed(need(
+      "Gestion d'équipe",
+      "Je veux suivre les présences et les responsabilités de mon équipe.",
+      "Suivre les présences et les responsabilités de chaque collaborateur.",
+    ));
+    expect(result.domainId).toBe("ressources-humaines");
+    expect(result.state).toBe("preliminary");
+    expect(result.questions.some((question) => /processus RH|collaborateurs/i.test(question))).toBe(true);
+  });
+
   it("routes municipal civil-status requests to domain 12 without making administrative decisions", () => {
     const result = analyzeNeed(need(
       "Portail de la mairie",
