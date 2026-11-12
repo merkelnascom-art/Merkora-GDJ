@@ -8,6 +8,7 @@ export type ProjectSourceModule = {
 };
 
 export type ProjectSourceInput = {
+  projectId: string;
   projectName: string;
   projectDescription: string;
   modules: ProjectSourceModule[];
@@ -47,11 +48,19 @@ function jsString(value: string): string {
     .replace(/\u2029/g, "\\u2029");
 }
 
+function storefrontSlugFor(projectName: string, projectId: string): string {
+  const base = projectName.normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "boutique";
+  const suffix = projectId.toLowerCase().replace(/[^a-z0-9]/g, "").slice(-6);
+  if (!suffix) throw new Error("Identifiant du projet invalide pour la boutique.");
+  return `${base}-${suffix}`;
+}
+
 function componentName(id: string): string {
   return id.split("-").map((part) => part[0].toUpperCase() + part.slice(1)).join("");
 }
 
 export function generateProjectSource(input: ProjectSourceInput): GeneratedProjectSource {
+  const projectId = requiredText(input.projectId, "identifiant du projet", 160);
   const projectName = requiredText(input.projectName, "nom du projet", 120);
   const projectDescription = requiredText(input.projectDescription, "description du projet", 500);
   if (!Array.isArray(input.modules) || input.modules.length < 1 || input.modules.length > 30) {
@@ -121,7 +130,7 @@ export function generateProjectSource(input: ProjectSourceInput): GeneratedProje
 
   const hasSweetShopModules = modules.some((module) => sweetShopModeForModule(module.id) !== null);
   if (hasSweetShopModules) {
-    files.push(createSweetShopWorkspaceFile());
+    files.push(createSweetShopWorkspaceFile(storefrontSlugFor(projectName, projectId)));
     files.push({ path: ".env.example", content: "NEXT_PUBLIC_SUPABASE_URL=\\nNEXT_PUBLIC_SUPABASE_ANON_KEY=\\n" });
     const stylesheet = files.find((file) => file.path === "src/app/globals.css");
     if (stylesheet) stylesheet.content += sweetShopStyles;
