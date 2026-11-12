@@ -169,9 +169,8 @@ function normalize(value: string): string {
 
 function keywordMatches(text: string, keywords: string[]): number {
   const haystack = ` ${normalize(text)} `;
-  return keywords.reduce((score, keyword) => {
-    const needle = normalize(keyword);
-    if (!needle) return score;
+  const uniqueKeywords = [...new Set(keywords.map(normalize).filter(Boolean))];
+  return uniqueKeywords.reduce((score, needle) => {
     const flexible = needle.split(" ").map((part) => `${part}s?`).join("\\s+");
     const pattern = new RegExp(`(^| )${flexible}( |$)`);
     return pattern.test(haystack) ? score + (needle.includes(" ") ? 3 : 2) : score;
