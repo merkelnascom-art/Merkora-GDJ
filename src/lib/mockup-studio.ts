@@ -1,6 +1,8 @@
 import type { Project } from "./project-types";
 import { identifyDomain } from "./domain-registry";
 import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
+import { getUniversalFamilyById } from "./universal-reference";
+import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
@@ -24,6 +26,7 @@ export type MockupModel = {
   domainLabel: string;
   domainId: string | null;
   specializationId: string | null;
+  universalFamilyCandidates: Array<{ id: string; label: string }>;
   transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
@@ -122,6 +125,12 @@ export function buildMockupModel(
   const match = identifyDomain([project.title, project.problem, project.desiredOutcome].join(" "));
   const trustedMatch = match.domain && match.confidence !== "low" ? match : null;
   const catalog = getDomainOptionCatalog(trustedMatch ?? { domain: null, specialization: null, confidence: "low", score: 0 });
+  const universalFamilyCandidates = trustedMatch?.domain
+    ? getUniversalFamilyCandidatesForOperationalDomain(trustedMatch.domain.id).flatMap((id) => {
+      const family = getUniversalFamilyById(id);
+      return family ? [{ id: family.id, label: family.label }] : [];
+    })
+    : [];
   const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
   const modules: MockupModule[] = trustedMatch ? catalog.domainOptions : legacyModules;
   const transversalOptions = trustedMatch ? catalog.transversalOptions : [];
@@ -154,6 +163,7 @@ export function buildMockupModel(
     domainLabel: trustedMatch?.domain?.label ?? domainLabels[domain],
     domainId: trustedMatch?.domain?.id ?? null,
     specializationId: trustedMatch?.specialization?.id ?? null,
+    universalFamilyCandidates,
     transversalOptions,
     format: config.format,
     formatLabel: formatLabels[config.format],
