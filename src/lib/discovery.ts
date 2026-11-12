@@ -12,6 +12,7 @@ import {
   type DomainMatch,
 } from "./domain-registry";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
+import { getProfessionCandidatesForFamilies, type ProfessionCandidate } from "./profession-reference";
 
 export type DiscoveryDomain =
   | "education"
@@ -32,6 +33,8 @@ export type DiscoveryResult = {
   domainLabel: string;
   /** Possible universal families linked to the operational match; not a client-approved classification. */
   universalFamilyCandidates: string[];
+  /** Candidate titles offered for client confirmation; never an automatic métier decision. */
+  professionCandidates: ProfessionCandidate[];
   confidence: "high" | "medium" | "low";
   isPreliminary: true;
   understood: string[];
@@ -84,6 +87,9 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     specializationId,
     domainLabel,
     universalFamilyCandidates: domainId ? getUniversalFamilyCandidatesForOperationalDomain(domainId) : [],
+    professionCandidates: domainId
+      ? getProfessionCandidatesForFamilies(getUniversalFamilyCandidatesForOperationalDomain(domainId), 12)
+      : [],
     confidence: match.confidence,
     isPreliminary: true as const,
   };
