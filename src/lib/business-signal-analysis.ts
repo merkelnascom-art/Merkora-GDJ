@@ -1,7 +1,7 @@
 export type BusinessSignalId =
   | "revenue" | "sales" | "cashflow" | "expenses" | "profitability"
   | "debt" | "receivables" | "payables" | "payments" | "pricing"
-  | "payroll" | "budget_control" | "stock_value" | "financial_reporting";
+  | "payroll" | "budget_control" | "stock_value" | "financial_reporting" | "financial_context";
 
 export type BusinessSignal = {
   id: BusinessSignalId;
@@ -44,7 +44,7 @@ function evidenceFor(text: string, pattern: RegExp): string[] {
 }
 
 /** Detects financial/operational signals from the client's own words. It suggests questions, never activates modules or asserts accounting facts. */
-export function analyzeBusinessSignals(text: string): BusinessSignalAnalysis {
+export function analyzeBusinessSignals(text: string, options: { includeBusinessBaseline?: boolean } = {}): BusinessSignalAnalysis {
   const signals: BusinessSignal[] = [];
   const families = new Set<string>();
   const capabilities = new Set<string>();
@@ -57,6 +57,29 @@ export function analyzeBusinessSignals(text: string): BusinessSignalAnalysis {
   }
 
   const normalized = text.toLocaleLowerCase("fr");
+  const genericMoneyCue = /\\b(argent|fcfa|cfa|francs?|financement|fonds|capital|investissement|investir|trésor|tresor)\\b/i.test(normalized);
+  if (genericMoneyCue && signals.length === 0) {
+    signals.push({
+      id: "financial_context",
+      label: "Mention financière à clarifier",
+      evidence: [...normalized.matchAll(/\\b(argent|fcfa|cfa|francs?|financement|fonds|capital|investissement|investir|trésor|tresor)\\b/gi)].map((match) => match[0]).slice(0, 5),
+      confidence: "suggested",
+      followUp: "Parlez-vous du budget destiné à créer la solution, ou souhaitez-vous aussi suivre les finances de votre activité : recettes, dépenses, caisse, dettes, paiements et bénéfices ?",
+    });
+    families.add("family-05");
+    capabilities.add("clarification du besoin financier");
+  }
+  if (options.includeBusinessBaseline && signals.length === 0) {
+    signals.push({
+      id: "financial_context",
+      label: "Dimension financière de l'activité à vérifier",
+      evidence: ["activité d'entreprise ou organisation déclarée"],
+      confidence: "suggested",
+      followUp: "Souhaitez-vous que la solution suive aussi les recettes, dépenses, caisse, paiements, dettes, marges ou bénéfices, ou faut-il se concentrer sur les opérations uniquement ?",
+    });
+    families.add("family-05");
+    capabilities.add("suivi financier facultatif");
+  }
   // A plain statement that money is missing/unclear is a warning signal, not proof of theft or loss.
   if (/je ne sais pas où est passé|je ne sais plus où est passé|on ne sait pas où est passé|je ne sais pas où passe|je ne sais plus où passe|on ne sait pas où passe|l'argent disparaît|argent disparait|l'argent manque|argent manque|je ne maîtrise pas l'argent|je ne maitrise pas l'argent/.test(normalized) &&
       !signals.some((item) => item.id === "cashflow")) {
