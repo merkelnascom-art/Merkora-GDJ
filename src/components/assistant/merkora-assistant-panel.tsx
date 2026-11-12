@@ -60,6 +60,8 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
         history: [],
       }));
       setMode("local");
+      setProvider("local");
+      setGeminiConsent(false);
       setMessage("");
       setError("Connexion indisponible : une première analyse locale est affichée. Aucun fournisseur IA externe n'a été appelé.");
     } finally {
