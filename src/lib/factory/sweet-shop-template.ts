@@ -424,7 +424,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
             <span>Connecté : {userEmail}</span>
             <button type="button" onClick={signOut}>Déconnexion</button>
             {teamAccess.isOwner ? <button type="button" onClick={togglePublication}>{store.is_published ? "Masquer la boutique" : "Publier la boutique"}</button> : null}
-            {teamAccess.isOwner ? <a className="sweet-secondary" href="/team">Gérer mon équipe</a> : null}
+            {teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView ? <a className="sweet-secondary" href="/team">{teamAccess.isOwner ? "Gérer mon équipe" : "Mon accès équipe"}</a> : null}
           </div>
           {teamAccess.catalogueView ? <div>
             <h3>Catalogue et réalisations</h3>
