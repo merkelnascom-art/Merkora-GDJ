@@ -91,6 +91,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
             <span className="local-tag">{reply.status === "draft" ? "Proposition" : "Clarification"}</span>
           </div>
           <p>{reply.assistantMessage}</p>
+          {reply.domainLabel && <p className="discovery-notice">Domaine repéré : <strong>{reply.domainLabel}</strong> · Confiance {reply.confidence === "high" ? "forte" : reply.confidence === "medium" ? "moyenne" : "à confirmer"}{reply.specializationId ? ` · Spécialisation : ${reply.specializationId.replace(/-/g, " ")}` : ""}.</p>}
           {reply.suggestedModules.length > 0 && <div className="recommendation-list">{reply.suggestedModules.map((item) => (
             <article className="recommendation-card" key={item.id}>
               <span className="recommendation-number">✳</span>
