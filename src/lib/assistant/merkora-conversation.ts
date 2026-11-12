@@ -1,6 +1,7 @@
 export type ConversationRole = "user" | "assistant";
 export type ConversationMessage = { role: ConversationRole; content: string };
 export type ConversationInput = { message: string; history: ConversationMessage[] };
+import { identifyDomain, getDomainModules, getDomainQuestions, type DomainId } from "../domain-registry";
 export type SuggestedModule = { id: string; title: string; description: string; reason: string };
 export type ConversationReply = {
   assistantMessage: string;
@@ -10,6 +11,10 @@ export type ConversationReply = {
   suggestedModules: SuggestedModule[];
   nextAction: "clarify_need" | "review_modules";
   disclaimer: string;
+  domainId: DomainId | null;
+  domainLabel: string | null;
+  specializationId: string | null;
+  confidence: "high" | "medium" | "low";
 };
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -73,39 +78,61 @@ function containsKeyword(text: string, keywords: string[]): boolean {
 
 export function createMerkoraConversationReply(input: ConversationInput): ConversationReply {
   const text = input.message.trim();
+  const match = identifyDomain(text);
   const vague = text.length < 35 ||
     /^(bonjour|salut|bonsoir|je veux une application|je veux un site|aide-moi|aidez-moi)[.! ]*$/i.test(text);
-  const suggestedModules = MODULE_RULES.filter((rule) => containsKeyword(text, rule.keywords))
+  const legacyModules = MODULE_RULES.filter((rule) => containsKeyword(text, rule.keywords))
     .map((rule) => rule.module);
-  if (vague || suggestedModules.length === 0) {
-    const clarifyingQuestions = [
-      "Quelle difficulté précise rencontrez-vous aujourd'hui dans votre activité ?",
-      "Qui utilisera la solution : vous seul, vos employés, vos clients ou plusieurs groupes ?",
-      "Quel résultat concret voudriez-vous obtenir grâce à cette solution ?",
-    ];
+  const domainModules = match.domain && match.confidence !== "low"
+    ? getDomainModules(match).map((module) => ({
+        ...module,
+        reason: match.specialization
+          ? `Le besoin correspond au domaine ${match.domain!.label} et à la spécialisation ${match.specialization.label}.`
+          : `Le besoin correspond au domaine ${match.domain!.label}.`,
+      }))
+    : [];
+  const suggestedModules = [...domainModules, ...legacyModules]
+    .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
+    .slice(0, 5);
+  const domainContext = {
+    domainId: match.domain?.id ?? null,
+    domainLabel: match.domain?.label ?? null,
+    specializationId: match.specialization?.id ?? null,
+    confidence: match.confidence,
+  };
+
+  if (vague || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
+    const clarifyingQuestions = getDomainQuestions(match);
     return {
-      assistantMessage: "Je vais vous aider à transformer votre idée en un besoin clair avant de proposer une application. Commençons par comprendre le problème à résoudre.",
+      assistantMessage: match.domain
+        ? `Je repère le domaine « ${match.domain.label} ». Avant de proposer une solution, précisons votre activité et le résultat attendu.`
+        : "Je vais vous aider à transformer votre idée en un besoin clair avant de proposer une application. Commençons par comprendre le problème à résoudre.",
       status: "needs_clarification",
       clarifyingQuestions,
       extractedNeeds: text.length >= 35 ? [text] : [],
       suggestedModules: [],
       nextAction: "clarify_need",
       disclaimer: "Les questions et suggestions de cette étape sont une première analyse, pas encore un cahier des charges validé.",
+      ...domainContext,
     };
   }
+
   const extractedNeeds = [text];
-  const clarifyingQuestions = [
-    "Quels rôles pourront consulter ou modifier ces informations ?",
-    "Souhaitez-vous des notifications, des rapports périodiques ou les deux ?",
-    "La solution doit-elle fonctionner principalement sur téléphone, ordinateur ou les deux ?",
-  ];
+  const clarifyingQuestions = getDomainQuestions(match);
+  if (match.domain && clarifyingQuestions.length < 3) {
+    clarifyingQuestions.push(
+      "Quels rôles pourront consulter ou modifier ces informations ?",
+      "Sur quels appareils la solution doit-elle fonctionner ?",
+    );
+  }
   return {
-    assistantMessage: `J'ai repéré ${suggestedModules.length} piste(s) qui semblent correspondre à votre besoin. Voici une première proposition que nous pouvons ajuster ensemble avant de créer le plan.`,
+    assistantMessage: `J'ai repéré le domaine « ${match.domain?.label ?? "à confirmer"} »${match.specialization ? ` et la spécialisation « ${match.specialization.label} »` : ""}. Voici des modules de départ que nous pouvons ajuster ensemble avant de créer le plan.`,
     status: "draft",
-    clarifyingQuestions,
+    clarifyingQuestions: clarifyingQuestions.slice(0, 7),
     extractedNeeds,
     suggestedModules,
     nextAction: "review_modules",
     disclaimer: "Ceci est une proposition initiale basée sur vos mots. Aucun module, règle métier, prix ou développement n'est encore validé.",
+    ...domainContext,
   };
 }
