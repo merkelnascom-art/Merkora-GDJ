@@ -28,8 +28,8 @@ Deno.test("rejects a different workflow path", () => {
   }
 });
 
-Deno.test("accepts the production-hardening and main branches for the same pinned workflow", () => {
-  for (const branch of ["feature/merkora-production-security-hardening", "main"]) {
+Deno.test("accepts the active factory branch, production-hardening, and main for the same pinned workflow", () => {
+  for (const branch of ["feature/admin-owned-factory-planning", "feature/merkora-production-security-hardening", "main"]) {
     const ref = `refs/heads/${branch}`;
     const workflowRef = `merkelnascom-art/Merkora-GDJ/.github/workflows/merkora-factory-worker.yml@${ref}`;
     if (!isTrustedGitHubWorkflowClaims({ ...validClaims, ref, workflow_ref: workflowRef })) {
