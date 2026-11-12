@@ -47,6 +47,12 @@ describe("buildMockupModel", () => {
     expect(model.selectedProfessionCandidates).toEqual([]);
   });
 
+  it("builds sector-focused diagnostic questions from client-confirmed sectors", () => {
+    const model = buildMockupModel(studentProject, { format: "website", palette: "violet", enabledModules: [], selectedUniversalSectorIds: ["S08-01"] });
+    expect(model.activityDiagnostic.status).toBe("sector_focused");
+    expect(model.activityDiagnostic.questions.map((item) => item.id)).toContain("education-learner");
+  });
+
   it("shows profession candidates for confirmation without selecting them automatically", () => {
     const projectWithCandidates: Project = {
       ...studentProject,
