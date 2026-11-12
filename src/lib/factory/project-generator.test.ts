@@ -27,7 +27,7 @@ describe("generateProjectSource", () => {
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("Récupérer les données du module");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
-    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.6.0");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.7.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("Pointage et retards.");
