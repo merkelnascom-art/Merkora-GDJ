@@ -31,6 +31,8 @@ export function ProjectTeamManagement({
   const [isOwner, setIsOwner] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [email, setEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [selected, setSelected] = useState<Record<string, { canView: boolean; canEdit: boolean }>>({});
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -156,6 +158,21 @@ export function ProjectTeamManagement({
     await load();
   }
 
+  async function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail.trim(), password: loginPassword });
+    setBusy(false);
+    if (error) {
+      setFeedback("Connexion impossible. Vérifiez votre adresse et votre mot de passe.");
+      return;
+    }
+    setLoginPassword("");
+    setFeedback("Connexion réussie. Vérification des droits du projet…");
+    await load();
+  }
+
   async function acceptInvitation() {
     if (!supabase || !userId) return;
     setBusy(true);
@@ -176,8 +193,14 @@ export function ProjectTeamManagement({
     return <section className="card">
       <p className="eyebrow">Équipe du projet</p>
       <h2>Connexion nécessaire</h2>
-      <p>Connectez-vous avec l'adresse qui a reçu l'invitation de la propriétaire.</p>
-      <p>Si vous êtes la propriétaire, connectez-vous avec votre compte administrateur du projet.</p>
+      <p>Connectez-vous avec le compte propriétaire ou avec l'adresse qui a reçu l'invitation.</p>
+      <form onSubmit={signIn}>
+        <label htmlFor="team-login-email">Adresse email</label>
+        <input id="team-login-email" required type="email" autoComplete="username" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} />
+        <label htmlFor="team-login-password">Mot de passe</label>
+        <input id="team-login-password" required type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} />
+        <button type="submit" disabled={busy}>Se connecter</button>
+      </form>
       <p role="status" aria-live="polite">{feedback}</p>
     </section>;
   }
@@ -195,7 +218,7 @@ export function ProjectTeamManagement({
   return <section className="card" aria-label="Gestion de l'équipe du projet">
     <p className="eyebrow">Espace propriétaire</p>
     <h2>Gérer mon équipe</h2>
-    <p>Vous choisissez les personnes qui travaillent avec vous et les modules auxquels elles peuvent accéder. Une invitation ne donne aucun accès avant son activation.</p>
+    <p>Vous choisissez les personnes qui travaillent avec vous et les modules auxquels elles peuvent accéder. Une invitation ne donne aucun accès avant son activation. Pour changer les droits d’une personne déjà membre, révoquez son accès puis invitez-la à nouveau avec les nouveaux modules.</p>
     <form onSubmit={invite}>
       <label htmlFor="team-invite-email">Adresse email du collaborateur</label>
       <input id="team-invite-email" type="email" required maxLength={320} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nom@exemple.com" />
