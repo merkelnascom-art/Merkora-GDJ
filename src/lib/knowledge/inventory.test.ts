@@ -51,7 +51,7 @@ describe("MerKora knowledge inventory manifest", () => {
     const catalogue = resources.find((item) => item.id === "activity-sectors-500");
     expect(catalogue).toBeDefined();
     expect(catalogue?.status).toBe("needs_extraction");
-    expect(catalogue?.notes.join(" ").toLowerCase()).toContain("not");
+    expect(catalogue?.notes.join(" ")).toContain("Aucune des 500 entrées");
   });
 
   it("does not silently merge separate source files that may be duplicates", () => {
