@@ -73,6 +73,7 @@ type Store = { id: string; display_name: string; description: string; is_publish
 type Product = { id: string; name: string; description: string; category: string; price_xof: number; image_url: string; is_active: boolean };
 type CartLine = { productId: string; quantity: number };
 type Order = { id: string; customer_name: string; customer_phone: string; desired_date: string | null; notes: string; fulfillment_method: string; delivery_address: string; items: Array<{ name: string; quantity: number; unit_price_xof: number; line_total_xof: number }>; total_amount_xof: number; status: string; created_at: string };
+type TeamAccess = { isOwner: boolean; catalogueView: boolean; catalogueEdit: boolean; ordersView: boolean; ordersEdit: boolean; customView: boolean; customEdit: boolean };
 type CustomRequest = { id: string; customer_name: string; customer_phone: string; creation_type: string; occasion: string; desired_date: string; portions: number; flavour: string; decoration: string; notes: string; reference_image_path: string | null; reference_image_url?: string; status: string; created_at: string };
 
 const STOREFRONT_SLUG = "__STOREFRONT_SLUG__";
@@ -99,6 +100,8 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [requests, setRequests] = useState<CustomRequest[]>([]);
   const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
+  const [teamAccess, setTeamAccess] = useState<TeamAccess>(EMPTY_TEAM_ACCESS);
   const [adminOpen, setAdminOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -125,6 +128,33 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const loadTeamAccess = useCallback(async (currentUserId: string) => {
+    if (!supabase || !currentUserId) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const { data: owner, error: ownerError } = await supabase.from("user_projects")
+      .select("id").eq("id", PROJECT_ID).eq("user_id", currentUserId).maybeSingle();
+    if (ownerError) { setTeamAccess(EMPTY_TEAM_ACCESS); setFeedback("Vérification des droits impossible."); return; }
+    if (owner) {
+      setTeamAccess({ isOwner: true, catalogueView: true, catalogueEdit: true, ordersView: true, ordersEdit: true, customView: true, customEdit: true });
+      return;
+    }
+    const { data: membership, error: membershipError } = await supabase.from("project_team_memberships")
+      .select("id").eq("project_id", PROJECT_ID).eq("user_id", currentUserId).eq("status", "active").maybeSingle();
+    if (membershipError || !membership) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const { data: grants, error: grantsError } = await supabase.from("project_team_module_permissions")
+      .select("module_id,can_view,can_edit").eq("project_id", PROJECT_ID).eq("membership_id", membership.id);
+    if (grantsError) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const get = (moduleId: string) => grants?.find((grant) => grant.module_id === moduleId);
+    const catalogue = get("catalogue-de-gateau-et-de-patisserie");
+    const orders = get("panier-et-validation-de-commande");
+    const custom = get("commande-personnalisee");
+    setTeamAccess({
+      isOwner: false,
+      catalogueView: Boolean(catalogue?.can_view), catalogueEdit: Boolean(catalogue?.can_edit),
+      ordersView: Boolean(orders?.can_view), ordersEdit: Boolean(orders?.can_edit),
+      customView: Boolean(custom?.can_view), customEdit: Boolean(custom?.can_edit),
+    });
+  }, [supabase]);
+
   const loadStore = useCallback(async () => {
     if (!supabase) return;
     const { data, error } = await supabase.from("project_storefronts")
@@ -144,25 +174,33 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
 
   const loadAdminData = useCallback(async (storeId: string) => {
     if (!supabase) return;
-    const [productResult, orderResult, requestResult] = await Promise.all([
-      supabase.from("project_store_products").select("id,name,description,category,price_xof,image_url,is_active").eq("storefront_id", storeId).order("created_at", { ascending: false }),
-      supabase.from("project_store_orders").select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
-      supabase.from("project_store_custom_requests").select("id,customer_name,customer_phone,creation_type,occasion,desired_date,portions,flavour,decoration,notes,reference_image_path,status,created_at").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
-    ]);
-    if (productResult.error || orderResult.error || requestResult.error) {
-      setFeedback("Accès gestion refusé ou chargement impossible. Vérifiez que vous utilisez le compte propriétaire du projet.");
-      return;
+    if (teamAccess.catalogueView) {
+      const { data, error } = await supabase.from("project_store_products")
+        .select("id,name,description,category,price_xof,image_url,is_active")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false });
+      if (error) { setFeedback("Accès au catalogue refusé."); return; }
+      setProducts((data ?? []) as Product[]);
     }
-    setProducts((productResult.data ?? []) as Product[]);
-    setOrders((orderResult.data ?? []) as Order[]);
-    const requestRows = (requestResult.data ?? []) as CustomRequest[];
-    const requestsWithImages = await Promise.all(requestRows.map(async (request) => {
-      if (!request.reference_image_path) return request;
-      const { data } = await supabase.storage.from("project-store-references").createSignedUrl(request.reference_image_path, 3600);
-      return { ...request, reference_image_url: data?.signedUrl ?? "" };
-    }));
-    setRequests(requestsWithImages);
-  }, [supabase]);
+    if (teamAccess.ordersView) {
+      const { data, error } = await supabase.from("project_store_orders")
+        .select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100);
+      if (error) { setFeedback("Accès aux commandes refusé."); return; }
+      setOrders((data ?? []) as Order[]);
+    } else setOrders([]);
+    if (teamAccess.customView) {
+      const { data, error } = await supabase.from("project_store_custom_requests")
+        .select("id,customer_name,customer_phone,creation_type,occasion,desired_date,portions,flavour,decoration,notes,reference_image_path,status,created_at")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100);
+      if (error) { setFeedback("Accès aux demandes personnalisées refusé."); return; }
+      const requestsWithImages = await Promise.all(((data ?? []) as CustomRequest[]).map(async (request) => {
+        if (!request.reference_image_path) return request;
+        const { data: image } = await supabase.storage.from("project-store-references").createSignedUrl(request.reference_image_path, 3600);
+        return { ...request, reference_image_url: image?.signedUrl ?? "" };
+      }));
+      setRequests(requestsWithImages);
+    } else setRequests([]);
+  }, [supabase, teamAccess.catalogueView, teamAccess.ordersView, teamAccess.customView]);
 
   useEffect(() => {
     try {
@@ -190,22 +228,26 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
       const { data } = await supabase.auth.getUser();
       if (!alive) return;
       setUserEmail(data.user?.email ?? "");
+      setUserId(data.user?.id ?? "");
       await loadStore();
     };
     void init();
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? "");
+      setUserId(session?.user?.id ?? "");
       void Promise.resolve().then(loadStore);
     });
     return () => { alive = false; authListener.subscription.unsubscribe(); };
   }, [supabase, loadStore]);
 
+  useEffect(() => { if (userId) void loadTeamAccess(userId); else setTeamAccess(EMPTY_TEAM_ACCESS); }, [userId, loadTeamAccess]);
+
   useEffect(() => {
     if (!store || !supabase) return;
     if (store.is_published) void loadPublicProducts(store.id);
     else setProducts([]);
-    if (adminOpen && userEmail) void loadAdminData(store.id);
-  }, [store, userEmail, adminOpen, supabase, loadAdminData, loadPublicProducts]);
+    if (adminOpen && userId && (teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView)) void loadAdminData(store.id);
+  }, [store, userId, userEmail, adminOpen, teamAccess, supabase, loadAdminData, loadPublicProducts]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => item.id === line.productId);
@@ -226,12 +268,12 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   async function signOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
-    setOrders([]); setRequests([]); setAdminOpen(false); setFeedback("Vous êtes déconnecté.");
+    setOrders([]); setRequests([]); setUserId(""); setTeamAccess(EMPTY_TEAM_ACCESS); setAdminOpen(false); setFeedback("Vous êtes déconnecté.");
   }
 
   async function addProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || !store) return;
+    if (!supabase || !store || !teamAccess.catalogueEdit) return;
     const price = Number(productPrice);
     if (!productName.trim() || !Number.isSafeInteger(price) || price <= 0) {
       setFeedback("Saisissez un nom et un prix entier positif en FCFA."); return;
@@ -262,14 +304,14 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   }
 
   async function updateProduct(product: Product, changes: Partial<Product>) {
-    if (!supabase || !store) return;
+    if (!supabase || !store || !teamAccess.catalogueEdit) return;
     const { error } = await supabase.from("project_store_products").update(changes).eq("id", product.id).eq("storefront_id", store.id);
     if (error) { setFeedback("Modification impossible : " + error.message); return; }
     await loadAdminData(store.id); setFeedback("Catalogue mis à jour.");
   }
 
   async function togglePublication() {
-    if (!supabase || !store) return;
+    if (!supabase || !store || !teamAccess.isOwner) return;
     const next = !store.is_published;
     if (next && products.filter((product) => product.is_active).length === 0) { setFeedback("Ajoutez au moins un produit actif avec son prix réel avant de publier la boutique."); return; }
     const { error } = await supabase.from("project_storefronts").update({ is_published: next }).eq("id", store.id);
@@ -341,14 +383,14 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   }
 
   async function updateOrderStatus(order: Order, status: string) {
-    if (!supabase || !store) return;
+    if (!supabase || !store || !teamAccess.ordersEdit) return;
     const { error } = await supabase.from("project_store_orders").update({ status }).eq("id", order.id).eq("storefront_id", store.id);
     if (error) { setFeedback("Mise à jour de commande impossible : " + error.message); return; }
     await loadAdminData(store.id);
   }
 
   async function updateRequestStatus(request: CustomRequest, status: string) {
-    if (!supabase || !store) return;
+    if (!supabase || !store || !teamAccess.customEdit) return;
     const { error } = await supabase.from("project_store_custom_requests").update({ status }).eq("id", request.id).eq("storefront_id", store.id);
     if (error) { setFeedback("Mise à jour de la demande impossible : " + error.message); return; }
     await loadAdminData(store.id);
@@ -388,10 +430,10 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
 }
 `;
 
-export function createSweetShopWorkspaceFile(storefrontSlug: string) {
+export function createSweetShopWorkspaceFile(storefrontSlug: string, projectId: string) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storefrontSlug)) throw new Error("Identifiant public de boutique invalide.");
   return {
     path: "src/components/sweet-shop-workspace.tsx",
-    content: sweetShopWorkspaceSource.replace("__STOREFRONT_SLUG__", storefrontSlug),
+    content: sweetShopWorkspaceSource.replace("__STOREFRONT_SLUG__", storefrontSlug).replace("__PROJECT_ID__", projectId),
   };
 }
