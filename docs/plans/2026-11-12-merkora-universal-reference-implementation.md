@@ -98,9 +98,14 @@
 - [x] Implement the compatible discovery-to-family bridge and expose family candidates without auto-selecting a family or module.
 - [x] Display the possible universal family context in the Studio and its exported summary; preserve the existing client-controlled module selection.
 - [x] Display profession candidate titles supplied by discovery as optional client-confirmed choices; persist those choices locally and include confirmed métiers in the concept summary and quote draft.
-- [ ] Connect confirmed métier/sector choices to profession-specific follow-up questions and process maps; do not infer sector IDs that the source index does not provide.
+- [x] Add a structured activity diagnostic plan with universal questions on real activities, workflow stages, roles, volume, exceptions, data/documents and business rules.
+- [x] Add profession-family question packs across all 20 universal families, including regulated-domain confidentiality and human-validation prompts.
+- [x] Let the client explicitly confirm one or more sector IDs in Studio; reject unknown sectors and sectors outside the suggested families.
+- [x] Feed confirmed sectors and confirmed métier titles into a hybrid-aware diagnostic plan; preserve separate family contexts and shared transversal questions.
+- [x] Display the diagnostic prompts in Studio and include confirmed sectors and question prompts in the local concept/quote summary.
+- [ ] Add answer capture and persist diagnostic responses with project ownership and version history; do not treat displayed prompts as completed answers.
+- [ ] Expand discovery to recognize currently unmapped families 16–20 without forcing them into the 13 legacy operational domains.
 - [ ] Run focused tests, typecheck and full build checks for the latest Studio changes.
-- [ ] Commit the complete diagnosis-to-Studio integration after the remaining checks.
 
 ## Execution ledger
 
@@ -109,7 +114,8 @@
 - Task 1 implementation committed: `src/lib/universal-reference.ts` and `src/lib/universal-reference.test.ts`.
 - Task 2 implementation committed: 484 source candidate entries, 20 detailed unreviewed profiles and focused tests in `src/lib/profession-reference.ts` / `.test.ts`.
 - Task 3 implementation committed: explicit family-to-operational-domain mapping and discovery family-candidate output, with focused tests.
-- Task 4 first slice committed: discovery carries possible family candidates, Studio displays the possible families, and the exported concept summary includes them. Profession-specific question selection, sector confirmation and broader hybrid/regulatory end-to-end cases remain open.
+- Task 4 first slice committed: discovery carries possible family candidates and Studio supports client confirmation of profession candidates.
+- Task 4 second slice committed: `activity-diagnostic.ts` defines shared process questions and family-specific question packs across all 20 families; Studio now allows explicit sector confirmation, builds a hybrid-aware question plan and includes confirmed sectors/questions in the local concept and quote summary. Answer capture and persistence remain open.
 - Focused Vitest, full Vitest, typecheck and production build execution are still pending; no passing-test claim is made.
 - No Supabase changes, Sandbox runs, merges or deployments were performed.
 
