@@ -3425,7 +3425,7 @@ export const MERKORA_PROFESSION_CANDIDATES = [
   }
 ] as const satisfies readonly ProfessionCandidate[];
 
-export const MERKORA_DETAILED_PROFESSION_PROFILES = [
+export const MERKORA_DETAILED_PROFESSION_PROFILES: readonly ProfessionProfile[] = [
   {
     "id": "profile-01",
     "title": "Médecin généraliste",
@@ -3917,7 +3917,7 @@ export const MERKORA_DETAILED_PROFESSION_PROFILES = [
     "projectExample": "Une ONG suit les distributions par programme avec des identifiants limités et des rapports agrégés, sans afficher publiquement les situations personnelles.",
     "clientValidation": "Valider les finalités, critères, consentements, droits d'accès, durée de conservation et méthode de mesure avec les responsables du programme."
   }
-] as const satisfies readonly ProfessionProfile[];
+ ];
 
 
 /**
