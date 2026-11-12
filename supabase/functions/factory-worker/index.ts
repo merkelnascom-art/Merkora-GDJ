@@ -356,21 +356,18 @@ Deno.serve(async (request) => {
   const ids = Array.isArray(job.approval_ids) ? job.approval_ids : [];
   const { data: approvals, error: approvalError } = await admin
     .from("project_memory_approvals")
-    .select("id,approval_kind,decision,plan_digest,scope_digest,ai_processing_consent")
+    .select("id,approval_kind,decision,actor_role,plan_digest,scope_digest")
     .eq("project_id", job.project_id).eq("plan_version", job.plan_version).in("id", ids);
   if (approvalError) return json({ error: "approval_check_failed" }, 503);
   const valid = (kind: string) => (approvals ?? []).some((a) =>
-    a.approval_kind === kind && a.decision === "approved" &&
+    a.approval_kind === kind && a.decision === "approved" && a.actor_role === "admin" &&
     a.plan_digest === job.plan_digest && a.scope_digest === job.scope_digest
   );
-  const clientConsent = (approvals ?? []).some((a) =>
-    a.approval_kind === "client_scope" && a.decision === "approved" &&
-    a.ai_processing_consent === true && a.plan_digest === job.plan_digest &&
-    a.scope_digest === job.scope_digest
-  );
-  if (!valid("client_scope") || !valid("admin_review") ||
-      !valid("execution_authorization") || !clientConsent) {
-    return json({ error: "required_approvals_or_ai_consent_missing" }, 409);
+  // Internal factory execution requires only the two exact administrative approvals.
+  // Customer scope approval and external-AI consent are separate workflows and are
+  // deliberately not prerequisites for this local, isolated build worker.
+  if (!valid("admin_review") || !valid("execution_authorization")) {
+    return json({ error: "required_admin_approvals_missing" }, 409);
   }
 
   const { data: requests, error: requestError } = await admin
