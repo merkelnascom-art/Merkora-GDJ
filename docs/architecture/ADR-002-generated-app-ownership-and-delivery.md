@@ -117,3 +117,19 @@ The human delivery review must fail closed if the app uses local-only persistenc
 - Business data survives browser/device changes and is not stored solely in localStorage.
 - The factory refuses delivery when any required access, persistence, security or workflow check is missing.
 - Preview and production deployment are separate, approval-controlled actions.
+
+
+## Implementation update — 2026-11-12
+
+- Générateur storefront version `merkora-nextjs-scaffold/1.6.0` : le parcours Asho Sweet ajoute un espace client avec inscription, connexion, liste des commandes, suivi des statuts, demandes personnalisées et accès à la photo d'inspiration.
+- Les commandes et demandes envoyées pendant une session authentifiée sont associées à `auth.uid()` par un déclencheur PostgreSQL ; le navigateur ne peut pas choisir le propriétaire de l'enregistrement.
+- Les politiques RLS autorisent chaque client authentifié à lire uniquement ses propres commandes et demandes ; les droits du propriétaire restent limités à son projet.
+- Les photos de référence restent dans le bucket privé ; le client concerné et le propriétaire peuvent obtenir des URL signées pour leurs propres demandes.
+- Migrations appliquées au projet Supabase MerKora `tvwkickjtqjqwoiidmxj` :
+  - `20261112133837_secure_storefront_updates_and_photo_uploads`
+  - `20261112133842_add_customer_accounts_and_order_tracking`
+- Vérification en base : colonnes de liaison client, colonne du chemin photo, buckets public/privé, politiques RLS et déclencheurs présents.
+- Vérification des données Asho Sweet après migration : 0 produit, 0 commande et 0 demande ; aucun enregistrement métier préexistant n'a été modifié.
+- Le catalogue Asho Sweet reste volontairement non publié et vide. La propriétaire devra ajouter ses propres réalisations, photos et tarifs.
+- Limite restante : les modules génériques hors template boutique utilisent encore le prototype localStorage. Ils ne doivent pas être livrés comme des espaces de travail multi-utilisateurs opérationnels avant l'implémentation du runtime persistant commun.
+- CI automatisée sur les derniers commits de cette branche : aucun résultat disponible à ce stade ; la revue de code et la vérification CI restent nécessaires avant livraison.
