@@ -124,6 +124,7 @@ describe("generateProjectSource", () => {
 
     expect(workspace).toContain("sans paiement");
     expect(workspace).toContain("CustomerAccountPanel");
+    expect(workspace).toContain("merkora-store-order-submitted");
     const accountPanel = sweetShop.files.find((file) => file.path === "src/components/customer-account-panel.tsx")?.content ?? "";
     expect(accountPanel).toContain("signUp");
     expect(accountPanel).toContain("signInWithPassword");
@@ -133,6 +134,9 @@ describe("generateProjectSource", () => {
     expect(accountPanel).toContain("createSignedUrl");
     expect(accountPanel).toContain("Mes commandes");
     expect(accountPanel).toContain("Mes demandes personnalisées");
+    expect(accountPanel).toContain("window.addEventListener");
+    expect(accountPanel).toContain("window.removeEventListener");
+    expect(accountPanel).toContain("merkora-store-order-submitted");
     const accountOutput = ts.transpileModule(accountPanel, {
       compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
       reportDiagnostics: true,
