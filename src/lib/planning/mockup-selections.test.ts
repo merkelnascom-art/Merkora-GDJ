@@ -36,6 +36,25 @@ describe("buildSelectedPlanOptions", () => {
     ]);
   });
 
+  it("passes selected transversal options into the approved plan scope", () => {
+    const selected = buildSelectedPlanOptions(project, {
+      moduleSelectionConfirmed: true,
+      enabledModules: ["common-roles-permissions", "common-notifications"],
+    });
+    expect(selected.map((item) => item.id)).toEqual([
+      "module:common-roles-permissions",
+      "module:common-notifications",
+    ]);
+  });
+
+  it("preserves an explicit choice to include no modules", () => {
+    const selected = buildSelectedPlanOptions(project, {
+      moduleSelectionConfirmed: true,
+      enabledModules: [],
+    });
+    expect(selected).toEqual([]);
+  });
+
   it("does not include recommendations when the client has not explicitly selected any", () => {
     const selected = buildSelectedPlanOptions(project, {
       enabledModules: ["attendance"],
