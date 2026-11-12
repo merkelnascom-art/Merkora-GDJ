@@ -126,7 +126,7 @@ using (exists (select 1 from public.project_storefronts s join public.user_proje
 create policy "Store owners can update order status"
 on public.project_store_orders for update to authenticated
 using (exists (select 1 from public.project_storefronts s join public.user_projects p on p.id = s.project_id where s.id = project_store_orders.storefront_id and p.user_id = (select auth.uid())))
-with check (exists (select 1 from public.project_storefronts s join public.user_projects p on p.id = s.project_id where s.id = project_storefronts.project_id and p.user_id = (select auth.uid())));
+with check (exists (select 1 from public.project_storefronts s join public.user_projects p on p.id = s.project_id where s.id = project_store_orders.storefront_id and p.user_id = (select auth.uid())));
 
 create or replace function public.calculate_project_store_order()
 returns trigger language plpgsql set search_path = ''
