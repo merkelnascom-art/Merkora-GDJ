@@ -5,6 +5,7 @@ import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
 import { getUniversalFamilyById } from "./universal-reference";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
 import type { ProfessionCandidate } from "./profession-reference";
+import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
@@ -18,6 +19,7 @@ export type MockupConfig = {
   selectedRecommendationIds?: string[];
   /** Profession candidates are selected only after explicit client confirmation. */
   selectedProfessionCandidateIds?: string[];
+  selectedUniversalSectorIds?: string[];
 };
 export type MockupModule = DomainOption;
 export type MockupRecommendation = MockupModule & { reason: string };
@@ -33,6 +35,7 @@ export type MockupModel = {
   universalFamilyCandidates: Array<{ id: string; label: string }>;
   professionCandidates: ProfessionCandidate[];
   selectedProfessionCandidates: ProfessionCandidate[];
+  activityDiagnostic: ActivityDiagnosticPlan;
   transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
@@ -147,6 +150,7 @@ export function buildMockupModel(
   }).professionCandidates;
   const selectedProfessionIds = new Set(config.selectedProfessionCandidateIds ?? []);
   const selectedProfessionCandidates = professionCandidates.filter((candidate) => selectedProfessionIds.has(candidate.id));
+  const activityDiagnostic = buildActivityDiagnosticPlan({ familyIds: universalFamilyCandidates.map((family) => family.id), sectorIds: config.selectedUniversalSectorIds ?? [], professionTitles: selectedProfessionCandidates.map((candidate) => candidate.title) });
   const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
   const modules: MockupModule[] = trustedMatch ? catalog.domainOptions : legacyModules;
   const transversalOptions = trustedMatch ? catalog.transversalOptions : [];
@@ -182,6 +186,7 @@ export function buildMockupModel(
     universalFamilyCandidates,
     professionCandidates,
     selectedProfessionCandidates,
+    activityDiagnostic,
     transversalOptions,
     format: config.format,
     formatLabel: formatLabels[config.format],
