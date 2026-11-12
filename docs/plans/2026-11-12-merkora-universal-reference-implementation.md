@@ -14,7 +14,7 @@
 - Do not merge into `main`, deploy production, launch a paid Vercel Sandbox, or activate paid/external AI services without separate explicit approval.
 - Keep the existing 13 operational domains compatible during migration.
 - Treat 20 families and 100 sectors as the initial taxonomy; distinguish it from the 13 operational domains.
-- Treat the 500 profession titles as candidate entries requiring review; only detailed, verified profiles count as completed profession records.
+- Treat the stated 500 profession titles as a source-document target requiring reconciliation: an audit of the current index found 484 candidate entries after excluding the 20 family headings. Preserve the source discrepancy; do not invent the missing 16.
 - Treat 2,000–3,000 métiers/specializations as a progressive target, never as an existing complete catalogue.
 - AI suggestions are proposals. No module, integration, payment, publication or external action is activated without the required client/admin validation.
 - Preserve health, legal, finance, safety, education and other regulated-domain safeguards; do not automate professional decisions.
@@ -35,14 +35,16 @@
 - Produces lookup helpers `getUniversalFamilyById(id)` and `getUniversalSectorById(id)`.
 - Does not replace or rename `DomainId` or `MERKORA_DOMAINS`.
 
-- [ ] Add tests asserting 20 unique family IDs, exactly 100 unique sector IDs, five sectors per family, non-empty labels/descriptions, and successful lookup / null for unknown IDs.
+- [x] Add tests asserting 20 unique family IDs, exactly 100 unique sector IDs, five sectors per family, non-empty labels/descriptions, and successful lookup / null for unknown IDs.
 - [ ] Run `npm test -- src/lib/universal-reference.test.ts`; expected initial failure because the module is absent.
-- [ ] Implement the reference using the exact family and sector structure in document 09; preserve source IDs where present and assign deterministic IDs only where the source requires them.
+- [x] Implement the reference using the exact family and sector structure in document 09; preserve source IDs where present and assign deterministic IDs only where the source requires them.
 - [ ] Run the focused test; expected all taxonomy invariants and lookup cases pass.
 - [ ] Run `npm run typecheck` and `npm test`; expected no regression in the existing discovery and domain tests.
-- [ ] Commit as `feat: add universal family and sector reference`.
+- [x] Commit as `feat: add universal family and sector reference`.
 
 ### Task 2: Profession candidate index and verified profile boundary
+
+**Source audit finding:** document 10 declares 500 candidate titles, but its current index contains 504 bullet rows across the 20 groups; 20 are family labels, leaving 484 candidate entries. Four titles occur in more than one family (`Livreur`, `Gestionnaire de paie`, `Concierge`, `Éducateur spécialisé`). Keep cross-family occurrences linked to their source family, and record the 16-entry gap instead of fabricating titles.
 
 **Files:**
 - Create: `src/lib/profession-reference.ts`
@@ -97,6 +99,14 @@
 - [ ] Ensure Studio updates from the selected project scope and does not auto-enable proposed modules.
 - [ ] Run focused tests, typecheck and full build checks.
 - [ ] Commit as `feat: connect universal reference to diagnosis and studio`.
+
+## Execution ledger
+
+- Branch created from `feature/merkora-factory-unified-runtime`: `feature/merkora-universal-reference-implementation`.
+- Task 1 source data extracted and checked: 20 families, 5 sectors per family, 100 sectors total.
+- Task 1 implementation committed: `src/lib/universal-reference.ts` and `src/lib/universal-reference.test.ts`.
+- Automated execution of Vitest/typecheck is still pending; no passing-test claim is made.
+- No Supabase changes, Sandbox runs, merges or deployments were performed.
 
 ## Product decisions deliberately preserved
 
