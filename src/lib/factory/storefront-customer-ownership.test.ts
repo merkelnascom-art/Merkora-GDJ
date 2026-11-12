@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20261112140000_link_storefront_records_to_customer_accounts.sql",
+  "supabase/migrations/20261112133842_add_customer_accounts_and_order_tracking.sql",
   "utf8",
 );
 
@@ -11,8 +11,8 @@ describe("storefront customer account ownership migration", () => {
     expect(migration).toMatch(/alter table public\.project_store_orders[\s\S]*add column if not exists customer_user_id uuid references auth\.users\(id\)/i);
     expect(migration).toMatch(/alter table public\.project_store_custom_requests[\s\S]*add column if not exists customer_user_id uuid references auth\.users\(id\)/i);
     expect(migration).toMatch(/new\.customer_user_id\s*:=\s*auth\.uid\(\)/i);
-    expect(migration).toMatch(/create trigger .*customer.*order/i);
-    expect(migration).toMatch(/create trigger .*customer.*request/i);
+    expect(migration).toMatch(/create trigger bind_project_store_order_customer/i);
+    expect(migration).toMatch(/create trigger bind_project_store_request_customer/i);
   });
 
   it("allows customers to read only their own orders and custom requests", () => {
