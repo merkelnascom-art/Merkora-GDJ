@@ -2,6 +2,21 @@
 -- Customer scope approval is not part of the internal factory plan approval.
 -- External AI processing consent remains a separate prerequisite for any future
 -- external AI execution; queue preparation itself performs no external AI call.
+--
+-- The previous database allowlist also contained wdesk87@gmail.com, which is
+-- recorded as a customer account. Keep the database-side administrator check
+-- fail-closed to the platform owner rather than granting customer accounts admin
+-- RLS privileges. Additional administrators should be provisioned explicitly
+-- through a server-managed authorization source before being added here.
+
+create or replace function public.is_merkora_admin()
+returns boolean
+language sql
+stable
+set search_path = ''
+as $function$
+  select lower(coalesce(auth.jwt() ->> 'email', '')) = 'merkelnascom@gmail.com';
+$function$;
 
 drop policy if exists "admins can create factory jobs after exact approvals"
   on public.project_factory_jobs;
@@ -50,4 +65,4 @@ with check (
 
 comment on policy "admins can create factory jobs after exact approvals"
 on public.project_factory_jobs is
-  'Requires an allowlisted administrator, the exact plan and scope digests, and both matching admin_review and execution_authorization approvals. Customer plan approval and external AI consent are separate concerns.';
+  'Requires the platform administrator, exact plan and scope digests, and both matching admin_review and execution_authorization approvals. Customer plan approval and external AI consent are separate concerns.';
