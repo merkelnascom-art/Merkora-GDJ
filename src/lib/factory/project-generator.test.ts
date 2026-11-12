@@ -36,7 +36,8 @@ describe("generateProjectSource", () => {
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("Récupérer les données du module");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
     expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.8.0");
-    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain('href="/team"');
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("ProjectTeamLink");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain('projectId={"MK-TEST-000001"}');
     const teamPage = result.files.find((file) => file.path === "src/app/team/page.tsx")?.content ?? "";
     expect(teamPage).toContain('projectId={"MK-TEST-000001"}');
     expect(teamPage).toContain('id: "attendance"');
