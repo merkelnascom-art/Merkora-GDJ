@@ -58,6 +58,7 @@ export function ProjectMockupStudio({ project }: Props) {
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
           enabledModules: Array.isArray(parsed.enabledModules) ? parsed.enabledModules.filter((id): id is string => typeof id === "string") : [],
+          moduleSelectionConfirmed: parsed.moduleSelectionConfirmed === true,
           ...(Array.isArray(parsed.selectedRecommendationIds)
             ? { selectedRecommendationIds: parsed.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
             : {}),
@@ -81,12 +82,9 @@ export function ProjectMockupStudio({ project }: Props) {
 
   function toggleModule(id: string) {
     setConfig((current) => {
-      const selected = current.enabledModules.length > 0
-        ? current.enabledModules
-        : model.modules.map((item) => item.id);
-      if (selected.includes(id) && selected.length === 1) return current;
+      const selected = current.moduleSelectionConfirmed ? current.enabledModules : [];
       const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
-      return { ...current, enabledModules: next };
+      return { ...current, enabledModules: next, moduleSelectionConfirmed: true };
     });
   }
 
@@ -254,10 +252,21 @@ export function ProjectMockupStudio({ project }: Props) {
           </div>
 
           <div className="mockup-control-group">
-            <span className="mockup-control-title">Blocs de la maquette</span>
-            <p className="mockup-control-hint">Coche les éléments que le client souhaite voir dans le concept.</p>
-            {model.modules.map((item) => {
-              const selected = model.visibleModules.some((visible) => visible.id === item.id);
+            <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
+            <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
+            {model.modules.filter((item) => item.group === "metier").map((item) => {
+              const selected = config.moduleSelectionConfirmed === true && config.enabledModules.includes(item.id);
+              return (
+                <label className="mockup-module-toggle" key={item.id}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleModule(item.id)} />
+                  <span><strong>{item.title}</strong><small>{item.description}</small></span>
+                </label>
+              );
+            })}
+            <span className="mockup-control-title" style={{ display: "block", marginTop: 16 }}>Options transversales (facultatives)</span>
+            <p className="mockup-control-hint">Ces fonctions peuvent servir à plusieurs métiers. Elles ne sont pas ajoutées automatiquement au projet.</p>
+            {model.transversalOptions.map((item) => {
+              const selected = config.moduleSelectionConfirmed === true && config.enabledModules.includes(item.id);
               return (
                 <label className="mockup-module-toggle" key={item.id}>
                   <input type="checkbox" checked={selected} onChange={() => toggleModule(item.id)} />
