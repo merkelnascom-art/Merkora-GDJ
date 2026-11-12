@@ -21,9 +21,12 @@ describe("validateNeed", () => {
 });
 
 describe("buildRecommendations", () => {
-  it("suggests organization steps for a team-management need", () => {
+  it("routes a team-management need to human-resources modules", () => {
     const recommendations = buildRecommendations(validNeed);
-    expect(recommendations.some((item) => item.title === "Organiser les opérations commerciales")).toBe(true);
+    const titles = recommendations.map((item) => item.title);
+    expect(titles).toContain("Dossiers du personnel");
+    expect(titles).toContain("Temps et absences");
+    expect(titles).not.toContain("Organiser les opérations commerciales");
   });
 
   it("does not recommend shop or team management for career orientation", () => {
