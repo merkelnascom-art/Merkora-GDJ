@@ -140,6 +140,7 @@ async function main() {
   });
 
   const source = generateProjectSource({
+    projectId: String(project.id ?? project.project_id ?? ""),
     projectName: String(project.title ?? "Projet MerKora"),
     projectDescription: `${String(project.problem ?? "")} Objectif : ${String(project.desired_outcome ?? "")}`.slice(0, 500),
     modules,
