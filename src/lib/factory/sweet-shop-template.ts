@@ -145,8 +145,8 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     if (!supabase) return;
     const [productResult, orderResult, requestResult] = await Promise.all([
       supabase.from("project_store_products").select("id,name,description,category,price_xof,image_url,is_active").eq("storefront_id", storeId).order("created_at", { ascending: false }),
-      supabase.from("project_store_orders").select("*").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
-      supabase.from("project_store_custom_requests").select("*").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
+      supabase.from("project_store_orders").select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
+      supabase.from("project_store_custom_requests").select("id,customer_name,customer_phone,creation_type,occasion,desired_date,portions,flavour,decoration,notes,reference_image_path,status,created_at").eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100),
     ]);
     if (productResult.error || orderResult.error || requestResult.error) {
       setFeedback("Accès gestion refusé ou chargement impossible. Vérifiez que vous utilisez le compte propriétaire du projet.");
