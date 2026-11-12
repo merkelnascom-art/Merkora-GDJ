@@ -97,8 +97,10 @@
 - [x] Add focused integration tests for known family candidates, ambiguous finance/management candidates, vague requests, and Studio family context. Broader hybrid and regulated-domain scenarios remain to be expanded.
 - [x] Implement the compatible discovery-to-family bridge and expose family candidates without auto-selecting a family or module.
 - [x] Display the possible universal family context in the Studio and its exported summary; preserve the existing client-controlled module selection.
-- [ ] Run focused tests, typecheck and full build checks.
-- [ ] Commit as `feat: connect universal reference to diagnosis and studio`.
+- [x] Display profession candidate titles supplied by discovery as optional client-confirmed choices; persist those choices locally and include confirmed métiers in the concept summary and quote draft.
+- [ ] Connect confirmed métier/sector choices to profession-specific follow-up questions and process maps; do not infer sector IDs that the source index does not provide.
+- [ ] Run focused tests, typecheck and full build checks for the latest Studio changes.
+- [ ] Commit the complete diagnosis-to-Studio integration after the remaining checks.
 
 ## Execution ledger
 
