@@ -87,6 +87,7 @@ describe("generateProjectSource", () => {
     });
     const paths = sweetShop.files.map((file) => file.path);
     expect(paths).toContain("src/components/sweet-shop-workspace.tsx");
+    expect(paths).toContain("src/components/customer-account-panel.tsx");
     expect(paths).toContain(".env.example");
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/catalogue-de-gateau-et-de-patisserie/page.tsx")?.content).toContain('mode="catalogue"');
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/commande-personnalisee/page.tsx")?.content).toContain('mode="custom-order"');
@@ -122,6 +123,21 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("Photo de votre réalisation");
 
     expect(workspace).toContain("sans paiement");
+    expect(workspace).toContain("CustomerAccountPanel");
+    const accountPanel = sweetShop.files.find((file) => file.path === "src/components/customer-account-panel.tsx")?.content ?? "";
+    expect(accountPanel).toContain("signUp");
+    expect(accountPanel).toContain("signInWithPassword");
+    expect(accountPanel).toContain("customer_user_id");
+    expect(accountPanel).toContain("project_store_orders");
+    expect(accountPanel).toContain("project_store_custom_requests");
+    expect(accountPanel).toContain("createSignedUrl");
+    expect(accountPanel).toContain("Mes commandes");
+    expect(accountPanel).toContain("Mes demandes personnalisées");
+    const accountOutput = ts.transpileModule(accountPanel, {
+      compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+      reportDiagnostics: true,
+    });
+    expect(accountOutput.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)).toEqual([]);
     expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
     const workspaceOutput = ts.transpileModule(workspace, {
       compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
