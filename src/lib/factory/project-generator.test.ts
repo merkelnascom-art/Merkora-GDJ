@@ -22,7 +22,7 @@ describe("generateProjectSource", () => {
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
-    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.2.0");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.3.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("Pointage et retards.");
@@ -90,10 +90,14 @@ describe("generateProjectSource", () => {
     expect(sweetShop.files.find((file) => file.path === "src/app/modules/panier-et-validation-de-commande/page.tsx")?.content).toContain('mode="cart"');
     const workspace = sweetShop.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
     expect(workspace).toContain("Prix en FCFA");
-    expect(workspace).toContain("localStorage");
-    expect(workspace).toContain("Commande enregistrée sur cet appareil");
+    expect(workspace).toContain("createClient");
+    expect(workspace).toContain("signInWithPassword");
+    expect(workspace).toContain("project_store_orders");
+    expect(workspace).toContain("project_store_custom_requests");
+    expect(workspace).not.toContain("localStorage");
     expect(workspace).toContain("Aucun produit");
     expect(workspace).toContain("sans paiement");
+    expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
   });
 
 });
