@@ -5,6 +5,7 @@ import { projectTeamManagementSource } from "./project-team-template";
 describe("generated project team management workspace", () => {
   it("lets only the owner invite people and choose module-level view/edit rights", () => {
     expect(projectTeamManagementSource).toContain("project-team-invite");
+    expect(projectTeamManagementSource).toContain("signInWithPassword");
     expect(projectTeamManagementSource).toContain("project-team-revoke");
     expect(projectTeamManagementSource).toContain("project_team_memberships");
     expect(projectTeamManagementSource).toContain("project_team_module_permissions");
