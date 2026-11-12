@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Project } from "@/lib/project-types";
+import { getUniversalFamilyById } from "@/lib/universal-reference";
 import {
   buildMockupModel,
   type MockupConfig,
@@ -65,6 +66,9 @@ export function ProjectMockupStudio({ project }: Props) {
           ...(Array.isArray(parsed.selectedProfessionCandidateIds)
             ? { selectedProfessionCandidateIds: parsed.selectedProfessionCandidateIds.filter((id): id is string => typeof id === "string") }
             : {}),
+          ...(Array.isArray(parsed.selectedUniversalSectorIds)
+            ? { selectedUniversalSectorIds: parsed.selectedUniversalSectorIds.filter((id): id is string => typeof id === "string") }
+            : {}),
         });
       }
     } catch {
@@ -89,6 +93,10 @@ export function ProjectMockupStudio({ project }: Props) {
       const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
       return { ...current, enabledModules: next, moduleSelectionConfirmed: true };
     });
+  }
+
+  function toggleUniversalSector(id: string) {
+    setConfig((current) => { const selected = current.selectedUniversalSectorIds ?? []; return { ...current, selectedUniversalSectorIds: selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id] }; });
   }
 
   function toggleProfessionCandidate(id: string) {
@@ -128,6 +136,9 @@ export function ProjectMockupStudio({ project }: Props) {
       "",
       "PÉRIMÈTRE ENVISAGÉ",
       ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
+      ...(model.activityDiagnostic.selectedSectors.length > 0 ? ["Secteurs confirmés :", ...model.activityDiagnostic.selectedSectors.map((item) => `- ${item.label}`)] : ["Secteur : à confirmer"]),
+      "Questions de diagnostic à approfondir :",
+      ...model.activityDiagnostic.questions.map((item) => `- ${item.title} : ${item.prompt}`),
       ...model.visibleModules.map((item) => `- Fonction / bloc : ${item.title} — ${item.description}`),
       ...model.visibleRecommendations.map((item) => `- Piste retenue : ${item.title} — ${item.description}`),
       "",
@@ -215,6 +226,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Direction : ${model.domainLabel}`,
       ...(model.universalFamilyCandidates.length > 0 ? [`Familles de référence possibles : ${model.universalFamilyCandidates.map((family) => family.label).join(" · ")}`] : []),
       ...(model.selectedProfessionCandidates.length > 0 ? [`Métiers confirmés par le client : ${model.selectedProfessionCandidates.map((item) => item.title).join(" · ")}`] : ["Métier : à confirmer avec le client"]),
+      ...(model.activityDiagnostic.selectedSectors.length > 0 ? [`Secteurs confirmés par le client : ${model.activityDiagnostic.selectedSectors.map((item) => item.label).join(" · ")}`] : ["Secteur : à confirmer avec le client"]),
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
       "Blocs retenus :",
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
@@ -272,6 +284,14 @@ export function ProjectMockupStudio({ project }: Props) {
           <div className="mockup-control-group">
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
             {model.universalFamilyCandidates.length > 0 && <p className="mockup-control-hint">Familles de référence possibles : {model.universalFamilyCandidates.map((family) => family.label).join(" · ")}. Cette correspondance aide à élargir l’analyse ; elle ne remplace pas la confirmation du métier et du secteur par le client.</p>}
+            {model.universalFamilyCandidates.length > 0 && <div className="mockup-profession-confirmation">
+              <span className="mockup-control-title" style={{ display: "block", marginTop: 12 }}>Secteurs d’activité à confirmer</span>
+              <p className="mockup-control-hint">Coche uniquement les secteurs réellement concernés. Un projet peut en combiner plusieurs.</p>
+              {model.universalFamilyCandidates.flatMap((family) => (getUniversalFamilyById(family.id)?.sectors ?? []).map((sector) => {
+                const selected = (config.selectedUniversalSectorIds ?? []).includes(sector.id);
+                return <label className="mockup-module-toggle" key={sector.id}><input type="checkbox" checked={selected} onChange={() => toggleUniversalSector(sector.id)} /><span><strong>{sector.label}</strong><small>{sector.description}</small></span></label>;
+              }))}
+            </div>}
             {model.professionCandidates.length > 0 && <div className="mockup-profession-confirmation">
               <span className="mockup-control-title" style={{ display: "block", marginTop: 12 }}>Métiers à confirmer avec le client</span>
               <p className="mockup-control-hint">Voici des pistes issues du référentiel. Coche uniquement les métiers réellement concernés. Aucun métier n’est sélectionné automatiquement et cette liste ne constitue pas une qualification officielle.</p>
@@ -283,6 +303,11 @@ export function ProjectMockupStudio({ project }: Props) {
                 </label>;
               })}
             </div>}
+            <div className="mockup-profession-confirmation">
+              <span className="mockup-control-title" style={{ display: "block", marginTop: 16 }}>Diagnostic du travail réel</span>
+              <p className="mockup-control-hint">{model.activityDiagnostic.status === "sector_focused" ? "Questions affinées selon les secteurs confirmés." : "Questions exploratoires : confirme les secteurs pour affiner le diagnostic."}</p>
+              {model.activityDiagnostic.questions.map((question) => <div className="mockup-module-toggle" key={question.id}><span><strong>{question.stage} — {question.title}</strong><small>{question.prompt}</small><small>Objectif : {question.purpose}</small></span></div>)}
+            </div>
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
               const selected = (config.moduleSelectionConfirmed === true || config.enabledModules.length > 0) && config.enabledModules.includes(item.id);
