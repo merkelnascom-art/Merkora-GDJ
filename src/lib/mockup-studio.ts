@@ -1,5 +1,6 @@
 import type { Project } from "./project-types";
 import { identifyDomain } from "./domain-registry";
+import { analyzeNeed } from "./discovery";
 import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
 import { getUniversalFamilyById } from "./universal-reference";
 import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
@@ -123,7 +124,7 @@ function modulesFor(domain: MockupDomain): MockupModule[] {
 }
 
 export function buildMockupModel(
-  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates"> },
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations" | "budget" | "urgency"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates"> },
   config: MockupConfig,
 ): MockupModel {
   const domain = detectDomain(project);
@@ -136,7 +137,14 @@ export function buildMockupModel(
       return family ? [{ id: family.id, label: family.label }] : [];
     })
     : [];
-  const professionCandidates = project.discovery?.professionCandidates ?? [];
+  const professionCandidates = project.discovery?.professionCandidates ?? analyzeNeed({
+    title: project.title,
+    category: project.category,
+    problem: project.problem,
+    desiredOutcome: project.desiredOutcome,
+    budget: project.budget,
+    urgency: project.urgency,
+  }).professionCandidates;
   const selectedProfessionIds = new Set(config.selectedProfessionCandidateIds ?? []);
   const selectedProfessionCandidates = professionCandidates.filter((candidate) => selectedProfessionIds.has(candidate.id));
   const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
