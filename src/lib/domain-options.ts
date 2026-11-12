@@ -67,6 +67,10 @@ const DOMAIN_OPTIONS: Record<DomainId, DomainOption[]> = {
     option("hospitality-food-safety", "Hygiène et traçabilité", "Lots, températures, allergènes et contrôles renseignés par l'établissement."),
   ],
   "ressources-humaines": [
+    option("team-overview", "Vue d'ensemble de l'équipe", "Effectifs, responsables, sites et repères de fonctionnement."),
+    option("attendance", "Présences et pointages", "Arrivées, départs, absences et corrections validées."),
+    option("task-board", "Tâches et responsabilités", "Actions, responsables, échéances et avancement des équipes."),
+    option("activity-log", "Historique des actions", "Retrouver les changements et validations importants."),
     option("hr-recruitment", "Recrutement et candidatures", "Offres, candidatures, entretiens et décisions humaines tracées."),
     option("hr-leave-approvals", "Congés et autorisations", "Demandes, soldes, validations et historique."),
     option("hr-training", "Formation du personnel", "Compétences, sessions, attestations et besoins."),
