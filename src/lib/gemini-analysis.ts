@@ -68,7 +68,7 @@ export function parseGeminiAnalysis(
     summary,
     domain,
     understood: stringList(item.understood, 12, 260),
-    questions: stringList(item.questions, 10, 300),
+    questions: stringList(item.questions, 7, 300),
     recommendations,
     improvements,
     competitiveAnalysis: parseCompetitiveAnalysis(item.competitiveAnalysis, hasSuppliedCompetitors),
