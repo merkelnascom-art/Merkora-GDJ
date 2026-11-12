@@ -100,7 +100,7 @@ Deno.serve(async (request: Request) => {
     return jsonError("invitation_permissions_create_failed", 503, origin);
   }
 
-  const configuredRedirect = Deno.env.get("MERKORA_INVITE_REDIRECT_URL")?.trim();
+  const configuredRedirect = Deno.env.get("MERKORA_INVITE_REDIRECT_URL")?.trim() || "https://merkoragdj.vercel.app";
   const inviteOptions = {
     data: { merkora_project_invitation: payload.projectId },
     ...(configuredRedirect ? { redirectTo: configuredRedirect } : {}),
