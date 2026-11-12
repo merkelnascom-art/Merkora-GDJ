@@ -57,11 +57,11 @@
 - A detailed profile may contain work activities, processes, roles, questions, data, digital capabilities, risks and review status.
 - No candidate title is silently promoted to a verified profile.
 
-- [ ] Test candidate/profile status separation, unique stable IDs, valid references and explicit unknown mappings.
-- [ ] Import the source's initial candidate titles without inventing job descriptions; preserve uncertain sector mappings as unassigned for review.
-- [ ] Add only the 20 detailed professional profiles that the source actually documents, clearly marking review status and regulated-domain cautions.
+- [x] Add tests for candidate/profile status separation, unique stable IDs, valid family references and cross-family duplicate titles.
+- [x] Import the 484 candidate entries actually present in the source index without inventing job descriptions; preserve sector mappings as unassigned for review and retain the 16-entry discrepancy.
+- [x] Add the 20 detailed professional profiles actually documented in the source, marked `documented_unreviewed` rather than certified or jurisdictionally verified.
 - [ ] Run focused tests, typecheck and full Vitest suite.
-- [ ] Commit as `feat: add reviewed profession reference index`.
+- [x] Commit the profession candidate index, 20 detailed profiles and tests.
 
 ### Task 3: Bridge universal reference to the 13 operational domains
 
@@ -76,11 +76,11 @@
 - Does not infer a confident classification from a vague request.
 - Existing `identifyDomain` behavior remains backward compatible until the bridge is covered by integration tests.
 
-- [ ] Test direct, hybrid, ambiguous and unmapped requests, including the existing 13-domain sample corpus.
-- [ ] Add explicit mappings and deterministic ranking; return confidence and evidence rather than silently selecting a single sector.
-- [ ] Preserve the existing 13-domain result as a compatibility field for current discovery callers.
+- [x] Add tests for direct, hybrid, ambiguous/multi-domain, unmapped and unknown-reference cases.
+- [x] Add explicit family-to-domain mappings with deterministic ordering, confidence, evidence and unmapped-family reporting.
+- [x] Preserve the existing 13-domain result and expose universal family candidates as a separate non-final classification field in discovery.
 - [ ] Run domain, discovery integration, typecheck and full tests.
-- [ ] Commit as `feat: bridge universal taxonomy to operational domains`.
+- [x] Commit the mapping bridge, discovery integration and focused tests.
 
 ### Task 4: Feed profession/process context into adaptive diagnosis and Studio
 
@@ -105,6 +105,9 @@
 - Branch created from `feature/merkora-factory-unified-runtime`: `feature/merkora-universal-reference-implementation`.
 - Task 1 source data extracted and checked: 20 families, 5 sectors per family, 100 sectors total.
 - Task 1 implementation committed: `src/lib/universal-reference.ts` and `src/lib/universal-reference.test.ts`.
+- Task 2 implementation committed: 484 source candidate entries, 20 detailed unreviewed profiles and focused tests in `src/lib/profession-reference.ts` / `.test.ts`.
+- Task 3 implementation committed: explicit family-to-operational-domain mapping and discovery family-candidate output, with focused tests.
+- Task 4 has started: discovery now carries possible universal family IDs without forcing a final choice; Studio integration and broader end-to-end verification remain open.
 - Automated execution of Vitest/typecheck is still pending; no passing-test claim is made.
 - No Supabase changes, Sandbox runs, merges or deployments were performed.
 
