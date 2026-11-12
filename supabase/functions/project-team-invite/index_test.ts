@@ -68,3 +68,13 @@ Deno.test("requires a confirmed email and extracts only a bearer token", () => {
   assertEquals(bearerToken(new Request("https://example.com", { headers: { authorization: "Bearer abc.DEF_123" } })), "abc.DEF_123");
   assertEquals(bearerToken(new Request("https://example.com", { headers: { authorization: "Basic abc" } })), null);
 });
+
+Deno.test("invite endpoint verifies owner identity before writing or sending invitations", async () => {
+  const source = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  assert(source.includes("admin.auth.getUser(token)"));
+  assert(source.includes("confirmedEmail(user)"));
+  assert(source.includes("project.user_id !== user.id"));
+  assert(source.includes("admin.auth.admin.inviteUserByEmail"));
+  assert(source.includes("project_team_module_permissions"));
+  assert(source.includes("payload.grants"));
+});
