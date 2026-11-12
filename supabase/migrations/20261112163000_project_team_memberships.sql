@@ -191,6 +191,29 @@ create policy "Project owners admins and collaborators can update module data"
     )
   );
 
+-- Collaborators can resolve the storefront record only when the owner assigned at least one relevant module.
+create policy "Store collaborators can read their assigned storefront"
+  on public.project_storefronts
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.project_team_memberships m
+      join public.project_team_module_permissions g
+        on g.membership_id = m.id and g.project_id = m.project_id
+      where m.project_id = project_storefronts.project_id
+        and m.user_id = (select auth.uid())
+        and m.status = 'active'
+        and g.module_id in (
+          'catalogue-de-gateau-et-de-patisserie',
+          'commande-personnalisee',
+          'panier-et-validation-de-commande'
+        )
+        and g.can_view
+    )
+  );
+
 -- Staff can read the private product catalogue only when the owner grants view access.
 create policy "Store collaborators can read assigned product catalogue"
   on public.project_store_products
