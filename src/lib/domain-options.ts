@@ -4,7 +4,7 @@ export type DomainOption = {
   id: string;
   title: string;
   description: string;
-  group: "metier" | "transversal";
+  group?: "metier" | "transversal";
 };
 
 const option = (id: string, title: string, description: string, group: DomainOption["group"] = "metier"): DomainOption =>
