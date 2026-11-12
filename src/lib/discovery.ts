@@ -7,6 +7,7 @@ import {
 import {
   identifyDomain,
   getDomainQuestions,
+  MERKORA_DOMAIN_VERSION,
   type DomainId,
   type DomainMatch,
 } from "./domain-registry";
@@ -23,6 +24,7 @@ export type DiscoveryState = "incomplete" | "needs_clarification" | "preliminary
 
 export type DiscoveryResult = {
   state: DiscoveryState;
+  registryVersion: string;
   domain: DiscoveryDomain;
   domainId: DomainId | null;
   specializationId: string | null;
@@ -73,6 +75,7 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     domain === "creative" ? "Création et communication" :
     domain === "digital" ? "Solution numérique" : "Objectif personnel");
   const base = {
+    registryVersion: MERKORA_DOMAIN_VERSION,
     domain,
     domainId,
     specializationId,
