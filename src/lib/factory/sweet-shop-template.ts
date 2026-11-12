@@ -106,6 +106,8 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   const [productCategory, setProductCategory] = useState("Gâteaux");
   const [productPrice, setProductPrice] = useState("");
   const [productImage, setProductImage] = useState("");
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImageInputKey, setProductImageInputKey] = useState(0);
   const [customer, setCustomer] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
@@ -233,14 +235,28 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     if (!productName.trim() || !Number.isSafeInteger(price) || price <= 0) {
       setFeedback("Saisissez un nom et un prix entier positif en FCFA."); return;
     }
+    if (productImageFile && (!["image/jpeg", "image/png", "image/webp"].includes(productImageFile.type) || productImageFile.size > 5 * 1024 * 1024)) {
+      setFeedback("La photo du produit doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo."); return;
+    }
     setBusy(true);
+    let imageUrl = productImage.trim();
+    if (productImageFile) {
+      const extension = productImageFile.type === "image/png" ? "png" : productImageFile.type === "image/webp" ? "webp" : "jpg";
+      const imagePath = store.id + "/products/" + crypto.randomUUID() + "." + extension;
+      const { error: uploadError } = await supabase.storage.from("project-store-product-images").upload(imagePath, productImageFile, {
+        cacheControl: "3600", contentType: productImageFile.type, upsert: false,
+      });
+      if (uploadError) { setBusy(false); setFeedback("Envoi de la photo impossible : " + uploadError.message); return; }
+      imageUrl = supabase.storage.from("project-store-product-images").getPublicUrl(imagePath).data.publicUrl;
+    }
     const { error } = await supabase.from("project_store_products").insert({
       storefront_id: store.id, name: productName.trim(), description: productDescription.trim(),
-      category: productCategory, price_xof: price, image_url: productImage.trim(),
+      category: productCategory, price_xof: price, image_url: imageUrl,
     });
     setBusy(false);
     if (error) { setFeedback("Ajout impossible : " + error.message); return; }
     setProductName(""); setProductDescription(""); setProductPrice(""); setProductImage("");
+    setProductImageFile(null); setProductImageInputKey((value) => value + 1);
     await loadAdminData(store.id); setFeedback("Produit ajouté au catalogue.");
   }
 
@@ -356,7 +372,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
         <div className="sweet-inline"><h2>Espace Asho Sweet</h2><button className="sweet-secondary" type="button" onClick={() => setAdminOpen((value) => !value)}>{adminOpen ? "Fermer" : "Gestion de la boutique"}</button></div>
         {adminOpen && !userEmail && <form className="sweet-form" onSubmit={signIn}><label>Email du propriétaire<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form>}
         {adminOpen && userEmail && <div className="sweet-history"><div className="sweet-inline"><span>Connecté : {userEmail}</span><button type="button" onClick={signOut}>Déconnexion</button><button type="button" onClick={togglePublication}>{store.is_published ? "Masquer la boutique" : "Publier la boutique"}</button></div>
-          <h3>Ajouter un produit</h3><form className="sweet-form" onSubmit={addProduct}><label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label><label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label><label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label><label>Image (URL facultative)<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label><label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label><button type="submit" disabled={busy}>Enregistrer le produit</button></form>
+          <h3>Ajouter un produit</h3><form className="sweet-form" onSubmit={addProduct}><label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label><label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label><label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label><label>Photo de votre réalisation (facultative)<input key={productImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label><label>Ou URL de l'image<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label><label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label><button type="submit" disabled={busy}>Enregistrer le produit</button></form>
           <h3>Catalogue à gérer</h3>{products.map((product) => <article key={product.id}><strong>{product.name} · {money(Number(product.price_xof))}</strong><span>{product.is_active ? "Visible" : "Masqué"}</span><div className="sweet-inline"><button type="button" onClick={() => { const next = window.prompt("Nouveau prix en FCFA", String(product.price_xof)); if (next && Number.isSafeInteger(Number(next)) && Number(next) > 0) void updateProduct(product, { price_xof: Number(next) }); }}>Modifier le prix</button><button type="button" onClick={() => void updateProduct(product, { is_active: !product.is_active })}>{product.is_active ? "Masquer" : "Réactiver"}</button></div></article>)}
           <h3>Commandes reçues</h3>{orders.length === 0 ? <p>Aucune commande pour le moment.</p> : orders.map((order) => <article key={order.id}><strong>{order.customer_name} · {money(Number(order.total_amount_xof))}</strong><span>{order.customer_phone} · {new Date(order.created_at).toLocaleString("fr-FR")}</span><span>{order.fulfillment_method === "delivery" ? "Livraison : " + order.delivery_address : "Retrait sur place"}</span><span>{order.items.map((item) => item.quantity + " × " + item.name).join(", ")}</span><div className="sweet-inline"><select aria-label="Statut de commande" value={order.status} onChange={(event) => void updateOrderStatus(order, event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div></article>)}
           <h3>Demandes personnalisées</h3>{requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}><strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong><span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span><span>{request.flavour} · {request.decoration}</span><small>{request.notes}</small>{request.reference_image_url ? <a href={request.reference_image_url} target="_blank" rel="noreferrer"><img className="sweet-reference-image" src={request.reference_image_url} alt="Photo d'exemple envoyée par le client" /></a> : request.reference_image_path ? <small>Photo de référence indisponible.</small> : null}<select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select></article>)}
