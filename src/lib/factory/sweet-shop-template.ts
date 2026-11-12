@@ -157,7 +157,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
     void init();
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? "");
-      void loadStore();
+      void Promise.resolve().then(loadStore);
     });
     return () => { alive = false; authListener.subscription.unsubscribe(); };
   }, [supabase, loadStore]);
@@ -219,6 +219,7 @@ export function SweetShopWorkspace({ mode }: { mode: Mode }) {
   async function togglePublication() {
     if (!supabase || !store) return;
     const next = !store.is_published;
+    if (next && products.filter((product) => product.is_active).length === 0) { setFeedback("Ajoutez au moins un produit actif avec son prix réel avant de publier la boutique."); return; }
     const { error } = await supabase.from("project_storefronts").update({ is_published: next }).eq("id", store.id);
     if (error) { setFeedback("Publication impossible : " + error.message); return; }
     setStore({ ...store, is_published: next });
