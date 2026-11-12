@@ -99,6 +99,11 @@ export default function HomePage() {
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
   );
+  const activeProjectRecommendations = activeProject
+    ? activeProject.discovery?.registryVersion === MERKORA_DOMAIN_VERSION
+      ? activeProject.recommendations
+      : buildRecommendations(activeProject)
+    : [];
 
   function updateForm<K extends keyof NeedInput>(key: K, value: NeedInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -232,9 +237,6 @@ export default function HomePage() {
                 const discovery = activeProject.discovery?.registryVersion === MERKORA_DOMAIN_VERSION
                   ? activeProject.discovery
                   : analyzeNeed(activeProject);
-                const recommendations = activeProject.discovery?.registryVersion === MERKORA_DOMAIN_VERSION
-                  ? activeProject.recommendations
-                  : buildRecommendations(activeProject);
                 return (
                   <section className="discovery-summary" aria-labelledby="discovery-title">
                     <div className="discovery-summary-head"><div><div className="eyebrow">LECTURE PRÉLIMINAIRE</div><h3 id="discovery-title">{discovery.domainLabel}</h3></div><span className="local-tag">{discovery.state === "needs_clarification" ? "À préciser" : discovery.state === "incomplete" ? "Informations manquantes" : "À confirmer"}</span></div>
@@ -247,7 +249,7 @@ export default function HomePage() {
               })()}
 
               <div className="recommendation-heading"><div><div className="eyebrow">PISTES DE RÉFLEXION</div><h3>Premières directions possibles</h3></div><span className="local-tag">Préliminaire</span></div>
-              <div className="recommendation-list">{recommendations.map((recommendation, index) => <article className="recommendation-card" key={recommendation.title}><span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span><div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div></article>)}</div>
+              <div className="recommendation-list">{activeProjectRecommendations.map((recommendation, index) => <article className="recommendation-card" key={recommendation.title}><span className="recommendation-number">{String(index + 1).padStart(2, "0")}</span><div><h4>{recommendation.title}</h4><p>{recommendation.description}</p><small>{recommendation.reason}</small></div></article>)}</div>
               <div className="notice"><span>ⓘ</span><p>Ces pistes reposent sur des règles locales simples. Elles ne constituent ni un diagnostic IA, ni un devis, ni une promesse de réalisation. Les points incertains doivent être confirmés.</p></div>
               <AiProposalPanel key={activeProject.id} project={activeProject} onApply={(recommendations) => updateProjectRecommendations(activeProject.id, recommendations)} />
               <div className="detail-actions"><button className="button button-quiet" onClick={() => { setForm({ title: activeProject.title, category: activeProject.category, problem: activeProject.problem, desiredOutcome: activeProject.desiredOutcome, budget: activeProject.budget, urgency: activeProject.urgency }); setShowForm(true); setActiveProjectId(null); }}>Modifier le besoin</button><button className="button button-quiet danger-button" onClick={() => deleteProject(activeProject.id)}>Supprimer ce dossier</button></div>
