@@ -148,7 +148,7 @@ export function AdminFactoryPlanningPanel() {
   }
 
   return (
-    <section style={styles.panel}>
+    <section id="admin-factory-planning" style={styles.panel}>
       <div style={styles.header}>
         <div>
           <div style={styles.eyebrow}>PLANIFICATION INTERNE · ADMINISTRATION</div>
