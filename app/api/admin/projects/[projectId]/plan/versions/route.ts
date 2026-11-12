@@ -93,7 +93,14 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       !text(requestProject.budget, 100) || !text(requestProject.urgency, 40)) {
       return NextResponse.json({ error: "Le dossier commercial ne contient pas un besoin projet complet." }, { status: 409 });
     }
-    const project = requestProject;
+    const project = {
+      title: requestProject.title as string,
+      category: requestProject.category as string,
+      problem: requestProject.problem as string,
+      desiredOutcome: requestProject.desiredOutcome as string,
+      budget: requestProject.budget as string,
+      urgency: requestProject.urgency as string,
+    };
     const requestStudio = record(requestPayload.studio) ? requestPayload.studio : {};
     const recommendations = Array.isArray(requestProject.recommendations) ? requestProject.recommendations : [];
     const selectedIds = Array.isArray(requestStudio.selectedRecommendationIds)
