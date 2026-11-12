@@ -112,4 +112,19 @@ describe("generateProjectSource", () => {
     expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
   });
 
+  it("isolates storefront slugs across projects that reuse the same store modules", () => {
+    const modules = [
+      { id: "catalogue-de-gateau-et-de-patisserie", title: "Catalogue", description: "Produits." },
+      { id: "commande-personnalisee", title: "Commandes", description: "Demandes." },
+      { id: "panier-et-validation-de-commande", title: "Panier", description: "Validation." },
+    ];
+    const first = generateProjectSource({ projectId: "MK-PROJECT-000001", projectName: "Asho Sweet", projectDescription: "Boutique.", modules });
+    const second = generateProjectSource({ projectId: "MK-PROJECT-000002", projectName: "Asho Sweet", projectDescription: "Boutique.", modules });
+    const firstWorkspace = first.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    const secondWorkspace = second.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    expect(firstWorkspace).toContain('const STOREFRONT_SLUG = "asho-sweet-000001"');
+    expect(secondWorkspace).toContain('const STOREFRONT_SLUG = "asho-sweet-000002"');
+    expect(firstWorkspace).not.toBe(secondWorkspace);
+  });
+
 });
