@@ -30,7 +30,7 @@ beforeEach(() => {
     }],
   });
 });
-afterEach(() => vi.clearAllMocks());
+afterEach(() => { delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_MODEL; vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 describe("POST /api/projects/[projectId]/assistant", () => {
   it("refuses cross-origin requests before reading project data", async () => {
@@ -64,6 +64,76 @@ describe("POST /api/projects/[projectId]/assistant", () => {
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
     expect(body.aiProviderCalled).toBe(false);
     expect(body.reply.disclaimer).toMatch(/aucun module.*encore validé/i);
+  });
+
+  it("does not call Gemini when the client has not explicitly consented", async () => {
+    process.env.GEMINI_API_KEY = "test-only-secret";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await POST(request({
+      message: "Je veux suivre les retards du personnel et les rapports de caisse",
+      history: [],
+      consent: false,
+    }), context);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.provider).toBe("local");
+    expect(body.aiProviderCalled).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("calls Gemini only after consent and preserves MerKora's module decisions", async () => {
+    process.env.GEMINI_API_KEY = "test-only-secret";
+    const generated = {
+      assistantMessage: "Nous allons préciser les retards et les mouvements de caisse.",
+      clarifyingQuestions: ["Qui valide les retards ?", "Comment rapprochez-vous la caisse ?"],
+      extractedNeeds: ["Suivi des retards", "Rapports de caisse"],
+      moduleEnhancements: [{
+        id: "cash-reports",
+        description: "Enregistrer et rapprocher les mouvements de caisse.",
+        reason: "Le dossier mentionne les rapports de caisse.",
+      }, {
+        id: "unapproved-module",
+        description: "Ne pas ajouter",
+        reason: "Identifiant inventé",
+      }],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify(generated) }] } }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await POST(request({
+      message: "Je veux suivre les retards du personnel et les rapports de caisse",
+      history: [],
+      consent: true,
+    }), context);
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = await response.json();
+    expect(body.provider).toBe("gemini");
+    expect(body.aiProviderCalled).toBe(true);
+    expect(body.reply.assistantMessage).toContain("préciser les retards");
+    expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
+      .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
+    expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
+      .not.toContain("unapproved-module");
+    expect(JSON.stringify(body)).not.toContain("test-only-secret");
+  });
+
+  it("falls back to the deterministic reply when Gemini is unavailable", async () => {
+    process.env.GEMINI_API_KEY = "test-only-secret";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network unavailable")));
+    const response = await POST(request({
+      message: "Je veux suivre les retards du personnel et les rapports de caisse",
+      history: [],
+      consent: true,
+    }), context);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.provider).toBe("unavailable");
+    expect(body.aiProviderCalled).toBe(false);
+    expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
+      .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
   });
 
   it("rejects malformed messages", async () => {
