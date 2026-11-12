@@ -234,23 +234,23 @@ export function sweetShopModeForModule(id: string): SweetShopMode | null {
 export function createSweetShopModulePage(id: string, title: string, description: string): string {
   const mode = sweetShopModeForModule(id);
   if (!mode) throw new Error("Module Asho Sweet non pris en charge.");
-  return \`import { SweetShopWorkspace } from "@/components/sweet-shop-workspace";
+  return `import { SweetShopWorkspace } from "@/components/sweet-shop-workspace";
 
 export default function SweetShopModulePage() {
   return (
     <main>
       <p className="eyebrow">Asho Sweet · Espace de commande</p>
-      <h1>{\${JSON.stringify(title)}}</h1>
-      <p className="lead">{\${JSON.stringify(description)}}</p>
-      <SweetShopWorkspace mode="\${mode}" />
+      <h1>{${JSON.stringify(title)}}</h1>
+      <p className="lead">{${JSON.stringify(description)}}</p>
+      <SweetShopWorkspace mode="${mode}" />
       <p><a href="/">← Retour au catalogue</a></p>
     </main>
   );
 }
-\`;
+`;
 }
 
-export const sweetShopStyles = \`
+export const sweetShopStyles = `
 .sweet-workspace { display: grid; gap: 22px; margin-top: 28px; }
 .sweet-panel { padding: clamp(20px, 4vw, 32px); border: 1px solid #e2e8f0; border-radius: 22px; background: #fff; box-shadow: 0 12px 36px #1720330a; }
 .sweet-panel h2 { margin: 8px 0 10px; font-size: clamp(22px, 3vw, 30px); }
@@ -280,4 +280,4 @@ export const sweetShopStyles = \`
 .sweet-history article { display: grid; gap: 5px; padding: 14px; border-radius: 12px; background: #f8fafc; }
 .sweet-feedback { padding: 12px 16px; border-radius: 12px; background: #eff6ff; color: #1e40af; }
 @media (max-width: 640px) { .sweet-form { grid-template-columns: 1fr; } .sweet-wide { grid-column: auto; } .sweet-cart-line { grid-template-columns: 1fr 72px; } .sweet-cart-line > strong { grid-column: 1 / -1; } .sweet-heading { flex-direction: column; } }
-\`;
+`;
