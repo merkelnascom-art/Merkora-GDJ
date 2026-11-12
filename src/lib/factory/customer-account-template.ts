@@ -83,6 +83,12 @@ export function CustomerAccountPanel({
       setUserEmail(user?.email ?? "");
       if (user) void loadHistory(user.id);
     });
+    const refreshHistory = () => {
+      void supabase.auth.getUser().then(({ data: current }) => {
+        if (current.user) void loadHistory(current.user.id);
+      });
+    };
+    window.addEventListener("merkora-store-order-submitted", refreshHistory);
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
       setUserId(user?.id ?? "");
