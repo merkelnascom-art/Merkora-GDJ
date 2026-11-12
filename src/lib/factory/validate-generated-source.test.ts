@@ -3,6 +3,7 @@ import { generateProjectSource } from "./project-generator";
 import { validateGeneratedProjectSource } from "./validate-generated-source";
 
 const generated = () => generateProjectSource({
+  projectId: "MK-TEST-VALIDATE-001",
   projectName: "Gestion de présence",
   projectDescription: "Suivre les arrivées.",
   modules: [{ id: "attendance", title: "Présences", description: "Pointage." }],
