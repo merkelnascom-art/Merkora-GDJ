@@ -32,6 +32,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
           setReply((payload as { reply: ConversationReply }).reply);
           const result = payload as { provider?: string; aiProviderCalled?: boolean };
           setProvider(result.aiProviderCalled === true && result.provider === "gemini" ? "gemini" : result.provider === "unavailable" ? "unavailable" : "local");
+          setError(result.provider === "unavailable" ? "Gemini n’a pas pu répondre. Votre analyse MerKora locale est conservée." : "");
           setGeminiConsent(false);
           setMode("cloud");
           setMessage("");
