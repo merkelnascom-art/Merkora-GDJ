@@ -137,3 +137,9 @@ The human delivery review must fail closed if the app uses local-only persistenc
 - Preview Vercel de la branche sur le commit `213551cd3f57bdd01992b3365dacab01660c5d3a` : état `READY`.
 - Contrôle de compilation exécuté par Vercel : 62 fichiers de tests réussis, 307 tests réussis, puis build Next.js terminé.
 - Cette vérification porte sur le dépôt MerKora et la génération du code ; l'artefact Asho Sweet doit encore être régénéré avec le générateur 1.6.0 et soumis à sa revue humaine avant toute livraison.
+
+- Générateur générique version `merkora-nextjs-scaffold/1.7.0` : les modules standards n'utilisent plus `localStorage` comme stockage métier. Ils se connectent à Supabase Auth et enregistrent leur état dans `project_module_data`, avec `project_id` et `module_id` explicites.
+- Le compte propriétaire peut retrouver et modifier les données du module depuis plusieurs appareils. Les règles RLS actuelles limitent cette première version au propriétaire du projet et à l'administration MerKora ; l'invitation des employés et les rôles personnalisés restent à construire.
+- Migration `20261112135510_project_module_data` appliquée au projet Supabase `tvwkickjtqjqwoiidmxj`. Vérification : table présente, RLS activé, trois politiques de lecture/création/mise à jour présentes.
+- Preview Vercel du commit `09e13ca95abc90e1f3be4b0e6e119ffc8a32fd8f` : `READY`, 63 fichiers de tests réussis, 311 tests réussis et build Next.js terminé.
+- Les données Asho Sweet restent inchangées ; aucun lancement Sandbox ni déploiement de production n'a été effectué.
