@@ -34,12 +34,12 @@ create policy "Store owners can upload product photos"
 on storage.objects for insert to authenticated
 with check (
   bucket_id = 'project-store-product-images'
-  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/products/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp)$'
+  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/products/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$'
   and exists (
     select 1
     from public.project_storefronts s
     join public.user_projects p on p.id = s.project_id
-    where s.id::text = split_part(storage.objects.name, '/', 1)
+    where s.id::text = split_part(name, '/', 1)
       and p.user_id = (select auth.uid())
   )
 );
@@ -49,11 +49,11 @@ create policy "Customers can upload reference photos to published stores"
 on storage.objects for insert to anon, authenticated
 with check (
   bucket_id = 'project-store-references'
-  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/custom-requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp)$'
+  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/custom-requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$'
   and exists (
     select 1
     from public.project_storefronts s
-    where s.id::text = split_part(storage.objects.name, '/', 1)
+    where s.id::text = split_part(name, '/', 1)
       and s.is_published
   )
 );
@@ -63,12 +63,12 @@ create policy "Store owners can read reference photos"
 on storage.objects for select to authenticated
 using (
   bucket_id = 'project-store-references'
-  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/custom-requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp)$'
+  and name ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/custom-requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$'
   and exists (
     select 1
     from public.project_storefronts s
     join public.user_projects p on p.id = s.project_id
-    where s.id::text = split_part(storage.objects.name, '/', 1)
+    where s.id::text = split_part(name, '/', 1)
       and p.user_id = (select auth.uid())
   )
 );
