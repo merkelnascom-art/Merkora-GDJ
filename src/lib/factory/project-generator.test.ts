@@ -95,7 +95,7 @@ describe("generateProjectSource", () => {
     expect(workspace).toContain("project_store_orders");
     expect(workspace).toContain("project_store_custom_requests");
     expect(workspace).not.toContain("localStorage");
-    expect(workspace).toContain("Aucun produit");
+    expect(workspace).toContain("Le catalogue sera affiché ici");
     expect(workspace).toContain("sans paiement");
     expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
   });
