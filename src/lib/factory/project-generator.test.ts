@@ -18,10 +18,14 @@ describe("generateProjectSource", () => {
     expect(result.files.map((file) => file.path)).toContain("package.json");
     expect(result.files.map((file) => file.path)).toContain("src/app/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/components/module-workspace.tsx");
+    expect(result.files.map((file) => file.path)).toContain(".env.example");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("<ModuleWorkspace");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("localStorage");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("project_module_data");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("signInWithPassword");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("upsert");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).not.toContain("localStorage");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("Récupérer les données du module");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
     expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.6.0");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
