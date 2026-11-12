@@ -40,6 +40,40 @@ describe("buildMockupModel", () => {
     expect(JSON.stringify(model)).not.toMatch(/Université nationale|prix de scolarité|85%/i);
   });
 
+  it("shows profession candidates for confirmation without selecting them automatically", () => {
+    const projectWithCandidates: Project = {
+      ...studentProject,
+      discovery: {
+        state: "preliminary",
+        registryVersion: "test",
+        domain: "education",
+        domainId: "education-formation",
+        specializationId: null,
+        domainLabel: "Éducation et formation",
+        universalFamilyCandidates: ["family-08"],
+        professionCandidates: [
+          { id: "candidate-08-001", title: "Conseiller d’orientation", familyId: "family-08", sourceGroup: "Éducation", reviewStatus: "candidate" },
+          { id: "candidate-08-002", title: "Formateur professionnel", familyId: "family-08", sourceGroup: "Éducation", reviewStatus: "candidate" },
+        ],
+        confidence: "medium",
+        isPreliminary: true,
+        understood: [],
+        questions: [],
+        recommendations: [],
+        notice: "À confirmer",
+      },
+    };
+    const unselected = buildMockupModel(projectWithCandidates, { format: "website", palette: "violet", enabledModules: [] });
+    expect(unselected.professionCandidates).toHaveLength(2);
+    expect(unselected.selectedProfessionCandidates).toEqual([]);
+
+    const selected = buildMockupModel(projectWithCandidates, {
+      format: "website", palette: "violet", enabledModules: [],
+      selectedProfessionCandidateIds: ["candidate-08-002"],
+    });
+    expect(selected.selectedProfessionCandidates.map((item) => item.title)).toEqual(["Formateur professionnel"]);
+  });
+
   it("builds operational modules for team management, not education", () => {
     const model = buildMockupModel(teamProject, { format: "dashboard", palette: "blue", enabledModules: [] });
     expect(model.domain).toBe("operations");
