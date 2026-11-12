@@ -60,11 +60,14 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
   const validation = validateNeed(input);
   const fullText = `${input.title} ${input.problem} ${input.desiredOutcome}`;
   const match = identifyDomain(fullText);
+  const trustedMatch: DomainMatch = match.confidence === "low"
+    ? { ...match, domain: null, specialization: null }
+    : match;
   const domain = legacyDomain(match, input);
   const vague = isVague(input);
-  const domainId = match.domain?.id ?? null;
-  const specializationId = match.specialization?.id ?? null;
-  const domainLabel = match.domain?.label ?? (domain === "general" ? "Domaine à préciser" :
+  const domainId = trustedMatch.domain?.id ?? null;
+  const specializationId = trustedMatch.specialization?.id ?? null;
+  const domainLabel = trustedMatch.domain?.label ?? (domain === "general" ? "Domaine à préciser" :
     domain === "education" ? "Éducation et formation" :
     domain === "commerce" ? "Entreprise, commerce et organisation" :
     domain === "creative" ? "Création et communication" :
@@ -93,12 +96,12 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     };
   }
 
-  if (!match.domain || vague || match.confidence === "low" && match.score < 3) {
+  if (vague || (!trustedMatch.domain && input.category === "other")) {
     return {
       ...base,
       state: "needs_clarification",
       understood: [input.problem.trim(), `Résultat souhaité : ${input.desiredOutcome.trim()}`],
-      questions: getDomainQuestions(match),
+      questions: getDomainQuestions(trustedMatch),
       recommendations: buildRecommendations(input),
       notice: "Le domaine ou le sous-métier reste à confirmer. Les pistes sont exploratoires et ne constituent pas une décision.",
     };
@@ -108,9 +111,9 @@ export function analyzeNeed(input: NeedInput): DiscoveryResult {
     input.problem.trim(),
     `Résultat souhaité : ${input.desiredOutcome.trim()}`,
     `Domaine repéré : ${domainLabel}`,
-    ...(match.specialization ? [`Spécialisation repérée : ${match.specialization.label}`] : []),
+    ...(trustedMatch.specialization ? [`Spécialisation repérée : ${trustedMatch.specialization.label}`] : []),
   ];
-  const questions = getDomainQuestions(match);
+  const questions = getDomainQuestions(trustedMatch);
   return {
     ...base,
     state: "preliminary",
