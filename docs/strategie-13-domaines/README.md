@@ -14,7 +14,7 @@ Les 13 domaines sont des portes d'entrée métier et des référentiels de conna
 1. **[Conception générale unifiée de MerKora GDJ](./08-conception-generale-unifiee-merkora.md)** — vision, parcours adaptatif, classification hybride, rôles, données, propositions, maquettes, fabrication, sécurité et livraison.
 2. **[Référentiel universel des domaines, secteurs et métiers](./09-referentiel-universel-domaines-secteurs-metiers.md)** — 20 familles, cartographie initiale de 100 secteurs, capacités transversales, modèle de fiche métier et méthode d'expansion vers 2 000 à 3 000 métiers/spécialisations.
 
-Le référentiel 09 est une première cartographie structurée, pas encore un catalogue de 2 000 à 3 000 fiches métier approfondies. Ces fiches doivent être enrichies et validées progressivement. Les 13 dossiers métiers historiques restent disponibles et ne sont pas remplacés.
+Le référentiel 09 est une première cartographie structurée, pas encore un catalogue de 2 000 à 3 000 fiches métier approfondies. Le document 10 ajoute 20 fiches professionnelles approfondies et un index initial de 500 intitulés candidats. Ces entrées doivent encore être dédoublonnées, vérifiées et enrichies avant d'être considérées comme des fiches métier validées. Les 13 dossiers métiers historiques restent disponibles et ne sont pas remplacés.
 
 ---
 
@@ -30,6 +30,7 @@ Le référentiel 09 est une première cartographie structurée, pas encore un ca
 8. [Glossaire et décisions ouvertes](./06-glossaire-et-decisions-ouvertes.md)
 9. [Conception hybride et parcours client adaptatif](./07-conception-hybride-et-parcours-client.md)
 10. [Référentiel universel des 20 familles et 100 secteurs](./09-referentiel-universel-domaines-secteurs-metiers.md)
+11. [Catalogue initial : 500 métiers candidats et 20 fiches approfondies](./10-catalogue-metiers-fiches-professionnelles.md)
 
 ## Les 13 dossiers métiers
 
