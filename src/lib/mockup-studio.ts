@@ -1,4 +1,6 @@
 import type { Project } from "./project-types";
+import { identifyDomain } from "./domain-registry";
+import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
@@ -6,10 +8,12 @@ export type MockupConfig = {
   format: MockupFormat;
   palette: MockupPalette;
   enabledModules: string[];
+  /** True only after the client has actively confirmed a module selection. */
+  moduleSelectionConfirmed?: boolean;
   /** Missing means legacy/default behavior: show every proposed solution track. */
   selectedRecommendationIds?: string[];
 };
-export type MockupModule = { id: string; title: string; description: string };
+export type MockupModule = DomainOption;
 export type MockupRecommendation = MockupModule & { reason: string };
 export type MockupDomain = "education" | "operations" | "creative" | "digital" | "general";
 export type MockupModel = {
@@ -18,6 +22,9 @@ export type MockupModel = {
   supportingCopy: string;
   domain: MockupDomain;
   domainLabel: string;
+  domainId: string | null;
+  specializationId: string | null;
+  transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
   palette: MockupPalette;
@@ -112,12 +119,18 @@ export function buildMockupModel(
   config: MockupConfig,
 ): MockupModel {
   const domain = detectDomain(project);
-  const modules = modulesFor(domain);
-  const allowedIds = new Set(modules.map((item) => item.id));
+  const match = identifyDomain([project.title, project.problem, project.desiredOutcome].join(" "));
+  const trustedMatch = match.domain && match.confidence !== "low" ? match : null;
+  const catalog = getDomainOptionCatalog(trustedMatch ?? { domain: null, specialization: null, confidence: "low", score: 0 });
+  const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
+  const modules: MockupModule[] = trustedMatch ? catalog.domainOptions : legacyModules;
+  const transversalOptions = trustedMatch ? catalog.transversalOptions : [];
+  const allOptions = [...modules, ...transversalOptions];
+  const allowedIds = new Set(allOptions.map((item) => item.id));
   const requested = config.enabledModules.filter((id) => allowedIds.has(id));
-  const visibleModules = requested.length > 0
-    ? modules.filter((item) => requested.includes(item.id))
-    : modules;
+  const visibleModules = config.moduleSelectionConfirmed
+    ? allOptions.filter((item) => requested.includes(item.id))
+    : allOptions;
 
   const recommendations: MockupRecommendation[] = project.recommendations.map((item) => ({
     id: recommendationId(item.title),
@@ -138,11 +151,14 @@ export function buildMockupModel(
     headline: title,
     supportingCopy,
     domain,
-    domainLabel: domainLabels[domain],
+    domainLabel: trustedMatch?.domain?.label ?? domainLabels[domain],
+    domainId: trustedMatch?.domain?.id ?? null,
+    specializationId: trustedMatch?.specialization?.id ?? null,
+    transversalOptions,
     format: config.format,
     formatLabel: formatLabels[config.format],
     palette: config.palette,
-    modules,
+    modules: allOptions,
     visibleModules,
     recommendations,
     visibleRecommendations,
