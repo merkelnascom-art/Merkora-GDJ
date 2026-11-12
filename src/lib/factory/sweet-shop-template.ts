@@ -78,6 +78,8 @@ type CustomRequest = { id: string; customer_name: string; customer_phone: string
 
 const STOREFRONT_SLUG = "__STOREFRONT_SLUG__";
 const CART_KEY = "merkora-asho-sweet-cart-v1";
+const PROJECT_ID = "__PROJECT_ID__";
+const EMPTY_TEAM_ACCESS: TeamAccess = { isOwner: false, catalogueView: false, catalogueEdit: false, ordersView: false, ordersEdit: false, customView: false, customEdit: false };
 const money = (value: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value) + " FCFA";
 const statuses = ["received", "confirmed", "preparing", "ready", "delivered", "cancelled"];
 const statusLabels: Record<string, string> = { received: "Reçue", confirmed: "Confirmée", preparing: "En préparation", ready: "Prête", delivered: "Livrée", cancelled: "Annulée" };
