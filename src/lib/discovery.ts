@@ -36,13 +36,14 @@ export type DiscoveryResult = {
 };
 
 function legacyDomain(match: DomainMatch, input: NeedInput): DiscoveryDomain {
-  if (match.domain?.id === "education-formation") return "education";
-  if (match.domain?.id === "commerce") return "commerce";
-  if (match.domain?.id === "voyage-tourisme-creation-jeux" &&
-      match.specialization?.id === "audiovisual") return "creative";
-  if (match.domain?.id === "ressources-humaines" ||
-      match.domain?.id === "entrepreneuriat-finance") return "commerce";
-  if (match.domain) return "digital";
+  if (match.domain && match.confidence !== "low") {
+    if (match.domain.id === "education-formation") return "education";
+    if (match.domain.id === "commerce" || match.domain.id === "ressources-humaines" ||
+        match.domain.id === "entrepreneuriat-finance") return "commerce";
+    if (match.domain.id === "voyage-tourisme-creation-jeux" &&
+        match.specialization?.id === "audiovisual") return "creative";
+    return "digital";
+  }
   if (input.category === "personal") return "personal";
   if (input.category === "business" || input.category === "organization") return "commerce";
   if (input.category === "creative") return "creative";
