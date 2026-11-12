@@ -219,7 +219,7 @@ export function AdminFactoryPlanningPanel() {
                   )}
                   <p style={styles.note}>Cette action prépare le dossier et ses tâches. Elle ne lance ni GitHub Actions, ni Vercel Sandbox, ni déploiement.</p>
                 </div>
-              )}
+              ) : null}
             </article>
           );
         })}
