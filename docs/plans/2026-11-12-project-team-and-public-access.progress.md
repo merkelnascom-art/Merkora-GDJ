@@ -17,8 +17,8 @@ Updated: 2026-11-12
 
 ## Verification in progress
 
-- [ ] Full Preview build and Vitest rerun on latest branch commit `ed454b305465c351a352293a91c9a14a3a748f6f`. Previous Preview run on an earlier commit exposed three issues: a missing domain registry file on the feature branch, two stale test expectations, and a public-policy assertion that belonged to existing database policy rather than the additive migration. Those have been corrected; latest Preview deployment is queued.
-- [ ] Deno check and tests for the three new Edge Functions.
+- [x] Full Preview build on branch commit `48939f9acbdb917d29e5ea9fa06b6bc4809c572d`: Vercel deployment READY; `vitest run` completed without failures; TypeScript and Next.js production build completed successfully. The preview also serves `/auth/accept-invite` with HTTP 200.
+- [ ] Deno check and tests for the three new Edge Functions. The GitHub workflow was updated to include them, but no fresh workflow run was available for this branch.
 - [ ] Review actual invitation email delivery and Auth redirect allowlist/SMTP configuration.
 - [ ] Final security review and ADR/spec reconciliation.
 
