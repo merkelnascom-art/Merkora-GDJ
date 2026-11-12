@@ -23,7 +23,7 @@ export type GeneratedProjectSource = {
   moduleIds: string[];
 };
 
-const GENERATOR_VERSION = "merkora-nextjs-scaffold/1.5.0";
+const GENERATOR_VERSION = "merkora-nextjs-scaffold/1.6.0";
 
 function requiredText(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== "string" || !value.trim() || value.trim().length > maxLength) {
