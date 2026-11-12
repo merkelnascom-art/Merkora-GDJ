@@ -19,6 +19,7 @@ Les 13 domaines sont des portes d'entrée métier et des référentiels de conna
 6. [Les 13 dossiers métiers](#les-13-dossiers-métiers)
 7. [Plan de mise en œuvre](./05-plan-de-mise-en-oeuvre-et-criteres-de-reussite.md)
 8. [Glossaire et décisions ouvertes](./06-glossaire-et-decisions-ouvertes.md)
+9. [Conception hybride et parcours client adaptatif](./07-conception-hybride-et-parcours-client.md)
 
 ## Les 13 dossiers métiers
 
