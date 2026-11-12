@@ -116,7 +116,7 @@ export function mapUniversalReferences(input: UniversalReferenceInput): Universa
 }
 
 export function getUniversalFamilyCandidatesForOperationalDomain(domainId: DomainId): string[] {
-  return Object.entries(UNIVERSAL_FAMILY_OPERATIONAL_DOMAINS)
+  return Object.entries(UNIVERSAL_FAMILY_OPERATIONAL_DOMAINS as Record<string, readonly DomainId[]>)
     .filter(([, domainIds]) => domainIds.includes(domainId))
     .map(([familyId]) => familyId)
     .sort();
