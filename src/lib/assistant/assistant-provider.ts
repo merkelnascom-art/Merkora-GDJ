@@ -1,4 +1,5 @@
 import { requestAiGatewayCompletion } from "@/lib/ai-provider";
+import { identifyDomain } from "@/lib/domain-registry";
 import {
   authorizeExternalAssistant,
   type AssistantRuntimeConfig,
@@ -30,7 +31,7 @@ function boundedStrings(value: unknown, maxItems: number, maxLength: number): st
   return value.map((item) => (item as string).trim());
 }
 
-function parseReply(value: unknown): ExternalReply | null {
+function parseReply(value: unknown, sourceMessage: string): ExternalReply | null {
   if (!isRecord(value) ||
     typeof value.assistantMessage !== "string" || !value.assistantMessage.trim() || value.assistantMessage.length > 5000 ||
     (value.status !== "needs_clarification" && value.status !== "draft")) return null;
@@ -45,12 +46,17 @@ function parseReply(value: unknown): ExternalReply | null {
       typeof item.reason !== "string" || item.reason.length > 500) return null;
     suggestedModules.push({ id: item.id, title: item.title.trim(), description: item.description, reason: item.reason });
   }
+  const domainMatch = identifyDomain(sourceMessage);
   return {
     assistantMessage: value.assistantMessage.trim(),
     status: value.status,
     clarifyingQuestions,
     extractedNeeds,
     suggestedModules,
+    domainId: domainMatch.domain?.id ?? null,
+    domainLabel: domainMatch.domain?.label ?? null,
+    specializationId: domainMatch.specialization?.id ?? null,
+    confidence: domainMatch.confidence,
   };
 }
 
@@ -98,7 +104,7 @@ export async function completeWithExternalAssistant(input: CompleteInput): Promi
     if (typeof message !== "string") return { ok: false, reason: "invalid_provider_response" };
     let decoded: unknown;
     try { decoded = JSON.parse(message); } catch { return { ok: false, reason: "invalid_provider_response" }; }
-    const parsed = parseReply(decoded);
+    const parsed = parseReply(decoded, input.message);
     if (!parsed) return { ok: false, reason: "invalid_provider_response" };
     return {
       ok: true,
