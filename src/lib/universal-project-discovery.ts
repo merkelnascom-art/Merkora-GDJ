@@ -99,6 +99,28 @@ function hasAny(text: string, patterns: RegExp[]): boolean {
 }
 
 /**
+ * A privacy answer only closes the discovery gap when it states an affirmative
+ * safeguard. A refusal or absence of consent must remain visible as unresolved.
+ */
+function hasPositivePrivacyAnswer(text: string): boolean {
+  const negativeConsent = [
+    /ne\\s+(?:seront|sont|seraient|peuvent|pourront|veulent|doivent)\\s+pas.{0,50}(?:inform|accord|consent)/i,
+    /sans.{0,40}(?:informer|prévenir|avertir|accord|consentement)/i,
+    /(?:pas|aucun|aucune|refus).{0,35}(?:accord|consentement)/i,
+  ];
+  if (hasAny(text, negativeConsent)) return false;
+
+  return hasAny(text, [
+    /(?:seront|sont|seraient) inform(?:é|és|ées)/i,
+    /(?:donner|obtenir|recueillir).{0,35}(?:leur|son) accord/i,
+    /(?:avec|après) (?:leur|son) accord/i,
+    /consentement (?:libre|explicite|recueilli)/i,
+    /(?:accès|consultation) (?:sera|est) (?:privé|confidentiel|limité)/i,
+    /seulement moi|uniquement moi|personne d'autre/i,
+  ]);
+}
+
+/**
  * Selects one next question using current evidence and prior user answers.
  * This deterministic first version flags common conflicts for client clarification;
  * it never resolves them automatically or invents business rules.
@@ -178,9 +200,7 @@ export function selectNextDiscoveryQuestion(
     });
   }
 
-  if (analysis.privacyConsiderations.length > 0 && !hasAny(answers, [
-    /accord|consentement|informé|informés|autorisé|autorisés|confidentiel|privé|personne ne|seulement moi/i,
-  ])) {
+  if (analysis.privacyConsiderations.length > 0 && !hasPositivePrivacyAnswer(answers)) {
     gaps.push({
       stage: "privacy_and_consent",
       question: "Les personnes concernées seront-elles informées et d'accord avec l'utilisation de leurs informations, et qui pourra les consulter ?",
