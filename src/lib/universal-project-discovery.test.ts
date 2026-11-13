@@ -27,6 +27,17 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.nextQuestion).toMatch(/procédez-vous aujourd'hui/i);
   });
 
+  it("understands a short yes or no answer when the preceding assistant question defines the topic", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.\\nOui.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "assistant", content: "Ces besoins font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?" },
+    ]);
+
+    expect(result.stage).toBe("current_process");
+  });
+
   it("asks about current operations when the user only describes a desired outcome", () => {
     const analysis = analyzeUniversalProjectIntent("Je veux recevoir un résumé des dépenses de la maison.");
     const result = selectNextDiscoveryQuestion(analysis, []);
