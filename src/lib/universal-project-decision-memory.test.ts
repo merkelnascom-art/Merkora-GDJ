@@ -86,6 +86,24 @@ describe("universal project decision memory", () => {
     expect(revised.decisions[1].supersedes).toBe(revised.decisions[0].id);
   });
 
+  it("does not supersede an unrelated decision when the client corrects another topic", () => {
+    const initial = createDecisionMemory("project-123");
+    const platformChoice = recordDecisionMemoryTurn(initial, {
+      role: "user",
+      content: "Je choisis une application web pour mon projet.",
+    });
+    const budgetChoice = recordDecisionMemoryTurn(platformChoice, {
+      role: "user",
+      content: "Je change d'avis : mon budget maximal est de 100 000 FCFA.",
+    });
+
+    expect(budgetChoice.decisions).toHaveLength(2);
+    expect(budgetChoice.decisions[0].status).toBe("confirmed");
+    expect(budgetChoice.decisions[0].supersededBy).toBeUndefined();
+    expect(budgetChoice.decisions[1].status).toBe("confirmed");
+    expect(budgetChoice.decisions[1].supersedes).toBeUndefined();
+  });
+
   it("treats a short yes or no as a decision only when the prior question asks for a choice", () => {
     const initial = createDecisionMemory("project-123");
     const yes = recordDecisionMemoryTurn(initial, {
