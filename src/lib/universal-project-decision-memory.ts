@@ -85,13 +85,22 @@ export function recordDecisionMemoryTurn(
   const content = cleanText(message.content);
 
   if (message.role === "assistant") {
+    if (/hypothèse|pourrait|peut-être|à vérifier/i.test(content)) {
+      next.hypotheses.push({
+        statement: content,
+        source: "assistant",
+        confirmationRequired: true,
+      });
+      next.hypotheses = next.hypotheses.slice(-MAX_ENTRIES);
+    }
     if (content.includes("?")) next.lastAssistantQuestion = content;
     return next;
   }
 
-  const priorQuestion = previousAssistantMessage?.role === "assistant"
+  const previousContent = previousAssistantMessage?.role === "assistant"
     ? cleanText(previousAssistantMessage.content)
-    : next.lastAssistantQuestion;
+    : "";
+  const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
 
   if (priorQuestion.includes("?") && content) {
     const answerId = `answer-${next.confirmedAnswers.length + 1}`;
