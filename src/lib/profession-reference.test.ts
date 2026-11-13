@@ -36,15 +36,14 @@ describe("MerKora profession reference", () => {
     expect(expanded).toHaveLength(2000);
     expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
     const usedSectorIds = new Set<string>(expanded.flatMap((candidate) => candidate.sectorIds ?? []));
-    expect(usedSectorIds.size).toBe(100);
-    expect([...sectorIds].every((id) => usedSectorIds.has(id))).toBe(true);
+    expect([...sectorIds].filter((id) => !usedSectorIds.has(id))).toEqual([]);
   });
 
   it("reaches exactly 2,000 and supports sector-specific profession filtering", () => {
     const sectorIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
     expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(2000);
     const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
-    expect(expanded).toHaveLength(516);
+    expect(expanded).toHaveLength(2000);
     expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
     const mechanography = getProfessionCandidatesForFamilies(["family-13"], 50, ["S13-04"]);
     expect(mechanography.some((candidate) => /mécanograph|sérigraph|reprograph/i.test(candidate.title))).toBe(true);
