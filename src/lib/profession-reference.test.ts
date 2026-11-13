@@ -43,8 +43,8 @@ describe("MerKora profession reference", () => {
     expect(new Set(couriers.map((candidate) => candidate.familyId)).size).toBe(couriers.length);
   });
 
-  it("contains 80 detailed profiles, distinct from candidate-only titles", () => {
-    expect(MERKORA_DETAILED_PROFESSION_PROFILES).toHaveLength(80);
+  it("contains 100 detailed profiles, distinct from candidate-only titles", () => {
+    expect(MERKORA_DETAILED_PROFESSION_PROFILES).toHaveLength(100);
     expect(MERKORA_DETAILED_PROFESSION_PROFILES.every((profile) =>
       profile.reviewStatus === "documented_unreviewed" &&
       profile.purpose.trim().length > 0 &&
@@ -63,7 +63,7 @@ describe("MerKora profession reference", () => {
   it("links the new profiles to valid universal sectors without promoting candidate titles", () => {
     const sectorIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
     const expanded = MERKORA_DETAILED_PROFESSION_PROFILES.filter((profile) => Number(profile.id.slice(-2)) >= 21);
-    expect(expanded).toHaveLength(60);
+    expect(expanded).toHaveLength(80);
     expect(expanded.every((profile) => profile.sectorIds?.length && profile.sectorIds.every((id) => sectorIds.has(id)))).toBe(true);
     expect(expanded.every((profile) => profile.reviewStatus === "documented_unreviewed")).toBe(true);
   });
