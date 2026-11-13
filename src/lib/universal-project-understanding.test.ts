@@ -34,7 +34,7 @@ describe("analyzeUniversalProjectIntent", () => {
     expect(result.currentSituation).toMatch(/contribution|espèces/i);
     expect(result.desiredOutcomes.length).toBeGreaterThan(0);
     expect(result.possibleCauses.length).toBeGreaterThan(0);
-    expect(result.constraints).toContain(expect.stringMatching(/connexion/i));
+    expect(result.constraints).toEqual(expect.arrayContaining([expect.stringMatching(/connexion/i)]));
     expect(result.hypotheses.every((item) => item.confirmationRequired)).toBe(true);
   });
 
