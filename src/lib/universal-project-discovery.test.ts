@@ -72,6 +72,20 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+  it("detects a conflict between informed consent and covert collection", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Les visiteurs seront informés et pourront donner leur accord.\nJe veux pourtant enregistrer leurs visites sans les prévenir.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, []);
+
+    expect(result.stage).toBe("resolve_contradiction");
+    expect(result.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "consent", confirmationRequired: true }),
+    ]));
+    expect(result.nextQuestion).toMatch(/informée|informé|accepter ou refuser/i);
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
   it("returns one question at a time and never declares a solution ready while critical gaps remain", () => {
     const analysis = analyzeUniversalProjectIntent("Je veux mieux organiser certaines choses.");
     const result = selectNextDiscoveryQuestion(analysis, []);
