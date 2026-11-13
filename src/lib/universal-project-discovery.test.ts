@@ -169,4 +169,16 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+
+  it("accepts an explicit affirmative information and agreement safeguard", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux conserver un historique des visites de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs seront informés et pourront donner leur accord." },
+    ]);
+
+    expect(result.remainingGaps).not.toContain("privacy_and_consent");
+  });
+
 });
