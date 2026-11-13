@@ -55,7 +55,7 @@ describe("universal project decision memory", () => {
     const initial = createDecisionMemory("project-123");
     const first = recordDecisionMemoryTurn(initial, {
       role: "user",
-      content: "Je confirme : je veux traiter les deux besoins dans un seul projet.",
+      content: "Je confirme mon choix : je veux traiter les deux besoins dans un seul projet.",
     });
     const corrected = recordDecisionMemoryTurn(first, {
       role: "user",
