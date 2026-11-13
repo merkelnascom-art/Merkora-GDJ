@@ -301,7 +301,7 @@ export function buildProjectMemoryDecisionInserts(
   for (const decision of memory.decisions) {
     if (knownDecisions.has(decision.id)) continue;
     const correction = decision.supersedes !== undefined || isCorrection(decision.statement);
-    const scopeChoice = /\\b(projet|périmètre|besoin|ensemble|séparé|séparément)\\b/i.test(decision.statement);
+    const scopeChoice = /\b(projet|périmètre|besoin|ensemble|séparé|séparément)\b/i.test(decision.statement);
     rows.push({
       project_id: projectId,
       decision_type: correction ? "change_requested" : scopeChoice ? "scope_confirmed" : "other",
