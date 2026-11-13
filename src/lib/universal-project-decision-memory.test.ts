@@ -246,4 +246,25 @@ describe("universal project decision memory", () => {
     expect(parseDecisionMemory(serialized, "project-456")).toBeNull();
     expect(parseDecisionMemory({ ...initial, version: 999 }, "project-123")).toBeNull();
   });
+
+  it("restores the last clarification question from the persisted answer ledger", async () => {
+    const { hydrateDecisionMemory } = await import("./universal-project-decision-memory");
+    const recovered = hydrateDecisionMemory("project-123", [{
+      id: "answer-1",
+      decision_type: "clarification_answered",
+      decision: "Je note tout dans un cahier.",
+      comment: "Comment procédez-vous aujourd'hui ?",
+      actor_role: "client",
+      created_at: "2026-11-13T09:00:00.000Z",
+    }]);
+
+    expect(recovered.lastAssistantQuestion).toBe("Comment procédez-vous aujourd'hui ?");
+    const resumed = recordDecisionMemoryTurn(recovered, {
+      role: "user",
+      content: "Je veux aussi recevoir un rapport chaque dimanche.",
+    });
+
+    expect(resumed.clientAnswers.at(-1)?.question).toBe("Comment procédez-vous aujourd'hui ?");
+  });
+
 });
