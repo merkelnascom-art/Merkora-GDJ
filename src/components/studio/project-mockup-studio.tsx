@@ -499,7 +499,7 @@ export function ProjectMockupStudio({ project }: Props) {
               <p className="mockup-control-hint">{model.activityDiagnostic.status === "sector_focused" ? "Questions affinées selon les secteurs confirmés." : "Questions exploratoires : confirme les secteurs pour affiner le diagnostic."}</p>
               {model.businessSignals.signals.length > 0 && <div className="mockup-local-note"><strong>Indices financiers et opérationnels à approfondir</strong><ul>{model.businessSignals.signals.map((signal) => <li key={signal.id}><strong>{signal.label}</strong> — {signal.confidence === "explicit" ? "mention explicite" : "piste à vérifier"}<small>Repères détectés : {signal.evidence.join(", ")}</small><small>Question à poser : {signal.followUp}</small></li>)}</ul><small>{model.businessSignals.caution}</small></div>}
               {model.activityDiagnostic.questions.map((question) => <div className="mockup-module-toggle" key={question.id}><span><strong>{question.stage} — {question.title}</strong><small>{question.prompt}</small><small>Objectif : {question.purpose}</small><label className="mockup-review-note-label" htmlFor={`diagnostic-answer-${project.id}-${question.id}`}>Réponse du client</label><textarea id={`diagnostic-answer-${project.id}-${question.id}`} className="mockup-review-note" maxLength={4000} rows={3} value={diagnosticResponses[question.id] ?? ""} onChange={(event) => updateDiagnosticAnswer(question.id, event.target.value)} placeholder="Décris comment cela se passe réellement dans ton activité…" /></span></div>)}
-              <p className="mockup-local-note">{model.activityDiagnostic.questions.filter((question) => diagnosticResponses[question.id]?.trim()).length} réponse(s) renseignée(s) sur {model.activityDiagnostic.questions.length}. Les réponses sont enregistrées localement dans ce navigateur, avec le schéma de diagnostic v1 ; elles ne sont pas encore synchronisées avec le compte ou le serveur.</p>
+              <p className="mockup-local-note">{model.activityDiagnostic.questions.filter((question) => diagnosticResponses[question.id]?.trim()).length} réponse(s) renseignée(s) sur {model.activityDiagnostic.questions.length}. Les réponses sont conservées dans ce navigateur comme copie de secours et synchronisées dans l’espace du projet lorsque la session est connectée et que la mémoire en ligne est disponible. Le statut en haut du Studio indique l’état réel de la synchronisation.</p>
             </div>
             <p className="mockup-control-hint">Ces fonctions sont adaptées au métier détecté. Coche uniquement celles que le client souhaite retenir; une proposition visible n'est pas encore une validation.</p>
             {model.modules.filter((item) => item.group === "metier").map((item) => {
@@ -554,7 +554,7 @@ export function ProjectMockupStudio({ project }: Props) {
               <button type="button" className="button button-quiet" onClick={() => setReviewStatus("changes_requested")}>Demander des modifications</button>
               <button type="button" className="button button-primary" onClick={() => setReviewStatus("approved")}>Valider ce concept</button>
             </div>
-            <p className="mockup-local-note">Prototype uniquement : le statut et les commentaires sont enregistrés dans ce navigateur. Rien n’est envoyé à l’administrateur, au client connecté ou au cloud. La validation officielle nécessitera ensuite un parcours sécurisé côté serveur.</p>
+            <p className="mockup-local-note">Cette validation concerne uniquement le concept de conception : elle ne vaut ni accord contractuel ni validation de devis et ne déclenche aucun message à l’administrateur ou au client. Le statut et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
           </section>
           {reviewStatus === "approved" && (
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
@@ -573,13 +573,13 @@ export function ProjectMockupStudio({ project }: Props) {
               <label className="mockup-review-note-label" htmlFor={`mockup-quote-terms-${project.id}`}>Conditions ou étapes de paiement</label>
               <textarea id={`mockup-quote-terms-${project.id}`} className="mockup-review-note" maxLength={500} value={quotePaymentTerms} onChange={(event) => setQuotePaymentTerms(event.target.value)} rows={2} />
               <button type="button" className="button button-primary" onClick={downloadQuoteDraft}>Exporter le brouillon de devis (.txt) ↗</button>
-              <p className="mockup-local-note">L'export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel, ne facture personne et ne synchronise aucune donnée.</p>
+              <p className="mockup-local-note">L’export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel et ne l’envoie pas au client. Les champs du brouillon restent sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
               <div className="mockup-client-response" aria-labelledby="mockup-client-response-title">
                 <div className="mockup-review-heading">
                   <div><span className="mockup-control-title">Étape 05 · Réponse à la proposition</span><h4 id="mockup-client-response-title">Que répondrait le client ?</h4></div>
                   <span className={"mockup-review-status " + (clientQuoteResponse === "accepted" ? "status-approved" : clientQuoteResponse === "undecided" ? "status-draft" : "status-changes_requested")}>{clientQuoteResponse === "accepted" ? "Acceptation choisie" : clientQuoteResponse === "changes_requested" ? "Modifications demandées" : clientQuoteResponse === "negotiate" ? "Discussion demandée" : "En attente"}</span>
                 </div>
-                <p className="mockup-local-note">Cette section prépare le parcours de réponse. Elle n'envoie pas de message : le client peut choisir une réponse, ajouter ses conditions, puis exporter son retour pour le transmettre manuellement.</p>
+                <p className="mockup-local-note">Cette section prépare le parcours de réponse. Le choix et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée, mais aucun message n’est envoyé automatiquement. Le retour peut être exporté pour une transmission manuelle.</p>
                 <div className="mockup-quote-response-options">
                   <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "accepted"} onChange={() => setClientQuoteResponse("accepted")} /><span><strong>Accepter</strong><small>Le client indique être d'accord avec la proposition affichée.</small></span></label>
                   <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "changes_requested"} onChange={() => setClientQuoteResponse("changes_requested")} /><span><strong>Demander des modifications</strong><small>Le périmètre, le délai ou les conditions doivent être revus.</small></span></label>
@@ -596,7 +596,7 @@ export function ProjectMockupStudio({ project }: Props) {
             </section>
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
-          <p className="mockup-local-note">Les réponses du diagnostic, secteurs, métiers, modules et choix de présentation sont synchronisés dans la mémoire du projet lorsque vous êtes connecté.</p>
+          <p className="mockup-local-note">Les réponses du diagnostic, secteurs, métiers, modules, commentaires et choix de présentation sont conservés localement comme secours et synchronisés dans la mémoire du projet lorsque la session est connectée. Vérifiez le statut affiché en haut avant de quitter.</p>
         </aside>
 
         <div
