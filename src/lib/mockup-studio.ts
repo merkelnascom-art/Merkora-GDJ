@@ -9,7 +9,7 @@ import type { BusinessSignalAnalysis } from "./business-signal-analysis";
 import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
-export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign";
+export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign" | "document_pack" | "presentation" | "training_program";
 export type DeliverableOption = { id: DeliverableFormat; label: string; description: string; reason: string };
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
 export type MockupConfig = {
@@ -65,6 +65,9 @@ export const DELIVERABLE_FORMAT_CATALOG: readonly Omit<DeliverableOption, "reaso
   { id: "service_blueprint", label: "Plan de service et parcours opérationnel", description: "Les étapes, acteurs, partenaires et opérations du service.", },
   { id: "technical_specification", label: "Cahier des charges technique", description: "Les exigences, contraintes, composants et critères de validation.", },
   { id: "communication_campaign", label: "Campagne de communication", description: "Un dispositif de sensibilisation, promotion ou mobilisation.", },
+  { id: "document_pack", label: "Dossier documentaire et modèles", description: "Guides, procédures, formulaires, devis, factures, rapports et listes de contrôle.", },
+  { id: "presentation", label: "Présentation ou dossier de pitch", description: "Un support structuré pour expliquer le concept à une équipe, un partenaire ou un financeur.", },
+  { id: "training_program", label: "Programme de formation ou d’accompagnement", description: "Un parcours d’apprentissage, d’essai, de coaching ou de reconversion avec étapes et évaluations.", },
 ];
 
 function recommendDeliverables(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome">): DeliverableOption[] {
@@ -75,17 +78,17 @@ function recommendDeliverables(project: Pick<Project, "title" | "category" | "pr
   ]);
   const add = (id: DeliverableFormat, reason: string) => { selected.add(id); reasons.set(id, reason); };
 
-  if (/application|plateforme|logiciel|site web|réserver|reservation|réservation|catalogue|commande|mettre en relation|espace client/.test(text)) {
+  if (/application|plateforme|logiciel|site web|réserver|reservation|réservation|catalogue|commande|mettre en relation|espace client|outil de gestion|interface|lister les outils|emprunt|prêt d.outils|pret d.outils/.test(text)) {
     add("web_app", "Le projet comporte un parcours numérique, une réservation ou une mise en relation à organiser.");
   }
   if (/mobile|téléphone|telephone|smartphone|géolocalisation|geolocalisation/.test(text)) {
     add("mobile_app", "L'usage sur téléphone semble important dans le parcours décrit.");
   }
-  if (/kit|produit|matériel|materiel|équipement|equipement|prototype|objet|fabrication|balcon|casier|outil|bagage|valise|physique/.test(text)) {
+  if (/kit|produit|matériel|materiel|équipement|equipement|prototype|objet|fabrication|balcon|casier|outil|bagage|valise|physique|aménagement|amenagement|aménagé|amenage|véhicule|vehicule/.test(text)) {
     add("physical_prototype", "Le résultat attendu comprend un produit, un équipement ou un objet physique à définir.");
     add("business_plan", "Un modèle économique aidera à estimer les coûts, la fabrication et la commercialisation.");
   }
-  if (/service|accompagnement|réseau|reseau|partenaire|covoiturage|coworking|prêt|pret|consigne|formation|reconversion|retrait/.test(text)) {
+  if (/service|accompagnement|réseau|reseau|partenaire|covoiturage|coworking|prêt|pret|consigne|formation|reconversion|retrait|cohabitation|intergénération|intergeneration|emprunt|voisinage/.test(text)) {
     add("service_blueprint", "Le projet dépend d'étapes de service, de rôles humains ou de partenaires à coordonner.");
   }
   if (/affiche|campagne|sensibilisation|tri des déchets|tri des dechets|communication|événement|evenement|promotion/.test(text)) {
@@ -95,6 +98,15 @@ function recommendDeliverables(project: Pick<Project, "title" | "category" | "pr
   if (/entreprise|commerce|budget|prix|vente|revenu|invendu|coût|cout|rentabilité|rentabilite|marché|marche/.test(text) ||
     project.category === "business" || project.category === "organization") {
     add("business_plan", "Le projet implique des coûts, des revenus ou une organisation économique à clarifier.");
+  }
+  if (/guide|pas-à-pas|pas a pas|manuel|formulaire|devis|facture|contrat|procédure|procedure|checklist|liste de contrôle|rapport/.test(text)) {
+    add("document_pack", "Des documents pratiques aideront à utiliser, exploiter ou gérer la solution au quotidien.");
+  }
+  if (/pitch|présentation|presentation|diaporama|présenter aux investisseurs|presenter aux investisseurs/.test(text)) {
+    add("presentation", "Un support de présentation permettra d’expliquer le concept à des interlocuteurs ciblés.");
+  }
+  if (/formation|reconversion|initiation|apprentissage|coaching|accompagnement professionnel|atelier/.test(text)) {
+    add("training_program", "Le résultat attendu repose sur un parcours d’apprentissage ou d’accompagnement progressif.");
   }
   if (/technique|matériel|materiel|machine|installation|maintenance|norme|sécurité|securite/.test(text)) {
     add("technical_specification", "Des exigences techniques et des critères de validation devront être définis.");
