@@ -123,9 +123,13 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     discovery,
   };
 
-  const discoveryBlocked = !discovery.evaluation.solutionReviewAllowed ||
-    discovery.evaluation.status !== "reviewable" ||
-    discovery.evaluation.blockingStages.length > 0;
+  // Non-critical gaps can remain visible while MerKora offers clearly provisional
+  // module ideas. Contradictions, project-scope ambiguity and privacy/consent
+  // questions are hard gates: do not propose modules before they are clarified.
+  const criticalDiscoveryStages = new Set(["resolve_contradiction", "project_scope", "privacy_and_consent"]);
+  const discoveryBlocked = discovery.evaluation.blockingStages.some((stage) =>
+    criticalDiscoveryStages.has(stage),
+  );
 
   if (discoveryBlocked || vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     return {
