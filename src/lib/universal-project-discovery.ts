@@ -49,7 +49,7 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
   }> = [
     {
       topic: "access",
-      broad: /tout le monde|tous les membres|toute la famille|toute l'équipe|tout le personnel|chacun peut consulter|accès à tous/i,
+      broad: /tout le monde|tous les membres|toute (?:la|ma|notre) famille|toute l'équipe|tout le personnel|chacun peut consulter|accès à tous/i,
       restrictive: /seul(?:e)? moi|uniquement moi|personne d'autre|seul le responsable|accès privé|moi uniquement/i,
       question: "Qui doit réellement pouvoir consulter ces informations : tout le groupe, certaines personnes précises ou uniquement vous ?",
     },
