@@ -145,6 +145,20 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+
+  it("prioritizes visitor consent clarification before routine process questions", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux enregistrer les visites de mes amis chez moi.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs ne seront pas informés." },
+    ]);
+
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.nextQuestion).toMatch(/informées|informés|accord/i);
+    expect(result.evaluation.blockingStages).toContain("privacy_and_consent");
+  });
+
   it("does not treat a refusal to inform visitors as a resolved consent gap", () => {
     const analysis = analyzeUniversalProjectIntent(
       "Je veux enregistrer les heures de visite de mes amis chez moi.",
