@@ -208,6 +208,55 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(body).not.toHaveProperty("provider");
   });
 
+
+  it("retrieves saved decisions and conversation as sources from this project only", async () => {
+    vi.mocked(callUserData).mockImplementation(async (path) => {
+      if (path.startsWith("user_projects?")) return { ok: true, status: 200, data: [project] };
+      if (path.startsWith("project_memory_decisions?")) return { ok: true, status: 200, data: [{
+        id: "decision-1", decision_type: "clarification_answered",
+        decision: "Je note les retards du personnel dans un cahier chaque matin.",
+        comment: "Comment suivez-vous les retards ?", actor_role: "client",
+        created_at: "2026-11-13T09:00:00.000Z",
+      }] };
+      if (path.startsWith("project_ai_processing_consents?")) return {
+        ok: true, status: 200, data: [{ consented_at: "2026-11-13T08:00:00Z", revoked_at: null }],
+      };
+      if (path.startsWith("project_conversation_messages?")) return {
+        ok: true, status: 200, data: [{
+          turn_id: "turn-1", role: "user",
+          content: "Nous utilisons un cahier pour noter les retards.",
+          created_at: "2026-11-13T09:00:01.000Z",
+        }],
+      };
+      return { ok: true, status: 201, data: null };
+    });
+    process.env.GEMINI_API_KEY = "test-only-secret";
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify({
+        assistantMessage: "Je tiens compte de votre méthode actuelle.",
+        clarifyingQuestions: ["Qui valide les retards ?"],
+        extractedNeeds: ["Suivi des retards"],
+        moduleEnhancements: [],
+      }) }] } }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(request({ message: "Comment suivre les retards du personnel ?", history: [] }), context);
+    expect(response.status).toBe(200);
+    const generationRequest = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    const modelInput = JSON.parse(generationRequest.contents[0].parts[0].text);
+    expect(modelInput.knowledgeRetrieval.method).toBe("bm25-lexical");
+    expect(modelInput.knowledgeRetrieval.sourceCount).toBe(3);
+    expect(modelInput.knowledgeRetrieval.references).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sourceLabel: "Mémoire décisionnelle de ce projet" }),
+      expect.objectContaining({ sourceLabel: "Conversation enregistrée de ce projet" }),
+    ]));
+    const decisionQuery = vi.mocked(callUserData).mock.calls.find(([path]) => String(path).startsWith("project_memory_decisions?"))?.[0];
+    const conversationQuery = vi.mocked(callUserData).mock.calls.find(([path]) => String(path).startsWith("project_conversation_messages?"))?.[0];
+    expect(String(decisionQuery)).toContain("project_id=eq.MK-PROJECT-001");
+    expect(String(conversationQuery)).toContain("project_id=eq.MK-PROJECT-001");
+  });
+
   it("falls back to MerKora's deterministic reply when the external provider is unavailable", async () => {
     mockDatabase(true);
     process.env.GEMINI_API_KEY = "test-only-secret";
