@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { buildProjectMemoryDecisionInserts, createDecisionMemory, hydrateDecisionMemory, projectMemoryRowsToConversationHistory, recordDecisionMemoryTurn, type StoredProjectDecision } from "@/lib/universal-project-decision-memory";
+import { buildProjectMemoryDecisionInserts, createDecisionMemory, hydrateDecisionMemory, mergeProjectConversationHistory, recordDecisionMemoryTurn, type StoredProjectConversationMessage, type StoredProjectDecision } from "@/lib/universal-project-decision-memory";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createMerkoraConversationReply, validateConversationInput } from "@/lib/assistant/merkora-conversation";
@@ -82,11 +82,10 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
       ? (decisionsResult.data.filter(isRecord) as StoredProjectDecision[]).reverse()
       : [];
     const decisionMemory = hydrateDecisionMemory(projectId, decisionRows);
-    const persistedConversation = conversationResult.ok
-      ? storedConversationRowsToHistory(conversationResult.data) : [];
-    const messages = persistedConversation.length
-      ? persistedConversation
-      : projectMemoryRowsToConversationHistory(decisionRows);
+    const persistedRows = conversationResult.ok && Array.isArray(conversationResult.data)
+      ? conversationResult.data.filter(isRecord) as StoredProjectConversationMessage[]
+      : [];
+    const messages = mergeProjectConversationHistory(persistedRows, decisionRows);
     return NextResponse.json({ messages, decisionMemory }, {
       headers: { "Cache-Control": "no-store" },
     });
