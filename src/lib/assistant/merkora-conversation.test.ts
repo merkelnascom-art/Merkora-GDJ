@@ -14,7 +14,7 @@ describe("MerKora conversation core", () => {
 
   it("extracts likely modules from a concrete staff-management need without claiming certainty", () => {
     const result = createMerkoraConversationReply({
-      message: "Aujourd'hui, je note les retards du personnel dans un cahier. Je veux suivre les retards et absences pour recevoir un rapport hebdomadaire. Moi et mes employés utiliserons un téléphone et Internet. Mon budget est de 100 000 FCFA. Je veux conserver les noms, dates et heures.",
+      message: "Aujourd'hui, je note les retards du personnel dans un cahier. Je veux suivre les retards et absences pour recevoir un rapport hebdomadaire de caisse. Moi et mes employés utiliserons un téléphone et Internet. Mon budget est de 100 000 FCFA. Je veux conserver les noms, dates et heures.",
       history: [],
     });
     expect(result.status).toBe("draft");
