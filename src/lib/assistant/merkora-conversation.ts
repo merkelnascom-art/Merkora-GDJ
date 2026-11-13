@@ -121,7 +121,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     discovery,
   };
 
-  if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
+  if (discovery.stage === "resolve_contradiction" || vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     return {
       assistantMessage: discovery.stage === "resolve_contradiction"
         ? "Je remarque deux indications qui semblent se contredire. Je préfère vérifier ce point avec vous avant de définir les règles ou les accès."
