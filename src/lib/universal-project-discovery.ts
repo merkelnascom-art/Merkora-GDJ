@@ -39,7 +39,7 @@ export function selectNextDiscoveryQuestion(
   analysis: UniversalProjectUnderstanding,
   history: ConversationMessage[],
 ): DiscoveryQuestionSelection {
-  const answers = userHistory(history);
+  const answers = [userHistory(history), analysis.rawIntent].join(" ");
   const gaps: Array<{ stage: DiscoveryStage; question: string; reason: string }> = [];
 
   if (analysis.intentGroups.length > 1 && !hasAny(answers, [
