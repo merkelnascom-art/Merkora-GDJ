@@ -157,14 +157,22 @@ function hasPositivePrivacyAnswer(text: string): boolean {
   ];
   if (hasAny(text, negativeConsent)) return false;
 
-  return hasAny(text, [
+  const peopleInformed = hasAny(text, [
     /(?:seront|sont|seraient) inform(?:é|és|ées)/i,
+    /(?:seront|sont) prévenu(?:s|es)?/i,
+    /(?:seront|sont) averti(?:s|es)?/i,
+    /après information/i,
+  ]);
+  const agreementObtained = hasAny(text, [
     /(?:donner|obtenir|recueillir).{0,35}(?:leur|son) accord/i,
     /(?:avec|après) (?:leur|son) accord/i,
     /consentement (?:libre|explicite|recueilli)/i,
-    /(?:accès|consultation) (?:sera|est) (?:privé|confidentiel|limité)/i,
-    /seulement moi|uniquement moi|personne d'autre/i,
+    /accepter ou refuser/i,
+    /accord (?:libre|explicite)/i,
   ]);
+
+  // Access restrictions protect confidentiality but do not establish informed consent.
+  return peopleInformed && agreementObtained;
 }
 
 /**
