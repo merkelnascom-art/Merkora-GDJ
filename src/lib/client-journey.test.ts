@@ -87,6 +87,32 @@ describe("client journey", () => {
     expect(canEnterJourneyStage("proposals", input)).toBe(false);
   });
 
+
+  it("fails closed when legacy readiness flags conflict with the evaluation", () => {
+    const input = readyInput({
+      discovery: {
+        stage: "solution_review",
+        contradictions: [],
+        nextQuestion: "Quel point reste à confirmer ?",
+        remainingGaps: [],
+        readyForSolutionReview: true,
+        reason: "Les anciens indicateurs indiquent que la découverte est prête.",
+        evaluation: {
+          clientStatements: ["Je veux suivre les visiteurs."],
+          hypothesesToConfirm: ["Le suivi pourrait nécessiter une identification."],
+          unresolvedUnknowns: ["L'accord des visiteurs reste à confirmer."],
+          blockingStages: ["privacy_and_consent"],
+          blockingQuestions: ["Les visiteurs seront-ils informés ?"],
+          status: "blocked",
+          solutionReviewAllowed: false,
+        },
+      },
+    });
+
+    expect(canEnterJourneyStage("proposals", input)).toBe(false);
+    expect(getNextJourneyStage(input)).toBe("understanding");
+  });
+
   it("does not turn AI recommendations into confirmed client decisions", () => {
     const input = readyInput({
       decisions: {
