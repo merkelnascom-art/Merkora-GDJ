@@ -64,3 +64,12 @@ Les données restent liées au propriétaire via RLS. Aucun effacement, reset ou
 - Aucun appel réel au fournisseur IA n'est effectué pendant les tests.
 - Les migrations restent en attente de revue et d'application contrôlée sur Preview.
 - Aucun merge ni déploiement de production n'est autorisé par cette tranche.
+
+
+## Compléments ajoutés après la première vérification
+
+- La mémoire du Studio conserve aussi les montants/délais de devis préparatoires, les conditions de paiement, les validations et les retours client.
+- La sauvegarde fusionne le contexte cloud existant au lieu de remplacer les autres informations du workspace.
+- Une notice dédiée est disponible dans `/confidentialite`. Elle explique le traitement assisté sans exposer le nom du fournisseur technique, décrit les catégories de données possibles, l'autorisation et son retrait.
+- La notice précise que les conditions exactes du prestataire, les durées, les lieux de traitement et les garanties doivent être vérifiés avant l'ouverture publique. Elle ne prétend pas que ces points sont déjà contractualisés ou validés.
+- Le panneau de conversation renvoie directement vers cette notice.
