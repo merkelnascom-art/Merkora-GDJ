@@ -13,7 +13,7 @@ export type DiscoveryStage =
   | "solution_review";
 
 export type DiscoveryContradiction = {
-  topic: "access" | "connectivity" | "automation";
+  topic: "access" | "connectivity" | "automation" | "consent";
   statementA: string;
   statementB: string;
   question: string;
@@ -64,6 +64,12 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
       broad: /automatiser|automatique|tout seul|sans intervention/i,
       restrictive: /manuellement|à la main|sans automatisation|je veux tout faire moi-même/i,
       question: "Quelles opérations doivent être automatiques et lesquelles doivent rester manuelles ?",
+    },
+    {
+      topic: "consent",
+      broad: /(?:personnes|participants|visiteurs|employés|membres).{0,70}(?:inform(?:é|e|és|ées)|consent(?:ement|ent)|d'accord)|avec (?:leur|son) accord|après information/i,
+      restrictive: /sans (?:les|leur|son) (?:informer|prévenir|avertir)|à leur insu|sans (?:leur )?consentement|collecte cachée|en secret/i,
+      question: "Comment garantir que chaque personne concernée sera informée et pourra accepter ou refuser la collecte de ses informations ?",
     },
   ];
 
