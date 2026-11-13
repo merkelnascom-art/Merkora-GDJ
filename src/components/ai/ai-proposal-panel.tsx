@@ -27,7 +27,7 @@ type Analysis = {
   nextSteps: string[];
 };
 
-type Status = { enabled: boolean; model: string | null; message: string };
+type Status = { enabled: boolean; message: string };
 type Props = { project: Project; onApply: (recommendations: Recommendation[]) => void };
 const emptyCompetitor: CompetitorInput = { name: "", url: "", offer: "", price: "", notes: "" };
 const priorityLabel = { high: "Priorité haute", medium: "Priorité moyenne", low: "Priorité basse" };
@@ -40,16 +40,20 @@ export function AiProposalPanel({ project, onApply }: Props) {
   const [improvements, setImprovements] = useState<Improvement[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorInput[]>([]);
   const [busy, setBusy] = useState(false);
-  const [geminiConsent, setGeminiConsent] = useState(false);
+  const [consented, setConsented] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
-    fetch("/api/ai/status", { cache: "no-store" })
-      .then(async (response) => await response.json() as Status)
-      .then((data) => { if (active) setStatus(data); })
-      .catch(() => { if (active) setStatus({ enabled: false, model: null, message: "État du service IA indisponible." }); });
+    Promise.all([
+      fetch("/api/ai/status", { cache: "no-store" }).then(async (response) => await response.json() as Status),
+      fetch(`/api/projects/${encodeURIComponent(project.id)}/ai-consent`, { cache: "no-store" }).then(async (response) => response.ok ? await response.json() as { consented?: boolean } : { consented: false }),
+    ]).then(([data, consent]) => {
+      if (active) { setStatus(data); setConsented(consent.consented === true); }
+    }).catch(() => {
+      if (active) setStatus({ enabled: false, message: "État du moteur d'analyse indisponible." });
+    });
     return () => { active = false; };
   }, []);
 
@@ -76,7 +80,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
           desiredOutcome: project.desiredOutcome,
           budget: project.budget,
           urgency: project.urgency,
-          consent: geminiConsent,
+          projectId: project.id,
           competitors: competitors.filter((item) => Object.values(item).some((value) => value.trim())),
         }),
       });
@@ -91,8 +95,8 @@ export function AiProposalPanel({ project, onApply }: Props) {
       setAnalysis(local);
       setEdited(local.recommendations.map((item) => ({ ...item })));
       setImprovements(local.improvements.map((item) => ({ ...item, assumptions: [...item.assumptions] })));
-      setError(caught instanceof Error ? caught.message : "Le service Gemini est momentanément indisponible.");
-      setMessage("Une pré-analyse locale gratuite a été préparée en secours. Aucun résultat Gemini n'a été appliqué.");
+      setError(caught instanceof Error ? caught.message : "Le moteur d’analyse avancée est momentanément indisponible.");
+      setMessage("Une pré-analyse locale gratuite a été préparée en secours. Aucune proposition externe n'a été appliquée.");
     } finally {
       setBusy(false);
     }
@@ -161,10 +165,10 @@ export function AiProposalPanel({ project, onApply }: Props) {
           <h3 id="ai-proposal-title">Faire évoluer le projet avec méthode</h3>
           <p>Les propositions restent modifiables. Tu peux ajouter tes propres pistes et décider ce qui sera appliqué au dossier.</p>
         </div>
-        <span className={`ai-state-pill ${status?.enabled ? "is-ready" : ""}`}>{status === null ? "Vérification…" : status.enabled ? "Connectable" : "En attente de configuration"}</span>
+        <span className={`ai-state-pill ${status?.enabled ? "is-ready" : ""}`}>{status === null ? "Vérification…" : status.enabled ? "Analyse approfondie disponible" : "Analyse locale disponible"}</span>
       </div>
 
-      {status && <p className="ai-status-note">{status.message}{status.model ? ` Modèle : ${status.model}.` : ""}</p>}
+      {status && <p className="ai-status-note">{status.message}</p>}
 
       <div className="ai-list-block">
         <strong>Sources pour comparer la concurrence (facultatif)</strong>
@@ -182,27 +186,18 @@ export function AiProposalPanel({ project, onApply }: Props) {
         <button type="button" className="button button-quiet" onClick={() => setCompetitors((current) => current.length >= 5 ? current : [...current, { ...emptyCompetitor }])} disabled={competitors.length >= 5}>Ajouter une source ({competitors.length}/5)</button>
       </div>
 
-      {status?.enabled && (
-        <label className="ai-consent-note">
-          <input
-            type="checkbox"
-            checked={geminiConsent}
-            onChange={(event) => setGeminiConsent(event.target.checked)}
-          />
-          <span>
-            J'accepte d'envoyer à Google Gemini les informations de ce dossier pour produire l'analyse.
-            Le niveau gratuit de Google peut utiliser les données envoyées pour améliorer ses produits.
-            N'incluez pas de mots de passe ni de données personnelles ou confidentielles.
-          </span>
-        </label>
+      {status?.enabled && !consented && (
+        <p className="ai-consent-note">
+          Pour approfondir cette analyse, autorisez une fois le traitement assisté dans l'espace de conversation de ce projet. Vous n'avez pas à choisir un outil ou un fournisseur.
+        </p>
       )}
 
       <div className="ai-proposal-actions">
-        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null || (status.enabled && !geminiConsent)}>
-          {busy ? "Analyse en cours…" : status?.enabled ? (analysis ? "Recommencer l’analyse IA" : "Analyser avec l’IA") : "Préparer une analyse locale gratuite"}
+        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null || (status.enabled && !consented)}>
+          {busy ? "Analyse en cours…" : status?.enabled ? (analysis ? "Recommencer l’analyse" : "Analyser le projet") : "Préparer une analyse locale gratuite"}
         </button>
         {!status?.enabled && <span>Mode local sans frais : aucune requête n’est envoyée à un fournisseur IA. Les résultats restent préliminaires.</span>}
-        {status?.enabled && !geminiConsent && <span>Donnez votre accord pour activer l’analyse Gemini de ce dossier.</span>}
+        {status?.enabled && !consented && <span>Une autorisation de traitement est nécessaire dans ce dossier.</span>}
       </div>
 
       {error && <p className="ai-feedback is-error" role="alert">{error}</p>}
