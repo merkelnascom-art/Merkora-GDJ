@@ -122,7 +122,6 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   };
 
   if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
-    const clarifyingQuestions = getDomainQuestions(match);
     return {
       assistantMessage: mixedNeeds
         ? `Je repère plusieurs besoins dans votre description : ${intentAnalysis.intentGroups.map((group) => group.subject).join(" ; ")}. Je vais les examiner séparément avant de voir s’ils appartiennent au même projet. Rien n’est encore classé ni choisi.`
@@ -140,13 +139,6 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   }
 
   const extractedNeeds = intentAnalysis.intentGroups.map((group) => `${group.subject} : ${group.desiredAction}`);
-  const clarifyingQuestions = [...new Set([...intentAnalysis.questions, ...getDomainQuestions(match)])];
-  if (match.domain && clarifyingQuestions.length < 3) {
-    clarifyingQuestions.push(
-      "Quels rôles pourront consulter ou modifier ces informations ?",
-      "Sur quels appareils la solution doit-elle fonctionner ?",
-    );
-  }
   return {
     assistantMessage: `J'ai repéré le domaine « ${match.domain?.label ?? "à confirmer"} »${match.specialization ? ` et la spécialisation « ${match.specialization.label} »` : ""}. Voici des modules de départ que nous pouvons ajuster ensemble avant de créer le plan.`,
     status: "draft",
