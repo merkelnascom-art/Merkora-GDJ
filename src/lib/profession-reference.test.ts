@@ -30,10 +30,10 @@ describe("MerKora profession reference", () => {
     )).toBe(true);
   });
 
-  it("attaches valid universal sector IDs to the new profession tranche", () => {
+  it("maps all 2,000 professions to valid universal sectors", () => {
     const sectorIds = new Set(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
     const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
-    expect(expanded).toHaveLength(516);
+    expect(expanded).toHaveLength(2000);
     expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
   });
 
