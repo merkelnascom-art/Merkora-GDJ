@@ -14,7 +14,7 @@ describe("MerKora conversation core", () => {
 
   it("extracts likely modules from a concrete staff-management need without claiming certainty", () => {
     const result = createMerkoraConversationReply({
-      message: "Je veux suivre les retards du personnel, les absences et les rapports de caisse",
+      message: "Aujourd'hui, je note les retards du personnel dans un cahier. Je veux suivre les retards et absences pour recevoir un rapport hebdomadaire. Mon équipe et moi utiliserons un téléphone et Internet. Mon budget est de 100 000 FCFA. Je veux conserver les noms, dates et heures.",
       history: [],
     });
     expect(result.status).toBe("draft");
@@ -116,7 +116,7 @@ describe("MerKora conversation core", () => {
 
 it("recognizes a personalized CV service and proposes a relevant starting module", () => {
   const result = createMerkoraConversationReply({
-    message: "Je veux les aider avec des maquettes de CV, le choix du modèle, l'ajout de leur photo et de la police selon leurs objectifs.",
+    message: "Actuellement, mon équipe et moi aidons des clients à créer des CV. Je veux créer des CV personnalisés avec modèle, photo, police et parcours. Nous utiliserons un ordinateur et Internet. Notre budget est de 100 000 FCFA. Les informations nécessaires sont le nom, le parcours et la photo.",
     history: [{ role: "user", content: "Je remarque que les personnes n'arrive pas à créer des CV adaptés à leur parcours." }],
   });
 
