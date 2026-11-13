@@ -243,6 +243,42 @@ describe("buildMockupModel", () => {
       .toEqual(expect.arrayContaining(["web_app", "service_blueprint", "business_plan"]));
   });
 
+  it("classifies all ten mixed project briefs by their useful deliverables without forcing every project into an app", () => {
+    const briefs = [
+      { title: "Application de covoiturage urbain quotidien", problem: "Les actifs partagent les mêmes trajets et les frais de carburant augmentent.", desiredOutcome: "Mettre en relation les voisins et partager les frais.", expected: ["web_app", "service_blueprint"] },
+      { title: "Service de paniers anti-gaspillage", problem: "Les commerces jettent leurs invendus et les ménages cherchent des produits frais.", desiredOutcome: "Réserver des paniers avant la fermeture avec retrait chez les commerçants.", expected: ["web_app", "service_blueprint", "business_plan"] },
+      { title: "Plateforme seniors et étudiants", problem: "Les seniors sont isolés et les étudiants cherchent un logement.", desiredOutcome: "Organiser une cohabitation sécurisée et des petits services.", expected: ["web_app", "service_blueprint"] },
+      { title: "Outil de gestion pour artisans", problem: "Les indépendants perdent du temps sur les devis, factures et relances.", desiredOutcome: "Créer des devis en deux minutes et envoyer des rappels automatiques.", expected: ["web_app", "document_pack"] },
+      { title: "Campagne de tri des déchets électroniques", problem: "Les habitants ignorent où déposer leurs anciens téléphones.", desiredOutcome: "Créer une campagne visuelle qui rassure sur l'effacement des données.", expected: ["poster", "communication_campaign"] },
+      { title: "Service de consigne à bagages", problem: "Les voyageurs doivent porter leurs valises avant leur hébergement.", desiredOutcome: "Réserver une consigne chez des commerces partenaires.", expected: ["web_app", "service_blueprint"] },
+      { title: "Kit de jardinage sur balcon", problem: "Les citadins manquent de place et de connaissances.", desiredOutcome: "Un kit physique prêt à utiliser avec matériel et guide pas-à-pas.", expected: ["physical_prototype", "business_plan", "document_pack"] },
+      { title: "Prêt d'outils entre voisins", problem: "Chaque foyer achète du matériel rarement utilisé.", desiredOutcome: "Lister les outils disponibles et organiser des emprunts de proximité.", expected: ["web_app", "service_blueprint"] },
+      { title: "Espace de coworking mobile en zone rurale", problem: "Les télétravailleurs manquent de lieux équipés.", desiredOutcome: "Aménager un café, une salle ou un véhicule avec Wi-Fi et espace de travail.", expected: ["service_blueprint", "physical_prototype"] },
+      { title: "Programme de reconversion professionnelle", problem: "Les salariés veulent changer de voie mais craignent de perdre leur sécurité financière.", desiredOutcome: "Un parcours structuré pour tester un nouveau métier sans quitter son emploi.", expected: ["service_blueprint", "training_program"] },
+    ] as const;
+
+    for (const brief of briefs) {
+      const model = buildMockupModel({
+        ...studentProject,
+        title: brief.title,
+        category: "other",
+        problem: brief.problem,
+        desiredOutcome: brief.desiredOutcome,
+      }, { format: "website", palette: "violet", enabledModules: [] });
+      const formats = model.recommendedDeliverables.map((item) => item.id);
+      expect(formats, brief.title).toEqual(expect.arrayContaining(brief.expected));
+    }
+
+    const physicalOnly = buildMockupModel({
+      ...studentProject,
+      title: "Kit de jardinage sur balcon",
+      category: "other",
+      problem: "Manque de place et de connaissances.",
+      desiredOutcome: "Un kit physique prêt à utiliser avec matériel et guide pas-à-pas.",
+    }, { format: "website", palette: "violet", enabledModules: [] });
+    expect(physicalOnly.recommendedDeliverables.map((item) => item.id)).not.toContain("web_app");
+  });
+
   it("preserves only client-selected deliverable formats and does not auto-confirm recommendations", () => {
     const model = buildMockupModel(studentProject, {
       format: "website", palette: "violet", enabledModules: [],
