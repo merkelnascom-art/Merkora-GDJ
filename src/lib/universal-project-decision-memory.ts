@@ -327,7 +327,8 @@ export function mergeProjectConversationHistory(
       role: row.role,
       content: row.content.slice(0, MAX_TEXT * 4),
       createdAt: typeof row.created_at === "string" ? row.created_at : "9999-12-31T23:59:59.999Z",
-      order: row.role === "assistant" ? 0 : 1,
+      // Persisted chat turns are written user-first, assistant-second.
+      order: row.role === "user" ? 0 : 1,
     });
   });
 
