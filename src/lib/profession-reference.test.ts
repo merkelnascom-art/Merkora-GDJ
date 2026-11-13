@@ -16,9 +16,9 @@ describe("MerKora profession reference", () => {
     expect(PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT).toBe(500);
     expect(PROFESSION_CANDIDATE_IMPORTED_COUNT).toBe(484);
     expect(PROFESSION_CANDIDATE_SOURCE_GAP).toBe(16);
-    expect(PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT).toBe(800);
-    expect(PROFESSION_CANDIDATE_TOTAL_COUNT).toBe(1284);
-    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(1284);
+    expect(PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT).toBe(1000);
+    expect(PROFESSION_CANDIDATE_TOTAL_COUNT).toBe(1484);
+    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(1484);
   });
 
   it("gives every candidate a unique stable ID and a valid family", () => {
