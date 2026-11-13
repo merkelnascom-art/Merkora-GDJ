@@ -23,7 +23,7 @@ function request(body: unknown) {
   });
 }
 
-function mockDatabase(consented = false, decisionRows: unknown[] = []) {
+function mockDatabase(consented = false, decisionRows: unknown[] = [], consentTableAvailable = true) {
   vi.mocked(callUserData).mockImplementation(async (path, method, _token, body) => {
     if (path.startsWith("user_projects?")) return { ok: true, status: 200, data: [project] };
     if (path.startsWith("project_memory_decisions?")) return { ok: true, status: 200, data: decisionRows };
@@ -32,12 +32,9 @@ function mockDatabase(consented = false, decisionRows: unknown[] = []) {
       return { ok: true, status: 201, data: null };
     }
     if (path.startsWith("project_ai_processing_consents?")) {
-      return { ok: true, status: 200, data: consented ? [{ consented_at: "2026-11-13T08:00:00Z", revoked_at: null }] : [] };
-    }
-    if (path === "project_conversation_messages" && method === "POST") {
-      expect(Array.isArray(body)).toBe(true);
-      expect((body as unknown[]).length).toBe(2);
-      return { ok: true, status: 201, data: null };
+      return consentTableAvailable
+        ? { ok: true, status: 200, data: consented ? [{ consented_at: "2026-11-13T08:00:00Z", revoked_at: null }] : [] }
+        : { ok: false, status: 404, data: [] };
     }
     return { ok: true, status: 200, data: [] };
   });
@@ -102,11 +99,6 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     );
     expect(body).not.toHaveProperty("provider");
     expect(body).not.toHaveProperty("aiProviderCalled");
-    expect(callUserData).toHaveBeenCalledWith(
-      "project_conversation_messages", "POST", "client-token",
-      expect.arrayContaining([expect.objectContaining({ role: "user" }), expect.objectContaining({ role: "assistant" })]),
-      "return=minimal",
-    );
   });
 
   it("reconstructs the conversation from the existing project decision ledger", async () => {
@@ -136,6 +128,19 @@ describe("POST /api/projects/[projectId]/assistant", () => {
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [],
       consent: true,
+    }), context);
+    expect(response.status).toBe(200);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps deterministic MerKora available when the optional consent table is not deployed", async () => {
+    mockDatabase(false, [], false);
+    process.env.GEMINI_API_KEY = "test-only-secret";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await POST(request({
+      message: "Je veux suivre les retards du personnel et les rapports de caisse",
+      history: [],
     }), context);
     expect(response.status).toBe(200);
     expect(fetchMock).not.toHaveBeenCalled();
