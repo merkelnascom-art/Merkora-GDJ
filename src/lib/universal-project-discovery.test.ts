@@ -181,4 +181,44 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.remainingGaps).not.toContain("privacy_and_consent");
   });
 
+
+  it("reports confirmed client statements separately from hypotheses and unresolved blockers", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Aujourd'hui je note les contributions dans un cahier. Je veux recevoir un résumé chaque dimanche.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Mon budget maximal est de 100 000 FCFA." },
+      { role: "assistant", content: "Je suppose que vous gérez une petite association." },
+    ]);
+
+    expect(result.evaluation.clientStatements).toEqual(expect.arrayContaining([
+      expect.stringMatching(/Aujourd'hui je note les contributions/),
+      expect.stringMatching(/100 000 FCFA/),
+    ]));
+    expect(result.evaluation.hypothesesToConfirm).toEqual(
+      analysis.hypotheses.map((hypothesis) => hypothesis.statement),
+    );
+    expect(result.evaluation.blockingStages).toEqual(result.remainingGaps);
+    expect(result.evaluation.status).toBe("blocked");
+    expect(result.evaluation.solutionReviewAllowed).toBe(false);
+    expect(result.evaluation.clientStatements.join(" ")).not.toMatch(/petite association/i);
+  });
+
+  it("marks the evaluation reviewable only after every discovery gap is answered", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Aujourd'hui je note les contributions dans un cahier. Je veux recevoir un résumé chaque dimanche.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Je suis seul à gérer cela." },
+      { role: "user", content: "Mon budget maximal est de 100 000 FCFA." },
+      { role: "user", content: "Je veux seulement suivre les montants et les dates." },
+    ]);
+
+    expect(result.evaluation.status).toBe(result.readyForSolutionReview ? "reviewable" : "blocked");
+    expect(result.evaluation.solutionReviewAllowed).toBe(result.readyForSolutionReview);
+    if (result.readyForSolutionReview) {
+      expect(result.evaluation.blockingStages).toEqual([]);
+    }
+  });
+
 });
