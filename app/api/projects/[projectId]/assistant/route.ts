@@ -35,12 +35,12 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
       return NextResponse.json({ error: "Projet introuvable." }, { status: project.ok ? 404 : 502 });
     }
     const decisionsResult = await callUserData(
-      `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=100`,
+      `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=100`,
       "GET", token,
     );
     if (!decisionsResult.ok) return NextResponse.json({ error: "Impossible de charger la mémoire du dossier." }, { status: 502 });
     const decisionRows = Array.isArray(decisionsResult.data)
-      ? decisionsResult.data.filter(isRecord) as StoredProjectDecision[]
+      ? (decisionsResult.data.filter(isRecord) as StoredProjectDecision[]).reverse()
       : [];
     const decisionMemory = hydrateDecisionMemory(projectId, decisionRows);
     const messages = projectMemoryRowsToConversationHistory(decisionRows);
@@ -86,7 +86,7 @@ export async function POST(
 
     const [decisionsResult, consentResult] = await Promise.all([
       callUserData(
-        `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=100`,
+        `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=100`,
         "GET", token,
       ),
       callUserData(`project_ai_processing_consents?select=consented_at,revoked_at&project_id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, "GET", token),
@@ -96,11 +96,12 @@ export async function POST(
     }
 
     const storedDecisionRows = Array.isArray(decisionsResult.data)
-      ? decisionsResult.data.filter(isRecord) as StoredProjectDecision[]
+      ? (decisionsResult.data.filter(isRecord) as StoredProjectDecision[]).reverse()
       : [];
     const currentDecisionMemory = hydrateDecisionMemory(projectId, storedDecisionRows);
     const storedHistory = projectMemoryRowsToConversationHistory(storedDecisionRows);
-    const history = input.value.history.length > storedHistory.length ? input.value.history : storedHistory;
+    // Only server-persisted project history is trusted; browser history is untrusted input.
+    const history = storedHistory;
     const projectContext = [
       typeof project.title === "string" ? project.title : "",
       typeof project.problem === "string" ? project.problem : "",
