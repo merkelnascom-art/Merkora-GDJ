@@ -24,7 +24,8 @@ describe("selectNextDiscoveryQuestion", () => {
     ]);
 
     expect(result.stage).not.toBe("project_scope");
-    expect(result.nextQuestion).toMatch(/procédez-vous aujourd'hui/i);
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.nextQuestion).toMatch(/informées|accord/i);
   });
 
   it("understands a short yes or no answer when the preceding assistant question defines the topic", () => {
@@ -35,7 +36,7 @@ describe("selectNextDiscoveryQuestion", () => {
       { role: "assistant", content: "Ces besoins font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?" },
     ]);
 
-    expect(result.stage).toBe("current_process");
+    expect(result.stage).toBe("privacy_and_consent");
   });
 
   it("does not mistake an unrelated use of the word together for a project-scope answer", () => {
