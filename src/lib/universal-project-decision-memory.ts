@@ -299,27 +299,83 @@ export function hydrateDecisionMemory(
 }
 
 /** Converts only persisted client answers and decisions into safe resumable chat context. */
+export type StoredProjectConversationMessage = {
+  role?: string;
+  content?: string;
+  created_at?: string;
+};
+
+/**
+ * Merges the conversation log with the append-only decision ledger.
+ * The ledger can recover a client answer even when saving the paired chat turn failed.
+ */
+export function mergeProjectConversationHistory(
+  conversationRows: StoredProjectConversationMessage[],
+  decisionRows: StoredProjectDecision[],
+): ConversationMessage[] {
+  const events: Array<{
+    role: ConversationMessage["role"];
+    content: string;
+    createdAt: string;
+    order: number;
+  }> = [];
+
+  conversationRows.forEach((row) => {
+    if ((row.role !== "user" && row.role !== "assistant") ||
+      typeof row.content !== "string" || !row.content.trim()) return;
+    events.push({
+      role: row.role,
+      content: row.content.slice(0, MAX_TEXT * 4),
+      createdAt: typeof row.created_at === "string" ? row.created_at : "9999-12-31T23:59:59.999Z",
+      order: row.role === "assistant" ? 0 : 1,
+    });
+  });
+
+  decisionRows.forEach((row) => {
+    if (row.actor_role !== "client" || typeof row.decision !== "string") return;
+    const createdAt = typeof row.created_at === "string" ? row.created_at : "9999-12-31T23:59:59.999Z";
+    if (row.decision_type === "clarification_answered") {
+      if (typeof row.comment === "string" && row.comment.trim()) {
+        events.push({
+          role: "assistant",
+          content: row.comment.slice(0, MAX_TEXT),
+          createdAt,
+          order: 0,
+        });
+      }
+      events.push({
+        role: "user",
+        content: row.decision.slice(0, MAX_TEXT),
+        createdAt,
+        order: 1,
+      });
+    } else if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
+      events.push({
+        role: "user",
+        content: row.decision.slice(0, MAX_TEXT),
+        createdAt,
+        order: 1,
+      });
+    }
+  });
+
+  events.sort((left, right) =>
+    left.createdAt.localeCompare(right.createdAt) || left.order - right.order,
+  );
+  const seen = new Set<string>();
+  return events.filter((event) => {
+    const key = `${event.role}\\u0000${event.content}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(-30).map(({ role, content }) => ({ role, content }));
+}
+
+/** Backward-compatible projection of the decision ledger into resumable chat context. */
 export function projectMemoryRowsToConversationHistory(
   rows: StoredProjectDecision[],
 ): ConversationMessage[] {
-  const history: ConversationMessage[] = [];
-  let lastUserContent = "";
-  for (const row of rows) {
-    if (row.actor_role !== "client" || typeof row.decision !== "string") continue;
-    if (row.decision_type === "clarification_answered") {
-      if (typeof row.comment === "string" && row.comment.trim()) {
-        history.push({ role: "assistant", content: row.comment.slice(0, MAX_TEXT) });
-      }
-      const answer = row.decision.slice(0, MAX_TEXT);
-      if (answer !== lastUserContent) history.push({ role: "user", content: answer });
-      lastUserContent = answer;
-    } else if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
-      const decision = row.decision.slice(0, MAX_TEXT);
-      if (decision !== lastUserContent) history.push({ role: "user", content: decision });
-      lastUserContent = decision;
-    }
-  }
-  return history.slice(-30);
+  return mergeProjectConversationHistory([], rows);
 }
 
 /** Creates append-only rows only for client answers and explicit client decisions not already stored. */
