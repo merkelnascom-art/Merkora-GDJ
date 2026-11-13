@@ -32,7 +32,7 @@ export type ProfessionProfile = {
  */
 export const PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT = 500;
 export const PROFESSION_CANDIDATE_IMPORTED_COUNT = 484;
-export const PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT = 800;
+export const PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT = 1000;
 export const PROFESSION_CANDIDATE_TOTAL_COUNT = PROFESSION_CANDIDATE_IMPORTED_COUNT + PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT;
 export const PROFESSION_CANDIDATE_SOURCE_GAP = PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT - PROFESSION_CANDIDATE_IMPORTED_COUNT;
 
@@ -9021,6 +9021,1406 @@ export const MERKORA_PROFESSION_CANDIDATES = [
   {
     "id": "candidate-20-065",
     "title": "Responsable de programme d’accès aux droits",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-065",
+    "title": "Médecin vasculaire",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-066",
+    "title": "Chirurgien thoracique",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-067",
+    "title": "Chirurgien pédiatrique",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-068",
+    "title": "Spécialiste en médecine du sport",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-069",
+    "title": "Médecin de famille",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-070",
+    "title": "Technicien en anatomopathologie",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-071",
+    "title": "Technicien en radiothérapie",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-072",
+    "title": "Coordinateur de greffe",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-073",
+    "title": "Infirmier anesthésiste",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-074",
+    "title": "Infirmier de bloc opératoire",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-065",
+    "title": "Entraîneur de volley-ball de plage",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-066",
+    "title": "Entraîneur de futsal",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-067",
+    "title": "Entraîneur de basketball 3x3",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-068",
+    "title": "Responsable de sport scolaire",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-069",
+    "title": "Moniteur de fitness aquatique",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-070",
+    "title": "Responsable de préparation physique",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-071",
+    "title": "Technicien de chronométrage sportif",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-072",
+    "title": "Responsable de centre de récupération sportive",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-073",
+    "title": "Gestionnaire de matériel de compétition",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-074",
+    "title": "Coordinateur de ligue sportive",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-065",
+    "title": "Technicien de production de cacao",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-066",
+    "title": "Technicien de production de coton",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-067",
+    "title": "Responsable de ferme porcine",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-068",
+    "title": "Responsable de ferme caprine",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-069",
+    "title": "Technicien de transformation de fruits",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-070",
+    "title": "Technicien de transformation de céréales",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-071",
+    "title": "Responsable de chaîne du froid agricole",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-072",
+    "title": "Gestionnaire de marché à bétail",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-073",
+    "title": "Technicien de contrôle vétérinaire",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-074",
+    "title": "Conseiller en élevage durable",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-065",
+    "title": "Responsable de vente de pièces détachées",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-066",
+    "title": "Gestionnaire de commerce de gros",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-067",
+    "title": "Responsable de magasin alimentaire",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-068",
+    "title": "Gestionnaire de dépôt de boissons",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-069",
+    "title": "Responsable de vente de matériel informatique",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-070",
+    "title": "Agent de vente pharmaceutique",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-071",
+    "title": "Responsable de réseau de distribution",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-072",
+    "title": "Gestionnaire de commandes en ligne",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-073",
+    "title": "Responsable de commerce mobile",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-074",
+    "title": "Responsable de centre de relation commerciale",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-065",
+    "title": "Gestionnaire de risques opérationnels financiers",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-066",
+    "title": "Analyste de conformité fiscale",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-067",
+    "title": "Gestionnaire de portefeuille immobilier",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-068",
+    "title": "Conseiller en assurance vie",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-069",
+    "title": "Gestionnaire de contrats d’assurance",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-070",
+    "title": "Responsable de contrôle financier",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-071",
+    "title": "Analyste de trésorerie prévisionnelle",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-072",
+    "title": "Responsable de financement agricole",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-073",
+    "title": "Gestionnaire de portefeuille de microcrédit",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-074",
+    "title": "Chargé de relation investisseurs",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-065",
+    "title": "Responsable de développement institutionnel",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-066",
+    "title": "Directeur de stratégie et planification",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-067",
+    "title": "Responsable de gestion des processus",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-068",
+    "title": "Responsable de performance organisationnelle",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-069",
+    "title": "Consultant en audit organisationnel",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-070",
+    "title": "Responsable de gestion des connaissances",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-071",
+    "title": "Coordinateur de gouvernance de projet",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-072",
+    "title": "Responsable de gestion des partenariats",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-073",
+    "title": "Directeur de centre de formation professionnelle",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-074",
+    "title": "Responsable de portefeuille d’initiatives",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-065",
+    "title": "Ingénieur en routes et chaussées",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-066",
+    "title": "Technicien en assainissement urbain",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-067",
+    "title": "Responsable de maintenance de routes",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-068",
+    "title": "Chef de projet de lotissement",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-069",
+    "title": "Responsable de bureau de contrôle bâtiment",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-070",
+    "title": "Technicien en économie de la construction",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-071",
+    "title": "Ingénieur en travaux maritimes",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-072",
+    "title": "Technicien en géomatique foncière",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-073",
+    "title": "Responsable de gestion de chantier",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-074",
+    "title": "Technicien de maintenance de bâtiments publics",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-065",
+    "title": "Enseignant de sciences économiques",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-066",
+    "title": "Enseignant de comptabilité",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-067",
+    "title": "Enseignant de dessin technique",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-068",
+    "title": "Enseignant de formation agricole",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-069",
+    "title": "Formateur en logistique",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-070",
+    "title": "Formateur en gestion de projet",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-071",
+    "title": "Responsable de tutorat universitaire",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-072",
+    "title": "Gestionnaire de formation à distance",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-073",
+    "title": "Coordinateur d’apprentissage dual",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-074",
+    "title": "Responsable de suivi des diplômés",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-065",
+    "title": "Responsable de transport interurbain",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-066",
+    "title": "Gestionnaire de gare routière",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-067",
+    "title": "Agent d’exploitation ferroviaire",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-068",
+    "title": "Planificateur de vols",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-069",
+    "title": "Agent de fret maritime",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-070",
+    "title": "Responsable de logistique humanitaire",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-071",
+    "title": "Gestionnaire de parc de véhicules lourds",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-072",
+    "title": "Technicien de maintenance de motos",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-073",
+    "title": "Responsable de transport de fonds",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-074",
+    "title": "Coordinateur de mobilité professionnelle",
+    "familyId": "family-09",
+    "sourceGroup": "Transport",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-065",
+    "title": "Responsable de production de boissons",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-066",
+    "title": "Brasseur artisanal",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-067",
+    "title": "Technicien de transformation de produits laitiers",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-068",
+    "title": "Responsable de cuisine hospitalière",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-069",
+    "title": "Gestionnaire de restaurant universitaire",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-070",
+    "title": "Responsable de restauration d’entreprise",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-071",
+    "title": "Chef de partie",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-072",
+    "title": "Responsable de service en chambre",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-073",
+    "title": "Gestionnaire de résidence de tourisme",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-074",
+    "title": "Responsable de contrôle des coûts alimentaires",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-066",
+    "title": "Administrateur de compagnie artistique",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-067",
+    "title": "Chargé de programmation de festival",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-068",
+    "title": "Responsable de billetterie de spectacle",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-069",
+    "title": "Gestionnaire de droits audiovisuels",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-070",
+    "title": "Directeur de production événementielle",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-071",
+    "title": "Responsable de communication touristique",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-072",
+    "title": "Gestionnaire de site patrimonial",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-073",
+    "title": "Coordinateur de circuits touristiques",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-074",
+    "title": "Responsable d’accueil de congrès",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-075",
+    "title": "Agent de développement des industries culturelles",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel et tourisme",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-065",
+    "title": "Gestionnaire de dossiers de recrutement",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-066",
+    "title": "Responsable de rémunération et avantages",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-067",
+    "title": "Responsable de gestion des absences",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-068",
+    "title": "Chargé de relations avec les syndicats",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-069",
+    "title": "Responsable d’administration du personnel",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-070",
+    "title": "Gestionnaire de mobilité géographique",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-071",
+    "title": "Responsable de plan de succession",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-072",
+    "title": "Chargé d’intégration des nouveaux employés",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-073",
+    "title": "Responsable de gestion des compétences numériques",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-074",
+    "title": "Analyste de climat social",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-066",
+    "title": "Technicien en maintenance de véhicules industriels",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-067",
+    "title": "Opérateur de fabrication de pièces",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-068",
+    "title": "Technicien en contrôle de soudure",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-069",
+    "title": "Responsable de maintenance préventive",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-070",
+    "title": "Responsable de maintenance corrective",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-071",
+    "title": "Technicien de réparation de moteurs",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-072",
+    "title": "Opérateur de traitement de surface",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-073",
+    "title": "Technicien de maintenance d’équipements médicaux",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-074",
+    "title": "Responsable de chaîne de montage",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-075",
+    "title": "Technicien de contrôle de production",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-065",
+    "title": "Responsable de résidence pour personnes âgées",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-066",
+    "title": "Coordinateur de soins à domicile non médicaux",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-067",
+    "title": "Assistant de vie de nuit",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-068",
+    "title": "Agent de service en établissement médico-social",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-069",
+    "title": "Responsable de garde périscolaire",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-070",
+    "title": "Accompagnateur de personnes à mobilité réduite",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-071",
+    "title": "Technicien de nettoyage après sinistre",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-072",
+    "title": "Responsable de service de jardinage",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-073",
+    "title": "Gestionnaire de services de blanchisserie",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-074",
+    "title": "Responsable de services de proximité",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-066",
+    "title": "Responsable de service de délivrance de documents",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-067",
+    "title": "Gestionnaire de dossiers de permis de construire",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-068",
+    "title": "Agent de gestion de domaine public",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-069",
+    "title": "Responsable de service de voirie",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-070",
+    "title": "Chargé de suivi des délibérations",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-071",
+    "title": "Responsable de relation avec les administrés",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-072",
+    "title": "Gestionnaire de dossiers de subventions",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-073",
+    "title": "Agent de contrôle des services délégués",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-074",
+    "title": "Responsable de coopération intercommunale",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-075",
+    "title": "Responsable de gestion des cimetières publics",
+    "familyId": "family-15",
+    "sourceGroup": "Administration",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-065",
+    "title": "Juriste en droit des sociétés commerciales",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-066",
+    "title": "Juriste en droit des personnes",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-067",
+    "title": "Juriste en droit de la propriété industrielle",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-068",
+    "title": "Juriste en droit de la consommation",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-069",
+    "title": "Juriste en droit de la concurrence numérique",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-070",
+    "title": "Responsable de veille juridique",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-071",
+    "title": "Responsable de gestion des réclamations juridiques",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-072",
+    "title": "Chargé de prévention des litiges",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-073",
+    "title": "Gestionnaire de dossiers de médiation",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-074",
+    "title": "Conseiller en conformité contractuelle",
+    "familyId": "family-16",
+    "sourceGroup": "Droit",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-065",
+    "title": "Ingénieur en architecture microservices",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-066",
+    "title": "Ingénieur en automatisation des tests",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-067",
+    "title": "Développeur de systèmes distribués",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-068",
+    "title": "Administrateur de messagerie d’entreprise",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-069",
+    "title": "Spécialiste en observabilité logicielle",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-070",
+    "title": "Ingénieur de sécurité cloud",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-071",
+    "title": "Responsable de qualité des données",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-072",
+    "title": "Développeur de solutions no-code",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-073",
+    "title": "Ingénieur de migration informatique",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-074",
+    "title": "Responsable de gestion des identités numériques",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-065",
+    "title": "Technicien de maintenance de panneaux solaires",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-066",
+    "title": "Responsable de réseau de distribution d’eau",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-067",
+    "title": "Technicien d’analyse des eaux",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-068",
+    "title": "Opérateur de centre de conduite énergétique",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-069",
+    "title": "Responsable de maintenance de réseau électrique",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-070",
+    "title": "Technicien de contrôle des installations électriques",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-071",
+    "title": "Gestionnaire de réseau d’éclairage public",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-072",
+    "title": "Responsable de collecte sélective",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-073",
+    "title": "Technicien de valorisation des déchets",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-074",
+    "title": "Ingénieur en gestion des ressources hydriques",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie et environnement",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-065",
+    "title": "Responsable de sécurité des données physiques",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-066",
+    "title": "Coordinateur de prévention des risques naturels",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-067",
+    "title": "Responsable de sécurité des sites sensibles",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-068",
+    "title": "Technicien de maintenance de systèmes incendie",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-069",
+    "title": "Responsable de sécurité des établissements scolaires",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-070",
+    "title": "Coordinateur de sûreté événementielle",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-071",
+    "title": "Responsable de protection des travailleurs",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-072",
+    "title": "Analyste de risques environnementaux",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-073",
+    "title": "Responsable de prévention des intrusions",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-074",
+    "title": "Gestionnaire de plan de crise",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-066",
+    "title": "Coordinateur de programme de lutte contre l’exclusion",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-067",
+    "title": "Responsable de programme d’aide aux personnes déplacées",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-068",
+    "title": "Chargé de soutien aux aidants",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-069",
+    "title": "Gestionnaire de centre d’accompagnement social",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-070",
+    "title": "Responsable de programme d’accès à l’éducation",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-071",
+    "title": "Coordinateur de réseau associatif",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-072",
+    "title": "Responsable de programme de médiation familiale",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-073",
+    "title": "Chargé d’accompagnement des personnes vulnérables",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-074",
+    "title": "Gestionnaire de fonds associatif",
+    "familyId": "family-20",
+    "sourceGroup": "Famille",
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-075",
+    "title": "Responsable de programme de cohésion sociale",
     "familyId": "family-20",
     "sourceGroup": "Famille",
     "reviewStatus": "candidate"
