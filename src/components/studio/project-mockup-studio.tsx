@@ -285,8 +285,9 @@ export function ProjectMockupStudio({ project }: Props) {
       `Catégorie : ${model.domainLabel}`,
       `Concept : ${reviewStatus === "approved" ? "validé localement" : "non validé"}`,
       `Format envisagé : ${model.formatLabel}`,
+      ...(model.selectedDeliverableFormats.length > 0 ? ["Livrables confirmés par le client :", ...model.selectedDeliverableFormats.map((id) => `- ${DELIVERABLE_FORMAT_CATALOG.find((item) => item.id === id)?.label ?? id}`)] : ["Livrables : aucun format confirmé pour le moment"]),
       "",
-      "PÉRIMÈTRE ENVISAGÉ",
+      "PÉRIMÈTRE ENVISAGÉ"
       ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
       ...(model.activityDiagnostic.selectedSectors.length > 0 ? ["Secteurs confirmés :", ...model.activityDiagnostic.selectedSectors.map((item) => `- ${item.label}`)] : ["Secteur : à confirmer"]),
       "Questions de diagnostic à approfondir :",
@@ -305,7 +306,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Conditions de paiement : ${quotePaymentTerms.trim() || "À convenir"}`,
       "",
       "ÉTAT : brouillon préparatoire uniquement. Ce document n'est ni un devis officiel, ni une offre contractuelle, ni une acceptation client. Le prix et le délai doivent être vérifiés par MerKora avant transmission.",
-      "Données et préférences conservées localement dans ce navigateur ; aucun envoi automatique n'a lieu.",
+      "Les réponses et choix de conception sont synchronisés dans la mémoire du projet lorsque le client est connecté. Aucun envoi commercial ou lancement de réalisation automatique n'a lieu.",
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -374,8 +375,9 @@ export function ProjectMockupStudio({ project }: Props) {
   async function copySummary() {
     const summary = [
       `Projet : ${model.title}`,
-      `Format : ${model.formatLabel}`,
+      `Format d’aperçu : ${model.formatLabel}`,
       `Direction : ${model.domainLabel}`,
+      ...(model.selectedDeliverableFormats.length > 0 ? [`Livrables confirmés : ${model.selectedDeliverableFormats.map((id) => DELIVERABLE_FORMAT_CATALOG.find((item) => item.id === id)?.label ?? id).join(" · ")}`] : ["Livrables : aucun format confirmé"]),
       ...(model.universalFamilyCandidates.length > 0 ? [`Familles de référence possibles : ${model.universalFamilyCandidates.map((family) => family.label).join(" · ")}`] : []),
       ...(model.selectedProfessionCandidates.length > 0 ? [`Métiers confirmés par le client : ${model.selectedProfessionCandidates.map((item) => item.title).join(" · ")}`] : ["Métier : à confirmer avec le client"]),
       ...(model.activityDiagnostic.selectedSectors.length > 0 ? [`Secteurs confirmés par le client : ${model.activityDiagnostic.selectedSectors.map((item) => item.label).join(" · ")}`] : ["Secteur : à confirmer avec le client"]),
