@@ -7,7 +7,7 @@ import {
 } from "./universal-project-decision-memory";
 
 describe("universal project decision memory", () => {
-  it("preserves client-confirmed answers through serialization and recovery", () => {
+  it("preserves client answers through serialization and recovery", () => {
     const initial = createDecisionMemory("project-123");
     const updated = recordDecisionMemoryTurn(initial, {
       role: "user",
@@ -21,6 +21,23 @@ describe("universal project decision memory", () => {
     expect(recovered?.clientAnswers).toHaveLength(1);
     expect(recovered?.clientAnswers[0].answer).toContain("même projet");
     expect(recovered?.clientAnswers[0].question).toContain("même projet");
+  });
+
+  it("remembers the last discovery question so an answer can be recovered after a restart", () => {
+    const initial = createDecisionMemory("project-123");
+    const afterAssistant = recordDecisionMemoryTurn(initial, {
+      role: "assistant",
+      content: "Comment procédez-vous aujourd'hui ?",
+    });
+    const recovered = parseDecisionMemory(serializeDecisionMemory(afterAssistant), "project-123");
+    const afterRestart = recordDecisionMemoryTurn(recovered!, {
+      role: "user",
+      content: "Je note tout dans un cahier.",
+    });
+
+    expect(afterRestart.clientAnswers).toHaveLength(1);
+    expect(afterRestart.clientAnswers[0].question).toContain("Comment procédez-vous");
+    expect(afterRestart.clientAnswers[0].answer).toContain("cahier");
   });
 
   it("keeps assistant hypotheses separate from client-confirmed decisions", () => {
