@@ -72,6 +72,22 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+  it("detects conflicting access requirements stated in different conversation turns", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Finalement, seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.stage).toBe("resolve_contradiction");
+    expect(result.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "access", confirmationRequired: true }),
+    ]));
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
   it("detects a conflict between informed consent and covert collection", () => {
     const analysis = analyzeUniversalProjectIntent(
       "Les visiteurs seront informés et pourront donner leur accord.\nJe veux pourtant enregistrer leurs visites sans les prévenir.",
