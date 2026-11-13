@@ -297,4 +297,29 @@ describe("buildMockupModel", () => {
     expect(new Set(Object.values(MOCKUP_PALETTE_TOKENS).map((palette) => palette.accent)).size).toBe(4);
   });
 
+
+  it("does not let AI recommendations reclassify the client's original project", () => {
+    const communityProject: Project = {
+      ...studentProject,
+      id: "MK-COMMUNITY-TEST",
+      title: "Rencontres locales",
+      category: "other",
+      problem: "Les habitants ont du mal à découvrir des rencontres de proximité et à y participer sereinement.",
+      desiredOutcome: "Découvrir des événements locaux et organiser sa participation avec les autres.",
+      recommendations: [
+        { title: "Orientation des membres", description: "Proposer des formations et des parcours adaptés.", reason: "Aider chacun à progresser." },
+      ],
+    };
+
+    const model = buildMockupModel(communityProject, {
+      format: "website",
+      palette: "violet",
+      enabledModules: [],
+    });
+
+    expect(model.domain).not.toBe("education");
+    expect(model.modules.map((item) => item.id)).not.toContain("career-explorer");
+    expect(model.modules.map((item) => item.id)).not.toContain("study-paths");
+  });
+
 });
