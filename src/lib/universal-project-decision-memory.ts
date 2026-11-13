@@ -73,16 +73,21 @@ function isCorrection(text: string): boolean {
 const DECISION_TOPIC_STOPWORDS = new Set([
   "alors", "avec", "dans", "deux", "elle", "elles", "est", "faire", "faut",
   "finalement", "je", "la", "le", "les", "leur", "leurs", "ma", "mais", "mon",
-  "notre", "nous", "par", "pas", "pour", "projet", "que", "qui", "seul",
+  "notre", "nous", "par", "pas", "pour", "projet", "projets", "besoin", "besoins", "que", "qui", "seul",
   "seule", "son", "sont", "sur", "un", "une", "vous", "votre", "vos",
   "choisis", "choix", "confirme", "corrige", "décision", "change", "avis",
 ]);
 
 function decisionTopicTerms(statement: string): Set<string> {
   const normalized = statement.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
-  return new Set(
+  const terms = new Set(
     normalized.match(/[a-z0-9]{3,}/g)?.filter((term) => !DECISION_TOPIC_STOPWORDS.has(term)) ?? [],
   );
+  if (/\\b(projet|projets|besoin|besoins)\\b/.test(normalized) &&
+    /\\b(meme projet|projets separes|regrouper|separer|separe)\\b/.test(normalized)) {
+    terms.add("scope");
+  }
+  return terms;
 }
 
 function decisionsShareTopic(left: string, right: string): boolean {
