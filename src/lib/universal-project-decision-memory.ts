@@ -70,6 +70,27 @@ function isCorrection(text: string): boolean {
   return /\bje corrige\b|\bje reviens sur ma décision\b|\bje change d'avis\b|\bfinalement\b|\ben fait,?\s+je préfère\b|\bje préfère finalement\b|\bje ne veux plus\b|\bremplace(?:r)?\b|\bà la place de\b/i.test(text);
 }
 
+const DECISION_TOPIC_STOPWORDS = new Set([
+  "alors", "avec", "dans", "deux", "elle", "elles", "est", "faire", "faut",
+  "finalement", "je", "la", "le", "les", "leur", "leurs", "ma", "mais", "mon",
+  "notre", "nous", "par", "pas", "pour", "projet", "que", "qui", "seul",
+  "seule", "son", "sont", "sur", "un", "une", "vous", "votre", "vos",
+  "choisis", "choix", "confirme", "corrige", "décision", "change", "avis",
+]);
+
+function decisionTopicTerms(statement: string): Set<string> {
+  const normalized = statement.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
+  return new Set(
+    normalized.match(/[a-z0-9]{3,}/g)?.filter((term) => !DECISION_TOPIC_STOPWORDS.has(term)) ?? [],
+  );
+}
+
+function decisionsShareTopic(left: string, right: string): boolean {
+  const leftTerms = decisionTopicTerms(left);
+  const rightTerms = decisionTopicTerms(right);
+  return [...leftTerms].some((term) => rightTerms.has(term));
+}
+
 /**
  * Updates only from an actual conversation turn. Assistant suggestions never
  * become client decisions; corrections retain the previous decision as history.
@@ -120,9 +141,13 @@ export function recordDecisionMemoryTurn(
   }
 
   if (explicitDecision(content, priorQuestion)) {
-    const previous = [...next.decisions].reverse().find((decision) => decision.status === "confirmed");
+    const previous = isCorrection(content)
+      ? [...next.decisions].reverse().find((decision) =>
+        decision.status === "confirmed" && decisionsShareTopic(decision.statement, content),
+      )
+      : undefined;
     const decisionId = randomUUID();
-    if (previous && isCorrection(content)) {
+    if (previous) {
       previous.status = "superseded";
       previous.supersededBy = decisionId;
     }
@@ -132,7 +157,7 @@ export function recordDecisionMemoryTurn(
       status: "confirmed",
       source: "client",
       createdAt: next.updatedAt,
-      ...(previous && isCorrection(content) ? { supersedes: previous.id } : {}),
+      ...(previous ? { supersedes: previous.id } : {}),
     });
     next.decisions = next.decisions.slice(-MAX_ENTRIES);
   }
@@ -236,9 +261,13 @@ export function hydrateDecisionMemory(
       continue;
     }
     if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
-      const previous = [...memory.decisions].reverse().find((item) => item.status === "confirmed");
       const correction = row.decision_type === "change_requested";
-      if (previous && correction) {
+      const previous = correction
+        ? [...memory.decisions].reverse().find((item) =>
+          item.status === "confirmed" && decisionsShareTopic(item.statement, row.decision!),
+        )
+        : undefined;
+      if (previous) {
         previous.status = "superseded";
         previous.supersededBy = id;
       }
@@ -248,7 +277,7 @@ export function hydrateDecisionMemory(
         status: "confirmed",
         source: "client",
         createdAt,
-        ...(previous && correction ? { supersedes: previous.id } : {}),
+        ...(previous ? { supersedes: previous.id } : {}),
       });
     }
   }
