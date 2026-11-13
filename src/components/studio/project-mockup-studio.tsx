@@ -431,6 +431,8 @@ export function ProjectMockupStudio({ project }: Props) {
 
       <div className="mockup-studio-layout">
         <aside className="mockup-controls" aria-label="Personnaliser la maquette">
+          <details className="mockup-step" name="mockup-studio-step" open>
+          <summary>01 · Aperçu visuel</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Type d’aperçu visuel</span>
             <p className="mockup-control-hint">Ce choix sert à présenter le concept. Il ne détermine pas à lui seul la forme finale de votre projet.</p>
@@ -442,7 +444,10 @@ export function ProjectMockupStudio({ project }: Props) {
               ))}
             </div>
           </div>
+          </details>
 
+          <details className="mockup-step" name="mockup-studio-step">
+          <summary>02 · Formats de réalisation</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Formats de réalisation souhaités</span>
             <p className="mockup-control-hint">MerKora recommande des formats selon votre besoin. Vous pouvez en choisir plusieurs, retirer une suggestion ou ajouter un format non recommandé.</p>
@@ -460,7 +465,10 @@ export function ProjectMockupStudio({ project }: Props) {
             </div>
             <p className="mockup-control-hint">{(config.selectedDeliverableFormats ?? []).length} format(s) confirmé(s) par le client. Les recommandations non sélectionnées restent de simples suggestions.</p>
           </div>
+          </details>
 
+          <details className="mockup-step" name="mockup-studio-step">
+          <summary>03 · Ambiance visuelle</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Ambiance visuelle</span>
             <div className="mockup-palette-options">
@@ -471,7 +479,10 @@ export function ProjectMockupStudio({ project }: Props) {
               ))}
             </div>
           </div>
+          </details>
 
+          <details className="mockup-step" name="mockup-studio-step">
+          <summary>04 · Diagnostic métier et options</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
             {model.universalFamilyCandidates.length > 0 && <p className="mockup-control-hint">Familles de référence possibles : {model.universalFamilyCandidates.map((family) => family.label).join(" · ")}. Cette correspondance aide à élargir l’analyse ; elle ne remplace pas la confirmation du métier et du secteur par le client.</p>}
@@ -523,7 +534,10 @@ export function ProjectMockupStudio({ project }: Props) {
               );
             })}
           </div>
+          </details>
 
+          <details className="mockup-step" name="mockup-studio-step">
+          <summary>05 · Pistes de solution</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Pistes de solution proposées</span>
             <p className="mockup-control-hint">Sélectionne les pistes que le client veut réellement voir dans son concept. Les pistes décochées ne seront pas présentées comme retenues.</p>
@@ -538,8 +552,11 @@ export function ProjectMockupStudio({ project }: Props) {
             })}
             {model.recommendations.length === 0 && <p className="mockup-control-hint">Aucune piste n’est disponible. Les pistes apparaîtront ici après l’analyse du besoin.</p>}
           </div>
+          </details>
 
-          <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
+          <details className="mockup-step mockup-step-review" name="mockup-studio-step">
+            <summary>06 · Retour et validation du concept</summary>
+            <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
             <div className="mockup-review-heading">
               <div>
                 <span className="mockup-control-title">Étape 03 · Retour sur le concept</span>
@@ -556,6 +573,7 @@ export function ProjectMockupStudio({ project }: Props) {
             </div>
             <p className="mockup-local-note">Cette validation concerne uniquement le concept de conception : elle ne vaut ni accord contractuel ni validation de devis et ne déclenche aucun message à l’administrateur ou au client. Le statut et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
           </section>
+          </details>
           {reviewStatus === "approved" && (
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
               <div className="mockup-review-heading">
