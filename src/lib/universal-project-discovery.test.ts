@@ -61,6 +61,7 @@ describe("selectNextDiscoveryQuestion", () => {
     const analysis = analyzeUniversalProjectIntent(
       "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
     );
+    expect(analysis.intentGroups).toHaveLength(1);
     const result = selectNextDiscoveryQuestion(analysis, []);
 
     expect(result.stage).toBe("resolve_contradiction");
