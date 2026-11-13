@@ -35,8 +35,8 @@ export type DecisionMemory = {
   }>;
 };
 
-const MAX_ENTRIES = 100;
-const MAX_TEXT = 2000;
+const MAX_ENTRIES = 15;
+const MAX_TEXT = 500;
 
 export function createDecisionMemory(projectId: string): DecisionMemory {
   return {
@@ -159,14 +159,18 @@ export function parseDecisionMemory(value: unknown, expectedProjectId: string): 
     isRecord(item) && typeof item.id === "string" && typeof item.question === "string" &&
     typeof item.answer === "string" && item.status === "provided" && item.source === "client" &&
     typeof item.createdAt === "string",
-  ).slice(-MAX_ENTRIES);
+  ).map((item) => ({
+    ...item,
+    question: item.question.slice(0, MAX_TEXT),
+    answer: item.answer.slice(0, MAX_TEXT),
+  })).slice(-MAX_ENTRIES);
   const decisions = value.decisions.filter((item): item is ProjectDecision =>
     isRecord(item) && typeof item.id === "string" && typeof item.statement === "string" &&
     (item.status === "confirmed" || item.status === "superseded") && item.source === "client" &&
     typeof item.createdAt === "string" &&
     (item.supersedes === undefined || typeof item.supersedes === "string") &&
     (item.supersededBy === undefined || typeof item.supersededBy === "string"),
-  ).slice(-MAX_ENTRIES);
+  ).map((item) => ({ ...item, statement: item.statement.slice(0, MAX_TEXT) })).slice(-MAX_ENTRIES);
   const hypotheses = value.hypotheses.filter((item) =>
     isRecord(item) && typeof item.statement === "string" &&
     item.source === "assistant" && item.confirmationRequired === true,
