@@ -190,10 +190,14 @@ export async function POST(
     const decisionMemoryAfterUser = recordDecisionMemoryTurn(currentDecisionMemory, {
       role: "user", content: input.value.message,
     }, previousAssistantMessage);
-    const decisionMemory = recordDecisionMemoryTurn(decisionMemoryAfterUser, {
-      role: "assistant",
-      content: [finalReply.assistantMessage, ...finalReply.clarifyingQuestions].join("\n"),
+    const decisionMemoryAfterAssistant = recordDecisionMemoryTurn(decisionMemoryAfterUser, {
+      role: "assistant", content: finalReply.assistantMessage,
     });
+    const decisionMemory = finalReply.clarifyingQuestions[0]
+      ? recordDecisionMemoryTurn(decisionMemoryAfterAssistant, {
+          role: "assistant", content: finalReply.clarifyingQuestions[0],
+        })
+      : decisionMemoryAfterAssistant;
     const nextWorkspacePayload = {
       ...workspacePayload,
       decisionMemory: serializeDecisionMemory(decisionMemory),
