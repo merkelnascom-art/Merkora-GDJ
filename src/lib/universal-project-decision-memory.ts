@@ -306,7 +306,9 @@ export function buildProjectMemoryDecisionInserts(
   for (const decision of memory.decisions) {
     if (knownDecisions.has(decision.id)) continue;
     const correction = decision.supersedes !== undefined || isCorrection(decision.statement);
-    const scopeChoice = /\b(projet|périmètre|besoin|ensemble|séparé|séparément)\b/i.test(decision.statement);
+    const relatedAnswer = memory.clientAnswers.find((answer) => answer.answer === decision.statement);
+    const scopeChoice = /\b(projet|périmètre|besoin|ensemble|séparé|séparément)\b/i.test(decision.statement) ||
+      /\b(même projet|séparés|regrouper|séparer)\b/i.test(relatedAnswer?.question ?? "");
     rows.push({
       project_id: projectId,
       decision_type: correction ? "change_requested" : scopeChoice ? "scope_confirmed" : "other",
