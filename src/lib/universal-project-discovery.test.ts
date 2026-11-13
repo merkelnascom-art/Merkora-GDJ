@@ -29,7 +29,7 @@ describe("selectNextDiscoveryQuestion", () => {
 
   it("understands a short yes or no answer when the preceding assistant question defines the topic", () => {
     const analysis = analyzeUniversalProjectIntent(
-      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.\\nOui.",
+      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.\nOui.",
     );
     const result = selectNextDiscoveryQuestion(analysis, [
       { role: "assistant", content: "Ces besoins font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?" },
