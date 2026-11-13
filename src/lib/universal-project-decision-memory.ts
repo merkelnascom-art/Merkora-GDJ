@@ -83,8 +83,8 @@ function decisionTopicTerms(statement: string): Set<string> {
   const terms = new Set(
     normalized.match(/[a-z0-9]{3,}/g)?.filter((term) => !DECISION_TOPIC_STOPWORDS.has(term)) ?? [],
   );
-  if (/\\b(projet|projets|besoin|besoins)\\b/.test(normalized) &&
-    /\\b(un seul projet|meme projet|projets separes|regrouper|separer|separe)\\b/.test(normalized)) {
+  if (/\b(projet|projets|besoin|besoins)\b/.test(normalized) &&
+    /\b(un seul projet|meme projet|projets separes|regrouper|separer|separe)\b/.test(normalized)) {
     terms.add("scope");
   }
   return terms;
