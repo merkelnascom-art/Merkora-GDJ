@@ -578,7 +578,7 @@ export function ProjectMockupStudio({ project }: Props) {
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
               <div className="mockup-review-heading">
                 <div>
-                  <span className="mockup-control-title">Étape 04 · Préparer la proposition</span>
+                  <span className="mockup-control-title">Étape 07 · Préparer la proposition</span>
                   <h4 id="mockup-quote-title">Préparer un brouillon de devis</h4>
                 </div>
                 <span className="mockup-review-status status-draft">Brouillon</span>
@@ -594,7 +594,7 @@ export function ProjectMockupStudio({ project }: Props) {
               <p className="mockup-local-note">L’export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel et ne l’envoie pas au client. Les champs du brouillon restent sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
               <div className="mockup-client-response" aria-labelledby="mockup-client-response-title">
                 <div className="mockup-review-heading">
-                  <div><span className="mockup-control-title">Étape 05 · Réponse à la proposition</span><h4 id="mockup-client-response-title">Que répondrait le client ?</h4></div>
+                  <div><span className="mockup-control-title">Étape 08 · Réponse à la proposition</span><h4 id="mockup-client-response-title">Que répondrait le client ?</h4></div>
                   <span className={"mockup-review-status " + (clientQuoteResponse === "accepted" ? "status-approved" : clientQuoteResponse === "undecided" ? "status-draft" : "status-changes_requested")}>{clientQuoteResponse === "accepted" ? "Acceptation choisie" : clientQuoteResponse === "changes_requested" ? "Modifications demandées" : clientQuoteResponse === "negotiate" ? "Discussion demandée" : "En attente"}</span>
                 </div>
                 <p className="mockup-local-note">Cette section prépare le parcours de réponse. Le choix et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée, mais aucun message n’est envoyé automatiquement. Le retour peut être exporté pour une transmission manuelle.</p>
