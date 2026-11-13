@@ -131,7 +131,7 @@ export async function completeWithExternalAssistant(input: CompleteInput): Promi
       reply: {
         ...parsed,
         status: localContext.status === "needs_clarification" ? "needs_clarification" : parsed.status,
-        clarifyingQuestions: [...new Set([...localContext.clarifyingQuestions, ...parsed.clarifyingQuestions])].slice(0, 12),
+        clarifyingQuestions: [localContext.discovery.nextQuestion],
         suggestedModules: localContext.suggestedModules,
         domainId: localContext.domainId,
         domainLabel: localContext.domainLabel,
