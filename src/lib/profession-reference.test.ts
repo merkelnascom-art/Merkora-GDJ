@@ -16,9 +16,9 @@ describe("MerKora profession reference", () => {
     expect(PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT).toBe(500);
     expect(PROFESSION_CANDIDATE_IMPORTED_COUNT).toBe(484);
     expect(PROFESSION_CANDIDATE_SOURCE_GAP).toBe(16);
-    expect(PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT).toBe(1000);
-    expect(PROFESSION_CANDIDATE_TOTAL_COUNT).toBe(1484);
-    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(1484);
+    expect(PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT).toBe(1407);
+    expect(PROFESSION_CANDIDATE_TOTAL_COUNT).toBe(1891);
+    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(1891);
   });
 
   it("gives every candidate a unique stable ID and a valid family", () => {
@@ -28,6 +28,13 @@ describe("MerKora profession reference", () => {
     expect(MERKORA_PROFESSION_CANDIDATES.every((candidate) =>
       familyIds.has(candidate.familyId) && candidate.reviewStatus === "candidate"
     )).toBe(true);
+  });
+
+  it("attaches valid universal sector IDs to the new profession tranche", () => {
+    const sectorIds = new Set(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
+    const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
+    expect(expanded).toHaveLength(407);
+    expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
   });
 
   it("returns only candidate titles from explicitly supplied families", () => {
