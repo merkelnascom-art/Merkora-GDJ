@@ -58,8 +58,11 @@ function cleanText(value: string): string {
   return value.trim().slice(0, MAX_TEXT);
 }
 
-function explicitDecision(text: string): boolean {
-  return /\bje valide\b|\bje choisis\b|\bma décision est\b|\bje confirme (?:mon choix|cette décision|que je veux|que je souhaite)\b|\bj'opte pour\b|\bje décide de\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text);
+function explicitDecision(text: string, question = ""): boolean {
+  if (/\bje valide\b|\bje choisis\b|\bma décision est\b|\bje confirme (?:mon choix|cette décision|que je veux|que je souhaite)\b|\bj'opte pour\b|\bje décide de\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text)) return true;
+  const shortAnswer = /^(?:oui|non|d'accord|exactement|je confirme)\b[.\s,;:]*$/i.test(text.trim());
+  const decisionQuestion = /\b(confirmez|validez|choisissez|retenez|même projet|séparés|regrouper|séparer|quelle option|quel format|quelle solution)\b/i.test(question);
+  return shortAnswer && decisionQuestion;
 }
 
 function isCorrection(text: string): boolean {
@@ -115,7 +118,7 @@ export function recordDecisionMemoryTurn(
     next.clientAnswers = next.clientAnswers.slice(-MAX_ENTRIES);
   }
 
-  if (explicitDecision(content)) {
+  if (explicitDecision(content, priorQuestion)) {
     const previous = [...next.decisions].reverse().find((decision) => decision.status === "confirmed");
     const decisionId = `decision-${Date.parse(next.updatedAt)}-${next.decisions.length + 1}`;
     if (previous && isCorrection(content)) {
@@ -260,15 +263,20 @@ export function projectMemoryRowsToConversationHistory(
   rows: StoredProjectDecision[],
 ): ConversationMessage[] {
   const history: ConversationMessage[] = [];
+  let lastUserContent = "";
   for (const row of rows) {
     if (row.actor_role !== "client" || typeof row.decision !== "string") continue;
     if (row.decision_type === "clarification_answered") {
       if (typeof row.comment === "string" && row.comment.trim()) {
         history.push({ role: "assistant", content: row.comment.slice(0, MAX_TEXT) });
       }
-      history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
+      const answer = row.decision.slice(0, MAX_TEXT);
+      if (answer !== lastUserContent) history.push({ role: "user", content: answer });
+      lastUserContent = answer;
     } else if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
-      history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
+      const decision = row.decision.slice(0, MAX_TEXT);
+      if (decision !== lastUserContent) history.push({ role: "user", content: decision });
+      lastUserContent = decision;
     }
   }
   return history.slice(-30);
