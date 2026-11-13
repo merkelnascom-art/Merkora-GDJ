@@ -3,6 +3,7 @@ export type ConversationMessage = { role: ConversationRole; content: string };
 export type ConversationInput = { message: string; history: ConversationMessage[] };
 import { identifyDomain, getDomainQuestions, type DomainId } from "../domain-registry";
 import { getDomainOptionCatalog } from "../domain-options";
+import { analyzeUniversalProjectIntent, type UniversalProjectUnderstanding } from "../universal-project-understanding";
 export type SuggestedModule = { id: string; title: string; description: string; reason: string };
 export type ConversationReply = {
   assistantMessage: string;
@@ -16,6 +17,7 @@ export type ConversationReply = {
   domainLabel: string | null;
   specializationId: string | null;
   confidence: "high" | "medium" | "low";
+  intentAnalysis: UniversalProjectUnderstanding;
 };
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -79,7 +81,9 @@ function containsKeyword(text: string, keywords: string[]): boolean {
 
 export function createMerkoraConversationReply(input: ConversationInput): ConversationReply {
   const text = input.message.trim();
+  const intentAnalysis = analyzeUniversalProjectIntent(text);
   const match = identifyDomain(text);
+  const mixedNeeds = intentAnalysis.intentGroups.length > 1;
   const vague = text.length < 35 ||
     /^(bonjour|salut|bonsoir|je veux une application|je veux un site|aide-moi|aidez-moi)[.! ]*$/i.test(text);
   const legacyModules = MODULE_RULES.filter((rule) => containsKeyword(text, rule.keywords))
@@ -90,25 +94,28 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
         reason: `Option métier proposée pour le domaine ${match.domain?.label ?? "identifié"}; à confirmer avec le client.`,
       }))
     : [];
-  const suggestedModules = [...legacyModules, ...domainModules]
+  const suggestedModules = (mixedNeeds ? [] : [...legacyModules, ...domainModules])
     .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
     .slice(0, 5);
   const domainContext = {
-    domainId: match.domain?.id ?? null,
-    domainLabel: match.domain?.label ?? null,
-    specializationId: match.specialization?.id ?? null,
-    confidence: match.confidence,
+    domainId: mixedNeeds ? null : match.domain?.id ?? null,
+    domainLabel: mixedNeeds ? null : match.domain?.label ?? null,
+    specializationId: mixedNeeds ? null : match.specialization?.id ?? null,
+    confidence: mixedNeeds ? "low" as const : match.confidence,
+    intentAnalysis,
   };
 
-  if (vague || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
+  if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     const clarifyingQuestions = getDomainQuestions(match);
     return {
-      assistantMessage: match.domain
-        ? `Je repère le domaine « ${match.domain.label} ». Avant de proposer une solution, précisons votre activité et le résultat attendu.`
-        : "Je vais vous aider à transformer votre idée en un besoin clair avant de proposer une application. Commençons par comprendre le problème à résoudre.",
+      assistantMessage: mixedNeeds
+        ? `Je repère plusieurs besoins dans votre description : ${intentAnalysis.intentGroups.map((group) => group.subject).join(" ; ")}. Je vais les examiner séparément avant de voir s’ils appartiennent au même projet. Rien n’est encore classé ni choisi.`
+        : match.domain
+          ? `Je repère le domaine « ${match.domain.label} ». Avant de proposer une solution, précisons votre activité et le résultat attendu.`
+          : "Je vais d’abord comprendre votre situation, votre objectif et les personnes concernées. Ensuite seulement, nous chercherons la solution adaptée.",
       status: "needs_clarification",
-      clarifyingQuestions,
-      extractedNeeds: text.length >= 35 ? [text] : [],
+      clarifyingQuestions: [...new Set([...intentAnalysis.questions, ...clarifyingQuestions])].slice(0, 7),
+      extractedNeeds: intentAnalysis.intentGroups.map((group) => `${group.subject} : ${group.desiredAction}`).slice(0, 8),
       suggestedModules: [],
       nextAction: "clarify_need",
       disclaimer: "Les questions et suggestions de cette étape sont une première analyse, pas encore un cahier des charges validé.",
@@ -116,8 +123,8 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     };
   }
 
-  const extractedNeeds = [text];
-  const clarifyingQuestions = getDomainQuestions(match);
+  const extractedNeeds = intentAnalysis.intentGroups.map((group) => `${group.subject} : ${group.desiredAction}`);
+  const clarifyingQuestions = [...new Set([...intentAnalysis.questions, ...getDomainQuestions(match)])];
   if (match.domain && clarifyingQuestions.length < 3) {
     clarifyingQuestions.push(
       "Quels rôles pourront consulter ou modifier ces informations ?",
