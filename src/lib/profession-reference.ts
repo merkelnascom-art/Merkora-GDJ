@@ -11975,7 +11975,7 @@ const MERKORA_PROFESSION_CANDIDATES_RAW: readonly ProfessionCandidate[] = [
     "title": "Billetiste de voyage",
     "familyId": "family-11",
     "sourceGroup": "Événementiel, culture et tourisme",
-    "sectorIds": ["S11-02"],
+    "sectorIds": ["S11-04"],
     "reviewStatus": "candidate"
   },
   {
@@ -14087,7 +14087,7 @@ const MERKORA_PROFESSION_CANDIDATES_RAW: readonly ProfessionCandidate[] = [
     "title": "Agent de billetterie de transport touristique",
     "familyId": "family-11",
     "sourceGroup": "Événementiel, culture et tourisme",
-    "sectorIds": ["S11-02"],
+    "sectorIds": ["S11-04"],
     "reviewStatus": "candidate"
   },
   {
