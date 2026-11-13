@@ -416,3 +416,20 @@ button:disabled{opacity:.6;cursor:not-allowed}
   .mockup-preview-toolbar{flex-wrap:wrap;align-items:center;padding:11px 12px;font-size:11px}
   .mockup-preview-disclaimer{font-size:11px;padding:12px}
 }
+
+
+/* Studio progressive disclosure: one client workspace panel open at a time. */
+.mockup-controls>.mockup-step{display:block;margin:0 0 10px;overflow:hidden;border:1px solid #e9e6f3;border-radius:13px;background:#fff}
+.mockup-step>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;cursor:pointer;list-style:none;color:#33304c;font-size:12px;font-weight:850;line-height:1.45}
+.mockup-step>summary::-webkit-details-marker{display:none}
+.mockup-step>summary:after{content:"＋";flex:0 0 auto;color:var(--mockup-accent,#7865dc);font-size:17px;font-weight:500}
+.mockup-step[open]>summary{border-bottom:1px solid #f0eef7;background:#fcfbff}
+.mockup-step[open]>summary:after{content:"−"}
+.mockup-step>.mockup-control-group{margin:0;padding:14px;border:0}
+.mockup-step>.mockup-control-group>.mockup-control-title:first-child{display:none}
+.mockup-step-review{margin-top:10px!important}
+.mockup-step-review>.mockup-review-panel{margin:0;border:0;border-radius:0;box-shadow:none}
+@media(max-width:760px){
+  .mockup-step>summary{min-height:50px;padding:13px;font-size:13px}
+  .mockup-step>.mockup-control-group{padding:12px}
+}
