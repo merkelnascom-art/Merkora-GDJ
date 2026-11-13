@@ -159,7 +159,7 @@ export async function POST(
     ];
     // The authenticated owner lookup and project_id filters above bound every retrieval source.
     const knowledgeDocuments = buildProjectKnowledgeDocuments(project, storedDecisionRows, persistedConversation);
-    const knowledge = searchKnowledge(input.value.message, knowledgeDocuments, { limit: 5 });
+    const knowledge = searchKnowledge(input.value.message.slice(0, 2000), knowledgeDocuments, { limit: 5 });
     const knowledgeReferences = knowledge.matches.map((match) => ({
       sourceId: match.documentId, title: match.title, sourceLabel: match.sourceLabel,
       excerpt: match.excerpt, matchedTerms: match.matchedTerms,
