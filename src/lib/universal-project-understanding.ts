@@ -1,3 +1,5 @@
+import { calculateEvidenceCoverage } from "./intelligence/scientific-engine";
+
 /**
  * Universal, domain-neutral interpretation of a client's first project description.
  *
@@ -33,6 +35,7 @@ export type UniversalProjectUnderstanding = {
   confidence: "high" | "medium" | "low";
   prematureClassification: false;
   interpretationNote: string;
+  analysisMetrics: import("./intelligence/scientific-engine").EvidenceCoverage;
 };
 
 type PatternGroup = {
@@ -259,6 +262,16 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
   const vague = rawIntent.length < 35 || /mieux organiser certaines choses|quelque chose|je ne sais pas encore/i.test(text);
   const confidence = vague || intentGroups.length === 0 ? "low" : intentGroups.length > 1 ? "medium" : "low";
   const needsMoreContext = vague || intentGroups.length === 0 || questions.length > 0;
+  const evidenceSignals = [
+    statedFacts.length > 0,
+    Boolean(extractCurrentSituation(evidenceSentences)),
+    desiredOutcomes.length > 0,
+    intentGroups.length > 0,
+    constraints.length > 0,
+    inferActors(rawIntent).length > 0,
+  ].filter(Boolean).length;
+  const analysisMetrics = calculateEvidenceCoverage(evidenceSignals, unknowns.length);
+
   const prioritizedQuestions = unique([
     ...(intentGroups.length > 1 ? ["Ces besoins font-ils partie d'un seul projet ou souhaitez-vous les traiter séparément ?"] : []),
     ...questions,
@@ -284,6 +297,7 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
     recommendedFormats: [],
     confidence,
     prematureClassification: false,
+    analysisMetrics,
     interpretationNote: intentGroups.length
       ? "Des intentions possibles ont été extraites des mots du client. Elles restent des hypothèses à confirmer ; aucun secteur, métier, module ou format de solution n'est imposé."
       : "La demande est encore trop ouverte pour classer le projet. MerKora doit d'abord comprendre la situation, le résultat attendu et les contraintes.",
