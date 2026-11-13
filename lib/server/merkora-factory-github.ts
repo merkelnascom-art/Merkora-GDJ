@@ -4,7 +4,7 @@ const API = "https://api.github.com";
 const OWNER = "merkelnascom-art";
 const REPOSITORY = "Merkora-GDJ";
 const WORKFLOW = "merkora-factory-worker.yml";
-const WORKFLOW_REF = "feature/merkora-factory-unified-runtime";
+const WORKFLOW_REF = "feature/merkora-universal-reference-implementation";
 
 type DispatchResult =
   | { ok: true; runRequested: true }
