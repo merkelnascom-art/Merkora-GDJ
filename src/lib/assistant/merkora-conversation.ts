@@ -123,9 +123,11 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
 
   if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     return {
-      assistantMessage: mixedNeeds
-        ? `Je repère plusieurs besoins dans votre description : ${intentAnalysis.intentGroups.map((group) => group.subject).join(" ; ")}. Je vais les examiner séparément avant de voir s’ils appartiennent au même projet. Rien n’est encore classé ni choisi.`
-        : match.domain
+      assistantMessage: discovery.stage === "resolve_contradiction"
+        ? "Je remarque deux indications qui semblent se contredire. Je préfère vérifier ce point avec vous avant de définir les règles ou les accès."
+        : mixedNeeds
+          ? `Je repère plusieurs besoins dans votre description : ${intentAnalysis.intentGroups.map((group) => group.subject).join(" ; ")}. Je vais les examiner séparément avant de voir s’ils appartiennent au même projet. Rien n’est encore classé ni choisi.`
+          : match.domain
           ? `Je repère le domaine « ${match.domain.label} ». Avant de proposer une solution, précisons votre activité et le résultat attendu.`
           : "Je vais d’abord comprendre votre situation, votre objectif et les personnes concernées. Ensuite seulement, nous chercherons la solution adaptée.",
       status: "needs_clarification",
