@@ -59,7 +59,7 @@ Le panneau administrateur `FactoryJobsPanel` appelle cet endpoint après afficha
 
 ## Lancement contrôlé
 
-Lancer `MerKora factory worker` depuis `feature/merkora-factory-unified-runtime`, `feature/merkora-production-security-hardening` ou `main` (branches autorisées par la vérification OIDC), avec un `project_id` existant et un UUID de job en statut `queued`. Le workflow reste manuel : aucun lancement automatique à la création d'un job.
+Lancer `MerKora factory worker` depuis `feature/merkora-universal-reference-implementation`, `feature/merkora-factory-unified-runtime`, `feature/merkora-production-security-hardening` ou `main` (branches autorisées par la vérification OIDC), avec un `project_id` existant et un UUID de job en statut `queued`. Le workflow reste manuel : aucun lancement automatique à la création d'un job.
 
 Un job est réclamé par comparaison atomique `status = queued`. Une seconde exécution ne peut pas prendre le même travail. Les erreurs après réservation marquent le job en échec lorsque le worker peut encore joindre l'Edge Function ; sinon, une réconciliation administrateur est nécessaire.
 
