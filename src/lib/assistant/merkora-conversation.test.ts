@@ -80,3 +80,17 @@ describe("MerKora conversation core", () => {
 });
 
 
+
+
+it("recognizes a personalized CV service and proposes a relevant starting module", () => {
+  const result = createMerkoraConversationReply({
+    message: "Je veux les aider avec des maquettes de CV, le choix du modèle, l'ajout de leur photo et de la police selon leurs objectifs.",
+    history: [{ role: "user", content: "Je remarque que les personnes n'arrive pas à créer des CV adaptés à leur parcours." }],
+  });
+
+  expect(result.status).toBe("draft");
+  expect(result.intentAnalysis.intentGroups.map((group) => group.id)).toContain("career-documents");
+  expect(result.intentAnalysis.intentGroups.map((group) => group.id)).not.toContain("visitors-and-events");
+  expect(result.intentAnalysis.intentGroups.map((group) => group.id)).not.toContain("work-and-tasks");
+  expect(result.suggestedModules.map((module) => module.id)).toContain("career-documents");
+});

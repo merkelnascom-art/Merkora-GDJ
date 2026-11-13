@@ -61,7 +61,7 @@ const GROUPS: PatternGroup[] = [
     id: "visitors-and-events",
     subject: "visites, arrivées et événements au domicile",
     action: "conserver ou consulter un historique des visites",
-    patterns: [/\bamis?\b|visiteur|visite|vient|viennent|arrive|arrivée|passage|chez moi|domicile|invité|invite/i],
+    patterns: [/\bamis?\b|\bvisiteurs?\b|\bvisites?\b|\bchez moi\b|\bdomicile\b|\binvites?\b/i],
     questions: [
       "Voulez-vous noter les visites manuellement, permettre aux visiteurs de signaler leur arrivée, ou simplement organiser un agenda ?",
       "Quelles informations sont réellement nécessaires : nom, heure d'arrivée, heure de départ ou motif de visite ?",
@@ -109,9 +109,20 @@ const GROUPS: PatternGroup[] = [
     id: "work-and-tasks",
     subject: "activités, tâches et responsabilités",
     action: "organiser qui fait quoi et suivre l'avancement",
-    patterns: [/tache|tâche|travail|activité|activite|mission|responsable|equipe|équipe|projet|avancement/i],
+    patterns: [/\btaches?\b|\btravail\b|\bactivites?\b|\bmissions?\b|\bresponsables?\b|\bequipes?\b|\bpointage\b|\bavancement\b/i],
     questions: [
       "Quelles actions doivent être suivies, par qui et selon quelles règles ?",
+    ],
+  },
+  {
+    id: "career-documents",
+    subject: "CV et documents de candidature personnalisés",
+    action: "créer et personnaliser des documents adaptés au parcours, au profil et à l'objectif de chaque personne",
+    patterns: [/\bc\.?v\.?\b|curriculum vitae|lettre de motivation|candidature|candidatures|parcours professionnel|profil professionnel/i],
+    questions: [
+      "Les CV doivent-ils être créés à partir de modèles proposés, d'un document existant ou des deux ?",
+      "Quelles parties chaque personne doit-elle pouvoir personnaliser : texte, photo, couleurs, police, rubriques et mise en page ?",
+      "Les CV doivent-ils être adaptés à un métier ou à une offre précise, ou rester polyvalents selon l'objectif choisi ?",
     ],
   },
 ];
@@ -146,6 +157,9 @@ function inferConstraints(text: string): string[] {
 
 function inferOutcomes(text: string): string[] {
   const outcomes: string[] = [];
+  if (/\bc\.?v\.?\b|curriculum vitae|lettre de motivation|candidature/i.test(text)) {
+    outcomes.push("créer ou personnaliser des documents de candidature adaptés au parcours et à l'objectif de chaque personne");
+  }
   if (/eviter|éviter|reduire|réduire|diminuer|moins de|ne plus|arreter|arrêter/i.test(text)) outcomes.push("réduire ou éviter une difficulté mentionnée (résultat exact à préciser)");
   if (/connaitre|connaître|savoir|voir|suivre|surveill/i.test(text)) outcomes.push("obtenir une meilleure visibilité sur les éléments cités (périmètre à confirmer)");
   if (/organis|planifi|program|rappel|agenda/i.test(text)) outcomes.push("mieux organiser ou planifier les activités mentionnées");
@@ -231,6 +245,7 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
     ...(matchedIds.has("time-and-scheduling") ? ["dates et heures", "historique ou planification"] : []),
     ...(matchedIds.has("goods-and-deliveries") ? ["personne qui réceptionne", "preuve de remise"] : []),
     ...(matchedIds.has("work-and-tasks") ? ["actions", "responsables", "règles de suivi"] : []),
+    ...(matchedIds.has("career-documents") ? ["modèles de CV", "informations du parcours", "photo et éléments visuels", "objectif de candidature", "formats d'export"] : []),
   ]);
   const unknowns = unique([
     ...(rawIntent.length < 35 ? ["le problème concret à résoudre"] : []),

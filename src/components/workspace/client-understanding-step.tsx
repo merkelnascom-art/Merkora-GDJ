@@ -26,11 +26,8 @@ export function ClientUnderstandingStep({ project, discovery, onDiscoveryChange,
         <p>{project.problem}</p>
       </div>
       <MerkoraAssistantPanel
-        key={`assistant-${project.id}`}
-        projectId={project.id}
-        projectTitle={project.title}
-        problem={project.problem}
-        desiredOutcome={project.desiredOutcome}
+        key={"assistant-" + project.id}
+        project={project}
         onDiscoveryChange={onDiscoveryChange}
       />
       <div className="mk-step-footer">

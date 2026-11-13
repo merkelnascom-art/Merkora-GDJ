@@ -4,11 +4,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createMerkoraConversationReply, type ConversationReply } from "@/lib/assistant/merkora-conversation";
 import { selectNextDiscoveryQuestion, type DiscoveryQuestionSelection } from "@/lib/universal-project-discovery";
 import { analyzeUniversalProjectIntent } from "@/lib/universal-project-understanding";
+import type { Project } from "@/lib/project-types";
 
-type Props = { projectId: string; projectTitle: string; problem: string; desiredOutcome: string; onDiscoveryChange?: (selection: DiscoveryQuestionSelection) => void };
+type Props = { project: Project; onDiscoveryChange?: (selection: DiscoveryQuestionSelection) => void };
 type ConversationItem = { id?: string; role: "user" | "assistant"; content: string };
 
-export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desiredOutcome, onDiscoveryChange }: Props) {
+export function MerkoraAssistantPanel({ project, onDiscoveryChange }: Props) {
+  const { id: projectId, title: projectTitle, problem, desiredOutcome } = project;
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState<ConversationReply | null>(null);
   const [messages, setMessages] = useState<ConversationItem[]>([]);
@@ -62,7 +64,19 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
     setConsentBusy(true);
     setError("");
     try {
-      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/ai-consent`, {
+      const syncResponse = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(project),
+      });
+      const syncPayload: unknown = await syncResponse.json().catch(() => null);
+      if (!syncResponse.ok) {
+        const detail = syncPayload && typeof syncPayload === "object" && "error" in syncPayload
+          ? String((syncPayload as { error: unknown }).error)
+          : "Le dossier n’a pas pu être enregistré dans votre espace en ligne.";
+        throw new Error(detail);
+      }
+      const response = await fetch("/api/projects/" + encodeURIComponent(projectId) + "/ai-consent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ consent: true, noticeVersion }),
@@ -128,18 +142,30 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       const detail = payload && typeof payload === "object" && "error" in payload
         ? String((payload as { error: unknown }).error) : "L'analyse en ligne est momentanément indisponible.";
       setError(detail);
+      const localHistory = [
+        ...(problem.trim() && !messages.some((item) => item.role === "user" && item.content.trim() === problem.trim())
+          ? [{ role: "user" as const, content: problem.trim() }]
+          : []),
+        ...messages.map(({ role, content }) => ({ role, content })),
+      ];
       const localReply = createMerkoraConversationReply({
-        message: `${submitted}\nProjet : ${projectTitle}. Problème : ${problem}. Résultat souhaité : ${desiredOutcome}`,
-        history: [],
+        message: submitted,
+        history: localHistory,
       });
       setReply(localReply);
       onDiscoveryChange?.(localReply.discovery);
       setMessages((current) => [...current, { role: "user", content: submitted }, { role: "assistant", content: localReply.assistantMessage }]);
       setMessage("");
     } catch {
+      const localHistory = [
+        ...(problem.trim() && !messages.some((item) => item.role === "user" && item.content.trim() === problem.trim())
+          ? [{ role: "user" as const, content: problem.trim() }]
+          : []),
+        ...messages.map(({ role, content }) => ({ role, content })),
+      ];
       const localReply = createMerkoraConversationReply({
-        message: `${submitted}\nProjet : ${projectTitle}. Problème : ${problem}. Résultat souhaité : ${desiredOutcome}`,
-        history: [],
+        message: submitted,
+        history: localHistory,
       });
       setReply(localReply);
       onDiscoveryChange?.(localReply.discovery);

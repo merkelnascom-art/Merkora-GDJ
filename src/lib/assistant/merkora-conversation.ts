@@ -65,6 +65,8 @@ export function validateConversationInput(value: unknown):
 
 type ModuleRule = { keywords: string[]; module: SuggestedModule };
 const MODULE_RULES: ModuleRule[] = [
+  { keywords: ["cv", "curriculum vitae", "lettre de motivation", "candidature", "candidatures"],
+    module: { id: "career-documents", title: "Création de CV personnalisés", description: "Création guidée de CV adaptés au parcours et à l'objectif de chaque personne, avec modèles visuels, photo, rubriques, polices et mise en page personnalisables.", reason: "Votre description porte sur la création et la personnalisation de CV et de documents de candidature." } },
   { keywords: ["personnel", "employé", "employes", "employés", "staff", "équipe", "equipe", "retard", "absence", "présence", "presence", "pointage"],
     module: { id: "staff-attendance", title: "Gestion du personnel et présence", description: "Suivi des employés, horaires, retards, absences et historiques d'activité.", reason: "Votre message mentionne le personnel, les horaires ou la présence." } },
   { keywords: ["caisse", "recette", "recettes", "dépense", "depense", "dépenses", "depenses", "finance", "rapport financier"],
