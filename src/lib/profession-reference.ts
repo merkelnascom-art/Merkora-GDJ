@@ -37,7 +37,7 @@ export const PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT = 1516;
 export const PROFESSION_CANDIDATE_TOTAL_COUNT = PROFESSION_CANDIDATE_IMPORTED_COUNT + PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT;
 export const PROFESSION_CANDIDATE_SOURCE_GAP = PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT - PROFESSION_CANDIDATE_IMPORTED_COUNT;
 
-export const MERKORA_PROFESSION_CANDIDATES = [
+const MERKORA_PROFESSION_CANDIDATES_RAW = [
   {
     "id": "candidate-01-001",
     "title": "Médecin spécialiste",
@@ -14555,6 +14555,42 @@ export const MERKORA_PROFESSION_CANDIDATES = [
     "reviewStatus": "candidate"
   }
 ] as const satisfies readonly ProfessionCandidate[];
+
+function inferProfessionSectorId(familyId: string, title: string): string {
+  const familyNumber = Number(familyId.slice(-2));
+  const value = title.toLocaleLowerCase("fr");
+  const rules: Record<number, readonly [RegExp, string][]> = {
+    1: [[/pharmac|médicament/, "04"], [/laboratoire|biolog|imagerie|radio|électro|anatomopath|stérilis/, "05"], [/infirm|soin|ambul|brancard|aide-soignant|paraméd|ergothé|orthophon|psychomot/, "03"]],
+    2: [[/billetterie|arbit|compétition|tournoi|antidop|juge|chronométr/, "04"], [/stade|piscine|équipement|centre équestre|golf/, "05"], [/fitness|crossfit|aquagym/, "02"]],
+    3: [[/pêche|poisson|mareyeur|aquac|pisc|ostré|mytil|conchy|écloserie|halieut|fumage|vivier/, "04"], [/élev|avic|bovin|porcin|ovin|caprin|insémin|lait|couvoir/, "03"], [/forêt|forest|environnement/, "05"], [/plantation|arbor|vitic|pépini|céréal|silo/, "02"]],
+    4: [[/e-commerce|boutique en ligne/, "03"], [/grossiste|import|export/, "02"], [/réseau|commission|prospection/, "04"]],
+    5: [[/assurance|sinistre|courtier|actuaire/, "04"], [/banque|crédit|microfinance|transfert de fonds/, "03"], [/patrimoine|actif/, "05"], [/trésor|budget|dépense|facturation|créance|financier|contrôleur|caisse/, "02"]],
+    6: [[/création|startup|incub|coworking/, "01"], [/projet|programme/, "03"], [/consultant|conseil|études|organisation|management/, "04"], [/qualité|audit|processus|gouvernance/, "05"]],
+    7: [[/agent immobilier|gestion locative|syndic|promoteur|expert immobilier/, "01"], [/location|copropriété/, "02"], [/architect|urban|géomètre|paysagiste concepteur|dessinateur/, "03"], [/maintenance|rénovation|chantier|travaux|maçon|carreleur|peintre|couvreur|charpent|menuisier|électricien|plombier|climatic|coffreur|ferrailleur|plaquiste|métreur|économiste|poseur|revêtement/, "04"]],
+    8: [[/primaire|instituteur|école|cantine|internat/, "01"], [/professeur|universit|examens|inspecteur pédagogique|surveillant/, "02"], [/formation|formateur|apprentissage|auto-école|alphabétisation/, "03"], [/cours numériques|tuteur en ligne/, "04"], [/orientation/, "05"]],
+    9: [[/billetterie|taxi|moto-taxi|bus|train|tramway|pilote|aéroport|escale|maritime|marine marchande|ferry/, "01"], [/livreur|fret|docker|douane|marchandises|commissionnaire|transitaire|coursier|tournées|quai/, "02"], [/magasinier|préparateur de commandes|entrepôt/, "03"], [/garage|automobile/, "04"]],
+    10: [[/hôtel|hébergement|réceptionniste|gouvernant|chambre|bagagiste|concierge|réservation hôtelière/, "04"], [/touristique|résidence/, "05"], [/traiteur|événementiel/, "03"], [/rapide|livraison|cafétéria|polyvalent/, "02"]],
+    11: [[/billetterie|billetiste|spectacle|festival|congrès|événement|mariage|régisseur|artiste|exposition|accès/, "02"], [/voyage|tourisme|guide|forfait|réservation touristique/, "03"], [/musée|culture|patrimoine|conférencier/, "05"]],
+    12: [[/recrut|chasseur de têtes|intérim/, "01"], [/personnel|administration|congés|absences|discipline|intégration/, "02"], [/temps|planning|effectifs|astreinte/, "03"], [/paie|rémunération|avantages sociaux/, "04"]],
+    13: [[/sérigraph|imprimeur|mécanograph|typograph|offset|reprograph|photograv|brocheur|relieur|massicot|façonnier|photocopie|traceur/, "04"], [/couturier|tailleur|brodeur|textile|cordonnier|maroquinier/, "03"], [/réparateur|maintenance|électromécanicien/, "05"], [/menuisier|forgeron|soudeur|chaudronnier|tourneur|bijoutier|horloger|potier|sculpteur/, "02"]],
+    14: [[/enfant|maternel|garde|familial|scolaire|famille|éducateur/, "05"], [/coiffeur|barbier|esthét|maquilleur|manucure|masseur|spa/, "03"], [/entretien|nettoyage|laveur|blanchisseur|pressing|linge/, "02"]],
+    15: [[/état civil|registre|document officiel|guichet unique|légalisation|actes/, "02"], [/archive|documentaliste|courrier/, "05"], [/mairie|commune|municip|impôts|douanes|administratif|foncier/, "01"], [/citoyen|réclamation|guichet/, "04"]],
+    16: [[/notaire|notarial|clerc/, "02"], [/huissier|commissaire de justice|greffe/, "03"], [/médiat|règlement amiable|arbitre/, "04"], [/conformité|protection des données|délégué/, "05"]],
+    17: [[/réseau|télécom|fibre|radio|cloud|administrateur systèmes/, "03"], [/support|helpdesk|maintenance|technicien informatique|photocopieur|parc informatique/, "02"], [/community|rédacteur web|vidéo|marketing|webmaster/, "04"], [/data|données|intelligence artificielle|automatisation|billetterie électronique|archivage numérique/, "05"]],
+    18: [[/solaire|photovolta|éolien|renouvelable/, "02"], [/eau|fontainier|pompe|compteur/, "03"], [/déchet|assainissement|compost|recycl/, "04"], [/électricité|centrale électrique/, "01"]],
+    19: [[/incendie|pompier|alarme|secour|urgence/, "02"], [/travail|hse|préventeur|inspecteur hse|risque|crise|continuité/, "03"]],
+    20: [[/famille|enfance|jeunes|parentalité|aidants|isolées/, "05"], [/médiat|quartier|communaut|association|bénévolat|solidarité|fonds|plaidoyer|citoyen/, "02"]],
+  };
+  const matched = (rules[familyNumber] ?? []).find(([pattern]) => pattern.test(value));
+  const sectorNumber = matched?.[1] ?? "01";
+  return `S${String(familyNumber).padStart(2, "0")}-${sectorNumber}`;
+}
+
+export const MERKORA_PROFESSION_CANDIDATES: readonly ProfessionCandidate[] =
+  MERKORA_PROFESSION_CANDIDATES_RAW.map((candidate) => ({
+    ...candidate,
+    sectorIds: candidate.sectorIds ?? [inferProfessionSectorId(candidate.familyId, candidate.title)],
+  }));
 
 export const MERKORA_DETAILED_PROFESSION_PROFILES: readonly ProfessionProfile[] = [
   {
