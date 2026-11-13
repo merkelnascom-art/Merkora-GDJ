@@ -38,4 +38,16 @@ describe("MerKora conversation core", () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.history).toHaveLength(12);
   });
+
+  it("returns a discovery blueprint with explicit validation gates and no invented rules", () => {
+    const result = createMerkoraConversationReply({
+      message: "Aujourd'hui chacun me donne sa contribution en espèces. Je veux un résumé chaque dimanche.",
+      history: [],
+    });
+    expect(result.projectBlueprint.status).toBe("discovery_draft");
+    expect(result.projectBlueprint.requirements.length).toBeGreaterThan(0);
+    expect(result.projectBlueprint.operatingRules).toEqual([]);
+    expect(result.projectBlueprint.recommendedOptionId).toBeNull();
+    expect(result.projectBlueprint.approvalGates.length).toBe(6);
+  });
 });
