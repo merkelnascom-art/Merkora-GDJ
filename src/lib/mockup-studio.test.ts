@@ -216,4 +216,40 @@ describe("buildMockupModel", () => {
     expect(model.visibleRecommendations.length).toBe(teamProject.recommendations.length);
   });
 
+  it("recommends physical and service deliverables without forcing a digital application", () => {
+    const physicalProject = {
+      ...studentProject,
+      title: "Kit de jardinage sur balcon",
+      category: "other" as const,
+      problem: "Les habitants manquent de place et ne savent pas comment cultiver des aromates.",
+      desiredOutcome: "Un kit physique prêt à utiliser avec matériel adapté et guide pas-à-pas.",
+    };
+    const model = buildMockupModel(physicalProject, { format: "website", palette: "violet", enabledModules: [] });
+    expect(model.recommendedDeliverables.map((item) => item.id))
+      .toEqual(expect.arrayContaining(["physical_prototype", "visual_mockup", "business_plan"]));
+    expect(model.recommendedDeliverables.map((item) => item.id)).not.toContain("web_app");
+  });
+
+  it("recommends a mixed digital and operational deliverable set for a neighborhood service", () => {
+    const serviceProject = {
+      ...studentProject,
+      title: "Paniers anti-gaspillage",
+      category: "other" as const,
+      problem: "Les commerces jettent leurs invendus et les ménages cherchent des produits frais.",
+      desiredOutcome: "Réserver des paniers avant la fermeture avec des commerces partenaires et organiser les retraits.",
+    };
+    const model = buildMockupModel(serviceProject, { format: "website", palette: "violet", enabledModules: [] });
+    expect(model.recommendedDeliverables.map((item) => item.id))
+      .toEqual(expect.arrayContaining(["web_app", "service_blueprint", "business_plan"]));
+  });
+
+  it("preserves only client-selected deliverable formats and does not auto-confirm recommendations", () => {
+    const model = buildMockupModel(studentProject, {
+      format: "website", palette: "violet", enabledModules: [],
+      selectedDeliverableFormats: ["poster", "physical_prototype", "unknown-format"],
+    });
+    expect(model.selectedDeliverableFormats).toEqual(["poster", "physical_prototype"]);
+    expect(model.recommendedDeliverables.length).toBeGreaterThan(0);
+  });
+
 });
