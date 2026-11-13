@@ -68,7 +68,7 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.contradictions).toEqual(expect.arrayContaining([
       expect.objectContaining({ topic: "access", confirmationRequired: true }),
     ]));
-    expect(result.nextQuestion).toMatch(/qui pourra|personnes autorisées/i);
+    expect(result.nextQuestion).toMatch(/qui doit réellement pouvoir/i);
     expect(result.readyForSolutionReview).toBe(false);
   });
 
