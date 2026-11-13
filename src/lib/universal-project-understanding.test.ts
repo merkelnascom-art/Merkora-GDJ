@@ -71,9 +71,8 @@ describe("analyzeUniversalProjectIntent", () => {
     expect(result.confidence).toBe("low");
     expect(result.questions.length).toBeGreaterThan(0);
   });
-});
 
-it("recognizes a personalized CV creation need without inventing home visits or task management", () => {
+  it("recognizes a personalized CV creation need without inventing home visits or task management", () => {
   const result = analyzeUniversalProjectIntent(
     "Je remarque que les personnes n'arrive pas à créer des CV selon ce qu'ils veulent et sont obligées de payer des frais IA ou de se débrouiller avant d'avoir leur CV propre à leur parcours et ce pourquoi ils veulent le faire. Je veux les aider avec des maquettes de CV, le choix du modèle, l'ajout de leur photo et de la police selon leurs objectifs.",
   );
