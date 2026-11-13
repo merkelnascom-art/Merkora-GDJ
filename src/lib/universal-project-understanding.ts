@@ -125,12 +125,12 @@ function unique(values: string[]): string[] {
 }
 
 function sentenceEvidence(input: string): string[] {
-  return input.split(/(?<=[.!?;])\\s+|\\n+/).map((part) => part.trim()).filter(Boolean).slice(0, 20);
+  return input.split(/(?<=[.!?;])\s+|\n+/).map((part) => part.trim()).filter(Boolean).slice(0, 20);
 }
 
 function extractCurrentSituation(sentences: string[]): string {
   return sentences.find((sentence) =>
-    /aujourd'hui|actuellement|pour le moment|en ce moment|jusqu'ici|on fait|nous faisons|je fais|notre façon actuelle/i.test(sentence),
+    /aujourd'hui|actuellement|pour le moment|en ce moment|jusqu'ici|on fait|nous faisons|je fais|je note|nous notons|on note|on utilise|nous utilisons|je travaille avec|on procède|par whatsapp|dans un cahier|sur excel|notre façon actuelle/i.test(sentence),
   ) ?? "";
 }
 
