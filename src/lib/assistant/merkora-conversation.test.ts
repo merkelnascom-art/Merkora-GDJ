@@ -66,6 +66,38 @@ describe("MerKora conversation core", () => {
     expect(result.clarifyingQuestions).toEqual([result.discovery.nextQuestion]);
   });
 
+
+  it("does not offer modules while the discovery evaluation still has blockers", () => {
+    const result = createMerkoraConversationReply({
+      message: "Je veux suivre les retards du personnel et les absences.",
+      history: [],
+    });
+
+    expect(result.discovery.evaluation.status).toBe("blocked");
+    expect(result.discovery.evaluation.solutionReviewAllowed).toBe(false);
+    expect(result.status).toBe("needs_clarification");
+    expect(result.nextAction).toBe("clarify_need");
+    expect(result.suggestedModules).toEqual([]);
+    expect(result.clarifyingQuestions).toEqual([result.discovery.nextQuestion]);
+  });
+
+  it("exposes the discovery evaluation in the live conversation response", () => {
+    const result = createMerkoraConversationReply({
+      message: "Je veux une application pour gérer mon activité.",
+      history: [],
+    });
+
+    expect(result.discovery.evaluation).toEqual(expect.objectContaining({
+      clientStatements: expect.any(Array),
+      hypothesesToConfirm: expect.any(Array),
+      unresolvedUnknowns: expect.any(Array),
+      blockingStages: expect.any(Array),
+      blockingQuestions: expect.any(Array),
+      status: "blocked",
+      solutionReviewAllowed: false,
+    }));
+  });
+
   it("surfaces a contradiction before offering modules and asks only one clarifying question", () => {
     const result = createMerkoraConversationReply({
       message: "Toute ma famille doit pouvoir consulter les contributions. Seul moi peux voir les montants.",
