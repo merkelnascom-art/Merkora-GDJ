@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { createDecisionMemory, parseDecisionMemory, recordDecisionMemoryTurn, serializeDecisionMemory } from "@/lib/universal-project-decision-memory";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createMerkoraConversationReply, validateConversationInput } from "@/lib/assistant/merkora-conversation";
@@ -34,12 +35,21 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
     if (!project.ok || !Array.isArray(project.data) || project.data.length !== 1) {
       return NextResponse.json({ error: "Projet introuvable." }, { status: project.ok ? 404 : 502 });
     }
-    const messages = await callUserData(
-      `project_conversation_messages?select=id,turn_id,role,content,reply_payload,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=100`,
-      "GET", token,
-    );
-    if (!messages.ok) return NextResponse.json({ error: "Impossible de charger l'historique du dossier." }, { status: 502 });
-    return NextResponse.json({ messages: Array.isArray(messages.data) ? messages.data : [] }, {
+    const [messages, workspaceState] = await Promise.all([
+      callUserData(
+        `project_conversation_messages?select=id,turn_id,role,content,reply_payload,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=100`,
+        "GET", token,
+      ),
+      callUserData(
+        `project_workspace_state?select=revision,payload&project_id=eq.${encodeURIComponent(projectId)}&limit=1`,
+        "GET", token,
+      ),
+    ]);
+    if (!messages.ok || !workspaceState.ok) return NextResponse.json({ error: "Impossible de charger la mémoire du dossier." }, { status: 502 });
+    const savedWorkspace = Array.isArray(workspaceState.data) && isRecord(workspaceState.data[0]) ? workspaceState.data[0] : null;
+    const savedPayload = savedWorkspace && isRecord(savedWorkspace.payload) ? savedWorkspace.payload : {};
+    const decisionMemory = parseDecisionMemory(savedPayload.decisionMemory, projectId);
+    return NextResponse.json({ messages: Array.isArray(messages.data) ? messages.data : [], decisionMemory }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch {
@@ -90,6 +100,7 @@ export async function POST(
 
     const workspace = Array.isArray(workspaceResult.data) && isRecord(workspaceResult.data[0]) ? workspaceResult.data[0] : null;
     const workspacePayload = workspace && isRecord(workspace.payload) ? workspace.payload : {};
+    const currentDecisionMemory = parseDecisionMemory(workspacePayload.decisionMemory, projectId) ?? createDecisionMemory(projectId);
     const storedHistory = Array.isArray(historyResult.data)
       ? historyResult.data.slice().reverse().flatMap((item) =>
           isRecord(item) && (item.role === "user" || item.role === "assistant") && typeof item.content === "string"
@@ -172,6 +183,31 @@ export async function POST(
       } catch { /* The safe deterministic MerKora reply remains available. */ }
     }
 
+    const previousAssistantMessage = [...history].reverse().find((item) => item.role === "assistant");
+    const decisionMemoryAfterUser = recordDecisionMemoryTurn(currentDecisionMemory, {
+      role: "user", content: input.value.message,
+    }, previousAssistantMessage);
+    const decisionMemory = recordDecisionMemoryTurn(decisionMemoryAfterUser, {
+      role: "assistant", content: finalReply.assistantMessage,
+    });
+    const nextWorkspacePayload = {
+      ...workspacePayload,
+      decisionMemory: serializeDecisionMemory(decisionMemory),
+    };
+    const expectedRevision = workspace && typeof workspace.revision === "number" ? workspace.revision : 0;
+    const payloadDigest = createHash("sha256").update(JSON.stringify(nextWorkspacePayload)).digest("hex");
+    const workspaceSaved = await callUserData("rpc/save_project_workspace_state", "POST", token, {
+      p_project_id: projectId,
+      p_expected_revision: expectedRevision,
+      p_payload: nextWorkspacePayload,
+      p_payload_digest: payloadDigest,
+      p_event_type: decisionMemory.decisions.length > currentDecisionMemory.decisions.length ? "client_decision" : "diagnostic_answer_saved",
+      p_summary: input.value.message.slice(0, 1000),
+    });
+    if (!workspaceSaved.ok) {
+      return NextResponse.json({ error: "Votre réponse a été préparée, mais la mémoire du projet n'a pas pu être synchronisée. Rechargez le dossier avant de réessayer." }, { status: workspaceSaved.status === 409 ? 409 : 502 });
+    }
+
     const turnId = randomUUID();
     const rows = [
       { project_id: projectId, turn_id: turnId, role: "user", content: input.value.message, created_by: user.id },
@@ -186,6 +222,7 @@ export async function POST(
       reply: finalReply,
       project: { id: project.id, title: typeof project.title === "string" ? project.title : null },
       synchronized: true,
+      decisionMemory,
     }, { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   } catch {
     return NextResponse.json({ error: "Le service MerKora est momentanément indisponible." }, { status: 502, headers: { "Cache-Control": "no-store" } });
