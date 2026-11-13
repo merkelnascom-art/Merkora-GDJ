@@ -69,7 +69,7 @@ describe("MerKora conversation core", () => {
 
   it("does not offer modules while the discovery evaluation still has blockers", () => {
     const result = createMerkoraConversationReply({
-      message: "Aujourd'hui, je note les contributions de ma famille dans un cahier. Je veux suivre les contributions et recevoir un rapport hebdomadaire. Finalement, les membres ne seront pas informés.",
+      message: "Aujourd'hui, je note les visites de mes amis chez moi. Je veux conserver les noms et les heures. Les visiteurs ne seront pas informés.",
       history: [],
     });
 
