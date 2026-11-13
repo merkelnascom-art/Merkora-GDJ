@@ -38,7 +38,7 @@ describe("MerKora profession reference", () => {
   });
 
   it("reaches exactly 2,000 and supports sector-specific profession filtering", () => {
-    const sectorIds = new Set(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
+    const sectorIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
     expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(2000);
     const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
     expect(expanded).toHaveLength(516);
