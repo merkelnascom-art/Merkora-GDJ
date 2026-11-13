@@ -215,6 +215,8 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.evaluation.blockingStages).toEqual(result.remainingGaps);
     expect(result.evaluation.status).toBe("blocked");
     expect(result.evaluation.solutionReviewAllowed).toBe(false);
+    expect(result.evaluation.evidenceCoverage).toEqual(analysis.analysisMetrics);
+    expect(result.evaluation.coverageMeaning).toBe("coverage_indicator_not_confidence");
     expect(result.evaluation.clientStatements.join(" ")).not.toMatch(/petite association/i);
   });
 
