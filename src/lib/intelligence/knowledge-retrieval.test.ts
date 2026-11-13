@@ -50,6 +50,19 @@ describe("authorized knowledge retrieval", () => {
     expect(result.matches[0].documentId).toBe("privacy-001");
   });
 
+  it("keeps excerpt offsets correct for decomposed Unicode accents", () => {
+    const decomposedPrefix = "e\\u0301".repeat(180);
+    const result = searchKnowledge("repère unique", [{
+      id: "unicode-001",
+      title: "Texte Unicode",
+      content: `${decomposedPrefix} repère unique suivi d'un passage important.`,
+      sourceLabel: "Test Unicode",
+    }]);
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].excerpt).toContain("repère unique");
+    expect(result.matches[0].excerpt).toContain("passage important");
+  });
+
   it("rejects duplicate IDs, invalid limits and oversized source collections", () => {
     expect(() => searchKnowledge("finance", [documents[0], documents[0]])).toThrow(TypeError);
     expect(() => searchKnowledge("finance", documents, { limit: 0 })).toThrow(RangeError);
