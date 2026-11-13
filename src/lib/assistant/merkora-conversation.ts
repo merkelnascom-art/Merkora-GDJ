@@ -123,10 +123,16 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     discovery,
   };
 
-  if (discovery.stage === "resolve_contradiction" || vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
+  const discoveryBlocked = !discovery.evaluation.solutionReviewAllowed ||
+    discovery.evaluation.status !== "reviewable" ||
+    discovery.evaluation.blockingStages.length > 0;
+
+  if (discoveryBlocked || vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     return {
       assistantMessage: discovery.stage === "resolve_contradiction"
         ? "Je remarque deux indications qui semblent se contredire. Je préfère vérifier ce point avec vous avant de définir les règles ou les accès."
+        : discoveryBlocked
+          ? `Avant de proposer des modules, je dois clarifier un point : ${discovery.reason} Je préfère éviter de vous proposer une solution sur une base incomplète.`
         : mixedNeeds
           ? `Je repère plusieurs besoins dans votre description : ${intentAnalysis.intentGroups.map((group) => group.subject).join(" ; ")}. Je vais les examiner séparément avant de voir s’ils appartiennent au même projet. Rien n’est encore classé ni choisi.`
           : match.domain
