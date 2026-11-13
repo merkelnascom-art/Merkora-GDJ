@@ -39,9 +39,16 @@ export function mergeGeminiConversationReply(
     };
   });
 
+  const hardDiscoveryBlock = base.discovery.evaluation.blockingStages.some((stage) =>
+    stage === "resolve_contradiction" || stage === "project_scope" ||
+    (stage === "privacy_and_consent" &&
+      base.intentAnalysis.intentGroups.some((group) => group.id === "visitors-and-events")),
+  );
+
   return {
     ...base,
-    assistantMessage,
+    // A model may improve wording, but it cannot narrate around a deterministic safety/discovery gate.
+    assistantMessage: hardDiscoveryBlock ? base.assistantMessage : assistantMessage,
     // The deterministic discovery engine owns the next required question; model suggestions follow it.
     clarifyingQuestions: [...new Set([
       ...base.clarifyingQuestions.map((question) => boundedText(question, 300)).filter(Boolean),
