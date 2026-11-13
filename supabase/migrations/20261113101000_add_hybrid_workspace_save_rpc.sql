@@ -73,7 +73,7 @@ exception
     -- not overwrite or surface an opaque database error.
     raise exception 'workspace_revision_conflict' using errcode = '40001';
 end;
-$;
+$$;
 
 revoke all on function public.save_project_workspace_state(text, integer, jsonb, text, text, text) from public, anon;
 grant execute on function public.save_project_workspace_state(text, integer, jsonb, text, text, text) to authenticated;
