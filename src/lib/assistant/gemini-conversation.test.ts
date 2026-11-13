@@ -31,6 +31,18 @@ describe("mergeGeminiConversationReply", () => {
       .toContain("rapprocher");
   });
 
+  it("keeps the deterministic next question first even when the model proposes different questions", () => {
+    const deterministicQuestion = base.clarifyingQuestions[0];
+    expect(deterministicQuestion).toBeTruthy();
+    const result = mergeGeminiConversationReply({
+      assistantMessage: "Précisons votre organisation.",
+      clarifyingQuestions: ["Question inventée par le modèle ?", deterministicQuestion],
+      extractedNeeds: ["Suivi du personnel"],
+    }, base);
+    expect(result?.clarifyingQuestions[0]).toBe(deterministicQuestion);
+    expect(result?.clarifyingQuestions.filter((question) => question === deterministicQuestion)).toHaveLength(1);
+  });
+
   it("rejects incomplete output and bounds generated lists", () => {
     expect(mergeGeminiConversationReply({ assistantMessage: "Incomplete" }, base)).toBeNull();
     const result = mergeGeminiConversationReply({

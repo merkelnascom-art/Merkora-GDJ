@@ -42,7 +42,11 @@ export function mergeGeminiConversationReply(
   return {
     ...base,
     assistantMessage,
-    clarifyingQuestions: stringList(item.clarifyingQuestions, 7, 300),
+    // The deterministic discovery engine owns the next required question; model suggestions follow it.
+    clarifyingQuestions: [...new Set([
+      ...base.clarifyingQuestions.map((question) => boundedText(question, 300)).filter(Boolean),
+      ...stringList(item.clarifyingQuestions, 7, 300),
+    ])].slice(0, 7),
     extractedNeeds: stringList(item.extractedNeeds, 8, 300),
     suggestedModules: enhancedModules,
   };
