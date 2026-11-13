@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Project } from "@/lib/project-types";
 import { getUniversalFamilyById } from "@/lib/universal-reference";
 import {
   buildMockupModel,
+  MOCKUP_PALETTE_TOKENS,
   type MockupConfig,
   type MockupFormat,
   type MockupPalette,
@@ -445,7 +446,7 @@ export function ProjectMockupStudio({ project }: Props) {
           <div className="mockup-control-group">
             <span className="mockup-control-title">Formats de réalisation souhaités</span>
             <p className="mockup-control-hint">MerKora recommande des formats selon votre besoin. Vous pouvez en choisir plusieurs, retirer une suggestion ou ajouter un format non recommandé.</p>
-            <div className="mockup-format-options">
+            <div className="mockup-format-options mockup-deliverable-options">
               {DELIVERABLE_FORMAT_CATALOG.map((item) => {
                 const selected = (config.selectedDeliverableFormats ?? []).includes(item.id);
                 const recommendation = model.recommendedDeliverables.find((candidate) => candidate.id === item.id);
@@ -598,8 +599,15 @@ export function ProjectMockupStudio({ project }: Props) {
           <p className="mockup-local-note">Les réponses du diagnostic, secteurs, métiers, modules et choix de présentation sont synchronisés dans la mémoire du projet lorsque vous êtes connecté.</p>
         </aside>
 
-        <div className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}>
-          <div className="mockup-preview-toolbar"><span><i /> Aperçu généré par MerKora</span><span>{model.formatLabel}</span></div>
+        <div
+          className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}
+          style={{
+            "--mockup-accent": MOCKUP_PALETTE_TOKENS[model.palette].accent,
+            "--mockup-accent-soft": MOCKUP_PALETTE_TOKENS[model.palette].accentSoft,
+            "--mockup-accent-deep": MOCKUP_PALETTE_TOKENS[model.palette].accentDeep,
+          } as CSSProperties}
+        >
+          <div className="mockup-preview-toolbar"><span><i /> Aperçu généré par MerKora</span><span>{model.formatLabel}</span><span>Couleur : {paletteOptions.find((option) => option.value === model.palette)?.label ?? model.palette}</span></div>
           {model.format === "mobile" ? (
             <div className="mockup-phone">
               <div className="mockup-phone-top"><span /> <span>•••</span></div>
