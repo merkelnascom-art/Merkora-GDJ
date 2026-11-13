@@ -104,7 +104,7 @@ function hasAny(text: string, patterns: RegExp[]): boolean {
  */
 function hasPositivePrivacyAnswer(text: string): boolean {
   const negativeConsent = [
-    /ne\\s+(?:seront|sont|seraient|peuvent|pourront|veulent|doivent)\\s+pas.{0,50}(?:inform|accord|consent)/i,
+    /ne\s+(?:seront|sont|seraient|peuvent|pourront|veulent|doivent)\s+pas.{0,50}(?:inform|accord|consent)/i,
     /sans.{0,40}(?:informer|prévenir|avertir|accord|consentement)/i,
     /(?:pas|aucun|aucune|refus).{0,35}(?:accord|consentement)/i,
   ];
