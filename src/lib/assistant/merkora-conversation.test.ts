@@ -65,5 +65,18 @@ describe("MerKora conversation core", () => {
     expect(result.discovery.stage).toBe("current_process");
     expect(result.clarifyingQuestions).toEqual([result.discovery.nextQuestion]);
   });
+
+  it("surfaces a contradiction before offering modules and asks only one clarifying question", () => {
+    const result = createMerkoraConversationReply({
+      message: "Toute ma famille doit pouvoir consulter les contributions. Finalement, seul moi peux voir les montants.",
+      history: [],
+    });
+
+    expect(result.discovery.stage).toBe("resolve_contradiction");
+    expect(result.assistantMessage).toMatch(/se contredire/i);
+    expect(result.clarifyingQuestions).toHaveLength(1);
+    expect(result.suggestedModules).toEqual([]);
+  });
 });
+
 
