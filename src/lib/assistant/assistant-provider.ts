@@ -94,6 +94,7 @@ export async function completeWithExternalAssistant(input: CompleteInput): Promi
       domainLabel: localContext.domainLabel,
       specializationId: localContext.specializationId,
       confidence: localContext.confidence,
+      universalProjectAnalysis: localContext.intentAnalysis,
       clarifyingQuestions: localContext.clarifyingQuestions,
       allowedStarterModules: localContext.suggestedModules,
     },
