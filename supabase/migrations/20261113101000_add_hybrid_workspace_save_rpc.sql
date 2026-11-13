@@ -67,8 +67,13 @@ begin
   );
 
   return jsonb_build_object('revision', v_revision, 'payload_digest', p_payload_digest);
+exception
+  when unique_violation then
+    -- Two devices may both try to create revision zero. The loser must reload,
+    -- not overwrite or surface an opaque database error.
+    raise exception 'workspace_revision_conflict' using errcode = '40001';
 end;
-$$;
+$;
 
 revoke all on function public.save_project_workspace_state(text, integer, jsonb, text, text, text) from public, anon;
 grant execute on function public.save_project_workspace_state(text, integer, jsonb, text, text, text) to authenticated;
