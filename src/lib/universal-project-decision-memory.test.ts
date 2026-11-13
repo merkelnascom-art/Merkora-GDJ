@@ -173,6 +173,37 @@ describe("universal project decision memory", () => {
     });
   });
 
+  it("does not persist assistant hypotheses as client decisions", async () => {
+    const { buildProjectMemoryDecisionInserts } = await import("./universal-project-decision-memory");
+    const initial = createDecisionMemory("project-123");
+    const suggested = recordDecisionMemoryTurn(initial, {
+      role: "assistant",
+      content: "Votre difficulté pourrait venir d'un manque de suivi, hypothèse à vérifier.",
+    });
+    expect(suggested.hypotheses).toHaveLength(1);
+    expect(buildProjectMemoryDecisionInserts(suggested, initial, "project-123", "user-1")).toEqual([]);
+  });
+
+  it("reconstructs superseded decisions from correction rows", async () => {
+    const { hydrateDecisionMemory } = await import("./universal-project-decision-memory");
+    const recovered = hydrateDecisionMemory("project-123", [
+      {
+        id: "decision-1", decision_type: "scope_confirmed",
+        decision: "Je confirme mon choix : un seul projet.",
+        actor_role: "client", created_at: "2026-11-13T09:00:00Z",
+      },
+      {
+        id: "decision-2", decision_type: "change_requested",
+        decision: "Je change d'avis : deux projets séparés.",
+        actor_role: "client", created_at: "2026-11-13T09:05:00Z",
+      },
+    ]);
+    expect(recovered.decisions[0].status).toBe("superseded");
+    expect(recovered.decisions[0].supersededBy).toBe("decision-2");
+    expect(recovered.decisions[1].status).toBe("confirmed");
+    expect(recovered.decisions[1].supersedes).toBe("decision-1");
+  });
+
   it("rejects a memory belonging to another project and unsupported versions", () => {
     const initial = createDecisionMemory("project-123");
     const serialized = serializeDecisionMemory(initial);
