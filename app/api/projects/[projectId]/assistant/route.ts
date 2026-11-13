@@ -91,7 +91,7 @@ export async function POST(
       ),
       callUserData(`project_ai_processing_consents?select=consented_at,revoked_at&project_id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, "GET", token),
     ]);
-    if (!decisionsResult.ok || !consentResult.ok) {
+    if (!decisionsResult.ok) {
       return NextResponse.json({ error: "Impossible de charger la mémoire durable de ce projet. Réessayez sans perdre votre message." }, { status: 502 });
     }
 
@@ -114,7 +114,7 @@ export async function POST(
     const reply = createMerkoraConversationReply({ message: combinedMessage, history });
 
     const consentRow = Array.isArray(consentResult.data) ? consentResult.data[0] : null;
-    const consentActive = isRecord(consentRow) && typeof consentRow.consented_at === "string" && consentRow.revoked_at === null;
+    const consentActive = consentResult.ok && isRecord(consentRow) && typeof consentRow.consented_at === "string" && consentRow.revoked_at === null;
     const apiKey = consentActive ? process.env.GEMINI_API_KEY : undefined;
     const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
     let finalReply = reply;
