@@ -48,6 +48,22 @@ describe("analyzeUniversalProjectIntent", () => {
     expect(result.risks.some((risk) => /vie privée|confidentialité/i.test(risk))).toBe(true);
   });
 
+  it.each([
+    ["agriculture", "Je veux suivre les parcelles de tomates, les périodes d'arrosage et les récoltes."],
+    ["education", "Je veux aider les élèves à choisir une orientation après le baccalauréat grâce à des questionnaires."],
+    ["transport", "Je veux organiser les trajets des conducteurs et informer les passagers des changements."],
+    ["craft", "Je veux gérer les commandes, les matières premières et les étapes de fabrication de mes créations."],
+    ["public service", "Je veux simplifier le dépôt et le suivi des demandes des habitants d'une commune."],
+  ])("keeps an unfamiliar %s domain open for discovery instead of forcing a solution category", (_domain, request) => {
+    const result = analyzeUniversalProjectIntent(request);
+
+    expect(result.prematureClassification).toBe(false);
+    expect(result.recommendedFormats).toEqual([]);
+    expect(result.statedFacts.every((item) => item.source === "client")).toBe(true);
+    expect(result.questions.length).toBeGreaterThan(0);
+    expect(result.unknowns.length).toBeGreaterThan(0);
+  });
+
   it("does not invent a solution format from an incomplete idea", () => {
     const result = analyzeUniversalProjectIntent("Je veux mieux organiser certaines choses.");
 
