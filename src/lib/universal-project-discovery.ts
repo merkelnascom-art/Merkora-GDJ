@@ -38,7 +38,7 @@ function userHistory(history: ConversationMessage[]): string {
 
 function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
   const statements = rawIntent
-    .split(/(?<=[.!?;])\\s+|\\n+/)
+    .split(/(?<=[.!?;])\s+|\n+/)
     .map((statement) => statement.trim())
     .filter(Boolean);
   const pairs: Array<{
@@ -87,8 +87,8 @@ function hasAny(text: string, patterns: RegExp[]): boolean {
 
 /**
  * Selects one next question using current evidence and prior user answers.
- * This is a deterministic first version: it does not claim to resolve
- * contradictions or infer business rules from conversation history.
+ * This deterministic first version flags common conflicts for client clarification;
+ * it never resolves them automatically or invents business rules.
  */
 export function selectNextDiscoveryQuestion(
   analysis: UniversalProjectUnderstanding,
