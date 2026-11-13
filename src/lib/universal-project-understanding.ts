@@ -12,8 +12,17 @@ export type IntentGroup = {
   confidence: "high" | "medium" | "low";
 };
 
+export type EvidenceItem = { text: string; source: "client"; };
+export type AnalysisHypothesis = { statement: string; reason: string; confirmationRequired: true; };
 export type UniversalProjectUnderstanding = {
   rawIntent: string;
+  statedFacts: EvidenceItem[];
+  currentSituation: string;
+  desiredOutcomes: string[];
+  possibleCauses: AnalysisHypothesis[];
+  hypotheses: AnalysisHypothesis[];
+  constraints: string[];
+  risks: string[];
   intentGroups: IntentGroup[];
   actors: string[];
   informationToClarify: string[];
@@ -115,6 +124,55 @@ function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+function sentenceEvidence(input: string): string[] {
+  return input.split(/(?<=[.!?;])\\s+|\\n+/).map((part) => part.trim()).filter(Boolean).slice(0, 20);
+}
+
+function extractMatches(input: string, patterns: RegExp[]): string[] {
+  return unique(patterns.flatMap((pattern) => [...input.matchAll(new RegExp(pattern.source, "gi"))].map((match) => match[0])));
+}
+
+function inferConstraints(text: string): string[] {
+  const constraints: string[] = [];
+  if (/connexion|internet|reseau|réseau|hors ligne|offline/i.test(text)) constraints.push("connectivité ou fonctionnement hors ligne à préciser");
+  if (/budget|pas cher|cout|coût|prix|gratuit|argent limite|moyen limite/i.test(text)) constraints.push("budget et coût acceptable à préciser");
+  if (/telephone|téléphone|mobile|smartphone|ordinateur|tablette/i.test(text)) constraints.push("équipements disponibles à préciser");
+  if (/temps|rapidement|urgent|delai|délai|date limite/i.test(text)) constraints.push("délais et disponibilité à préciser");
+  if (/discret|secret|sans qu|sans que|cacher|surveill/i.test(text)) constraints.push("limites de confidentialité, information et consentement à clarifier");
+  return constraints;
+}
+
+function inferOutcomes(text: string): string[] {
+  const outcomes: string[] = [];
+  if (/eviter|éviter|reduire|réduire|diminuer|moins de|ne plus|arreter|arrêter/i.test(text)) outcomes.push("réduire ou éviter une difficulté mentionnée (résultat exact à préciser)");
+  if (/connaitre|connaître|savoir|voir|suivre|surveill/i.test(text)) outcomes.push("obtenir une meilleure visibilité sur les éléments cités (périmètre à confirmer)");
+  if (/organis|planifi|program|rappel|agenda/i.test(text)) outcomes.push("mieux organiser ou planifier les activités mentionnées");
+  if (/alerte|notifi|prevenir|prévenir|avertir|resume|résumé|rapport/i.test(text)) outcomes.push("recevoir des informations ou alertes selon une fréquence à définir");
+  if (/automatis|automatiser|sans avoir|tout seul/i.test(text)) outcomes.push("réduire certaines opérations manuelles (niveau d'automatisation à confirmer)");
+  return outcomes;
+}
+
+function inferCauses(text: string): AnalysisHypothesis[] {
+  const causes: AnalysisHypothesis[] = [];
+  if (/je ne sais plus|oubli|oublie|perd|perdu|difficile de retrouver|pas de trace/i.test(text)) {
+    causes.push({ statement: "Le suivi actuel pourrait manquer de traces fiables ou faciles à retrouver.", reason: "Le client mentionne des oublis ou une difficulté à retrouver l'information.", confirmationRequired: true });
+  }
+  if (/dispute|conflit|malentendu|désaccord|desaccord|erreur/i.test(text)) {
+    causes.push({ statement: "Des informations partagées ou des règles peu explicites pourraient provoquer des désaccords.", reason: "Le client mentionne des disputes, conflits ou erreurs.", confirmationRequired: true });
+  }
+  if (/attend|retard|ne repond|ne répond|pas inform|ne sait pas/i.test(text)) {
+    causes.push({ statement: "La circulation de l'information ou la coordination pourrait être insuffisante.", reason: "Le client évoque une attente ou un manque d'information.", confirmationRequired: true });
+  }
+  return causes;
+}
+
+function privacyConsiderationsPlaceholder(matchedIds: Set<string>): string[] {
+  return [
+    ...(matchedIds.has("money-flow") ? ["Confidentialité des informations financières et limitation des accès."] : []),
+    ...(matchedIds.has("visitors-and-events") ? ["Information préalable des visiteurs et collecte strictement nécessaire."] : []),
+  ];
+}
+
 function inferActors(text: string): string[] {
   const actors: string[] = [];
   if (/famille|foyer|parent|enfant|conjoint|frere|frère|soeur|sœur/i.test(text)) actors.push("membres de la famille ou du foyer (à préciser)");
@@ -143,6 +201,25 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
   });
 
   const matchedIds = new Set(intentGroups.map((group) => group.id));
+  const evidenceSentences = sentenceEvidence(rawIntent);
+  const statedFacts = evidenceSentences.map((text) => ({ text, source: "client" as const }));
+  const possibleCauses = inferCauses(text);
+  const desiredOutcomes = inferOutcomes(text);
+  const constraints = inferConstraints(text);
+  const hypotheses: AnalysisHypothesis[] = [
+    ...possibleCauses,
+    ...(intentGroups.length > 1 ? [{
+      statement: "Les besoins mentionnés pourraient relever d'un même projet ou de plusieurs projets distincts.",
+      reason: "Plusieurs intentions apparaissent dans le même message.",
+      confirmationRequired: true as const,
+    }] : []),
+  ];
+  const risks = unique([
+    ...(privacyConsiderationsPlaceholder(matchedIds)),
+    ...(constraints.some((item) => /confidentialité/i.test(item)) ? ["Risque de collecte excessive ou insuffisamment transparente."] : []),
+    ...(matchedIds.has("money-flow") ? ["Risque d'accès non autorisé à des informations financières personnelles."] : []),
+    ...(matchedIds.has("visitors-and-events") ? ["Risque d'atteinte à la vie privée si les visites sont enregistrées sans information ni accord."] : []),
+  ]);
   const questions = unique(GROUPS.filter((group) => matchedIds.has(group.id)).flatMap((group) => group.questions));
   const privacyConsiderations = unique(GROUPS.filter((group) => matchedIds.has(group.id) && group.privacy).map((group) => group.privacy!));
   const informationToClarify = unique([
@@ -155,10 +232,11 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
   ]);
   const unknowns = unique([
     ...(rawIntent.length < 35 ? ["le problème concret à résoudre"] : []),
-    "le résultat prioritaire attendu",
+    ...(desiredOutcomes.length ? [] : ["le résultat prioritaire attendu"]),
     "les personnes concernées et leurs autorisations",
+    "le fonctionnement actuel et les étapes réellement suivies",
     "les règles de fonctionnement et les exceptions",
-    "les contraintes de budget, de matériel, de connexion et de disponibilité",
+    ...(constraints.length ? [] : ["les contraintes de budget, de matériel, de connexion et de disponibilité"]),
   ]);
 
   const vague = rawIntent.length < 35 || /mieux organiser certaines choses|quelque chose|je ne sais pas encore/i.test(text);
@@ -173,6 +251,13 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
 
   return {
     rawIntent,
+    statedFacts,
+    currentSituation: evidenceSentences[0] ?? "",
+    desiredOutcomes,
+    possibleCauses,
+    hypotheses,
+    constraints,
+    risks,
     intentGroups,
     actors: inferActors(rawIntent),
     informationToClarify,
