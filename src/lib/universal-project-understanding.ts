@@ -73,7 +73,7 @@ const GROUPS: PatternGroup[] = [
     id: "people-and-relationships",
     subject: "personnes, membres d'un foyer ou d'un groupe",
     action: "organiser les informations et interactions entre les personnes concernées",
-    patterns: [/famille|foyer|maison|parent|enfant|conjoint|frere|frère|soeur|sœur|membre|proche|voisin|colocataire/i],
+    patterns: [/relation entre|relations entre|communication familiale|entraide|conflit familial|médiation/i],
     questions: [
       "Qui fait partie du groupe concerné et quel rôle chaque personne souhaite-t-elle avoir ?",
     ],
@@ -91,7 +91,7 @@ const GROUPS: PatternGroup[] = [
     id: "time-and-scheduling",
     subject: "horaires, dates et organisation du temps",
     action: "enregistrer, comparer ou planifier des événements dans le temps",
-    patterns: [/heure|horaire|date|calendrier|planning|agenda|durée|duree|retard|départ|depart|arrivée|arrivee/i],
+    patterns: [/horaire|calendrier|planning|agenda|durée|duree|retard|rendez-vous|planifier|programmer/i],
     questions: [
       "Avez-vous besoin d'un historique, d'un calendrier à venir ou des deux ?",
     ],
