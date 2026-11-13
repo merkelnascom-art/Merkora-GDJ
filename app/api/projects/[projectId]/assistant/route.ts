@@ -199,7 +199,11 @@ export async function POST(
       decisionMemory: serializeDecisionMemory(decisionMemory),
     };
     const expectedRevision = workspace && typeof workspace.revision === "number" ? workspace.revision : 0;
-    const payloadDigest = createHash("sha256").update(JSON.stringify(nextWorkspacePayload)).digest("hex");
+    const serializedWorkspace = JSON.stringify(nextWorkspacePayload);
+    if (Buffer.byteLength(serializedWorkspace, "utf8") > 60_000) {
+      return NextResponse.json({ error: "La mémoire du projet dépasse la capacité de sauvegarde. Aucun ancien choix ne sera supprimé automatiquement." }, { status: 413 });
+    }
+    const payloadDigest = createHash("sha256").update(serializedWorkspace).digest("hex");
     const workspaceSaved = await callUserData("rpc/save_project_workspace_state", "POST", token, {
       p_project_id: projectId,
       p_expected_revision: expectedRevision,
