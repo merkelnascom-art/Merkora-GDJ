@@ -219,7 +219,10 @@ export function selectNextDiscoveryQuestion(
     });
   }
 
-  if (analysis.privacyConsiderations.length > 0 && !hasPositivePrivacyAnswer(answers)) {
+  // Confidentiality requirements (e.g. family financial records) are not the
+  // same as informed-consent requirements for recording other people's visits.
+  const requiresInformedConsent = analysis.intentGroups.some((group) => group.id === "visitors-and-events");
+  if (requiresInformedConsent && !hasPositivePrivacyAnswer(answers)) {
     const explicitRefusal = hasNegativePrivacyAnswer(answers);
     gaps.push({
       stage: "privacy_and_consent",
