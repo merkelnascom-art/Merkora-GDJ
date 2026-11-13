@@ -102,11 +102,11 @@ export function recordDecisionMemoryTurn(
     : "";
   const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
 
-  if (priorQuestion.includes("?") && content) {
+  if (content) {
     const answerId = `answer-${Date.parse(next.updatedAt)}-${next.clientAnswers.length + 1}`;
     next.clientAnswers.push({
       id: answerId,
-      question: priorQuestion,
+      question: priorQuestion.includes("?") ? priorQuestion : "",
       answer: content,
       status: "provided",
       source: "client",
@@ -219,10 +219,12 @@ export function hydrateDecisionMemory(
     if (row.actor_role !== "client" || typeof row.decision !== "string") continue;
     const createdAt = typeof row.created_at === "string" ? row.created_at : memory.updatedAt;
     const id = typeof row.id === "string" ? row.id : `stored-${memory.clientAnswers.length + memory.decisions.length + 1}`;
-    if (row.decision_type === "clarification_answered") {
+    if (row.decision_type === "clarification_answered" ||
+      (row.decision_type === "other" && row.comment === "client_statement")) {
       memory.clientAnswers.push({
         id,
-        question: typeof row.comment === "string" ? row.comment.slice(0, MAX_TEXT) : "",
+        question: row.decision_type === "clarification_answered" && typeof row.comment === "string"
+          ? row.comment.slice(0, MAX_TEXT) : "",
         answer: row.decision.slice(0, MAX_TEXT),
         status: "provided",
         source: "client",
@@ -266,6 +268,8 @@ export function projectMemoryRowsToConversationHistory(
         history.push({ role: "assistant", content: row.comment.slice(0, MAX_TEXT) });
       }
       history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
+    } else if (row.decision_type === "other" && row.comment === "client_statement") {
+      history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
     } else if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
       history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
     }
@@ -287,9 +291,9 @@ export function buildProjectMemoryDecisionInserts(
     if (knownAnswers.has(answer.id)) continue;
     rows.push({
       project_id: projectId,
-      decision_type: "clarification_answered",
+      decision_type: answer.question ? "clarification_answered" : "other",
       decision: answer.answer.slice(0, 3000),
-      comment: answer.question.slice(0, 2000),
+      comment: answer.question ? answer.question.slice(0, 2000) : "client_statement",
       actor_user_id: actorUserId,
       actor_role: "client",
     });
