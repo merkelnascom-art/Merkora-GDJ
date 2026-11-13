@@ -41,7 +41,7 @@ export function selectNextDiscoveryQuestion(
 ): DiscoveryQuestionSelection {
   const answers = [userHistory(history), analysis.rawIntent].join(" ");
   const previousAssistantQuestion = [...history].reverse().find((message) => message.role === "assistant")?.content ?? "";
-  const latestStatement = analysis.rawIntent.split(/\\n+/).at(-1)?.trim() ?? "";
+  const latestStatement = analysis.rawIntent.split(/\n+/).at(-1)?.trim() ?? "";
   const shortAnswerToScopeQuestion =
     /même projet|séparément/i.test(previousAssistantQuestion) &&
     /^(oui|non|exactement|c'est ça|c'est cela|pas du tout)[.!? ]*$/i.test(latestStatement);
