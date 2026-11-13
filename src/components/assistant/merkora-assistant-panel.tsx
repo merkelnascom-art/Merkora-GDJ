@@ -1,18 +1,95 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createMerkoraConversationReply, type ConversationReply } from "@/lib/assistant/merkora-conversation";
 
 type Props = { projectId: string; projectTitle: string; problem: string; desiredOutcome: string };
+type ConversationItem = { id?: string; role: "user" | "assistant"; content: string };
 
 export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desiredOutcome }: Props) {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState<ConversationReply | null>(null);
+  const [messages, setMessages] = useState<ConversationItem[]>([]);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<"cloud" | "local" | null>(null);
-  const [geminiConsent, setGeminiConsent] = useState(false);
-  const [provider, setProvider] = useState<"local" | "gemini" | "unavailable" | null>(null);
   const [error, setError] = useState("");
+  const [consented, setConsented] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
+  const [noticeVersion, setNoticeVersion] = useState("2026-11-13-v1");
+
+  useEffect(() => {
+    let active = true;
+    async function loadProjectContext() {
+      const [historyResponse, consentResponse] = await Promise.all([
+        fetch(`/api/projects/${encodeURIComponent(projectId)}/assistant`, { cache: "no-store" }),
+        fetch(`/api/projects/${encodeURIComponent(projectId)}/ai-consent`, { cache: "no-store" }),
+      ]);
+      if (!active) return;
+      if (historyResponse.ok) {
+        const payload: unknown = await historyResponse.json().catch(() => null);
+        if (payload && typeof payload === "object" && "messages" in payload && Array.isArray((payload as { messages: unknown[] }).messages)) {
+          const loaded = (payload as { messages: unknown[] }).messages.flatMap((item): ConversationItem[] => {
+            if (!item || typeof item !== "object") return [];
+            const row = item as Record<string, unknown>;
+            return (row.role === "user" || row.role === "assistant") && typeof row.content === "string"
+              ? [{ id: typeof row.id === "string" ? row.id : undefined, role: row.role, content: row.content }]
+              : [];
+          });
+          setMessages(loaded);
+        }
+      }
+      if (consentResponse.ok) {
+        const payload: unknown = await consentResponse.json().catch(() => null);
+        if (payload && typeof payload === "object") {
+          const value = payload as { consented?: boolean; noticeVersion?: string };
+          setConsented(value.consented === true);
+          if (typeof value.noticeVersion === "string") setNoticeVersion(value.noticeVersion);
+        }
+      }
+    }
+    void loadProjectContext().catch(() => {
+      if (active) setError("La mémoire en ligne n'a pas pu être chargée. Vérifiez votre connexion avant de poursuivre.");
+    });
+    return () => { active = false; };
+  }, [projectId]);
+
+  async function acceptAiProcessing() {
+    if (!consentChecked || consentBusy) return;
+    setConsentBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/ai-consent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consent: true, noticeVersion }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        const detail = payload && typeof payload === "object" && "error" in payload ? String((payload as { error: unknown }).error) : "";
+        throw new Error(detail || "Votre autorisation n'a pas pu être enregistrée.");
+      }
+      setConsented(true);
+      setConsentChecked(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Votre autorisation n'a pas pu être enregistrée.");
+    } finally {
+      setConsentBusy(false);
+    }
+  }
+
+  async function revokeAiProcessing() {
+    if (consentBusy) return;
+    setConsentBusy(true);
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/ai-consent`, { method: "PATCH" });
+      if (!response.ok) throw new Error("Le retrait de votre autorisation n'a pas pu être enregistré.");
+      setConsented(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Le retrait de votre autorisation a échoué.");
+    } finally {
+      setConsentBusy(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,47 +101,40 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/assistant`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: submitted, history: [], consent: geminiConsent }),
+        body: JSON.stringify({ message: submitted, history: [] }),
       });
-      if (response.ok) {
-        const payload: unknown = await response.json();
-        if (payload && typeof payload === "object" && "reply" in payload) {
-          setReply((payload as { reply: ConversationReply }).reply);
-          const result = payload as { provider?: string; aiProviderCalled?: boolean };
-          setProvider(result.aiProviderCalled === true && result.provider === "gemini" ? "gemini" : result.provider === "unavailable" ? "unavailable" : "local");
-          setError(result.provider === "unavailable" ? "Gemini n’a pas pu répondre. Votre analyse MerKora locale est conservée." : "");
-          setGeminiConsent(false);
-          setMode("cloud");
-          setMessage("");
-          return;
-        }
+      const payload: unknown = await response.json().catch(() => null);
+      if (response.ok && payload && typeof payload === "object" && "reply" in payload) {
+        const result = payload as { reply: ConversationReply; synchronized?: boolean };
+        setReply(result.reply);
+        setMessages((current) => [
+          ...current,
+          { role: "user", content: submitted },
+          { role: "assistant", content: result.reply.assistantMessage },
+        ]);
+        if (result.synchronized !== true) setError("Votre réponse est affichée, mais sa synchronisation n'est pas confirmée.");
+        setMessage("");
+        return;
       }
-      // A local-only draft may not yet exist in the cloud. Never lose the user's request.
-      setReply(createMerkoraConversationReply({
+      const detail = payload && typeof payload === "object" && "error" in payload
+        ? String((payload as { error: unknown }).error) : "L'analyse en ligne est momentanément indisponible.";
+      setError(detail);
+      const localReply = createMerkoraConversationReply({
         message: `${submitted}\nProjet : ${projectTitle}. Problème : ${problem}. Résultat souhaité : ${desiredOutcome}`,
         history: [],
-      }));
-      setMode("local");
-      setProvider("local");
-      setGeminiConsent(false);
+      });
+      setReply(localReply);
+      setMessages((current) => [...current, { role: "user", content: submitted }, { role: "assistant", content: localReply.assistantMessage }]);
       setMessage("");
-      if (response.status === 401) {
-        setError("Connectez-vous pour analyser le dossier en ligne. Une première analyse locale est affichée ci-dessous.");
-      } else if (response.status === 404) {
-        setError("Ce dossier n'est pas encore synchronisé avec votre espace en ligne. Une première analyse locale est affichée ci-dessous.");
-      } else {
-        setError("L'assistant en ligne est indisponible pour le moment. Une première analyse locale est affichée ci-dessous.");
-      }
     } catch {
-      setReply(createMerkoraConversationReply({
+      const localReply = createMerkoraConversationReply({
         message: `${submitted}\nProjet : ${projectTitle}. Problème : ${problem}. Résultat souhaité : ${desiredOutcome}`,
         history: [],
-      }));
-      setMode("local");
-      setProvider("local");
-      setGeminiConsent(false);
+      });
+      setReply(localReply);
+      setMessages((current) => [...current, { role: "user", content: submitted }, { role: "assistant", content: localReply.assistantMessage }]);
+      setError("Connexion indisponible. Une première analyse locale est affichée ; la synchronisation en ligne reste à rétablir.");
       setMessage("");
-      setError("Connexion indisponible : une première analyse locale est affichée. Aucun fournisseur IA externe n'a été appelé.");
     } finally {
       setBusy(false);
     }
@@ -74,29 +144,57 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
     <section className="panel" aria-labelledby="merkora-assistant-title">
       <div className="panel-heading">
         <div>
-          <div className="eyebrow">MERKORA · ASSISTANT DE PROJET</div>
-          <h3 id="merkora-assistant-title">Réfléchissons ensemble.</h3>
-          <p>Expliquez ce qui manque, corrigez notre compréhension ou demandez quelles pistes examiner.</p>
+          <div className="eyebrow">MERKORA · ESPACE DE CONCEPTION</div>
+          <h3 id="merkora-assistant-title">Construisons votre projet ensemble.</h3>
+          <p>Votre dossier conserve les échanges, les précisions et les décisions afin de reprendre le travail sur vos différents appareils.</p>
         </div>
-        <span className="local-tag">{provider === "gemini" ? "Gemini · accord donné" : mode === "cloud" ? "Analyse MerKora locale" : "Mode sans dépense"}</span>
+        <span className="local-tag">Mémoire de projet</span>
       </div>
+
+      {!consented ? (
+        <div className="discovery-notice" style={{ marginBottom: "1rem" }}>
+          <strong>Traitement assisté par intelligence artificielle</strong>
+          <p>Pour approfondir votre dossier et préparer des propositions, MerKora peut utiliser ses propres traitements ainsi que des services externes spécialisés. Certaines informations de votre projet pourront leur être transmises uniquement pour fournir ce service. Les détails sur les catégories de prestataires et l'utilisation des données figurent dans la politique de confidentialité. N'envoyez aucun mot de passe ni donnée inutilement sensible.</p>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", marginTop: "0.75rem" }}>
+            <input type="checkbox" checked={consentChecked} onChange={(event) => setConsentChecked(event.target.checked)} />
+            <span>J'ai lu cette information et j'autorise le traitement assisté de mon dossier, y compris par des prestataires externes lorsque cela est nécessaire.</span>
+          </label>
+          <button className="button button-primary" type="button" disabled={!consentChecked || consentBusy} onClick={acceptAiProcessing} style={{ marginTop: "0.75rem" }}>
+            {consentBusy ? "Enregistrement…" : "Confirmer et continuer"} <span>→</span>
+          </button>
+        </div>
+      ) : (
+        <div className="discovery-notice" style={{ marginBottom: "1rem" }}>
+          <span>Le traitement assisté est autorisé pour ce dossier. Les échanges restent liés à votre projet.</span>
+          <button className="button button-secondary" type="button" disabled={consentBusy} onClick={revokeAiProcessing} style={{ marginLeft: "0.75rem" }}>
+            Retirer mon autorisation
+          </button>
+        </div>
+      )}
+
+      {messages.length > 0 && (
+        <div className="clarification-list" aria-label="Historique du projet">
+          <strong>Historique du dossier</strong>
+          <ol>
+            {messages.slice(-12).map((item, index) => (
+              <li key={item.id ?? `${item.role}-${index}`}>
+                <strong>{item.role === "user" ? "Vous" : "MerKora"}</strong> : {item.content}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       <form onSubmit={submit} className="need-form">
         <label className="field-wide">
           Votre message
           <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={3} maxLength={5000}
-            placeholder="Ex. Je veux savoir qui arrive en retard et recevoir un rapport chaque semaine…" />
-        </label>
-        <label className="field-wide" style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem" }}>
-          <input type="checkbox" checked={geminiConsent} onChange={(event) => setGeminiConsent(event.target.checked)} />
-          <span>
-            <strong>Autoriser Gemini pour cette réponse (facultatif)</strong>
-            <small style={{ display: "block" }}>Mon message et les informations de ce dossier seront envoyés à Google Gemini pour enrichir l’analyse. Sur le niveau gratuit, Google peut utiliser les données pour améliorer ses produits. N’envoyez aucun mot de passe ni renseignement personnel ou confidentiel.</small>
-          </span>
+            placeholder="Décrivez votre idée, ajoutez une précision ou corrigez notre compréhension…" />
         </label>
         <div className="form-footer">
-          <p>Sans cet accord, MerKora utilise uniquement son analyse locale. Votre choix n’active aucun module.</p>
+          <p>MerKora conserve vos choix et reprend le contexte du dossier à chaque échange. Les propositions restent à valider.</p>
           <button className="button button-primary" type="submit" disabled={busy || !message.trim()}>
-            {busy ? "Analyse…" : "Analyser avec MerKora"} <span>→</span>
+            {busy ? "Analyse…" : "Continuer avec MerKora"} <span>→</span>
           </button>
         </div>
       </form>
@@ -104,7 +202,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       {reply && (
         <div className="discovery-summary" aria-live="polite">
           <div className="discovery-summary-head">
-            <div><div className="eyebrow">{provider === "gemini" ? "RÉPONSE ENRICHIE PAR GEMINI" : mode === "cloud" ? "ANALYSE DU SERVICE MERKORA" : "PREMIÈRE ANALYSE LOCALE"}</div><h4>{reply.status === "needs_clarification" ? "Précisons votre besoin" : "Pistes à examiner"}</h4></div>
+            <div><div className="eyebrow">ANALYSE MERKORA</div><h4>{reply.status === "needs_clarification" ? "Précisons votre besoin" : "Pistes à examiner"}</h4></div>
             <span className="local-tag">{reply.status === "draft" ? "Proposition" : "Clarification"}</span>
           </div>
           <p>{reply.assistantMessage}</p>
