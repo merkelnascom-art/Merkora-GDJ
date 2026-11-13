@@ -8,6 +8,7 @@ import {
   type MockupConfig,
   type MockupFormat,
   type MockupPalette,
+  DELIVERABLE_FORMAT_CATALOG,
 } from "@/lib/mockup-studio";
 
 type Props = { project: Project };
@@ -28,7 +29,7 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
 ];
 
 export function ProjectMockupStudio({ project }: Props) {
-  const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [] });
+  const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [], selectedDeliverableFormats: [] });
   const [ready, setReady] = useState(false);
   const [cloudLoaded, setCloudLoaded] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState("Vérification de la mémoire en ligne…");
@@ -82,6 +83,9 @@ export function ProjectMockupStudio({ project }: Props) {
           ...(Array.isArray(parsed.selectedUniversalSectorIds)
             ? { selectedUniversalSectorIds: parsed.selectedUniversalSectorIds.filter((id): id is string => typeof id === "string") }
             : {}),
+          ...(Array.isArray(parsed.selectedDeliverableFormats)
+            ? { selectedDeliverableFormats: parsed.selectedDeliverableFormats.filter((id): id is string => DELIVERABLE_FORMAT_CATALOG.some((item) => item.id === id)) }
+            : {}),
         });
       }
     } catch {
@@ -122,6 +126,7 @@ export function ProjectMockupStudio({ project }: Props) {
               ...(Array.isArray(saved.selectedRecommendationIds) ? { selectedRecommendationIds: saved.selectedRecommendationIds.filter((id): id is string => typeof id === "string") } : {}),
               ...(Array.isArray(saved.selectedProfessionCandidateIds) ? { selectedProfessionCandidateIds: saved.selectedProfessionCandidateIds.filter((id): id is string => typeof id === "string") } : {}),
               ...(Array.isArray(saved.selectedUniversalSectorIds) ? { selectedUniversalSectorIds: saved.selectedUniversalSectorIds.filter((id): id is string => typeof id === "string") } : {}),
+              ...(Array.isArray(saved.selectedDeliverableFormats) ? { selectedDeliverableFormats: saved.selectedDeliverableFormats.filter((id): id is string => DELIVERABLE_FORMAT_CATALOG.some((item) => item.id === id)) } : {}),
             });
             setDiagnosticResponses(saved.diagnosticSchemaVersion === 1 && saved.diagnosticResponses && typeof saved.diagnosticResponses === "object" && !Array.isArray(saved.diagnosticResponses)
               ? Object.fromEntries(Object.entries(saved.diagnosticResponses).filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([id, value]) => [id, value.slice(0, 4000)]))
@@ -170,6 +175,7 @@ export function ProjectMockupStudio({ project }: Props) {
         },
         clientConfirmedChoices: {
           selectedSectorIds: config.selectedUniversalSectorIds ?? [],
+          selectedDeliverableFormats: config.selectedDeliverableFormats ?? [],
           selectedProfessionCandidateIds: config.selectedProfessionCandidateIds ?? [],
           selectedRecommendationIds: config.selectedRecommendationIds ?? [],
           enabledModules: config.enabledModules,
@@ -231,6 +237,13 @@ export function ProjectMockupStudio({ project }: Props) {
       const selected = current.moduleSelectionConfirmed ? current.enabledModules : [];
       const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
       return { ...current, enabledModules: next, moduleSelectionConfirmed: true };
+    });
+  }
+
+  function toggleDeliverableFormat(id: string) {
+    setConfig((current) => {
+      const selected = current.selectedDeliverableFormats ?? [];
+      return { ...current, selectedDeliverableFormats: selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id] };
     });
   }
 
@@ -403,7 +416,8 @@ export function ProjectMockupStudio({ project }: Props) {
       <div className="mockup-studio-layout">
         <aside className="mockup-controls" aria-label="Personnaliser la maquette">
           <div className="mockup-control-group">
-            <span className="mockup-control-title">Format de présentation</span>
+            <span className="mockup-control-title">Type d’aperçu visuel</span>
+            <p className="mockup-control-hint">Ce choix sert à présenter le concept. Il ne détermine pas à lui seul la forme finale de votre projet.</p>
             <div className="mockup-format-options">
               {formatOptions.map((option) => (
                 <button key={option.value} type="button" className={config.format === option.value ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={config.format === option.value} onClick={() => setConfig((current) => ({ ...current, format: option.value }))}>
@@ -411,6 +425,24 @@ export function ProjectMockupStudio({ project }: Props) {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mockup-control-group">
+            <span className="mockup-control-title">Formats de réalisation souhaités</span>
+            <p className="mockup-control-hint">MerKora recommande des formats selon votre besoin. Vous pouvez en choisir plusieurs, retirer une suggestion ou ajouter un format non recommandé.</p>
+            <div className="mockup-format-options">
+              {DELIVERABLE_FORMAT_CATALOG.map((item) => {
+                const selected = (config.selectedDeliverableFormats ?? []).includes(item.id);
+                const recommendation = model.recommendedDeliverables.find((candidate) => candidate.id === item.id);
+                return (
+                  <button key={item.id} type="button" className={selected ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={selected} onClick={() => toggleDeliverableFormat(item.id)}>
+                    <span aria-hidden="true">{selected ? "✓" : recommendation ? "✳" : "＋"}</span>
+                    <span><strong>{item.label}</strong><small>{item.description}{recommendation ? ` Recommandé : ${recommendation.reason}` : ""}</small></span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mockup-control-hint">{(config.selectedDeliverableFormats ?? []).length} format(s) confirmé(s) par le client. Les recommandations non sélectionnées restent de simples suggestions.</p>
           </div>
 
           <div className="mockup-control-group">
