@@ -16,6 +16,37 @@ function validProjectId(value: unknown): value is string {
     /^[a-zA-Z0-9_-]+$/.test(value);
 }
 
+async function resolveProject(projectId: string, userId: string, token: string) {
+  return callUserData(
+    `user_projects?select=id,user_id,title,problem,desired_outcome&id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+    "GET", token,
+  );
+}
+
+export async function GET(_request: Request, context: { params: Promise<{ projectId: string }> }) {
+  try {
+    const { projectId } = await context.params;
+    if (!validProjectId(projectId)) return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
+    const store = await cookies();
+    const [user, token] = await Promise.all([getCurrentUser(store), getAccessToken(store)]);
+    if (!user || !token) return NextResponse.json({ error: "Connectez-vous pour retrouver l'historique du dossier." }, { status: 401 });
+    const project = await resolveProject(projectId, user.id, token);
+    if (!project.ok || !Array.isArray(project.data) || project.data.length !== 1) {
+      return NextResponse.json({ error: "Projet introuvable." }, { status: project.ok ? 404 : 502 });
+    }
+    const messages = await callUserData(
+      `project_conversation_messages?select=id,turn_id,role,content,reply_payload,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=100`,
+      "GET", token,
+    );
+    if (!messages.ok) return NextResponse.json({ error: "Impossible de charger l'historique du dossier." }, { status: 502 });
+    return NextResponse.json({ messages: Array.isArray(messages.data) ? messages.data : [] }, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch {
+    return NextResponse.json({ error: "Le service MerKora est momentanément indisponible." }, { status: 502 });
+  }
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ projectId: string }> },
@@ -41,11 +72,7 @@ export async function POST(
 
     const { projectId } = await context.params;
     if (!validProjectId(projectId)) return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
-
-    const projectResult = await callUserData(
-      `user_projects?select=id,user_id,title,problem,desired_outcome&id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-      "GET", token,
-    );
+    const projectResult = await resolveProject(projectId, user.id, token);
     if (!projectResult.ok) return NextResponse.json({ error: "Impossible de vérifier l'accès au projet." }, { status: projectResult.status === 401 ? 401 : 502 });
     const project = Array.isArray(projectResult.data) ? projectResult.data[0] : null;
     if (!isRecord(project) || project.id !== projectId || project.user_id !== user.id) {
@@ -61,8 +88,7 @@ export async function POST(
       return NextResponse.json({ error: "Impossible de charger la mémoire durable de ce projet. Réessayez sans perdre votre message." }, { status: 502 });
     }
 
-    const workspace = Array.isArray(workspaceResult.data) && isRecord(workspaceResult.data[0])
-      ? workspaceResult.data[0] : null;
+    const workspace = Array.isArray(workspaceResult.data) && isRecord(workspaceResult.data[0]) ? workspaceResult.data[0] : null;
     const workspacePayload = workspace && isRecord(workspace.payload) ? workspace.payload : {};
     const storedHistory = Array.isArray(historyResult.data)
       ? historyResult.data.slice().reverse().flatMap((item) =>
@@ -156,7 +182,6 @@ export async function POST(
       reply: finalReply,
       project: { id: project.id, title: typeof project.title === "string" ? project.title : null },
       synchronized: true,
-      aiEnhanced,
     }, { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   } catch {
     return NextResponse.json({ error: "Le service MerKora est momentanément indisponible." }, { status: 502, headers: { "Cache-Control": "no-store" } });
