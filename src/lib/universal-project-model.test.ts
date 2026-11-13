@@ -49,7 +49,7 @@ describe("buildUniversalProjectModel", () => {
     expect(model.needs[0]).toMatchObject({
       status: "proposed",
       confirmationRequired: true,
-      evidence: expect.arrayContaining(["dépenses"]),
+      evidence: expect.arrayContaining(["dépense"]),
     });
     expect(model.validationCheckpoints.length).toBeGreaterThan(0);
   });
