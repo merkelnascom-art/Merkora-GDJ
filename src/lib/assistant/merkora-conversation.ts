@@ -159,8 +159,10 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     clarifyingQuestions: [discovery.nextQuestion],
     extractedNeeds,
     suggestedModules,
-    nextAction: "review_modules",
-    disclaimer: "Ceci est une proposition initiale basée sur vos mots. Aucun module, règle métier, prix ou développement n'est encore validé.",
+    nextAction: discovery.evaluation.solutionReviewAllowed ? "review_modules" : "clarify_need",
+    disclaimer: discovery.evaluation.solutionReviewAllowed
+      ? "Ceci est une proposition initiale basée sur vos mots. Aucun module, règle métier, prix ou développement n'est encore validé."
+      : "Ces modules sont de simples pistes provisoires. La revue formelle des solutions reste bloquée jusqu'à la clarification des points encore ouverts. Aucun module, règle métier, prix ou développement n'est validé.",
     ...domainContext,
   };
 }
