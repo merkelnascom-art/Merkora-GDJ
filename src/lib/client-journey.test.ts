@@ -24,6 +24,8 @@ function readyInput(overrides: Partial<ClientJourneyInput> = {}): ClientJourneyI
         unresolvedUnknowns: [],
         blockingStages: [],
         blockingQuestions: [],
+        evidenceCoverage: { evidenceSignals: 0, unresolvedSignals: 0, coverageRatio: 0, uncertaintyRatio: 1, band: "low" },
+        coverageMeaning: "coverage_indicator_not_confidence",
         status: "reviewable",
         solutionReviewAllowed: true,
       },
@@ -57,7 +59,7 @@ describe("client journey", () => {
         remainingGaps: ["constraints"],
         readyForSolutionReview: false,
         reason: "Une contrainte reste à clarifier.",
-        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Une contrainte reste à clarifier."], blockingStages: ["constraints"], blockingQuestions: ["Comment cela fonctionne-t-il actuellement ?"], status: "blocked", solutionReviewAllowed: false },
+        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Une contrainte reste à clarifier."], blockingStages: ["constraints"], blockingQuestions: ["Comment cela fonctionne-t-il actuellement ?"], evidenceCoverage: { evidenceSignals: 0, unresolvedSignals: 1, coverageRatio: 0, uncertaintyRatio: 1, band: "low" }, coverageMeaning: "coverage_indicator_not_confidence", status: "blocked", solutionReviewAllowed: false },
       },
     });
 
@@ -80,7 +82,7 @@ describe("client journey", () => {
         remainingGaps: ["resolve_contradiction"],
         readyForSolutionReview: false,
         reason: "Des indications se contredisent.",
-        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Des indications se contredisent."], blockingStages: ["resolve_contradiction"], blockingQuestions: ["Qui doit consulter ?"], status: "blocked", solutionReviewAllowed: false },
+        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Des indications se contredisent."], blockingStages: ["resolve_contradiction"], blockingQuestions: ["Qui doit consulter ?"], evidenceCoverage: { evidenceSignals: 0, unresolvedSignals: 1, coverageRatio: 0, uncertaintyRatio: 1, band: "low" }, coverageMeaning: "coverage_indicator_not_confidence", status: "blocked", solutionReviewAllowed: false },
       },
     });
 
@@ -103,6 +105,8 @@ describe("client journey", () => {
           unresolvedUnknowns: ["L'accord des visiteurs reste à confirmer."],
           blockingStages: ["privacy_and_consent"],
           blockingQuestions: ["Les visiteurs seront-ils informés ?"],
+          evidenceCoverage: { evidenceSignals: 1, unresolvedSignals: 1, coverageRatio: 0.5, uncertaintyRatio: 0.5, band: "moderate" },
+          coverageMeaning: "coverage_indicator_not_confidence",
           status: "blocked",
           solutionReviewAllowed: false,
         },
