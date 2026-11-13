@@ -323,3 +323,41 @@ describe("buildMockupModel", () => {
   });
 
 });
+
+
+describe("universal concept presentation", () => {
+  it("does not infer a website when no solution format has been confirmed", () => {
+    const model = buildMockupModel(studentProject, {
+      format: "website", palette: "violet", enabledModules: [],
+      solutionFormat: null, formatConfirmed: false,
+    });
+    expect(model.previewKind).toBe("exploration");
+    expect(model.solutionFormat).toBeNull();
+    expect(model.formatConfirmed).toBe(false);
+  });
+
+  it("requires an explicit display choice after the client selects a digital solution", () => {
+    const model = buildMockupModel(studentProject, {
+      format: "website", palette: "violet", enabledModules: [],
+      solutionFormat: "digital", formatConfirmed: false,
+    });
+    expect(model.previewKind).toBe("digital_selection");
+    expect(model.formatConfirmed).toBe(false);
+  });
+
+  it("keeps organizational solutions separate from website, mobile and dashboard previews", () => {
+    const model = buildMockupModel(teamProject, {
+      format: "website", palette: "violet", enabledModules: [],
+      solutionFormat: "organizational", formatConfirmed: false,
+    });
+    expect(model.previewKind).toBe("universal");
+    expect(model.solutionFormat).toBe("organizational");
+    expect(model.formatConfirmed).toBe(true);
+  });
+
+  it("preserves legacy saved display formats", () => {
+    const model = buildMockupModel(studentProject, { format: "mobile", palette: "violet", enabledModules: [] });
+    expect(model.previewKind).toBe("digital");
+    expect(model.formatLabel).toBe("Application mobile");
+  });
+});

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Project } from "@/lib/project-types";
+import { createConceptValidationState, createConceptVersionId, recordConceptDecision, startNewConceptVersion, type ConceptValidationState } from "@/lib/concept-validation";
 import { getUniversalFamilyById } from "@/lib/universal-reference";
 import {
   buildMockupModel,
@@ -9,14 +10,24 @@ import {
   type MockupConfig,
   type MockupFormat,
   type MockupPalette,
+  type SolutionFormat,
+  SOLUTION_FORMAT_LABELS,
   DELIVERABLE_FORMAT_CATALOG,
 } from "@/lib/mockup-studio";
 
-type Props = { project: Project };
+type Props = { project: Project; showValidation?: boolean; selectedRecommendationIds?: string[]; onSelectedRecommendationIdsChange?: (ids: string[]) => void; onConceptVersionChange?: (versionId: string) => void; onConceptDecision?: (state: ConceptValidationState) => void };
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
-type StoredMockupConfig = Partial<MockupConfig> & { diagnosticResponses?: Record<string, string>; diagnosticSchemaVersion?: number; reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
+type StoredMockupConfig = Partial<MockupConfig> & { diagnosticResponses?: Record<string, string>; diagnosticSchemaVersion?: number; reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string; conceptValidation?: ConceptValidationState };
 const STORAGE_PREFIX = "merkora-gdj-mockup-v1:";
+const solutionFormatOptions: { value: SolutionFormat; description: string }[] = [
+  { value: "human", description: "Accompagnement, expertise, médiation ou intervention humaine." },
+  { value: "organizational", description: "Rôles, méthodes, responsabilités et processus de travail." },
+  { value: "documentary", description: "Guides, dossiers, formulaires, supports et ressources." },
+  { value: "physical", description: "Objet, équipement, aménagement, prototype ou dispositif physique." },
+  { value: "digital", description: "Service accessible par site web, application ou interface numérique." },
+  { value: "hybrid", description: "Combinaison coordonnée de plusieurs formes de solution." },
+];
 const formatOptions: { value: MockupFormat; label: string; icon: string }[] = [
   { value: "website", label: "Site web", icon: "▤" },
   { value: "mobile", label: "Mobile", icon: "▯" },
@@ -29,8 +40,8 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
   { value: "amber", label: "Ambre" },
 ];
 
-export function ProjectMockupStudio({ project }: Props) {
-  const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [], selectedDeliverableFormats: [] });
+export function ProjectMockupStudio({ project, showValidation = false, selectedRecommendationIds, onSelectedRecommendationIdsChange, onConceptVersionChange, onConceptDecision }: Props) {
+  const [config, setConfig] = useState<MockupConfig>({ format: "website", formatConfirmed: false, solutionFormat: null, palette: "violet", enabledModules: [], selectedDeliverableFormats: [] });
   const [ready, setReady] = useState(false);
   const [cloudLoaded, setCloudLoaded] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState("Vérification de la mémoire en ligne…");
@@ -47,12 +58,29 @@ export function ProjectMockupStudio({ project }: Props) {
   const [clientQuoteResponse, setClientQuoteResponse] = useState<ClientQuoteResponse>("undecided");
   const [clientQuoteNote, setClientQuoteNote] = useState("");
   const [diagnosticResponses, setDiagnosticResponses] = useState<Record<string, string>>({});
+  const [conceptValidation, setConceptValidation] = useState<ConceptValidationState>(() => createConceptValidationState("pending"));
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
   const selectedSectorIds = config.selectedUniversalSectorIds ?? [];
   const visibleProfessionCandidates = selectedSectorIds.length
     ? model.professionCandidates.filter((candidate) => candidate.sectorIds?.some((sectorId) => selectedSectorIds.includes(sectorId)))
     : model.professionCandidates;
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
+  const conceptVersionId = useMemo(() => createConceptVersionId(project.id, project, { ...config, diagnosticResponses }), [project, config, diagnosticResponses]);
+
+  useEffect(() => {
+    if (!ready) return;
+    setConceptValidation((current) => startNewConceptVersion(current, conceptVersionId));
+    onConceptVersionChange?.(conceptVersionId);
+  }, [ready, conceptVersionId, onConceptVersionChange]);
+
+  useEffect(() => {
+    if (!ready || !selectedRecommendationIds) return;
+    setConfig((current) => {
+      const existing = current.selectedRecommendationIds ?? [];
+      if (existing.length === selectedRecommendationIds.length && existing.every((id, index) => id === selectedRecommendationIds[index])) return current;
+      return { ...current, selectedRecommendationIds: [...selectedRecommendationIds] };
+    });
+  }, [ready, selectedRecommendationIds]);
 
   useEffect(() => {
     try {
@@ -63,6 +91,16 @@ export function ProjectMockupStudio({ project }: Props) {
         const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
         setReviewStatus(parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested" ? parsed.reviewStatus : "draft");
         setReviewNote(typeof parsed.reviewNote === "string" ? parsed.reviewNote.slice(0, 1200) : "");
+        if (parsed.conceptValidation && typeof parsed.conceptValidation === "object" && parsed.conceptValidation.currentVersionId && Array.isArray(parsed.conceptValidation.history)) {
+          setConceptValidation(parsed.conceptValidation);
+        } else if (parsed.reviewStatus === "approved" || parsed.reviewStatus === "changes_requested") {
+          const legacyVersionId = createConceptVersionId(project.id, project, parsed);
+          setConceptValidation(recordConceptDecision(createConceptValidationState(legacyVersionId), {
+            conceptVersionId: legacyVersionId,
+            action: parsed.reviewStatus === "approved" ? "approve" : "request_changes",
+            clientNote: typeof parsed.reviewNote === "string" ? parsed.reviewNote : "",
+          }));
+        }
         setQuoteAmount(typeof parsed.quoteAmount === "string" ? parsed.quoteAmount : "");
         setQuoteDays(typeof parsed.quoteDays === "string" ? parsed.quoteDays : "");
         setQuotePaymentTerms(typeof parsed.quotePaymentTerms === "string" ? parsed.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
@@ -71,8 +109,12 @@ export function ProjectMockupStudio({ project }: Props) {
         setDiagnosticResponses(parsed.diagnosticSchemaVersion === 1 && parsed.diagnosticResponses && typeof parsed.diagnosticResponses === "object" && !Array.isArray(parsed.diagnosticResponses)
           ? Object.fromEntries(Object.entries(parsed.diagnosticResponses).filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([id, value]) => [id, value.slice(0, 4000)]))
           : {});
+        const solutionFormats: SolutionFormat[] = ["human", "organizational", "documentary", "physical", "digital", "hybrid"];
+        const legacyDisplayChoice = parsed.solutionFormat === undefined && formats.includes(parsed.format as MockupFormat);
         setConfig({
           format: formats.includes(parsed.format as MockupFormat) ? parsed.format as MockupFormat : "website",
+          solutionFormat: solutionFormats.includes(parsed.solutionFormat as SolutionFormat) ? parsed.solutionFormat as SolutionFormat : parsed.solutionFormat === null ? null : legacyDisplayChoice ? "digital" : null,
+          formatConfirmed: parsed.formatConfirmed === true || legacyDisplayChoice,
           palette: palettes.includes(parsed.palette as MockupPalette) ? parsed.palette as MockupPalette : "violet",
           enabledModules: Array.isArray(parsed.enabledModules) ? parsed.enabledModules.filter((id): id is string => typeof id === "string") : [],
           moduleSelectionConfirmed: parsed.moduleSelectionConfirmed === true,
@@ -121,8 +163,12 @@ export function ProjectMockupStudio({ project }: Props) {
           if (saved) {
             const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
             const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
+            const solutionFormats: SolutionFormat[] = ["human", "organizational", "documentary", "physical", "digital", "hybrid"];
+            const legacyDisplayChoice = saved.solutionFormat === undefined && formats.includes(saved.format as MockupFormat);
             setConfig({
               format: formats.includes(saved.format as MockupFormat) ? saved.format as MockupFormat : "website",
+              solutionFormat: solutionFormats.includes(saved.solutionFormat as SolutionFormat) ? saved.solutionFormat as SolutionFormat : saved.solutionFormat === null ? null : legacyDisplayChoice ? "digital" : null,
+              formatConfirmed: saved.formatConfirmed === true || legacyDisplayChoice,
               palette: palettes.includes(saved.palette as MockupPalette) ? saved.palette as MockupPalette : "violet",
               enabledModules: Array.isArray(saved.enabledModules) ? saved.enabledModules.filter((id): id is string => typeof id === "string") : [],
               moduleSelectionConfirmed: saved.moduleSelectionConfirmed === true,
@@ -136,6 +182,16 @@ export function ProjectMockupStudio({ project }: Props) {
               : {});
             setReviewStatus(saved.reviewStatus === "approved" || saved.reviewStatus === "changes_requested" ? saved.reviewStatus : "draft");
             setReviewNote(typeof saved.reviewNote === "string" ? saved.reviewNote.slice(0, 1200) : "");
+            if (saved.conceptValidation && typeof saved.conceptValidation === "object" && saved.conceptValidation.currentVersionId && Array.isArray(saved.conceptValidation.history)) {
+              setConceptValidation(saved.conceptValidation);
+            } else if (saved.reviewStatus === "approved" || saved.reviewStatus === "changes_requested") {
+              const legacyVersionId = createConceptVersionId(project.id, project, saved);
+              setConceptValidation(recordConceptDecision(createConceptValidationState(legacyVersionId), {
+                conceptVersionId: legacyVersionId,
+                action: saved.reviewStatus === "approved" ? "approve" : "request_changes",
+                clientNote: typeof saved.reviewNote === "string" ? saved.reviewNote : "",
+              }));
+            }
             setQuoteAmount(typeof saved.quoteAmount === "string" ? saved.quoteAmount.slice(0, 80) : "");
             setQuoteDays(typeof saved.quoteDays === "string" ? saved.quoteDays.slice(0, 40) : "");
             setQuotePaymentTerms(typeof saved.quotePaymentTerms === "string" ? saved.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
@@ -178,7 +234,7 @@ export function ProjectMockupStudio({ project }: Props) {
         discovery: project.discovery ?? null,
         studioConfig: {
           ...config, diagnosticSchemaVersion: 1, diagnosticResponses,
-          reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote,
+          reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, conceptValidation,
         },
         clientConfirmedChoices: {
           selectedSectorIds: config.selectedUniversalSectorIds ?? [],
@@ -197,6 +253,10 @@ export function ProjectMockupStudio({ project }: Props) {
           reviewStatus,
           reviewNote,
           clientQuoteNote,
+          conceptValidation,
+          conceptVersionId,
+          solutionFormat: config.solutionFormat ?? null,
+          displayFormatConfirmed: config.formatConfirmed === true,
         },
         updatedAt: new Date().toISOString(),
       };
@@ -231,16 +291,44 @@ export function ProjectMockupStudio({ project }: Props) {
       }
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [ready, cloudLoaded, project, config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote]);
+  }, [ready, cloudLoaded, project, config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, conceptValidation, conceptVersionId]);
 
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, diagnosticSchemaVersion: 1, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...config, diagnosticSchemaVersion: 1, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, conceptValidation }));
     } catch {
       // The preview still works for this session if storage is unavailable.
     }
-  }, [config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, ready, storageKey]);
+  }, [config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote, conceptValidation, ready, storageKey]);
+
+  function commitConceptDecision(action: "approve" | "request_changes") {
+    const next = recordConceptDecision(conceptValidation, {
+      conceptVersionId,
+      action,
+      clientNote: reviewNote,
+      decidedAt: new Date().toISOString(),
+    });
+    setConceptValidation(next);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify({
+        ...config,
+        diagnosticSchemaVersion: 1,
+        diagnosticResponses,
+        reviewStatus: action === "approve" ? "approved" : "changes_requested",
+        reviewNote,
+        quoteAmount,
+        quoteDays,
+        quotePaymentTerms,
+        clientQuoteResponse,
+        clientQuoteNote,
+        conceptValidation: next,
+      }));
+    } catch {
+      // The parent journey state also records the explicit approval for this session.
+    }
+    onConceptDecision?.(next);
+  }
 
   function updateDiagnosticAnswer(questionId: string, value: string) {
     setDiagnosticResponses((current) => ({ ...current, [questionId]: value.slice(0, 4000) }));
@@ -278,112 +366,10 @@ export function ProjectMockupStudio({ project }: Props) {
   }
 
   function toggleRecommendation(id: string) {
-    setConfig((current) => {
-      const selected = current.selectedRecommendationIds ?? model.recommendations.map((item) => item.id);
-      return {
-        ...current,
-        selectedRecommendationIds: selected.includes(id)
-          ? selected.filter((item) => item !== id)
-          : [...selected, id],
-      };
-    });
-  }
-
-  function downloadQuoteDraft() {
-    const amount = quoteAmount.trim();
-    const days = quoteDays.trim();
-    const lines = [
-      "MERKORA GDJ — PROJET DE DEVIS (BROUILLON NON CONTRACTUEL)",
-      "",
-      `Projet : ${model.title}`,
-      `Catégorie : ${model.domainLabel}`,
-      `Concept : ${reviewStatus === "approved" ? "validé localement" : "non validé"}`,
-      `Format envisagé : ${model.formatLabel}`,
-      ...(model.selectedDeliverableFormats.length > 0 ? ["Livrables confirmés par le client :", ...model.selectedDeliverableFormats.map((id) => `- ${DELIVERABLE_FORMAT_CATALOG.find((item) => item.id === id)?.label ?? id}`)] : ["Livrables : aucun format confirmé pour le moment"]),
-      "",
-      "PÉRIMÈTRE ENVISAGÉ",
-      ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
-      ...(model.activityDiagnostic.selectedSectors.length > 0 ? ["Secteurs confirmés :", ...model.activityDiagnostic.selectedSectors.map((item) => `- ${item.label}`)] : ["Secteur : à confirmer"]),
-      "Questions de diagnostic à approfondir :",
-      ...model.activityDiagnostic.questions.flatMap((item) => [`- ${item.title} : ${item.prompt}`, `  Réponse du client : ${diagnosticResponses[item.id]?.trim() || "Non renseignée"}`]),
-      ...model.visibleModules.map((item) => `- Fonction / bloc : ${item.title} — ${item.description}`),
-      ...model.visibleRecommendations.map((item) => `- Piste retenue : ${item.title} — ${item.description}`),
-      "",
-      "BESOINS ET CONTEXTE",
-      `Problème initial : ${project.problem}`,
-      `Résultat souhaité : ${project.desiredOutcome}`,
-      `Budget indiqué : ${project.budget}`,
-      "",
-      "PROPOSITION COMMERCIALE À COMPLÉTER",
-      `Montant indicatif : ${amount ? `${amount} FCFA` : "À chiffrer après estimation du travail"}`,
-      `Délai estimé : ${days ? `${days} jour(s)` : "À confirmer"}`,
-      `Conditions de paiement : ${quotePaymentTerms.trim() || "À convenir"}`,
-      "",
-      "ÉTAT : brouillon préparatoire uniquement. Ce document n'est ni un devis officiel, ni une offre contractuelle, ni une acceptation client. Le prix et le délai doivent être vérifiés par MerKora avant transmission.",
-      "Les réponses et choix de conception sont synchronisés dans la mémoire du projet lorsque le client est connecté. Aucun envoi commercial ou lancement de réalisation automatique n'a lieu.",
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `merkora-brouillon-devis-${model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet"}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadClientResponse() {
-    const responseLabels: Record<ClientQuoteResponse, string> = {
-      undecided: "Aucune décision sélectionnée",
-      accepted: "Le client indique accepter la proposition",
-      changes_requested: "Le client demande des modifications",
-      negotiate: "Le client souhaite discuter du prix ou des conditions",
-    };
-    const lines = [
-      "MERKORA GDJ — RETOUR CLIENT SUR UN BROUILLON DE DEVIS",
-      "",
-      "Projet : " + model.title,
-      "Référence locale : " + project.id,
-      "Montant présenté : " + (quoteAmount.trim() ? quoteAmount.trim() + " FCFA" : "Non renseigné"),
-      "Délai présenté : " + (quoteDays.trim() ? quoteDays.trim() + " jour(s)" : "Non renseigné"),
-      "Décision choisie : " + responseLabels[clientQuoteResponse],
-      "",
-      "Commentaire du client :",
-      clientQuoteNote.trim() || "Aucun commentaire ajouté.",
-      "",
-      "IMPORTANT : retour préparatoire exporté localement. Ce fichier n'a pas été envoyé à MerKora et ne vaut pas acceptation contractuelle ni preuve de transmission. L'administrateur doit vérifier et enregistrer la réponse par un canal convenu.",
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "merkora-retour-client-" + (model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet") + ".txt";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadClientResponseJson() {
-    const payload = {
-      schema: "merkora.client-response.v1",
-      project: { id: project.id, title: model.title },
-      quote: {
-        amountFcfa: quoteAmount.trim() || null,
-        estimatedDays: quoteDays.trim() || null,
-        paymentTerms: quotePaymentTerms.trim().slice(0, 500),
-      },
-      response: {
-        choice: clientQuoteResponse,
-        comment: clientQuoteNote.trim().slice(0, 1200),
-      },
-      exportedAt: new Date().toISOString(),
-      notice: "Export local uniquement. L'import administrateur ne vérifie pas l'identité de l'expéditeur et ne vaut pas acceptation contractuelle.",
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "merkora-retour-client-" + (model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "projet") + ".json";
-    link.click();
-    URL.revokeObjectURL(url);
+    const current = config.selectedRecommendationIds ?? [];
+    const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+    setConfig((value) => ({ ...value, selectedRecommendationIds: next }));
+    onSelectedRecommendationIdsChange?.(next);
   }
 
   async function copySummary() {
@@ -399,13 +385,13 @@ export function ProjectMockupStudio({ project }: Props) {
       "Réponses au diagnostic :",
       ...model.activityDiagnostic.questions.map((item) => `- ${item.title} : ${diagnosticResponses[item.id]?.trim() || "Non renseignée"}`),
       `Palette : ${paletteOptions.find((item) => item.value === model.palette)?.label ?? model.palette}`,
-      "Blocs retenus :",
+      config.moduleSelectionConfirmed ? "Blocs retenus par le client :" : "Blocs proposés à examiner — non confirmés :",
       ...model.visibleModules.map((item) => `- Bloc : ${item.title} : ${item.description}`),
-      "Pistes de solution retenues :",
+      Array.isArray(config.selectedRecommendationIds) ? "Pistes retenues par le client :" : "Pistes proposées à examiner — non confirmées :",
       ...model.visibleRecommendations.map((item) => `- ${item.title} : ${item.description} (raison : ${item.reason})`),
-      `État local du concept : ${reviewStatus === "approved" ? "Concept validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
-      ...(reviewNote.trim() ? [`Note de retour : ${reviewNote.trim()}`] : []),
-      "Attention : cet état et cette note sont enregistrés uniquement dans ce navigateur; ils ne sont pas transmis à MerKora ni au cloud.",
+      `État de validation de la version : ${conceptValidation.status === "approved" ? "Approuvée par le client" : conceptValidation.status === "changes_requested" ? "Modifications demandées" : "À examiner"}`,
+      ...(conceptValidation.clientNote.trim() ? [`Note du client : ${conceptValidation.clientNote.trim()}`] : []),
+      "La validation concerne uniquement la version de concept affichée; elle ne vaut ni devis accepté ni paiement.",
       model.conceptNotice,
     ].join("\n");
     try {
@@ -432,22 +418,43 @@ export function ProjectMockupStudio({ project }: Props) {
       <div className="mockup-studio-layout">
         <aside className="mockup-controls" aria-label="Personnaliser la maquette">
           <details className="mockup-step" name="mockup-studio-step" open>
-          <summary>01 · Aperçu visuel</summary>
+          <summary>01 · Nature de la solution</summary>
           <div className="mockup-control-group">
-            <span className="mockup-control-title">Type d’aperçu visuel</span>
-            <p className="mockup-control-hint">Ce choix sert à présenter le concept. Il ne détermine pas à lui seul la forme finale de votre projet.</p>
-            <div className="mockup-format-options">
-              {formatOptions.map((option) => (
-                <button key={option.value} type="button" className={config.format === option.value ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={config.format === option.value} onClick={() => setConfig((current) => ({ ...current, format: option.value }))}>
-                  <span>{option.icon}</span>{option.label}
+            <span className="mockup-control-title">Quelle forme de solution correspond le mieux à votre besoin ?</span>
+            <p className="mockup-control-hint">Il ne s’agit pas encore de choisir un écran ou une technologie. Une solution peut être humaine, organisationnelle, documentaire, physique, numérique ou hybride.</p>
+            <div className="mockup-solution-format-options">
+              {solutionFormatOptions.map((option) => (
+                <button key={option.value} type="button" className={config.solutionFormat === option.value ? "mockup-solution-format is-selected" : "mockup-solution-format"} aria-pressed={config.solutionFormat === option.value} onClick={() => setConfig((current) => ({ ...current, solutionFormat: option.value, formatConfirmed: false }))}>
+                  <strong>{SOLUTION_FORMAT_LABELS[option.value]}</strong><small>{option.description}</small>
                 </button>
               ))}
             </div>
+            <button type="button" className="mockup-choice mockup-undecided-choice" aria-pressed={config.solutionFormat === null} onClick={() => setConfig((current) => ({ ...current, solutionFormat: null, formatConfirmed: false }))}>Je ne sais pas encore — garder la direction ouverte</button>
           </div>
           </details>
 
+          {config.solutionFormat === "digital" && (
+            <details className="mockup-step" name="mockup-studio-step" open>
+              <summary>02 · Format de l’interface</summary>
+              <div className="mockup-control-group">
+                <span className="mockup-control-title">Quel aperçu numérique souhaitez-vous examiner ?</span>
+                <p className="mockup-control-hint">Ce choix définit uniquement la représentation visuelle. Il ne transforme pas automatiquement votre projet en produit fonctionnel.</p>
+                <div className="mockup-format-options">
+                  {formatOptions.map((option) => (
+                    <button key={option.value} type="button" className={config.formatConfirmed && config.format === option.value ? "mockup-choice is-selected" : "mockup-choice"} aria-pressed={config.formatConfirmed === true && config.format === option.value} onClick={() => setConfig((current) => ({ ...current, format: option.value, formatConfirmed: true }))}>
+                      <span>{option.icon}</span>{option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
+          )}
+          {config.solutionFormat && config.solutionFormat !== "digital" && (
+            <div className="mockup-nondigital-note"><strong>{SOLUTION_FORMAT_LABELS[config.solutionFormat]}</strong><p>Le concept sera présenté sous forme de parcours, d’organisation ou de livrable adapté. Aucune interface web, mobile ou tableau de bord ne sera supposée.</p></div>
+          )}
+
           <details className="mockup-step" name="mockup-studio-step">
-          <summary>02 · Formats de réalisation</summary>
+          <summary>03 · Formats de réalisation</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Formats de réalisation souhaités</span>
             <p className="mockup-control-hint">MerKora recommande des formats selon votre besoin. Vous pouvez en choisir plusieurs, retirer une suggestion ou ajouter un format non recommandé.</p>
@@ -468,7 +475,7 @@ export function ProjectMockupStudio({ project }: Props) {
           </details>
 
           <details className="mockup-step" name="mockup-studio-step">
-          <summary>03 · Ambiance visuelle</summary>
+          <summary>04 · Ambiance visuelle</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Ambiance visuelle</span>
             <div className="mockup-palette-options">
@@ -482,7 +489,7 @@ export function ProjectMockupStudio({ project }: Props) {
           </details>
 
           <details className="mockup-step" name="mockup-studio-step">
-          <summary>04 · Diagnostic métier et options</summary>
+          <summary>05 · Diagnostic métier et options</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Options du domaine : {model.domainLabel}</span>
             {model.universalFamilyCandidates.length > 0 && <p className="mockup-control-hint">Familles de référence possibles : {model.universalFamilyCandidates.map((family) => family.label).join(" · ")}. Cette correspondance aide à élargir l’analyse ; elle ne remplace pas la confirmation du métier et du secteur par le client.</p>}
@@ -537,12 +544,12 @@ export function ProjectMockupStudio({ project }: Props) {
           </details>
 
           <details className="mockup-step" name="mockup-studio-step">
-          <summary>05 · Pistes de solution</summary>
+          <summary>06 · Pistes de solution</summary>
           <div className="mockup-control-group">
             <span className="mockup-control-title">Pistes de solution proposées</span>
             <p className="mockup-control-hint">Sélectionne les pistes que le client veut réellement voir dans son concept. Les pistes décochées ne seront pas présentées comme retenues.</p>
             {model.recommendations.map((item) => {
-              const selected = model.visibleRecommendations.some((visible) => visible.id === item.id);
+              const selected = config.selectedRecommendationIds?.includes(item.id) ?? false;
               return (
                 <label className="mockup-module-toggle" key={item.id}>
                   <input type="checkbox" checked={selected} onChange={() => toggleRecommendation(item.id)} />
@@ -554,63 +561,20 @@ export function ProjectMockupStudio({ project }: Props) {
           </div>
           </details>
 
-          <details className="mockup-step mockup-step-review" name="mockup-studio-step">
-            <summary>06 · Retour et validation du concept</summary>
-            <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
-            <div className="mockup-review-heading">
-              <div>
-                <span className="mockup-control-title">Étape 06 · Retour sur le concept</span>
-                <h4 id="mockup-review-title">Le concept correspond-il au besoin ?</h4>
-              </div>
-              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Concept approuvé" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
-            </div>
-            <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
-            <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
-            <div className="mockup-review-actions">
-              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("draft")}>À examiner</button>
-              <button type="button" className="button button-quiet" onClick={() => setReviewStatus("changes_requested")}>Demander des modifications</button>
-              <button type="button" className="button button-primary" onClick={() => setReviewStatus("approved")}>Valider ce concept</button>
-            </div>
-            <p className="mockup-local-note">Cette validation concerne uniquement le concept de conception : elle ne vaut ni accord contractuel ni validation de devis et ne déclenche aucun message à l’administrateur ou au client. Le statut et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
-          </section>
-          </details>
-          {reviewStatus === "approved" && (
-            <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
+          {showValidation && (
+            <section className="mockup-review-panel" aria-labelledby={`mockup-review-title-${project.id}`}>
               <div className="mockup-review-heading">
-                <div>
-                  <span className="mockup-control-title">Étape 07 · Préparer la proposition</span>
-                  <h4 id="mockup-quote-title">Préparer un brouillon de devis</h4>
-                </div>
-                <span className="mockup-review-status status-draft">Brouillon</span>
+                <div><span className="mockup-control-title">DÉCISION SUR CETTE VERSION</span><h4 id={`mockup-review-title-${project.id}`}>Le concept correspond-il à votre besoin ?</h4></div>
+                <span className={`mockup-review-status status-${conceptValidation.status}`}>{conceptValidation.status === "approved" ? "Version approuvée" : conceptValidation.status === "changes_requested" ? "Modifications demandées" : "Brouillon à examiner"}</span>
               </div>
-              <p className="mockup-local-note">Le concept étant marqué comme validé dans ce navigateur, tu peux préparer une première proposition. Aucun prix n'est inventé : laisse le montant vide tant que le travail n'a pas été estimé. Le brouillon n'est pas envoyé au client.</p>
-              <label className="mockup-review-note-label" htmlFor={`mockup-quote-amount-${project.id}`}>Montant proposé (FCFA, facultatif)</label>
-              <input id={`mockup-quote-amount-${project.id}`} className="mockup-quote-input" type="number" min="0" step="500" value={quoteAmount} onChange={(event) => setQuoteAmount(event.target.value)} placeholder="À chiffrer après estimation" />
-              <label className="mockup-review-note-label" htmlFor={`mockup-quote-days-${project.id}`}>Délai estimé en jours (facultatif)</label>
-              <input id={`mockup-quote-days-${project.id}`} className="mockup-quote-input" type="number" min="1" step="1" value={quoteDays} onChange={(event) => setQuoteDays(event.target.value)} placeholder="À confirmer" />
-              <label className="mockup-review-note-label" htmlFor={`mockup-quote-terms-${project.id}`}>Conditions ou étapes de paiement</label>
-              <textarea id={`mockup-quote-terms-${project.id}`} className="mockup-review-note" maxLength={500} value={quotePaymentTerms} onChange={(event) => setQuotePaymentTerms(event.target.value)} rows={2} />
-              <button type="button" className="button button-primary" onClick={downloadQuoteDraft}>Exporter le brouillon de devis (.txt) ↗</button>
-              <p className="mockup-local-note">L’export crée un fichier texte sur ton appareil. Il ne crée pas de devis officiel et ne l’envoie pas au client. Les champs du brouillon restent sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée.</p>
-              <div className="mockup-client-response" aria-labelledby="mockup-client-response-title">
-                <div className="mockup-review-heading">
-                  <div><span className="mockup-control-title">Étape 08 · Réponse à la proposition</span><h4 id="mockup-client-response-title">Que répondrait le client ?</h4></div>
-                  <span className={"mockup-review-status " + (clientQuoteResponse === "accepted" ? "status-approved" : clientQuoteResponse === "undecided" ? "status-draft" : "status-changes_requested")}>{clientQuoteResponse === "accepted" ? "Acceptation choisie" : clientQuoteResponse === "changes_requested" ? "Modifications demandées" : clientQuoteResponse === "negotiate" ? "Discussion demandée" : "En attente"}</span>
-                </div>
-                <p className="mockup-local-note">Cette section prépare le parcours de réponse. Le choix et les commentaires sont sauvegardés dans l’espace du projet lorsque la synchronisation est confirmée, mais aucun message n’est envoyé automatiquement. Le retour peut être exporté pour une transmission manuelle.</p>
-                <div className="mockup-quote-response-options">
-                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "accepted"} onChange={() => setClientQuoteResponse("accepted")} /><span><strong>Accepter</strong><small>Le client indique être d'accord avec la proposition affichée.</small></span></label>
-                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "changes_requested"} onChange={() => setClientQuoteResponse("changes_requested")} /><span><strong>Demander des modifications</strong><small>Le périmètre, le délai ou les conditions doivent être revus.</small></span></label>
-                  <label><input type="radio" name={"quote-response-" + project.id} checked={clientQuoteResponse === "negotiate"} onChange={() => setClientQuoteResponse("negotiate")} /><span><strong>Discuter du prix ou des conditions</strong><small>Le client souhaite échanger avant de décider.</small></span></label>
-                </div>
-                <label className="mockup-review-note-label" htmlFor={"mockup-client-response-note-" + project.id}>Message ou conditions proposés par le client</label>
-                <textarea id={"mockup-client-response-note-" + project.id} className="mockup-review-note" maxLength={1200} rows={3} value={clientQuoteNote} onChange={(event) => setClientQuoteNote(event.target.value)} placeholder="Ex. : je souhaite réduire le périmètre, préciser la livraison ou discuter d'un paiement en deux étapes…" />
-                <div className="mockup-client-response-actions">
-                  <button type="button" className="button button-quiet" onClick={downloadClientResponse} disabled={clientQuoteResponse === "undecided"}>Exporter le résumé (.txt) ↗</button>
-                  <button type="button" className="button button-primary" onClick={downloadClientResponseJson} disabled={clientQuoteResponse === "undecided"}>Exporter pour l’administration (.json) ↗</button>
-                </div>
-                <p className="mockup-local-note">Le fichier JSON peut être transmis manuellement à l’administrateur puis importé dans son espace. Il ne part pas automatiquement et doit être vérifié.</p>
+              <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Votre retour ou les changements souhaités</label>
+              <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} placeholder="Décrivez ce qui doit être ajusté avant de valider cette version…" />
+              <div className="mockup-review-actions">
+                <button type="button" className="button button-quiet" onClick={() => commitConceptDecision("request_changes")}>Demander des modifications</button>
+                <button type="button" className="button button-primary" onClick={() => commitConceptDecision("approve")}>Valider cette version</button>
               </div>
+              <p className="mockup-local-note">Cette décision est liée à la version {conceptVersionId}. Une modification ultérieure du concept créera une nouvelle version à valider. Elle ne vaut ni acceptation d’un devis ni paiement.</p>
+              {conceptValidation.history.length > 0 && <p className="mockup-local-note">Historique conservé : {conceptValidation.history.length} décision(s) sur les versions précédentes ou actuelle.</p>}
             </section>
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
@@ -618,21 +582,27 @@ export function ProjectMockupStudio({ project }: Props) {
         </aside>
 
         <div
-          className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}
+          className={`mockup-preview-wrap palette-${model.palette} format-${model.previewKind === "digital" ? model.format : model.previewKind}`}
           style={{
             "--mockup-accent": MOCKUP_PALETTE_TOKENS[model.palette].accent,
             "--mockup-accent-soft": MOCKUP_PALETTE_TOKENS[model.palette].accentSoft,
             "--mockup-accent-deep": MOCKUP_PALETTE_TOKENS[model.palette].accentDeep,
           } as CSSProperties}
         >
-          <div className="mockup-preview-toolbar"><span><i /> Aperçu généré par MerKora</span><span>{model.formatLabel}</span><span>Couleur : {paletteOptions.find((option) => option.value === model.palette)?.label ?? model.palette}</span></div>
-          {model.format === "mobile" ? (
+          <div className="mockup-preview-toolbar"><span><i /> {model.previewKind === "digital" ? "Aperçu visuel conceptuel" : "Concept en cours de définition"}</span><span>{model.formatLabel}</span><span>Couleur : {paletteOptions.find((option) => option.value === model.palette)?.label ?? model.palette}</span></div>
+          {model.previewKind === "exploration" ? (
+            <div className="mockup-neutral-preview"><span className="mockup-kicker">CONCEPT À EXPLORER</span><h4>{model.title}</h4><p>{model.supportingCopy}</p><div className="mockup-neutral-prompt"><strong>La forme de solution reste ouverte.</strong><span>Choisissez d’abord une direction parmi les formes humaine, organisationnelle, documentaire, physique, numérique ou hybride.</span></div></div>
+          ) : model.previewKind === "digital_selection" ? (
+            <div className="mockup-neutral-preview"><span className="mockup-kicker">SOLUTION NUMÉRIQUE</span><h4>{model.title}</h4><p>{model.supportingCopy}</p><div className="mockup-neutral-prompt"><strong>Quel type d’interface souhaitez-vous examiner ?</strong><span>Site web, application mobile ou tableau de bord : aucun n’est présélectionné.</span></div></div>
+          ) : model.previewKind === "universal" ? (
+            <div className="mockup-neutral-preview"><span className="mockup-kicker">{model.solutionFormatLabel.toLocaleUpperCase("fr")}</span><h4>{model.title}</h4><p>{model.supportingCopy}</p><div className="mockup-universal-preview-grid"><article><span>01</span><strong>Situation à traiter</strong><p>{project.problem}</p></article><article><span>02</span><strong>Résultat attendu</strong><p>{project.desiredOutcome}</p></article><article><span>03</span><strong>Éléments à construire</strong><p>{model.visibleModules.slice(0, 3).map((item) => item.title).join(" · ") || "À préciser avec vous"}</p></article></div><div className="mockup-neutral-prompt"><strong>Concept de travail — pas un écran numérique.</strong><span>La présentation suit la nature de la solution retenue.</span></div></div>
+          ) : model.format === "mobile" ? (
             <div className="mockup-phone">
               <div className="mockup-phone-top"><span /> <span>•••</span></div>
               <div className="mockup-preview-brand"><span className="mockup-brand-mark">M</span><strong>{model.title}</strong><button type="button" aria-label="Menu conceptuel">☰</button></div>
               <div className="mockup-hero mockup-hero-mobile"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">Découvrir les pistes <span>→</span></button></div>
               <div className="mockup-module-stack">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><div><h5>{item.title}</h5><p>{item.description}</p></div><span className="mockup-card-arrow">↗</span></article>)}</div>
-              {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution retenues"><h5>Pistes retenues</h5>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><div><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></div></article>)}</section>}
+              {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution"><h5>{Array.isArray(config.selectedRecommendationIds) ? "Pistes retenues par le client" : "Pistes proposées à examiner"}</h5>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><div><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></div></article>)}</section>}
               <div className="mockup-phone-footer">Concept d’interface · aperçu</div>
             </div>
           ) : (
@@ -645,7 +615,7 @@ export function ProjectMockupStudio({ project }: Props) {
                   <div className="mockup-hero"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.format === "dashboard" ? "Continuer le parcours" : "Découvrir les pistes"} <span>→</span></button><div className="mockup-hero-orbit" aria-hidden="true"><span>✳</span></div></div>
                   <div className="mockup-preview-section-title"><div><span>VOTRE ESPACE</span><h5>Ce que vous pourrez explorer</h5></div><span className="mockup-section-counter">{model.visibleModules.length} bloc(s) conceptuels</span></div>
                   <div className="mockup-module-grid">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><h5>{item.title}</h5><p>{item.description}</p><span className="mockup-card-arrow">↗</span></article>)}</div>
-                  {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution retenues"><div className="mockup-preview-section-title"><div><span>PISTES CHOISIES</span><h5>Les solutions à explorer</h5></div><span className="mockup-section-counter">{model.visibleRecommendations.length} piste(s)</span></div>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></article>)}</section>}
+                  {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution"><div className="mockup-preview-section-title"><div><span>{Array.isArray(config.selectedRecommendationIds) ? "PISTES RETENUES" : "PISTES PROPOSÉES"}</span><h5>{Array.isArray(config.selectedRecommendationIds) ? "Les pistes que vous avez retenues" : "Des pistes à examiner"}</h5></div><span className="mockup-section-counter">{model.visibleRecommendations.length} piste(s)</span></div>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></article>)}</section>}
                   <div className="mockup-demo-footer">Contenu de démonstration · à confirmer avec le client</div>
                 </div>
               </div>

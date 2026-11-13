@@ -2,11 +2,13 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { createMerkoraConversationReply, type ConversationReply } from "@/lib/assistant/merkora-conversation";
+import { selectNextDiscoveryQuestion, type DiscoveryQuestionSelection } from "@/lib/universal-project-discovery";
+import { analyzeUniversalProjectIntent } from "@/lib/universal-project-understanding";
 
-type Props = { projectId: string; projectTitle: string; problem: string; desiredOutcome: string };
+type Props = { projectId: string; projectTitle: string; problem: string; desiredOutcome: string; onDiscoveryChange?: (selection: DiscoveryQuestionSelection) => void };
 type ConversationItem = { id?: string; role: "user" | "assistant"; content: string };
 
-export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desiredOutcome }: Props) {
+export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desiredOutcome, onDiscoveryChange }: Props) {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState<ConversationReply | null>(null);
   const [messages, setMessages] = useState<ConversationItem[]>([]);
@@ -36,6 +38,8 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
               : [];
           });
           setMessages(loaded);
+          const analysis = analyzeUniversalProjectIntent(`${projectTitle}\n${problem}\n${desiredOutcome}`);
+          onDiscoveryChange?.(selectNextDiscoveryQuestion(analysis, loaded.map(({ role, content }) => ({ role, content }))));
         }
       }
       if (consentResponse.ok) {
@@ -51,7 +55,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       if (active) setError("La mémoire en ligne n'a pas pu être chargée. Vérifiez votre connexion avant de poursuivre.");
     });
     return () => { active = false; };
-  }, [projectId]);
+  }, [projectId, projectTitle, problem, desiredOutcome, onDiscoveryChange]);
 
   async function acceptAiProcessing() {
     if (!consentChecked || consentBusy) return;
@@ -107,6 +111,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       if (response.ok && payload && typeof payload === "object" && "reply" in payload) {
         const result = payload as { reply: ConversationReply; synchronized?: boolean; conversationSynchronized?: boolean };
         setReply(result.reply);
+        onDiscoveryChange?.(result.reply.discovery);
         setMessages((current) => [
           ...current,
           { role: "user", content: submitted },
@@ -128,6 +133,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
         history: [],
       });
       setReply(localReply);
+      onDiscoveryChange?.(localReply.discovery);
       setMessages((current) => [...current, { role: "user", content: submitted }, { role: "assistant", content: localReply.assistantMessage }]);
       setMessage("");
     } catch {
@@ -136,6 +142,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
         history: [],
       });
       setReply(localReply);
+      onDiscoveryChange?.(localReply.discovery);
       setMessages((current) => [...current, { role: "user", content: submitted }, { role: "assistant", content: localReply.assistantMessage }]);
       setError("Connexion indisponible. Une première analyse locale est affichée ; la synchronisation en ligne reste à rétablir.");
       setMessage("");

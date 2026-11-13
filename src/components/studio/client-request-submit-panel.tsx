@@ -6,9 +6,7 @@ import { submitClientRequest } from "@/lib/client-request-submission";
 
 type Props = { project: Project };
 type SavedStudio = {
-  format?: string; palette?: string; enabledModules?: string[]; selectedRecommendationIds?: string[];
-  reviewStatus?: string; reviewNote?: string; quoteAmount?: string; quoteDays?: string;
-  quotePaymentTerms?: string; clientQuoteResponse?: string; clientQuoteNote?: string;
+  format?: string; formatConfirmed?: boolean; solutionFormat?: string | null; palette?: string; enabledModules?: string[]; selectedRecommendationIds?: string[]; conceptValidation?: unknown;
 };
 
 export function ClientRequestSubmitPanel({ project }: Props) {
@@ -34,6 +32,8 @@ export function ClientRequestSubmitPanel({ project }: Props) {
     setError("");
     setMessage("");
     try {
+      const legacyDisplayChoice = saved.solutionFormat === undefined && ["website", "mobile", "dashboard"].includes(saved.format ?? "");
+      const displayFormatConfirmed = saved.formatConfirmed === true || legacyDisplayChoice;
       const successMessage = await submitClientRequest(project, {
         project: {
           id: project.id, title: project.title, category: project.category,
@@ -42,21 +42,13 @@ export function ClientRequestSubmitPanel({ project }: Props) {
           recommendations: project.recommendations,
         },
         studio: {
-          format: ["website", "mobile", "dashboard"].includes(saved.format ?? "") ? saved.format : "website",
+          format: displayFormatConfirmed ? saved.format : null,
+          formatConfirmed: displayFormatConfirmed,
+          solutionFormat: ["human", "organizational", "documentary", "physical", "digital", "hybrid"].includes(saved.solutionFormat ?? "") ? saved.solutionFormat : legacyDisplayChoice ? "digital" : null,
           palette: ["violet", "blue", "emerald", "amber"].includes(saved.palette ?? "") ? saved.palette : "violet",
           enabledModules: Array.isArray(saved.enabledModules) ? saved.enabledModules.slice(0, 40) : [],
           selectedRecommendationIds: Array.isArray(saved.selectedRecommendationIds) ? saved.selectedRecommendationIds.slice(0, 40) : [],
-          reviewStatus: ["draft", "changes_requested", "approved"].includes(saved.reviewStatus ?? "") ? saved.reviewStatus : "draft",
-          reviewNote: typeof saved.reviewNote === "string" ? saved.reviewNote.slice(0, 1200) : "",
-        },
-        quote: {
-          amount: typeof saved.quoteAmount === "string" ? saved.quoteAmount.slice(0, 40) : "",
-          days: typeof saved.quoteDays === "string" ? saved.quoteDays.slice(0, 20) : "",
-          paymentTerms: typeof saved.quotePaymentTerms === "string" ? saved.quotePaymentTerms.slice(0, 500) : "",
-        },
-        clientResponse: {
-          choice: ["undecided", "accepted", "changes_requested", "negotiate"].includes(saved.clientQuoteResponse ?? "") ? saved.clientQuoteResponse : "undecided",
-          comment: typeof saved.clientQuoteNote === "string" ? saved.clientQuoteNote.slice(0, 1200) : "",
+          conceptValidation: saved.conceptValidation && typeof saved.conceptValidation === "object" ? saved.conceptValidation : null,
         },
       });
       setMessage(successMessage);

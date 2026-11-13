@@ -7,16 +7,12 @@ import { CloudClientRequestsPanel } from "@/components/admin/cloud-client-reques
 import { AdminQuotesPanel } from "@/components/admin/admin-quotes-panel";
 import { AdminPaymentsPanel } from "@/components/admin/admin-payments-panel";
 import { FactoryJobsPanel } from "@/components/admin/factory-jobs-panel";
+import { AdminWorkspaceShell } from "@/components/admin/admin-workspace-shell";
 import { callUserData, getAccessToken } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
 
-const cards = [
-  { title: "Dossiers clients", description: "Consulter les dossiers autorisés et leur statut.", value: "Lecture seule" },
-  { title: "Studio & propositions", description: "Préparer la revue des maquettes et des choix clients.", value: "À connecter" },
-  { title: "Devis & validations", description: "Créer des versions de devis, les publier au client et suivre ses décisions.", value: "Disponible en aperçu" },
-  { title: "Réalisation & livraison", description: "Lancer officiellement le projet après validation du paiement et préparer son suivi.", value: "Lancement manuel en aperçu" },
-];
+
 
 export default async function AdminPage() {
   const access = await getAdminAccess();
@@ -96,25 +92,62 @@ export default async function AdminPage() {
   }));
 
   return (
-    <main style={styles.page}>
-      <header style={styles.header}>
-        <div><div style={styles.eyebrow}>MERKORA GDJ · ESPACE PRIVÉ</div><h1 style={styles.title}>Administration</h1><p style={styles.text}>Connecté en tant que {access.user.email}. Accès vérifié côté serveur.</p></div>
-        <Link href="/" style={styles.link}>← Espace de travail</Link>
-      </header>
-      <section style={styles.notice}>
-        <strong>Mode aperçu sécurisé · actions encadrées</strong>
-        <p>Les devis, factures, validations de paiement et lancements officiels sont enregistrés après vérification côté serveur. Les autres modules restent en préparation. Aucune action de production n’est effectuée depuis cet aperçu.</p>
+    <AdminWorkspaceShell email={access.user.email ?? "Compte administrateur"}>
+      <section id="dashboard" className="mk-admin-section">
+        <div className="mk-admin-page-heading">
+          <div><span>VUE D’ENSEMBLE</span><h1>Tableau de bord</h1><p>Suivez les demandes, les validations et les travaux sans perdre le contrôle des décisions.</p></div>
+          <span className="mk-admin-preview-badge"><i /> MODE APERÇU SÉCURISÉ</span>
+        </div>
+        <div className="mk-admin-safety-notice">
+          <strong>Actions sensibles sous contrôle humain</strong>
+          <p>Les devis, factures, validations de paiement et lancements officiels restent soumis à vérification côté serveur. Aucun déploiement ou lancement de production n’est effectué depuis cet aperçu.</p>
+        </div>
+        <div className="mk-admin-overview-grid">
+          <article><span>JOBS DE FABRICATION</span><strong>{factoryJobs.length.toString().padStart(2, "0")}</strong><small>Dossiers techniques enregistrés</small></article>
+          <article><span>À CONTRÔLER</span><strong>{factoryJobs.filter((job) => job.status === "awaiting_review" || job.implementationStatus === "candidate_ready_for_human_review").length.toString().padStart(2, "0")}</strong><small>Revue humaine requise</small></article>
+          <article><span>EN COURS</span><strong>{factoryJobs.filter((job) => job.status === "queued" || job.status === "running").length.toString().padStart(2, "0")}</strong><small>Jobs en file ou actifs</small></article>
+          <article><span>COMPTE ADMIN</span><strong>Actif</strong><small>Accès vérifié côté serveur</small></article>
+        </div>
       </section>
-      <section style={styles.grid}>
-        {cards.map((card) => <article key={card.title} style={styles.module}><span style={styles.moduleValue}>{card.value}</span><h2 style={styles.moduleTitle}>{card.title}</h2><p style={styles.text}>{card.description}</p></article>)}
+
+      <section id="requests" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>01 · ENTRÉES CLIENTS</span><h2>Demandes clients</h2><p>Consulter les dossiers transmis et leur état actuel.</p></div></div>
+        <CloudClientRequestsPanel />
       </section>
-      <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
-      <AdminQuotesPanel />
-      <AdminPaymentsPanel />
-      <CloudClientRequestsPanel />
-      <ClientResponseImportPanel />
-      <footer style={styles.footer}>MerKora GDJ · Administration de prévisualisation · aucune action de production</footer>
-    </main>
+
+      <section id="conception" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>02 · TRAVAIL INTELLECTUEL</span><h2>Analyse & conception</h2><p>Zone de revue des besoins, des hypothèses, des pistes proposées et des concepts.</p></div></div>
+        <div className="mk-admin-placeholder"><span>✳</span><div><strong>La revue de conception reste liée au dossier client.</strong><p>Les propositions de l’IA ne sont pas considérées comme des décisions. Les outils de revue transversale seront ajoutés sans dupliquer les dossiers ni créer de décisions automatiques.</p></div><small>ESPACE EN STRUCTURATION</small></div>
+      </section>
+
+      <section id="quotes" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>03 · ACCORD CLIENT</span><h2>Validations & devis</h2><p>Préparer les versions, publier les documents et vérifier les retours explicites du client.</p></div></div>
+        <AdminQuotesPanel />
+        <ClientResponseImportPanel />
+      </section>
+
+      <section id="realization" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>04 · EXÉCUTION</span><h2>Réalisation</h2><p>Suivre les jobs techniques, les tâches et les contrôles humains avant livraison.</p></div></div>
+        <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
+      </section>
+
+      <section id="clients" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>05 · RELATION CLIENT</span><h2>Clients</h2><p>Les identités et historiques restent rattachés aux dossiers autorisés.</p></div></div>
+        <div className="mk-admin-placeholder"><span>♙</span><div><strong>Vue clients dédiée en préparation.</strong><p>Pour éviter les doublons, les dossiers clients existants restent consultables depuis « Demandes clients ». Aucune fiche client indépendante n’est créée automatiquement.</p></div><small>DONNÉES NON DUPLIQUÉES</small></div>
+      </section>
+
+      <section id="finances" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>06 · SUIVI FINANCIER</span><h2>Finances</h2><p>Consulter les factures, déclarations et confirmations réellement enregistrées.</p></div></div>
+        <AdminPaymentsPanel />
+      </section>
+
+      <section id="configuration" className="mk-admin-section">
+        <div className="mk-admin-section-heading"><div><span>07 · PARAMÈTRES</span><h2>Configuration</h2><p>Règles de fonctionnement et intégrations de la plateforme.</p></div></div>
+        <div className="mk-admin-placeholder"><span>⚙</span><div><strong>Aucun paramètre sensible modifiable depuis cet aperçu.</strong><p>Les règles tarifaires, abonnements, limites d’usage, connexions et autorisations restent inchangés tant qu’une configuration dédiée n’a pas été validée.</p></div><small>LECTURE SEULE</small></div>
+      </section>
+
+      <footer className="mk-admin-footer">MerKora GDJ · Administration · actions de production soumises à autorisation</footer>
+    </AdminWorkspaceShell>
   );
 }
 

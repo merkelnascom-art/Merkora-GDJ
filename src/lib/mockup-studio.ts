@@ -9,6 +9,16 @@ import type { BusinessSignalAnalysis } from "./business-signal-analysis";
 import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
+export type SolutionFormat = "human" | "organizational" | "documentary" | "physical" | "digital" | "hybrid";
+export type ConceptPreviewKind = "exploration" | "universal" | "digital_selection" | "digital";
+export const SOLUTION_FORMAT_LABELS: Record<SolutionFormat, string> = {
+  human: "Accompagnement humain",
+  organizational: "Organisation et processus",
+  documentary: "Documents et ressources",
+  physical: "Solution physique",
+  digital: "Solution numérique",
+  hybrid: "Solution hybride",
+};
 export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign" | "document_pack" | "presentation" | "training_program";
 export type DeliverableOption = { id: DeliverableFormat; label: string; description: string; reason: string };
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
@@ -20,6 +30,10 @@ export const MOCKUP_PALETTE_TOKENS: Record<MockupPalette, { accent: string; acce
 };
 export type MockupConfig = {
   format: MockupFormat;
+  /** Universal solution family, explicitly selected by the client. */
+  solutionFormat?: SolutionFormat | null;
+  /** Display format is confirmed only after an explicit choice in the digital path. */
+  formatConfirmed?: boolean;
   palette: MockupPalette;
   enabledModules: string[];
   /** True only after the client has actively confirmed a module selection. */
@@ -51,6 +65,10 @@ export type MockupModel = {
   transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
+  previewKind: ConceptPreviewKind;
+  solutionFormat: SolutionFormat | null;
+  solutionFormatLabel: string;
+  formatConfirmed: boolean;
   palette: MockupPalette;
   modules: MockupModule[];
   visibleModules: MockupModule[];
@@ -60,6 +78,53 @@ export type MockupModel = {
   recommendedDeliverables: DeliverableOption[];
   selectedDeliverableFormats: DeliverableFormat[];
 };
+
+
+export function resolveConceptPresentation(config: Pick<MockupConfig, "format" | "solutionFormat" | "formatConfirmed">): {
+  kind: ConceptPreviewKind;
+  solutionFormat: SolutionFormat | null;
+  solutionFormatLabel: string;
+  format: MockupFormat | null;
+  formatConfirmed: boolean;
+} {
+  const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
+  const solutionFormats: SolutionFormat[] = ["human", "organizational", "documentary", "physical", "digital", "hybrid"];
+  const validDisplayFormat = formats.includes(config.format) ? config.format : null;
+  const validSolutionFormat = solutionFormats.includes(config.solutionFormat as SolutionFormat)
+    ? config.solutionFormat as SolutionFormat
+    : null;
+
+  // Older saved studio records used a display format without a universal format field.
+  // Preserve that explicit legacy choice, while new records start with solutionFormat: null.
+  const isLegacyDisplayChoice = config.solutionFormat === undefined &&
+    config.formatConfirmed === undefined && validDisplayFormat !== null;
+  if (validSolutionFormat === "digital" || isLegacyDisplayChoice) {
+    const confirmed = validDisplayFormat !== null && (config.formatConfirmed === true || isLegacyDisplayChoice);
+    return {
+      kind: confirmed ? "digital" : "digital_selection",
+      solutionFormat: "digital",
+      solutionFormatLabel: SOLUTION_FORMAT_LABELS.digital,
+      format: confirmed ? validDisplayFormat : null,
+      formatConfirmed: confirmed,
+    };
+  }
+  if (validSolutionFormat) {
+    return {
+      kind: "universal",
+      solutionFormat: validSolutionFormat,
+      solutionFormatLabel: SOLUTION_FORMAT_LABELS[validSolutionFormat],
+      format: null,
+      formatConfirmed: true,
+    };
+  }
+  return {
+    kind: "exploration",
+    solutionFormat: null,
+    solutionFormatLabel: "Direction à explorer",
+    format: null,
+    formatConfirmed: false,
+  };
+}
 
 export const DELIVERABLE_FORMAT_CATALOG: readonly Omit<DeliverableOption, "reason">[] = [
   { id: "web_app", label: "Site ou plateforme web", description: "Un service accessible depuis un navigateur.", },
@@ -254,6 +319,7 @@ export function buildMockupModel(
     ? recommendations
     : recommendations.filter((item) => selectedRecommendationIds.includes(item.id));
 
+  const presentation = resolveConceptPresentation(config);
   const title = project.title.trim() || "Votre projet";
   const supportingCopy = project.desiredOutcome.trim()
     || "Un aperçu de travail à préciser avec les besoins et les choix du client.";
@@ -272,7 +338,13 @@ export function buildMockupModel(
     activityDiagnostic,
     transversalOptions,
     format: config.format,
-    formatLabel: formatLabels[config.format],
+    formatLabel: presentation.kind === "digital" && presentation.format
+      ? formatLabels[presentation.format]
+      : presentation.kind === "digital_selection" ? "Aperçu numérique à choisir" : presentation.solutionFormatLabel,
+    previewKind: presentation.kind,
+    solutionFormat: presentation.solutionFormat,
+    solutionFormatLabel: presentation.solutionFormatLabel,
+    formatConfirmed: presentation.formatConfirmed,
     palette: config.palette,
     modules: allOptions,
     visibleModules,
