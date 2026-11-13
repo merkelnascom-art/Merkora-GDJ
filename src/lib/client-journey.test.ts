@@ -18,6 +18,15 @@ function readyInput(overrides: Partial<ClientJourneyInput> = {}): ClientJourneyI
       remainingGaps: [],
       readyForSolutionReview: true,
       reason: "Les éléments nécessaires sont clarifiés.",
+      evaluation: {
+        clientStatements: [],
+        hypothesesToConfirm: [],
+        unresolvedUnknowns: [],
+        blockingStages: [],
+        blockingQuestions: [],
+        status: "reviewable",
+        solutionReviewAllowed: true,
+      },
     },
     decisions: {
       selectedProposalIds: [],
@@ -48,6 +57,7 @@ describe("client journey", () => {
         remainingGaps: ["constraints"],
         readyForSolutionReview: false,
         reason: "Une contrainte reste à clarifier.",
+        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Une contrainte reste à clarifier."], blockingStages: ["constraints"], blockingQuestions: ["Comment cela fonctionne-t-il actuellement ?"], status: "blocked", solutionReviewAllowed: false },
       },
     });
 
@@ -70,6 +80,7 @@ describe("client journey", () => {
         remainingGaps: ["resolve_contradiction"],
         readyForSolutionReview: false,
         reason: "Des indications se contredisent.",
+        evaluation: { clientStatements: [], hypothesesToConfirm: [], unresolvedUnknowns: ["Des indications se contredisent."], blockingStages: ["resolve_contradiction"], blockingQuestions: ["Qui doit consulter ?"], status: "blocked", solutionReviewAllowed: false },
       },
     });
 
