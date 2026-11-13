@@ -33,7 +33,7 @@ export type ProfessionProfile = {
  */
 export const PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT = 500;
 export const PROFESSION_CANDIDATE_IMPORTED_COUNT = 484;
-export const PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT = 1407;
+export const PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT = 1516;
 export const PROFESSION_CANDIDATE_TOTAL_COUNT = PROFESSION_CANDIDATE_IMPORTED_COUNT + PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT;
 export const PROFESSION_CANDIDATE_SOURCE_GAP = PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT - PROFESSION_CANDIDATE_IMPORTED_COUNT;
 
@@ -13680,6 +13680,878 @@ export const MERKORA_PROFESSION_CANDIDATES = [
     "familyId": "family-20",
     "sourceGroup": "Famille, vie personnelle et solidarité",
     "sectorIds": ["S20-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-090",
+    "title": "Audioprothésiste",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-091",
+    "title": "Technicien en électroencéphalographie",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-092",
+    "title": "Agent de coordination des essais cliniques",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-093",
+    "title": "Gestionnaire de centre de santé",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-094",
+    "title": "Assistant de régulation médicale",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-094",
+    "title": "Moniteur de roller",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-095",
+    "title": "Coach de crossfit",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-096",
+    "title": "Responsable d’académie sportive",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-097",
+    "title": "Technicien de chronométrage",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-098",
+    "title": "Gestionnaire d’inscriptions sportives",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-094",
+    "title": "Technicien de transformation du poisson",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-095",
+    "title": "Responsable de fumage de poisson",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-096",
+    "title": "Gestionnaire de débarcadère de pêche",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-097",
+    "title": "Agent de contrôle des produits halieutiques",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-098",
+    "title": "Technicien de chaîne du froid aquacole",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-099",
+    "title": "Responsable de poissonnerie",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-100",
+    "title": "Écailler de commerce",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-101",
+    "title": "Vendeur de produits de la mer",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-102",
+    "title": "Responsable de comptoir de vente",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-103",
+    "title": "Gestionnaire de commerce ambulant",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-093",
+    "title": "Responsable de rapprochement bancaire",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "sectorIds": ["S05-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-094",
+    "title": "Contrôleur des dépenses",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "sectorIds": ["S05-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-095",
+    "title": "Gestionnaire de portefeuille de créances",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "sectorIds": ["S05-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-096",
+    "title": "Incubateur d’entreprises",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-097",
+    "title": "Gestionnaire de pépinière d’entreprises",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-098",
+    "title": "Responsable de gouvernance associative",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-099",
+    "title": "Consultant en création d’activité",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-100",
+    "title": "Gestionnaire de centre d’affaires",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-092",
+    "title": "Diagnostiqueur énergétique",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-093",
+    "title": "Technicien en étanchéité",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-094",
+    "title": "Installateur de faux plafonds",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-095",
+    "title": "Monteur en structures métalliques",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-096",
+    "title": "Gestionnaire de chantier de rénovation",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-094",
+    "title": "Formateur en sérigraphie",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-095",
+    "title": "Formateur en mécanographie",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-096",
+    "title": "Formateur en métiers de la pêche",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-097",
+    "title": "Responsable de formation en alternance",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-098",
+    "title": "Gestionnaire de certification d’apprentis",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-095",
+    "title": "Agent de billetterie maritime",
+    "familyId": "family-09",
+    "sourceGroup": "Transport et logistique",
+    "sectorIds": ["S09-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-096",
+    "title": "Agent de réservation de bus",
+    "familyId": "family-09",
+    "sourceGroup": "Transport et logistique",
+    "sectorIds": ["S09-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-097",
+    "title": "Responsable de quai de livraison",
+    "familyId": "family-09",
+    "sourceGroup": "Transport et logistique",
+    "sectorIds": ["S09-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-098",
+    "title": "Agent de contrôle des titres de transport",
+    "familyId": "family-09",
+    "sourceGroup": "Transport et logistique",
+    "sectorIds": ["S09-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-094",
+    "title": "Responsable de poissonnerie de restaurant",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration et hôtellerie",
+    "sectorIds": ["S10-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-095",
+    "title": "Fumoir de poissons artisanaux",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration et hôtellerie",
+    "sectorIds": ["S10-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-096",
+    "title": "Responsable de chambre froide alimentaire",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration et hôtellerie",
+    "sectorIds": ["S10-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-097",
+    "title": "Gestionnaire de marché de produits frais",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration et hôtellerie",
+    "sectorIds": ["S10-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-10-098",
+    "title": "Préparateur de produits de la mer",
+    "familyId": "family-10",
+    "sourceGroup": "Restauration et hôtellerie",
+    "sectorIds": ["S10-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-094",
+    "title": "Responsable de billetterie en ligne",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel, culture et tourisme",
+    "sectorIds": ["S11-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-095",
+    "title": "Contrôleur de billets et accès",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel, culture et tourisme",
+    "sectorIds": ["S11-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-096",
+    "title": "Gestionnaire de réservation de salles",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel, culture et tourisme",
+    "sectorIds": ["S11-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-097",
+    "title": "Agent de billetterie de transport touristique",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel, culture et tourisme",
+    "sectorIds": ["S11-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-11-098",
+    "title": "Responsable d’accréditation événementielle",
+    "familyId": "family-11",
+    "sourceGroup": "Événementiel, culture et tourisme",
+    "sectorIds": ["S11-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-102",
+    "title": "Gestionnaire de planning du personnel",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "sectorIds": ["S12-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-103",
+    "title": "Chargé de gestion des intérimaires",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "sectorIds": ["S12-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-104",
+    "title": "Responsable de recrutement saisonnier",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "sectorIds": ["S12-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-12-105",
+    "title": "Responsable d’évaluation des compétences",
+    "familyId": "family-12",
+    "sourceGroup": "Ressources humaines",
+    "sectorIds": ["S12-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-102",
+    "title": "Sérigraphe textile",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "sectorIds": ["S13-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-103",
+    "title": "Sérigraphe sur objets publicitaires",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "sectorIds": ["S13-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-104",
+    "title": "Conducteur de machine de tampographie",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "sectorIds": ["S13-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-105",
+    "title": "Opérateur de photocopie et reprographie",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "sectorIds": ["S13-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-13-106",
+    "title": "Technicien de finition graphique",
+    "familyId": "family-13",
+    "sourceGroup": "Artisanat et industrie",
+    "sectorIds": ["S13-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-094",
+    "title": "Linger professionnel",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "sectorIds": ["S14-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-095",
+    "title": "Agent de pressing industriel",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "sectorIds": ["S14-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-096",
+    "title": "Technicien de désinfection",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "sectorIds": ["S14-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-14-097",
+    "title": "Assistant de vie scolaire",
+    "familyId": "family-14",
+    "sourceGroup": "Services aux personnes",
+    "sectorIds": ["S14-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-099",
+    "title": "Agent de délivrance de documents officiels",
+    "familyId": "family-15",
+    "sourceGroup": "Administration et services publics",
+    "sectorIds": ["S15-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-100",
+    "title": "Gestionnaire de registres publics",
+    "familyId": "family-15",
+    "sourceGroup": "Administration et services publics",
+    "sectorIds": ["S15-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-101",
+    "title": "Agent de suivi des réclamations citoyennes",
+    "familyId": "family-15",
+    "sourceGroup": "Administration et services publics",
+    "sectorIds": ["S15-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-102",
+    "title": "Archiviste audiovisuel",
+    "familyId": "family-15",
+    "sourceGroup": "Administration et services publics",
+    "sectorIds": ["S15-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-15-103",
+    "title": "Agent de contrôle administratif",
+    "familyId": "family-15",
+    "sourceGroup": "Administration et services publics",
+    "sectorIds": ["S15-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-088",
+    "title": "Juriste en droit des associations",
+    "familyId": "family-16",
+    "sourceGroup": "Droit et conformité",
+    "sectorIds": ["S16-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-089",
+    "title": "Juriste en droit de la pêche",
+    "familyId": "family-16",
+    "sourceGroup": "Droit et conformité",
+    "sectorIds": ["S16-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-090",
+    "title": "Gestionnaire de conformité documentaire",
+    "familyId": "family-16",
+    "sourceGroup": "Droit et conformité",
+    "sectorIds": ["S16-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-091",
+    "title": "Assistant de formalités notariales",
+    "familyId": "family-16",
+    "sourceGroup": "Droit et conformité",
+    "sectorIds": ["S16-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-16-092",
+    "title": "Conseiller en règlement amiable",
+    "familyId": "family-16",
+    "sourceGroup": "Droit et conformité",
+    "sectorIds": ["S16-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-095",
+    "title": "Technicien de reprographie numérique",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique et télécommunications",
+    "sectorIds": ["S17-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-096",
+    "title": "Opérateur de numérisation documentaire",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique et télécommunications",
+    "sectorIds": ["S17-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-097",
+    "title": "Gestionnaire de billetterie électronique",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique et télécommunications",
+    "sectorIds": ["S17-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-098",
+    "title": "Technicien de systèmes de caisse",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique et télécommunications",
+    "sectorIds": ["S17-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-17-099",
+    "title": "Spécialiste en archivage numérique",
+    "familyId": "family-17",
+    "sourceGroup": "Numérique et télécommunications",
+    "sectorIds": ["S17-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-102",
+    "title": "Technicien de froid industriel",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie, eau et environnement",
+    "sectorIds": ["S18-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-103",
+    "title": "Responsable de chaîne du froid",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie, eau et environnement",
+    "sectorIds": ["S18-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-104",
+    "title": "Agent de maintenance de pompes",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie, eau et environnement",
+    "sectorIds": ["S18-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-105",
+    "title": "Technicien de valorisation des déchets organiques",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie, eau et environnement",
+    "sectorIds": ["S18-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-18-106",
+    "title": "Installateur de chauffe-eau solaire",
+    "familyId": "family-18",
+    "sourceGroup": "Énergie, eau et environnement",
+    "sectorIds": ["S18-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-096",
+    "title": "Agent de contrôle de billetterie",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité et gestion des risques",
+    "sectorIds": ["S19-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-097",
+    "title": "Responsable de sécurité de marché",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité et gestion des risques",
+    "sectorIds": ["S19-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-098",
+    "title": "Agent de surveillance de débarcadère",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité et gestion des risques",
+    "sectorIds": ["S19-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-099",
+    "title": "Coordinateur de sécurité alimentaire",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité et gestion des risques",
+    "sectorIds": ["S19-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-19-100",
+    "title": "Responsable de prévention des risques aquacoles",
+    "familyId": "family-19",
+    "sourceGroup": "Sécurité et gestion des risques",
+    "sectorIds": ["S19-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-098",
+    "title": "Médiateur de quartier",
+    "familyId": "family-20",
+    "sourceGroup": "Famille, vie personnelle et solidarité",
+    "sectorIds": ["S20-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-099",
+    "title": "Coordinateur de soutien aux familles monoparentales",
+    "familyId": "family-20",
+    "sourceGroup": "Famille, vie personnelle et solidarité",
+    "sectorIds": ["S20-05"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-100",
+    "title": "Accompagnateur de personnes en situation d’isolement",
+    "familyId": "family-20",
+    "sourceGroup": "Famille, vie personnelle et solidarité",
+    "sectorIds": ["S20-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-20-101",
+    "title": "Gestionnaire de fonds de solidarité",
+    "familyId": "family-20",
+    "sourceGroup": "Famille, vie personnelle et solidarité",
+    "sectorIds": ["S20-02"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-095",
+    "title": "Technicien de polysomnographie",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-099",
+    "title": "Animateur de parcours santé",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-099",
+    "title": "Responsable de vivier piscicole",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-04-104",
+    "title": "Vendeur de billets de tombola",
+    "familyId": "family-04",
+    "sourceGroup": "Commerce",
+    "sectorIds": ["S04-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-05-096",
+    "title": "Agent de transfert de fonds",
+    "familyId": "family-05",
+    "sourceGroup": "Finance",
+    "sectorIds": ["S05-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-06-101",
+    "title": "Responsable d’espace de coworking",
+    "familyId": "family-06",
+    "sourceGroup": "Entrepreneuriat et gestion",
+    "sectorIds": ["S06-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-07-097",
+    "title": "Poseur de revêtements de sol",
+    "familyId": "family-07",
+    "sourceGroup": "Immobilier et BTP",
+    "sectorIds": ["S07-04"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-08-099",
+    "title": "Formateur en alphabétisation",
+    "familyId": "family-08",
+    "sourceGroup": "Éducation et formation",
+    "sectorIds": ["S08-03"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-09-099",
+    "title": "Agent de billetterie interurbaine",
+    "familyId": "family-09",
+    "sourceGroup": "Transport et logistique",
+    "sectorIds": ["S09-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-096",
+    "title": "Technicien en explorations respiratoires",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-01-097",
+    "title": "Gestionnaire de rendez-vous médicaux",
+    "familyId": "family-01",
+    "sourceGroup": "Santé",
+    "sectorIds": ["S01-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-100",
+    "title": "Moniteur de gymnastique douce",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-02-101",
+    "title": "Gestionnaire de matériel sportif",
+    "familyId": "family-02",
+    "sourceGroup": "Sport",
+    "sectorIds": ["S02-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-100",
+    "title": "Technicien de transformation agricole",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-01"],
+    "reviewStatus": "candidate"
+  },
+  {
+    "id": "candidate-03-101",
+    "title": "Responsable de coopérative de pêche",
+    "familyId": "family-03",
+    "sourceGroup": "Agriculture",
+    "sectorIds": ["S03-04"],
     "reviewStatus": "candidate"
   }
 ] as const satisfies readonly ProfessionCandidate[];
