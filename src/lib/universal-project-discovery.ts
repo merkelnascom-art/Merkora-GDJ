@@ -40,11 +40,17 @@ export function selectNextDiscoveryQuestion(
   history: ConversationMessage[],
 ): DiscoveryQuestionSelection {
   const answers = [userHistory(history), analysis.rawIntent].join(" ");
+  const previousAssistantQuestion = [...history].reverse().find((message) => message.role === "assistant")?.content ?? "";
+  const latestStatement = analysis.rawIntent.split(/\\n+/).at(-1)?.trim() ?? "";
+  const shortAnswerToScopeQuestion =
+    /même projet|séparément/i.test(previousAssistantQuestion) &&
+    /^(oui|non|exactement|c'est ça|c'est cela|pas du tout)[.!? ]*$/i.test(latestStatement);
+  const scopeAlreadyAnswered = shortAnswerToScopeQuestion || hasAny(answers, [
+    /même projet|un seul projet|ensemble|séparément|projets distincts|deux projets/i,
+  ]);
   const gaps: Array<{ stage: DiscoveryStage; question: string; reason: string }> = [];
 
-  if (analysis.intentGroups.length > 1 && !hasAny(answers, [
-    /même projet|un seul projet|ensemble|séparément|projets distincts|deux projets/i,
-  ])) {
+  if (analysis.intentGroups.length > 1 && !scopeAlreadyAnswered) {
     gaps.push({
       stage: "project_scope",
       question: "Les différents besoins que vous avez cités font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?",
