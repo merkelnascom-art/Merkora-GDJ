@@ -62,7 +62,7 @@ describe("MerKora conversation core", () => {
 
     expect(result.intentAnalysis.intentGroups.length).toBeGreaterThan(1);
     expect(result.discovery.stage).not.toBe("project_scope");
-    expect(result.discovery.stage).toBe("current_process");
+    expect(result.discovery.stage).toBe("privacy_and_consent");
     expect(result.clarifyingQuestions).toEqual([result.discovery.nextQuestion]);
   });
 
