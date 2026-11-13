@@ -6,7 +6,7 @@ vi.mock("@/lib/server/supabase-rest", () => ({
 }));
 
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const user = { id: "client-1", email: "client@example.com", fullName: "Client" };
 const project = {
@@ -23,12 +23,13 @@ function request(body: unknown) {
   });
 }
 
-function mockDatabase(consented = false) {
+function mockDatabase(consented = false, decisionRows: unknown[] = []) {
   vi.mocked(callUserData).mockImplementation(async (path, method, _token, body) => {
     if (path.startsWith("user_projects?")) return { ok: true, status: 200, data: [project] };
-    if (path.startsWith("project_workspace_state?")) return { ok: true, status: 200, data: [] };
-    if (path.startsWith("project_conversation_messages?")) {
-      return { ok: true, status: 200, data: [{ role: "user", content: "Contexte antérieur" }] };
+    if (path.startsWith("project_memory_decisions?")) return { ok: true, status: 200, data: decisionRows };
+    if (path === "project_memory_decisions" && method === "POST") {
+      expect(Array.isArray(body)).toBe(true);
+      return { ok: true, status: 201, data: null };
     }
     if (path.startsWith("project_ai_processing_consents?")) {
       return { ok: true, status: 200, data: consented ? [{ consented_at: "2026-11-13T08:00:00Z", revoked_at: null }] : [] };
@@ -79,28 +80,25 @@ describe("POST /api/projects/[projectId]/assistant", () => {
   it("returns MerKora's deterministic analysis and persists both sides of the conversation", async () => {
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
-      history: [],
+      history: [{ role: "assistant", content: "Comment suivez-vous les retards et les mouvements de caisse ?" }],
     }), context);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
     expect(body.synchronized).toBe(true);
+    expect(body.decisionMemory.clientAnswers).toHaveLength(1);
     expect(callUserData).toHaveBeenCalledWith(
-      "rpc/save_project_workspace_state", "POST", "client-token",
-      expect.objectContaining({
-        p_project_id: "MK-PROJECT-001",
-        p_expected_revision: 0,
-        p_payload: expect.objectContaining({
-          decisionMemory: expect.objectContaining({
-            version: 1,
-            projectId: "MK-PROJECT-001",
-            clientAnswers: expect.any(Array),
-            decisions: expect.any(Array),
-            hypotheses: expect.any(Array),
-          }),
-        }),
-      }),
+      "project_memory_decisions", "POST", "client-token",
+      expect.arrayContaining([expect.objectContaining({
+        project_id: "MK-PROJECT-001",
+        decision_type: "clarification_answered",
+        decision: "Je veux suivre les retards du personnel et les rapports de caisse",
+        comment: "Comment suivez-vous les retards et les mouvements de caisse ?",
+        actor_user_id: "client-1",
+        actor_role: "client",
+      })]),
+      "return=minimal",
     );
     expect(body).not.toHaveProperty("provider");
     expect(body).not.toHaveProperty("aiProviderCalled");
@@ -109,6 +107,25 @@ describe("POST /api/projects/[projectId]/assistant", () => {
       expect.arrayContaining([expect.objectContaining({ role: "user" }), expect.objectContaining({ role: "assistant" })]),
       "return=minimal",
     );
+  });
+
+  it("reconstructs the conversation from the existing project decision ledger", async () => {
+    mockDatabase(false, [{
+      id: "answer-1",
+      decision_type: "clarification_answered",
+      decision: "Je note les retards dans un cahier.",
+      comment: "Comment suivez-vous les retards ?",
+      actor_role: "client",
+      created_at: "2026-11-13T09:00:00.000Z",
+    }]);
+    const response = await GET(new Request("https://merkora.test/api/projects/MK-PROJECT-001/assistant"), context);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.messages).toEqual([
+      { role: "assistant", content: "Comment suivez-vous les retards ?" },
+      { role: "user", content: "Je note les retards dans un cahier." },
+    ]);
+    expect(body.decisionMemory.clientAnswers).toHaveLength(1);
   });
 
   it("does not call an external AI provider without the project's recorded consent", async () => {
