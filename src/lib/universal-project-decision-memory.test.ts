@@ -68,6 +68,28 @@ describe("universal project decision memory", () => {
     expect(corrected.decisions[1].status).toBe("confirmed");
   });
 
+  it("treats a short yes or no as a decision only when the prior question asks for a choice", () => {
+    const initial = createDecisionMemory("project-123");
+    const yes = recordDecisionMemoryTurn(initial, {
+      role: "user",
+      content: "Oui",
+    }, {
+      role: "assistant",
+      content: "Ces deux besoins doivent-ils être regroupés dans un même projet ?",
+    });
+    expect(yes.decisions).toHaveLength(1);
+    expect(yes.decisions[0].statement).toBe("Oui");
+
+    const unrelated = recordDecisionMemoryTurn(initial, {
+      role: "user",
+      content: "Oui",
+    }, {
+      role: "assistant",
+      content: "Avez-vous déjà un ordinateur ?",
+    });
+    expect(unrelated.decisions).toHaveLength(0);
+  });
+
   it("does not treat an assistant suggestion or an unanswered question as a client decision", () => {
     const initial = createDecisionMemory("project-123");
     const updated = recordDecisionMemoryTurn(initial, {
