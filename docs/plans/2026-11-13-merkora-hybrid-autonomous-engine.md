@@ -73,3 +73,18 @@ Les données restent liées au propriétaire via RLS. Aucun effacement, reset ou
 - Une notice dédiée est disponible dans `/confidentialite`. Elle explique le traitement assisté sans exposer le nom du fournisseur technique, décrit les catégories de données possibles, l'autorisation et son retrait.
 - La notice précise que les conditions exactes du prestataire, les durées, les lieux de traitement et les garanties doivent être vérifiés avant l'ouverture publique. Elle ne prétend pas que ces points sont déjà contractualisés ou validés.
 - Le panneau de conversation renvoie directement vers cette notice.
+
+
+## Renforcement des formats hybrides
+
+Le catalogue de livrables du Studio distingue maintenant douze formats combinables :
+- Site ou plateforme web ; application mobile ; affiche/support visuel.
+- Business plan/modèle économique ; maquette visuelle ou 3D ; prototype/kit physique.
+- Plan de service/parcours opérationnel ; cahier des charges technique ; campagne de communication.
+- Dossier documentaire et modèles ; présentation/pitch ; programme de formation ou d'accompagnement.
+
+Le moteur de recommandation ne confond pas le type de projet et le format de livraison. Il peut recommander plusieurs formats pour un même besoin, sans imposer une application à un projet physique. Un test couvre les dix briefs de référence : covoiturage, paniers anti-gaspillage, cohabitation seniors/étudiants, gestion d'artisans, déchets électroniques, consigne à bagages, jardinage sur balcon, prêt d'outils, coworking mobile et reconversion professionnelle.
+
+## Concurrence entre appareils
+
+La fonction de sauvegarde traduit aussi une collision lors de la création simultanée du premier workspace en conflit de révision contrôlé. Le second appareil doit recharger la version récente au lieu d'écraser les choix du premier.
