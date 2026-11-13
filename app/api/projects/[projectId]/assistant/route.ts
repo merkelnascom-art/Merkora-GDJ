@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { buildProjectMemoryDecisionInserts, createDecisionMemory, hydrateDecisionMemory, projectMemoryRowsToConversationHistory, recordDecisionMemoryTurn, type StoredProjectDecision } from "@/lib/universal-project-decision-memory";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createMerkoraConversationReply, validateConversationInput, type ConversationMessage } from "@/lib/assistant/merkora-conversation";
+import { createMerkoraConversationReply, validateConversationInput } from "@/lib/assistant/merkora-conversation";
+import { storedConversationRowsToHistory } from "@/lib/project-conversation-history";
 import { mergeGeminiConversationReply } from "@/lib/assistant/gemini-conversation";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 
@@ -12,14 +13,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
-function storedConversationRowsToHistory(value: unknown): ConversationMessage[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter(isRecord).flatMap((row): ConversationMessage[] => {
-    if ((row.role !== "user" && row.role !== "assistant") ||
-      typeof row.content !== "string" || !row.content.trim()) return [];
-    return [{ role: row.role, content: row.content.slice(0, 5000) }];
-  }).reverse().slice(-60);
-}
 
 function validProjectId(value: unknown): value is string {
   return typeof value === "string" && value.length >= 3 && value.length <= 100 &&
@@ -50,7 +43,7 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
         "GET", token,
       ),
       callUserData(
-        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
+        `project_conversation_messages?select=turn_id,role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
         "GET", token,
       ),
     ]);
@@ -113,7 +106,7 @@ export async function POST(
       ),
       callUserData(`project_ai_processing_consents?select=consented_at,revoked_at&project_id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, "GET", token),
       callUserData(
-        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
+        `project_conversation_messages?select=turn_id,role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
         "GET", token,
       ),
     ]);
