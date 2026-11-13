@@ -9,6 +9,8 @@ import type { BusinessSignalAnalysis } from "./business-signal-analysis";
 import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
+export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign";
+export type DeliverableOption = { id: DeliverableFormat; label: string; description: string; reason: string };
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
 export type MockupConfig = {
   format: MockupFormat;
@@ -21,6 +23,8 @@ export type MockupConfig = {
   /** Profession candidates are selected only after explicit client confirmation. */
   selectedProfessionCandidateIds?: string[];
   selectedUniversalSectorIds?: string[];
+  /** Client-selected output formats; recommendations are never auto-confirmed. */
+  selectedDeliverableFormats?: string[];
 };
 export type MockupModule = DomainOption;
 export type MockupRecommendation = MockupModule & { reason: string };
@@ -47,7 +51,59 @@ export type MockupModel = {
   recommendations: MockupRecommendation[];
   visibleRecommendations: MockupRecommendation[];
   conceptNotice: string;
+  recommendedDeliverables: DeliverableOption[];
+  selectedDeliverableFormats: DeliverableFormat[];
 };
+
+export const DELIVERABLE_FORMAT_CATALOG: readonly Omit<DeliverableOption, "reason">[] = [
+  { id: "web_app", label: "Site ou plateforme web", description: "Un service accessible depuis un navigateur.", },
+  { id: "mobile_app", label: "Application mobile", description: "Un parcours adapté aux téléphones.", },
+  { id: "poster", label: "Affiche ou support visuel", description: "Un support prêt à être décliné pour impression ou diffusion.", },
+  { id: "business_plan", label: "Business plan et modèle économique", description: "Une étude de faisabilité, des coûts et des revenus à vérifier.", },
+  { id: "visual_mockup", label: "Maquette visuelle ou 3D", description: "Une représentation du produit, du service ou de son expérience.", },
+  { id: "physical_prototype", label: "Prototype ou kit physique", description: "Un objet, équipement, kit ou prototype à spécifier.", },
+  { id: "service_blueprint", label: "Plan de service et parcours opérationnel", description: "Les étapes, acteurs, partenaires et opérations du service.", },
+  { id: "technical_specification", label: "Cahier des charges technique", description: "Les exigences, contraintes, composants et critères de validation.", },
+  { id: "communication_campaign", label: "Campagne de communication", description: "Un dispositif de sensibilisation, promotion ou mobilisation.", },
+];
+
+function recommendDeliverables(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome">): DeliverableOption[] {
+  const text = `${project.title} ${project.problem} ${project.desiredOutcome}`.toLocaleLowerCase("fr");
+  const selected = new Set<DeliverableFormat>(["visual_mockup"]);
+  const reasons = new Map<DeliverableFormat, string>([
+    ["visual_mockup", "Une représentation aide à comparer le concept avant de le réaliser."],
+  ]);
+  const add = (id: DeliverableFormat, reason: string) => { selected.add(id); reasons.set(id, reason); };
+
+  if (/application|plateforme|logiciel|site web|réserver|reservation|réservation|catalogue|commande|mettre en relation|espace client/.test(text)) {
+    add("web_app", "Le projet comporte un parcours numérique, une réservation ou une mise en relation à organiser.");
+  }
+  if (/mobile|téléphone|telephone|smartphone|géolocalisation|geolocalisation/.test(text)) {
+    add("mobile_app", "L'usage sur téléphone semble important dans le parcours décrit.");
+  }
+  if (/kit|produit|matériel|materiel|équipement|equipement|prototype|objet|fabrication|balcon|casier|outil|bagage|valise|physique/.test(text)) {
+    add("physical_prototype", "Le résultat attendu comprend un produit, un équipement ou un objet physique à définir.");
+    add("business_plan", "Un modèle économique aidera à estimer les coûts, la fabrication et la commercialisation.");
+  }
+  if (/service|accompagnement|réseau|reseau|partenaire|covoiturage|coworking|prêt|pret|consigne|formation|reconversion|retrait/.test(text)) {
+    add("service_blueprint", "Le projet dépend d'étapes de service, de rôles humains ou de partenaires à coordonner.");
+  }
+  if (/affiche|campagne|sensibilisation|tri des déchets|tri des dechets|communication|événement|evenement|promotion/.test(text)) {
+    add("poster", "Un support visuel peut rendre le message ou l'offre immédiatement compréhensible.");
+    add("communication_campaign", "Le besoin évoque une action de communication à organiser et mesurer.");
+  }
+  if (/entreprise|commerce|budget|prix|vente|revenu|invendu|coût|cout|rentabilité|rentabilite|marché|marche/.test(text) ||
+    project.category === "business" || project.category === "organization") {
+    add("business_plan", "Le projet implique des coûts, des revenus ou une organisation économique à clarifier.");
+  }
+  if (/technique|matériel|materiel|machine|installation|maintenance|norme|sécurité|securite/.test(text)) {
+    add("technical_specification", "Des exigences techniques et des critères de validation devront être définis.");
+  }
+
+  return DELIVERABLE_FORMAT_CATALOG
+    .filter((item) => selected.has(item.id))
+    .map((item) => ({ ...item, reason: reasons.get(item.id) ?? "Format proposé à confirmer avec le client." }));
+}
 
 const formatLabels: Record<MockupFormat, string> = {
   website: "Site web",
@@ -203,5 +259,7 @@ export function buildMockupModel(
     recommendations,
     visibleRecommendations,
     conceptNotice: "Maquette conceptuelle assemblée par MerKora à partir du dossier. Elle illustre une direction possible ; ce n’est pas encore un produit fonctionnel ni une image générée par IA.",
+    recommendedDeliverables: recommendDeliverables(project),
+    selectedDeliverableFormats: (config.selectedDeliverableFormats ?? []).filter((id): id is DeliverableFormat => DELIVERABLE_FORMAT_CATALOG.some((item) => item.id === id)),
   };
 }
