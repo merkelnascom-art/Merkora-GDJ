@@ -40,6 +40,10 @@ export function ProjectMockupStudio({ project }: Props) {
   const [clientQuoteNote, setClientQuoteNote] = useState("");
   const [diagnosticResponses, setDiagnosticResponses] = useState<Record<string, string>>({});
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
+  const selectedSectorIds = config.selectedUniversalSectorIds ?? [];
+  const visibleProfessionCandidates = selectedSectorIds.length
+    ? model.professionCandidates.filter((candidate) => candidate.sectorIds?.some((sectorId) => selectedSectorIds.includes(sectorId)))
+    : model.professionCandidates;
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
   useEffect(() => {
@@ -306,7 +310,7 @@ export function ProjectMockupStudio({ project }: Props) {
             {model.professionCandidates.length > 0 && <div className="mockup-profession-confirmation">
               <span className="mockup-control-title" style={{ display: "block", marginTop: 12 }}>Métiers à confirmer avec le client</span>
               <p className="mockup-control-hint">Voici des pistes issues du référentiel. Coche uniquement les métiers réellement concernés. Aucun métier n’est sélectionné automatiquement et cette liste ne constitue pas une qualification officielle.</p>
-              {model.professionCandidates.map((candidate) => {
+              {visibleProfessionCandidates.map((candidate) => {
                 const selected = model.selectedProfessionCandidates.some((item) => item.id === candidate.id);
                 return <label className="mockup-module-toggle" key={candidate.id}>
                   <input type="checkbox" checked={selected} onChange={() => toggleProfessionCandidate(candidate.id)} />
