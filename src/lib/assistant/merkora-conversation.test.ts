@@ -50,4 +50,20 @@ describe("MerKora conversation core", () => {
     expect(result.projectBlueprint.recommendedOptionId).toBeNull();
     expect(result.projectBlueprint.approvalGates.length).toBe(6);
   });
+
+  it("retains earlier project context while adapting the next question to the latest answer", () => {
+    const result = createMerkoraConversationReply({
+      message: "Oui, c'est un seul projet.",
+      history: [
+        { role: "user", content: "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis." },
+        { role: "assistant", content: "Ces besoins font-ils partie d'un même projet ?" },
+      ],
+    });
+
+    expect(result.intentAnalysis.intentGroups.length).toBeGreaterThan(1);
+    expect(result.discovery.stage).not.toBe("project_scope");
+    expect(result.discovery.stage).toBe("current_process");
+    expect(result.clarifyingQuestions).toEqual([result.discovery.nextQuestion]);
+  });
 });
+
