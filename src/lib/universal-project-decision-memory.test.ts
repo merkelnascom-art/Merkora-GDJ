@@ -30,7 +30,8 @@ describe("universal project decision memory", () => {
       content: "Votre difficulté pourrait venir d'un manque de suivi. C'est une hypothèse à vérifier.",
     });
     expect(updated.confirmedAnswers).toHaveLength(0);
-    expect(updated.hypotheses).toHaveLength(0);
+    expect(updated.hypotheses).toHaveLength(1);
+    expect(updated.hypotheses[0].confirmationRequired).toBe(true);
   });
 
   it("records an explicit client decision and preserves a later correction as history", () => {
