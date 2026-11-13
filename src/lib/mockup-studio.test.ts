@@ -288,4 +288,13 @@ describe("buildMockupModel", () => {
     expect(model.recommendedDeliverables.length).toBeGreaterThan(0);
   });
 
+  it("exposes distinct visual tokens for every palette selected in the Studio", async () => {
+    const { MOCKUP_PALETTE_TOKENS } = await import("./mockup-studio");
+    expect(MOCKUP_PALETTE_TOKENS.violet.accent).toBe("#7865dc");
+    expect(MOCKUP_PALETTE_TOKENS.blue.accent).toBe("#3278ce");
+    expect(MOCKUP_PALETTE_TOKENS.emerald.accent).toBe("#159477");
+    expect(MOCKUP_PALETTE_TOKENS.amber.accent).toBe("#c88322");
+    expect(new Set(Object.values(MOCKUP_PALETTE_TOKENS).map((palette) => palette.accent)).size).toBe(4);
+  });
+
 });
