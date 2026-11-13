@@ -62,7 +62,7 @@ describe("MerKora profession reference", () => {
 
   it("links the new profiles to valid universal sectors without promoting candidate titles", () => {
     const sectorIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
-    const expanded = MERKORA_DETAILED_PROFESSION_PROFILES.filter((profile) => Number(profile.id.slice(-2)) >= 21);
+    const expanded = MERKORA_DETAILED_PROFESSION_PROFILES.filter((profile) => Number(profile.id.replace("profile-", "")) >= 21);
     expect(expanded).toHaveLength(80);
     expect(expanded.every((profile) => profile.sectorIds?.length && profile.sectorIds.every((id) => sectorIds.has(id)))).toBe(true);
     expect(expanded.every((profile) => profile.reviewStatus === "documented_unreviewed")).toBe(true);
