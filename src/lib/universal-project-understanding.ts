@@ -61,7 +61,7 @@ const GROUPS: PatternGroup[] = [
     id: "visitors-and-events",
     subject: "visites, arrivées et événements au domicile",
     action: "conserver ou consulter un historique des visites",
-    patterns: [/\\bamis?\\b|visiteur|visite|vient|viennent|arrive|arrivée|passage|chez moi|domicile|invité|invite/i],
+    patterns: [/\bamis?\b|visiteur|visite|vient|viennent|arrive|arrivée|passage|chez moi|domicile|invité|invite/i],
     questions: [
       "Voulez-vous noter les visites manuellement, permettre aux visiteurs de signaler leur arrivée, ou simplement organiser un agenda ?",
       "Quelles informations sont réellement nécessaires : nom, heure d'arrivée, heure de départ ou motif de visite ?",
