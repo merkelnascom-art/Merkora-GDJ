@@ -66,7 +66,11 @@ function hasReadyDiscovery(discovery: DiscoveryQuestionSelection | null | undefi
   return Boolean(
     discovery?.readyForSolutionReview &&
       discovery.remainingGaps.length === 0 &&
-      discovery.contradictions.length === 0,
+      discovery.contradictions.length === 0 &&
+      discovery.evaluation.status === "reviewable" &&
+      discovery.evaluation.solutionReviewAllowed &&
+      discovery.evaluation.blockingStages.length === 0 &&
+      discovery.evaluation.blockingQuestions.length === 0,
   );
 }
 
