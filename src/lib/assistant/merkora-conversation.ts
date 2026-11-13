@@ -5,6 +5,7 @@ import { identifyDomain, getDomainQuestions, type DomainId } from "../domain-reg
 import { getDomainOptionCatalog } from "../domain-options";
 import { analyzeUniversalProjectIntent, type UniversalProjectUnderstanding } from "../universal-project-understanding";
 import { buildUniversalProjectModel, type UniversalProjectModel } from "../universal-project-model";
+import { buildUniversalProjectBlueprint, type UniversalProjectBlueprint } from "../universal-project-blueprint";
 export type SuggestedModule = { id: string; title: string; description: string; reason: string };
 export type ConversationReply = {
   assistantMessage: string;
@@ -20,6 +21,7 @@ export type ConversationReply = {
   confidence: "high" | "medium" | "low";
   intentAnalysis: UniversalProjectUnderstanding;
   projectModel: UniversalProjectModel;
+  projectBlueprint: UniversalProjectBlueprint;
 };
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -85,6 +87,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   const text = input.message.trim();
   const intentAnalysis = analyzeUniversalProjectIntent(text);
   const projectModel = buildUniversalProjectModel(intentAnalysis);
+  const projectBlueprint = buildUniversalProjectBlueprint(projectModel);
   const match = identifyDomain(text);
   const mixedNeeds = intentAnalysis.intentGroups.length > 1;
   const vague = text.length < 35 ||
@@ -107,6 +110,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     confidence: mixedNeeds ? "low" as const : match.confidence,
     intentAnalysis,
     projectModel,
+    projectBlueprint,
   };
 
   if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
