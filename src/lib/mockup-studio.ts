@@ -164,12 +164,14 @@ const digitalModules: MockupModule[] = [
   { id: "help-center", title: "Aide et accompagnement", description: "Prévoir des explications et des points de contact." },
 ];
 
-function detectDomain(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">): MockupDomain {
+function detectDomain(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome">): MockupDomain {
+  // Classification must be grounded only in the client's original brief.
+  // AI recommendations are derived output and must never feed back into the
+  // source-of-truth signals used to choose a domain.
   const text = [
     project.title,
     project.problem,
     project.desiredOutcome,
-    ...project.recommendations.flatMap((item) => [item.title, item.description, item.reason]),
   ].join(" ").toLocaleLowerCase("fr");
 
   if (/élève|eleve|étudiant|etudiant|orientation|métier|metier|bac\b|formation|école|ecole|scolaire|aptitude|bulletin/.test(text)) return "education";
