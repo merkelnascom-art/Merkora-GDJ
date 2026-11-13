@@ -109,7 +109,8 @@ export function selectNextDiscoveryQuestion(
   const scopeAlreadyAnswered = shortAnswerToScopeQuestion || hasAny(answers, [
     /même projet|un seul projet|ensemble|séparément|projets distincts|deux projets/i,
   ]);
-  const contradictions = detectContradictions(analysis.rawIntent);
+  // Compare client statements across turns, not just the latest message.
+  const contradictions = detectContradictions(answers);
   const gaps: Array<{ stage: DiscoveryStage; question: string; reason: string }> = [];
 
   if (contradictions.length > 0) {
