@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ConversationMessage } from "./assistant/merkora-conversation";
 
 export const DECISION_MEMORY_VERSION = 1;
@@ -106,7 +107,7 @@ export function recordDecisionMemoryTurn(
   const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
 
   if (content) {
-    const answerId = `answer-${Date.parse(next.updatedAt)}-${next.clientAnswers.length + 1}`;
+    const answerId = randomUUID();
     next.clientAnswers.push({
       id: answerId,
       question: priorQuestion.includes("?") ? priorQuestion : "",
@@ -120,7 +121,7 @@ export function recordDecisionMemoryTurn(
 
   if (explicitDecision(content, priorQuestion)) {
     const previous = [...next.decisions].reverse().find((decision) => decision.status === "confirmed");
-    const decisionId = `decision-${Date.parse(next.updatedAt)}-${next.decisions.length + 1}`;
+    const decisionId = randomUUID();
     if (previous && isCorrection(content)) {
       previous.status = "superseded";
       previous.supersededBy = decisionId;
