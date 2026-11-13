@@ -188,7 +188,8 @@ export async function POST(
       role: "user", content: input.value.message,
     }, previousAssistantMessage);
     const decisionMemory = recordDecisionMemoryTurn(decisionMemoryAfterUser, {
-      role: "assistant", content: finalReply.assistantMessage,
+      role: "assistant",
+      content: [finalReply.assistantMessage, ...finalReply.clarifyingQuestions].join("\n"),
     });
     const nextWorkspacePayload = {
       ...workspacePayload,
