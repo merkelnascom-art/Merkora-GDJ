@@ -29,6 +29,9 @@ export type DiscoveryEvaluation = {
   unresolvedUnknowns: string[];
   blockingStages: DiscoveryStage[];
   blockingQuestions: string[];
+  evidenceCoverage: UniversalProjectUnderstanding["analysisMetrics"];
+  /** This is checklist coverage, not a probability or calibrated confidence score. */
+  coverageMeaning: "coverage_indicator_not_confidence";
   status: "blocked" | "reviewable";
   /** Reviewable means ready to validate a summary, not permission to build or deploy. */
   solutionReviewAllowed: boolean;
@@ -135,6 +138,8 @@ function buildEvaluation(
     unresolvedUnknowns: uniqueStatements(gaps.map((gap) => gap.reason)),
     blockingStages,
     blockingQuestions: gaps.map((gap) => gap.question),
+    evidenceCoverage: analysis.analysisMetrics,
+    coverageMeaning: "coverage_indicator_not_confidence",
     status: gaps.length > 0 ? "blocked" : "reviewable",
     solutionReviewAllowed: gaps.length === 0,
   };
