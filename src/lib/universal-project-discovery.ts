@@ -20,6 +20,20 @@ export type DiscoveryContradiction = {
   confirmationRequired: true;
 };
 
+export type DiscoveryEvaluation = {
+  /** Statements explicitly supplied by the client; assistant wording is excluded. */
+  clientStatements: string[];
+  /** Interpretations that still require the client's confirmation. */
+  hypothesesToConfirm: string[];
+  /** Active unknowns represented by unresolved discovery gates. */
+  unresolvedUnknowns: string[];
+  blockingStages: DiscoveryStage[];
+  blockingQuestions: string[];
+  status: "blocked" | "reviewable";
+  /** Reviewable means ready to validate a summary, not permission to build or deploy. */
+  solutionReviewAllowed: boolean;
+};
+
 export type DiscoveryQuestionSelection = {
   stage: DiscoveryStage;
   contradictions: DiscoveryContradiction[];
@@ -27,6 +41,7 @@ export type DiscoveryQuestionSelection = {
   remainingGaps: DiscoveryStage[];
   readyForSolutionReview: boolean;
   reason: string;
+  evaluation: DiscoveryEvaluation;
 };
 
 function userHistory(history: ConversationMessage[]): string {
@@ -96,6 +111,33 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
 
 function hasAny(text: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(text));
+}
+
+function uniqueStatements(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function buildEvaluation(
+  analysis: UniversalProjectUnderstanding,
+  history: ConversationMessage[],
+  gaps: Array<{ stage: DiscoveryStage; question: string; reason: string }>,
+): DiscoveryEvaluation {
+  const clientStatements = uniqueStatements([
+    ...analysis.statedFacts.map((fact) => fact.text),
+    ...history
+      .filter((message) => message.role === "user")
+      .map((message) => message.content),
+  ]);
+  const blockingStages = gaps.map((gap) => gap.stage);
+  return {
+    clientStatements,
+    hypothesesToConfirm: uniqueStatements(analysis.hypotheses.map((item) => item.statement)),
+    unresolvedUnknowns: uniqueStatements(gaps.map((gap) => gap.reason)),
+    blockingStages,
+    blockingQuestions: gaps.map((gap) => gap.question),
+    status: gaps.length > 0 ? "blocked" : "reviewable",
+    solutionReviewAllowed: gaps.length === 0,
+  };
 }
 
 /**
@@ -226,6 +268,7 @@ export function selectNextDiscoveryQuestion(
       remainingGaps: gaps.map((gap) => gap.stage),
       readyForSolutionReview: false,
       reason: gaps[0].reason,
+      evaluation: buildEvaluation(analysis, history, gaps),
     };
   }
 
@@ -236,5 +279,6 @@ export function selectNextDiscoveryQuestion(
     remainingGaps: [],
     readyForSolutionReview: true,
     reason: "Les principaux points de découverte ont reçu une première réponse ; le client doit encore valider le résumé.",
+    evaluation: buildEvaluation(analysis, history, gaps),
   };
 }
