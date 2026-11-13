@@ -145,16 +145,17 @@ export async function POST(
       ? (decisionsResult.data.filter(isRecord) as StoredProjectDecision[]).reverse()
       : [];
     const currentDecisionMemory = hydrateDecisionMemory(projectId, storedDecisionRows);
-    const storedHistory = projectMemoryRowsToConversationHistory(storedDecisionRows);
     // Only server-persisted project history is trusted; browser history is untrusted input.
-    const persistedConversation = conversationResult.ok
-      ? storedConversationRowsToHistory(conversationResult.data) : [];
+    const persistedRows = conversationResult.ok && Array.isArray(conversationResult.data)
+      ? conversationResult.data.filter(isRecord) as StoredProjectConversationMessage[]
+      : [];
+    const persistedConversation = storedConversationRowsToHistory(persistedRows);
     const initialDescription = typeof project.problem === "string" ? project.problem.trim() : "";
     const history = [
       ...(initialDescription && !persistedConversation.some((item) => item.role === "user" && item.content.trim() === initialDescription)
         ? [{ role: "user" as const, content: initialDescription }]
         : []),
-      ...(persistedConversation.length ? persistedConversation : storedHistory),
+      ...mergeProjectConversationHistory(persistedRows, storedDecisionRows),
     ];
     // The authenticated owner lookup and project_id filters above bound every retrieval source.
     const knowledgeDocuments = buildProjectKnowledgeDocuments(project, storedDecisionRows, persistedConversation);
