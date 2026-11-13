@@ -57,6 +57,20 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+  it("detects conflicting access instructions and asks for clarification before proceeding", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, []);
+
+    expect(result.stage).toBe("resolve_contradiction");
+    expect(result.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "access", confirmationRequired: true }),
+    ]));
+    expect(result.nextQuestion).toMatch(/qui pourra|personnes autorisées/i);
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
   it("returns one question at a time and never declares a solution ready while critical gaps remain", () => {
     const analysis = analyzeUniversalProjectIntent("Je veux mieux organiser certaines choses.");
     const result = selectNextDiscoveryQuestion(analysis, []);
