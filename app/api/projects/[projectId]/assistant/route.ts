@@ -18,7 +18,7 @@ function storedConversationRowsToHistory(value: unknown): ConversationMessage[] 
     if ((row.role !== "user" && row.role !== "assistant") ||
       typeof row.content !== "string" || !row.content.trim()) return [];
     return [{ role: row.role, content: row.content.slice(0, 5000) }];
-  }).slice(-60);
+  }).reverse().slice(-60);
 }
 
 function validProjectId(value: unknown): value is string {
@@ -50,7 +50,7 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
         "GET", token,
       ),
       callUserData(
-        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=500`,
+        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
         "GET", token,
       ),
     ]);
@@ -113,7 +113,7 @@ export async function POST(
       ),
       callUserData(`project_ai_processing_consents?select=consented_at,revoked_at&project_id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, "GET", token),
       callUserData(
-        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=500`,
+        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=500`,
         "GET", token,
       ),
     ]);
