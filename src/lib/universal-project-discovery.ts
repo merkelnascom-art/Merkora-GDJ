@@ -2,6 +2,7 @@ import type { ConversationMessage } from "./assistant/merkora-conversation";
 import type { UniversalProjectUnderstanding } from "./universal-project-understanding";
 
 export type DiscoveryStage =
+  | "resolve_contradiction"
   | "project_scope"
   | "current_process"
   | "desired_outcome"
@@ -11,8 +12,17 @@ export type DiscoveryStage =
   | "data_needs"
   | "solution_review";
 
+export type DiscoveryContradiction = {
+  topic: "access" | "connectivity" | "automation";
+  statementA: string;
+  statementB: string;
+  question: string;
+  confirmationRequired: true;
+};
+
 export type DiscoveryQuestionSelection = {
   stage: DiscoveryStage;
+  contradictions: DiscoveryContradiction[];
   nextQuestion: string;
   remainingGaps: DiscoveryStage[];
   readyForSolutionReview: boolean;
@@ -24,6 +34,51 @@ function userHistory(history: ConversationMessage[]): string {
     .filter((message) => message.role === "user")
     .map((message) => message.content)
     .join(" ");
+}
+
+function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
+  const statements = rawIntent
+    .split(/(?<=[.!?;])\\s+|\\n+/)
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+  const pairs: Array<{
+    topic: DiscoveryContradiction["topic"];
+    broad: RegExp;
+    restrictive: RegExp;
+    question: string;
+  }> = [
+    {
+      topic: "access",
+      broad: /tout le monde|tous les membres|toute la famille|toute l'équipe|tout le personnel|chacun peut consulter|accès à tous/i,
+      restrictive: /seul(?:e)? moi|uniquement moi|personne d'autre|seul le responsable|accès privé|moi uniquement/i,
+      question: "Qui doit réellement pouvoir consulter ces informations : tout le groupe, certaines personnes précises ou uniquement vous ?",
+    },
+    {
+      topic: "connectivity",
+      broad: /connexion permanente|toujours connecté|internet obligatoire|nécessite internet/i,
+      restrictive: /sans connexion|hors ligne|offline|même sans internet/i,
+      question: "La solution doit-elle fonctionner uniquement avec Internet, uniquement hors ligne ou dans les deux situations ?",
+    },
+    {
+      topic: "automation",
+      broad: /automatiser|automatique|tout seul|sans intervention/i,
+      restrictive: /manuellement|à la main|sans automatisation|je veux tout faire moi-même/i,
+      question: "Quelles opérations doivent être automatiques et lesquelles doivent rester manuelles ?",
+    },
+  ];
+
+  return pairs.flatMap((pair) => {
+    const statementA = statements.find((statement) => pair.broad.test(statement));
+    const statementB = statements.find((statement) => pair.restrictive.test(statement));
+    if (!statementA || !statementB || statementA === statementB) return [];
+    return [{
+      topic: pair.topic,
+      statementA,
+      statementB,
+      question: pair.question,
+      confirmationRequired: true as const,
+    }];
+  });
 }
 
 function hasAny(text: string, patterns: RegExp[]): boolean {
@@ -48,7 +103,16 @@ export function selectNextDiscoveryQuestion(
   const scopeAlreadyAnswered = shortAnswerToScopeQuestion || hasAny(answers, [
     /même projet|un seul projet|ensemble|séparément|projets distincts|deux projets/i,
   ]);
+  const contradictions = detectContradictions(analysis.rawIntent);
   const gaps: Array<{ stage: DiscoveryStage; question: string; reason: string }> = [];
+
+  if (contradictions.length > 0) {
+    gaps.push({
+      stage: "resolve_contradiction",
+      question: contradictions[0].question,
+      reason: "Deux indications du client semblent incompatibles et doivent être clarifiées avant de concevoir les accès ou le fonctionnement.",
+    });
+  }
 
   if (analysis.intentGroups.length > 1 && !scopeAlreadyAnswered) {
     gaps.push({
@@ -121,6 +185,7 @@ export function selectNextDiscoveryQuestion(
   if (gaps.length > 0) {
     return {
       stage: gaps[0].stage,
+      contradictions,
       nextQuestion: gaps[0].question,
       remainingGaps: gaps.map((gap) => gap.stage),
       readyForSolutionReview: false,
@@ -130,6 +195,7 @@ export function selectNextDiscoveryQuestion(
 
   return {
     stage: "solution_review",
+    contradictions,
     nextQuestion: "Nous avons les premières informations essentielles. Souhaitez-vous vérifier ensemble ce résumé avant de comparer les différentes formes de solution ?",
     remainingGaps: [],
     readyForSolutionReview: true,
