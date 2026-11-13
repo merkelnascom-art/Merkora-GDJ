@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Project } from "@/lib/project-types";
 import { getUniversalFamilyById } from "@/lib/universal-reference";
 import {
@@ -30,6 +30,11 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
 export function ProjectMockupStudio({ project }: Props) {
   const [config, setConfig] = useState<MockupConfig>({ format: "website", palette: "violet", enabledModules: [] });
   const [ready, setReady] = useState(false);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState("Vérification de la mémoire en ligne…");
+  const workspaceRevisionRef = useRef(0);
+  const cloudAvailableRef = useRef(false);
+  const skipCloudSaveRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<LocalReviewStatus>("draft");
   const [reviewNote, setReviewNote] = useState("");
@@ -85,6 +90,128 @@ export function ProjectMockupStudio({ project }: Props) {
       setReady(true);
     }
   }, [storageKey]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadCloudWorkspace() {
+      try {
+        const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}/workspace`, { cache: "no-store" });
+        if (!response.ok) {
+          cloudAvailableRef.current = false;
+          if (active) setCloudSyncStatus(response.status === 401 ? "Connectez-vous pour synchroniser" : "Mémoire en ligne indisponible");
+          return;
+        }
+        const result: unknown = await response.json();
+        const workspace = result && typeof result === "object" && "workspace" in result
+          ? (result as { workspace: unknown }).workspace : null;
+        if (workspace && typeof workspace === "object") {
+          const row = workspace as { revision?: unknown; payload?: unknown };
+          workspaceRevisionRef.current = typeof row.revision === "number" ? row.revision : 0;
+          const payload = row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+            ? row.payload as Record<string, unknown> : {};
+          const saved = payload.studioConfig && typeof payload.studioConfig === "object" && !Array.isArray(payload.studioConfig)
+            ? payload.studioConfig as StoredMockupConfig : null;
+          if (saved) {
+            const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
+            const palettes: MockupPalette[] = ["violet", "blue", "emerald", "amber"];
+            setConfig({
+              format: formats.includes(saved.format as MockupFormat) ? saved.format as MockupFormat : "website",
+              palette: palettes.includes(saved.palette as MockupPalette) ? saved.palette as MockupPalette : "violet",
+              enabledModules: Array.isArray(saved.enabledModules) ? saved.enabledModules.filter((id): id is string => typeof id === "string") : [],
+              moduleSelectionConfirmed: saved.moduleSelectionConfirmed === true,
+              ...(Array.isArray(saved.selectedRecommendationIds) ? { selectedRecommendationIds: saved.selectedRecommendationIds.filter((id): id is string => typeof id === "string") } : {}),
+              ...(Array.isArray(saved.selectedProfessionCandidateIds) ? { selectedProfessionCandidateIds: saved.selectedProfessionCandidateIds.filter((id): id is string => typeof id === "string") } : {}),
+              ...(Array.isArray(saved.selectedUniversalSectorIds) ? { selectedUniversalSectorIds: saved.selectedUniversalSectorIds.filter((id): id is string => typeof id === "string") } : {}),
+            });
+            setDiagnosticResponses(saved.diagnosticSchemaVersion === 1 && saved.diagnosticResponses && typeof saved.diagnosticResponses === "object" && !Array.isArray(saved.diagnosticResponses)
+              ? Object.fromEntries(Object.entries(saved.diagnosticResponses).filter((entry): entry is [string, string] => typeof entry[1] === "string").map(([id, value]) => [id, value.slice(0, 4000)]))
+              : {});
+            setReviewStatus(saved.reviewStatus === "approved" || saved.reviewStatus === "changes_requested" ? saved.reviewStatus : "draft");
+            setReviewNote(typeof saved.reviewNote === "string" ? saved.reviewNote.slice(0, 1200) : "");
+            setClientQuoteResponse(saved.clientQuoteResponse === "accepted" || saved.clientQuoteResponse === "changes_requested" || saved.clientQuoteResponse === "negotiate" ? saved.clientQuoteResponse : "undecided");
+            setClientQuoteNote(typeof saved.clientQuoteNote === "string" ? saved.clientQuoteNote.slice(0, 1200) : "");
+            skipCloudSaveRef.current = true;
+          }
+        } else {
+          workspaceRevisionRef.current = 0;
+        }
+        cloudAvailableRef.current = true;
+        if (active) setCloudSyncStatus("Mémoire du projet synchronisée");
+      } catch {
+        cloudAvailableRef.current = false;
+        if (active) setCloudSyncStatus("Synchronisation en attente");
+      } finally {
+        if (active) setCloudLoaded(true);
+      }
+    }
+    void loadCloudWorkspace();
+    return () => { active = false; };
+  }, [project.id]);
+
+  useEffect(() => {
+    if (!ready || !cloudLoaded || !cloudAvailableRef.current) return;
+    if (skipCloudSaveRef.current) {
+      skipCloudSaveRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      setCloudSyncStatus("Synchronisation…");
+      const payload = {
+        schemaVersion: 1,
+        project: {
+          id: project.id, title: project.title, category: project.category,
+          problem: project.problem, desiredOutcome: project.desiredOutcome,
+          budget: project.budget, urgency: project.urgency,
+        },
+        discovery: project.discovery ?? null,
+        studioConfig: {
+          ...config, diagnosticSchemaVersion: 1, diagnosticResponses,
+          reviewStatus, reviewNote, clientQuoteResponse, clientQuoteNote,
+        },
+        clientConfirmedChoices: {
+          selectedSectorIds: config.selectedUniversalSectorIds ?? [],
+          selectedProfessionCandidateIds: config.selectedProfessionCandidateIds ?? [],
+          selectedRecommendationIds: config.selectedRecommendationIds ?? [],
+          enabledModules: config.enabledModules,
+          moduleSelectionConfirmed: config.moduleSelectionConfirmed === true,
+          deliverableFormat: config.format,
+          visualDirection: config.palette,
+          diagnosticResponses,
+          clientQuoteResponse,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      try {
+        const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}/workspace`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedRevision: workspaceRevisionRef.current,
+            payload,
+            eventType: Object.keys(diagnosticResponses).length ? "diagnostic_answer_saved" : "client_decision",
+            summary: "Réponses et choix de conception du client synchronisés depuis le Studio.",
+          }),
+        });
+        const result: unknown = await response.json().catch(() => null);
+        if (!response.ok) {
+          if (response.status === 409) {
+            cloudAvailableRef.current = false;
+            setCloudSyncStatus("Conflit : rechargez la dernière version");
+          } else {
+            setCloudSyncStatus("Synchronisation non confirmée");
+          }
+          return;
+        }
+        if (result && typeof result === "object" && "revision" in result && typeof (result as { revision: unknown }).revision === "number") {
+          workspaceRevisionRef.current = (result as { revision: number }).revision;
+        }
+        setCloudSyncStatus("Toutes vos décisions sont synchronisées");
+      } catch {
+        setCloudSyncStatus("Synchronisation en attente");
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [ready, cloudLoaded, project, config, diagnosticResponses, reviewStatus, reviewNote, clientQuoteResponse, clientQuoteNote]);
 
   useEffect(() => {
     if (!ready) return;
@@ -270,6 +397,7 @@ export function ProjectMockupStudio({ project }: Props) {
           <p>MerKora assemble un premier aperçu à partir du dossier. Le client pourra comparer les directions, demander des changements et valider le concept avant le devis.</p>
         </div>
         <span className="mockup-concept-badge">Concept · non fonctionnel</span>
+        <span className="local-tag" role="status">{cloudSyncStatus}</span>
       </div>
 
       <div className="mockup-studio-layout">
@@ -420,7 +548,7 @@ export function ProjectMockupStudio({ project }: Props) {
             </section>
           )}
           <button type="button" className="button button-quiet mockup-copy-button" onClick={() => void copySummary()}>{copied ? "Résumé copié ✓" : "Copier le résumé du concept ↗"}</button>
-          <p className="mockup-local-note">Les préférences de présentation sont enregistrées dans ce navigateur uniquement. Elles ne sont pas encore synchronisées dans le cloud.</p>
+          <p className="mockup-local-note">Les réponses du diagnostic, secteurs, métiers, modules et choix de présentation sont synchronisés dans la mémoire du projet lorsque vous êtes connecté.</p>
         </aside>
 
         <div className={`mockup-preview-wrap palette-${model.palette} format-${model.format}`}>
