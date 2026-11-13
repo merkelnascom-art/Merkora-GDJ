@@ -154,7 +154,7 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       {!consented ? (
         <div className="discovery-notice" style={{ marginBottom: "1rem" }}>
           <strong>Traitement assisté par intelligence artificielle</strong>
-          <p>Pour approfondir votre dossier et préparer des propositions, MerKora peut utiliser ses propres traitements ainsi que des services externes spécialisés. Certaines informations de votre projet pourront leur être transmises uniquement pour fournir ce service. Les détails sur les catégories de prestataires et l'utilisation des données figurent dans la politique de confidentialité. N'envoyez aucun mot de passe ni donnée inutilement sensible.</p>
+          <p>Pour approfondir votre dossier et préparer des propositions, MerKora peut utiliser ses propres traitements ainsi que des services externes spécialisés. Certaines informations de votre projet pourront leur être transmises uniquement pour fournir ce service. Consultez notre <a href="/confidentialite">notice de confidentialité et de traitement assisté</a> pour comprendre les données concernées, vos choix et les vérifications encore nécessaires avant l’ouverture publique. N’envoyez aucun mot de passe ni donnée inutilement sensible.</p>
           <label style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", marginTop: "0.75rem" }}>
             <input type="checkbox" checked={consentChecked} onChange={(event) => setConsentChecked(event.target.checked)} />
             <span>J'ai lu cette information et j'autorise le traitement assisté de mon dossier, y compris par des prestataires externes lorsque cela est nécessaire.</span>
