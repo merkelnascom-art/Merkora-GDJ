@@ -90,7 +90,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   const accumulatedProjectDescription = [
     ...input.history.filter((item) => item.role === "user").map((item) => item.content),
     text,
-  ].join("\\n").slice(-5000);
+  ].join("\n").slice(-5000);
   const intentAnalysis = analyzeUniversalProjectIntent(accumulatedProjectDescription);
   const projectModel = buildUniversalProjectModel(intentAnalysis);
   const projectBlueprint = buildUniversalProjectBlueprint(projectModel);
