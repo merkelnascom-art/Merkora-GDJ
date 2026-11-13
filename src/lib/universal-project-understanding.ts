@@ -14,6 +14,7 @@ export type IntentGroup = {
   confidence: "high" | "medium" | "low";
 };
 
+/** A statement reported by the client; provenance is known, external truth is not independently verified. */
 export type EvidenceItem = { text: string; source: "client"; };
 export type AnalysisHypothesis = { statement: string; reason: string; confirmationRequired: true; };
 export type UniversalProjectUnderstanding = {
