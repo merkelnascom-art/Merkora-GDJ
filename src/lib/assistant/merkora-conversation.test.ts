@@ -68,7 +68,7 @@ describe("MerKora conversation core", () => {
 
   it("surfaces a contradiction before offering modules and asks only one clarifying question", () => {
     const result = createMerkoraConversationReply({
-      message: "Toute ma famille doit pouvoir consulter les contributions. Finalement, seul moi peux voir les montants.",
+      message: "Toute ma famille doit pouvoir consulter les contributions. Seul moi peux voir les montants.",
       history: [],
     });
 
