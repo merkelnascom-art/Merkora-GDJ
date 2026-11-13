@@ -22,7 +22,7 @@ describe("MerKora profession reference", () => {
   });
 
   it("gives every candidate a unique stable ID and a valid family", () => {
-    const familyIds = new Set(MERKORA_UNIVERSAL_FAMILIES.map((family) => family.id));
+    const familyIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.map((family) => family.id));
     const candidateIds = MERKORA_PROFESSION_CANDIDATES.map((candidate) => candidate.id);
     expect(new Set(candidateIds).size).toBe(candidateIds.length);
     expect(MERKORA_PROFESSION_CANDIDATES.every((candidate) =>
@@ -31,7 +31,7 @@ describe("MerKora profession reference", () => {
   });
 
   it("maps all 2,000 professions to valid universal sectors", () => {
-    const sectorIds = new Set(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
+    const sectorIds = new Set<string>(MERKORA_UNIVERSAL_FAMILIES.flatMap((family) => family.sectors.map((sector) => sector.id)));
     const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
     expect(expanded).toHaveLength(2000);
     expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
