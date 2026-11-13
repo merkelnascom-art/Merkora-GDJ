@@ -34,6 +34,7 @@ export function ProjectMockupStudio({ project }: Props) {
   const [cloudLoaded, setCloudLoaded] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState("Vérification de la mémoire en ligne…");
   const workspaceRevisionRef = useRef(0);
+  const workspacePayloadRef = useRef<Record<string, unknown>>({});
   const cloudAvailableRef = useRef(false);
   const skipCloudSaveRef = useRef(false);
   const [copied, setCopied] = useState(false);
@@ -113,6 +114,7 @@ export function ProjectMockupStudio({ project }: Props) {
           workspaceRevisionRef.current = typeof row.revision === "number" ? row.revision : 0;
           const payload = row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
             ? row.payload as Record<string, unknown> : {};
+          workspacePayloadRef.current = payload;
           const saved = payload.studioConfig && typeof payload.studioConfig === "object" && !Array.isArray(payload.studioConfig)
             ? payload.studioConfig as StoredMockupConfig : null;
           if (saved) {
@@ -165,6 +167,7 @@ export function ProjectMockupStudio({ project }: Props) {
     const timer = window.setTimeout(async () => {
       setCloudSyncStatus("Synchronisation…");
       const payload = {
+        ...workspacePayloadRef.current,
         schemaVersion: 1,
         project: {
           id: project.id, title: project.title, category: project.category,
@@ -217,6 +220,7 @@ export function ProjectMockupStudio({ project }: Props) {
           }
           return;
         }
+        workspacePayloadRef.current = payload;
         if (result && typeof result === "object" && "revision" in result && typeof (result as { revision: unknown }).revision === "number") {
           workspaceRevisionRef.current = (result as { revision: number }).revision;
         }
