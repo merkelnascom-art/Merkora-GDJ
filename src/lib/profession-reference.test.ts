@@ -4,17 +4,21 @@ import {
   MERKORA_DETAILED_PROFESSION_PROFILES,
   MERKORA_PROFESSION_CANDIDATES,
   PROFESSION_CANDIDATE_IMPORTED_COUNT,
+  PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT,
+  PROFESSION_CANDIDATE_TOTAL_COUNT,
   PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT,
   PROFESSION_CANDIDATE_SOURCE_GAP,
   getProfessionCandidatesForFamilies,
 } from "./profession-reference";
 
 describe("MerKora profession reference", () => {
-  it("imports only the candidate entries actually present in the source index", () => {
+  it("keeps source-index imports distinct from the curated expansion", () => {
     expect(PROFESSION_CANDIDATE_SOURCE_DECLARED_COUNT).toBe(500);
     expect(PROFESSION_CANDIDATE_IMPORTED_COUNT).toBe(484);
     expect(PROFESSION_CANDIDATE_SOURCE_GAP).toBe(16);
-    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(484);
+    expect(PROFESSION_CANDIDATE_CURATED_ADDITION_COUNT).toBe(200);
+    expect(PROFESSION_CANDIDATE_TOTAL_COUNT).toBe(684);
+    expect(MERKORA_PROFESSION_CANDIDATES).toHaveLength(684);
   });
 
   it("gives every candidate a unique stable ID and a valid family", () => {
