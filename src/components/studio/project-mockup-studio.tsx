@@ -287,7 +287,7 @@ export function ProjectMockupStudio({ project }: Props) {
       `Format envisagé : ${model.formatLabel}`,
       ...(model.selectedDeliverableFormats.length > 0 ? ["Livrables confirmés par le client :", ...model.selectedDeliverableFormats.map((id) => `- ${DELIVERABLE_FORMAT_CATALOG.find((item) => item.id === id)?.label ?? id}`)] : ["Livrables : aucun format confirmé pour le moment"]),
       "",
-      "PÉRIMÈTRE ENVISAGÉ"
+      "PÉRIMÈTRE ENVISAGÉ",
       ...(model.selectedProfessionCandidates.length > 0 ? ["Métiers confirmés par le client :", ...model.selectedProfessionCandidates.map((item) => `- ${item.title}`)] : ["Métier : à confirmer avec le client"]),
       ...(model.activityDiagnostic.selectedSectors.length > 0 ? ["Secteurs confirmés :", ...model.activityDiagnostic.selectedSectors.map((item) => `- ${item.label}`)] : ["Secteur : à confirmer"]),
       "Questions de diagnostic à approfondir :",
