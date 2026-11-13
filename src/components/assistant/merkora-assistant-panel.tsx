@@ -105,14 +105,18 @@ export function MerkoraAssistantPanel({ projectId, projectTitle, problem, desire
       });
       const payload: unknown = await response.json().catch(() => null);
       if (response.ok && payload && typeof payload === "object" && "reply" in payload) {
-        const result = payload as { reply: ConversationReply; synchronized?: boolean };
+        const result = payload as { reply: ConversationReply; synchronized?: boolean; conversationSynchronized?: boolean };
         setReply(result.reply);
         setMessages((current) => [
           ...current,
           { role: "user", content: submitted },
           { role: "assistant", content: result.reply.assistantMessage },
         ]);
-        if (result.synchronized !== true) setError("Votre réponse est affichée, mais sa synchronisation n'est pas confirmée.");
+        if (result.synchronized !== true) {
+          setError("Votre réponse est affichée, mais la mémoire décisionnelle n'est pas synchronisée.");
+        } else if (result.conversationSynchronized !== true) {
+          setError("Votre décision est enregistrée, mais l'historique complet des échanges n'est pas encore synchronisé. La mémoire conversationnelle nécessite l'activation de la migration dédiée.");
+        }
         setMessage("");
         return;
       }
