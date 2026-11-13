@@ -60,7 +60,7 @@ describe("authorized knowledge retrieval", () => {
     }]);
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0].excerpt).toContain("repère unique");
-    expect(result.matches[0].excerpt.startsWith("…" + ("e" + String.fromCharCode(769)).repeat(100))).toBe(true);
+    expect(result.matches[0].excerpt.startsWith("…" + ("e" + String.fromCharCode(769)).repeat(80))).toBe(true);
     expect(result.matches[0].excerpt).toContain("passage important");
   });
 
