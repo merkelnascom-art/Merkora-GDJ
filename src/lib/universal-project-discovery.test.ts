@@ -74,7 +74,7 @@ describe("selectNextDiscoveryQuestion", () => {
 
   it("detects conflicting access requirements stated in different conversation turns", () => {
     const analysis = analyzeUniversalProjectIntent(
-      "Finalement, seul moi peux consulter les montants.",
+      "Seul moi peux consulter les montants.",
     );
     const result = selectNextDiscoveryQuestion(analysis, [
       { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
