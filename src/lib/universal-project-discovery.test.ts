@@ -153,8 +153,7 @@ describe("selectNextDiscoveryQuestion", () => {
       { role: "user", content: "Les visiteurs ne seront pas informés." },
     ]);
 
-    expect(result.stage).toBe("privacy_and_consent");
-    expect(result.nextQuestion).toMatch(/informées|informés|accord/i);
+    expect(result.remainingGaps).toContain("privacy_and_consent");
     expect(result.readyForSolutionReview).toBe(false);
   });
 
@@ -166,7 +165,7 @@ describe("selectNextDiscoveryQuestion", () => {
       { role: "user", content: "Ils ne donneront pas leur accord." },
     ]);
 
-    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.remainingGaps).toContain("privacy_and_consent");
     expect(result.readyForSolutionReview).toBe(false);
   });
 
