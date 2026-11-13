@@ -126,10 +126,12 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   // Non-critical gaps can remain visible while MerKora offers clearly provisional
   // module ideas. Contradictions, project-scope ambiguity and privacy/consent
   // questions are hard gates: do not propose modules before they are clarified.
-  const criticalDiscoveryStages = new Set(["resolve_contradiction", "project_scope", "privacy_and_consent"]);
-  const discoveryBlocked = discovery.evaluation.blockingStages.some((stage) =>
-    criticalDiscoveryStages.has(stage),
-  );
+  const criticalDiscoveryStages = new Set(["resolve_contradiction", "project_scope"]);
+  const hasVisitorConsentBlock =
+    discovery.evaluation.blockingStages.includes("privacy_and_consent") &&
+    intentAnalysis.intentGroups.some((group) => group.id === "visitors-and-events");
+  const discoveryBlocked = hasVisitorConsentBlock ||
+    discovery.evaluation.blockingStages.some((stage) => criticalDiscoveryStages.has(stage));
 
   if (discoveryBlocked || vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
     return {
