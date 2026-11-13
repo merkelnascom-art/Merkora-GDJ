@@ -559,10 +559,10 @@ export function ProjectMockupStudio({ project }: Props) {
             <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
             <div className="mockup-review-heading">
               <div>
-                <span className="mockup-control-title">Étape 03 · Retour sur le concept</span>
+                <span className="mockup-control-title">Étape 06 · Retour sur le concept</span>
                 <h4 id="mockup-review-title">Le concept correspond-il au besoin ?</h4>
               </div>
-              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Validé localement" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
+              <span className={`mockup-review-status status-${reviewStatus}`}>{reviewStatus === "approved" ? "Concept approuvé" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</span>
             </div>
             <label className="mockup-review-note-label" htmlFor={`mockup-review-note-${project.id}`}>Commentaires ou changements souhaités</label>
             <textarea id={`mockup-review-note-${project.id}`} className="mockup-review-note" maxLength={1200} value={reviewNote} onChange={(event) => { setReviewNote(event.target.value); if (reviewStatus === "approved") setReviewStatus("draft"); }} placeholder="Ex. : ajouter un espace pour les employés, retirer la partie stock, changer la couleur…"/>
