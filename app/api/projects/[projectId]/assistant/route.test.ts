@@ -74,7 +74,7 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(String(vi.mocked(callUserData).mock.calls[0][0])).toContain("user_id=eq.client-1");
   });
 
-  it("returns MerKora's deterministic analysis and persists both sides of the conversation", async () => {
+  it("returns MerKora's deterministic analysis and persists the client answer", async () => {
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [{ role: "assistant", content: "Comment suivez-vous les retards et les mouvements de caisse ?" }],
