@@ -103,7 +103,7 @@ export function recordDecisionMemoryTurn(
   const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
 
   if (priorQuestion.includes("?") && content) {
-    const answerId = `answer-${next.clientAnswers.length + 1}`;
+    const answerId = `answer-${Date.parse(next.updatedAt)}-${next.clientAnswers.length + 1}`;
     next.clientAnswers.push({
       id: answerId,
       question: priorQuestion,
@@ -117,7 +117,7 @@ export function recordDecisionMemoryTurn(
 
   if (explicitDecision(content)) {
     const previous = [...next.decisions].reverse().find((decision) => decision.status === "confirmed");
-    const decisionId = `decision-${next.decisions.length + 1}`;
+    const decisionId = `decision-${Date.parse(next.updatedAt)}-${next.decisions.length + 1}`;
     if (previous && isCorrection(content)) {
       previous.status = "superseded";
       previous.supersededBy = decisionId;
@@ -189,4 +189,123 @@ export function parseDecisionMemory(value: unknown, expectedProjectId: string): 
     decisions,
     hypotheses,
   };
+}
+
+export type StoredProjectDecision = {
+  id?: string;
+  decision_type?: string;
+  decision?: string;
+  comment?: string;
+  actor_role?: string;
+  created_at?: string;
+};
+
+export type ProjectMemoryDecisionInsert = {
+  project_id: string;
+  decision_type: "clarification_answered" | "scope_confirmed" | "change_requested" | "other";
+  decision: string;
+  comment: string;
+  actor_user_id: string;
+  actor_role: "client";
+};
+
+/** Rebuilds the conversational memory from the existing append-only project decision ledger. */
+export function hydrateDecisionMemory(
+  projectId: string,
+  rows: StoredProjectDecision[],
+): DecisionMemory {
+  const memory = createDecisionMemory(projectId);
+  for (const row of rows) {
+    if (row.actor_role !== "client" || typeof row.decision !== "string") continue;
+    const createdAt = typeof row.created_at === "string" ? row.created_at : memory.updatedAt;
+    const id = typeof row.id === "string" ? row.id : `stored-${memory.clientAnswers.length + memory.decisions.length + 1}`;
+    if (row.decision_type === "clarification_answered") {
+      memory.clientAnswers.push({
+        id,
+        question: typeof row.comment === "string" ? row.comment.slice(0, MAX_TEXT) : "",
+        answer: row.decision.slice(0, MAX_TEXT),
+        status: "provided",
+        source: "client",
+        createdAt,
+      });
+      continue;
+    }
+    if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
+      const previous = [...memory.decisions].reverse().find((item) => item.status === "confirmed");
+      const correction = row.decision_type === "change_requested";
+      if (previous && correction) {
+        previous.status = "superseded";
+        previous.supersededBy = id;
+      }
+      memory.decisions.push({
+        id,
+        statement: row.decision.slice(0, MAX_TEXT),
+        status: "confirmed",
+        source: "client",
+        createdAt,
+        ...(previous && correction ? { supersedes: previous.id } : {}),
+      });
+    }
+  }
+  memory.clientAnswers = memory.clientAnswers.slice(-MAX_ENTRIES);
+  memory.decisions = memory.decisions.slice(-MAX_ENTRIES);
+  const latest = [...rows].reverse().find((row) => typeof row.created_at === "string");
+  if (latest?.created_at) memory.updatedAt = latest.created_at;
+  return memory;
+}
+
+/** Converts only persisted client answers and decisions into safe resumable chat context. */
+export function projectMemoryRowsToConversationHistory(
+  rows: StoredProjectDecision[],
+): ConversationMessage[] {
+  const history: ConversationMessage[] = [];
+  for (const row of rows) {
+    if (row.actor_role !== "client" || typeof row.decision !== "string") continue;
+    if (row.decision_type === "clarification_answered") {
+      if (typeof row.comment === "string" && row.comment.trim()) {
+        history.push({ role: "assistant", content: row.comment.slice(0, MAX_TEXT) });
+      }
+      history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
+    } else if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
+      history.push({ role: "user", content: row.decision.slice(0, MAX_TEXT) });
+    }
+  }
+  return history.slice(-30);
+}
+
+/** Creates append-only rows only for client answers and explicit client decisions not already stored. */
+export function buildProjectMemoryDecisionInserts(
+  memory: DecisionMemory,
+  previous: DecisionMemory,
+  projectId: string,
+  actorUserId: string,
+): ProjectMemoryDecisionInsert[] {
+  const knownAnswers = new Set(previous.clientAnswers.map((item) => item.id));
+  const knownDecisions = new Set(previous.decisions.map((item) => item.id));
+  const rows: ProjectMemoryDecisionInsert[] = [];
+  for (const answer of memory.clientAnswers) {
+    if (knownAnswers.has(answer.id)) continue;
+    rows.push({
+      project_id: projectId,
+      decision_type: "clarification_answered",
+      decision: answer.answer.slice(0, 3000),
+      comment: answer.question.slice(0, 2000),
+      actor_user_id: actorUserId,
+      actor_role: "client",
+    });
+  }
+  for (const decision of memory.decisions) {
+    if (knownDecisions.has(decision.id)) continue;
+    const correction = decision.supersedes !== undefined || isCorrection(decision.statement);
+    const scopeChoice = /\\b(projet|périmètre|besoin|ensemble|séparé|séparément)\\b/i.test(decision.statement);
+    rows.push({
+      project_id: projectId,
+      decision_type: correction ? "change_requested" : scopeChoice ? "scope_confirmed" : "other",
+      decision: decision.statement.slice(0, 3000),
+      comment: "",
+      actor_user_id: actorUserId,
+      actor_role: "client",
+    });
+  }
+  return rows;
 }
