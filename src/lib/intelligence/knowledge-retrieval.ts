@@ -56,11 +56,27 @@ function tokenize(value: string): string[] {
 }
 
 function excerptFor(content: string, terms: string[], maxLength = 420): string {
-  const normalized = normalize(content);
+  // Keep a normalized-index -> original UTF-16 offset map. NFD removes
+  // combining marks, so normalized offsets cannot safely slice the source.
+  let normalized = "";
+  const originalOffsets: number[] = [];
+  for (let offset = 0; offset < content.length;) {
+    const point = content.codePointAt(offset);
+    if (point === undefined) break;
+    const character = String.fromCodePoint(point);
+    const normalizedCharacter = normalize(character);
+    normalized += normalizedCharacter;
+    for (let index = 0; index < normalizedCharacter.length; index += 1) {
+      originalOffsets.push(offset);
+    }
+    offset += character.length;
+  }
+
   const positions = terms
     .map((term) => normalized.indexOf(term))
     .filter((position) => position >= 0);
-  const start = positions.length ? Math.max(0, Math.min(...positions) - 100) : 0;
+  const normalizedStart = positions.length ? Math.max(0, Math.min(...positions) - 100) : 0;
+  const start = originalOffsets[normalizedStart] ?? 0;
   const end = Math.min(content.length, start + maxLength);
   return `${start > 0 ? "…" : ""}${content.slice(start, end).trim()}${end < content.length ? "…" : ""}`;
 }
