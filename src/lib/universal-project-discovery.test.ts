@@ -24,7 +24,7 @@ describe("selectNextDiscoveryQuestion", () => {
     ]);
 
     expect(result.stage).not.toBe("project_scope");
-    expect(result.nextQuestion).toMatch(/fonctionnement actuel|faites-vous aujourd'hui/i);
+    expect(result.nextQuestion).toMatch(/procédez-vous aujourd'hui/i);
   });
 
   it("asks about current operations when the user only describes a desired outcome", () => {
