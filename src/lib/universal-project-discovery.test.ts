@@ -59,7 +59,7 @@ describe("selectNextDiscoveryQuestion", () => {
 
   it("detects conflicting access instructions and asks for clarification before proceeding", () => {
     const analysis = analyzeUniversalProjectIntent(
-      "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
+      "Toute ma famille doit pouvoir consulter les contributions.\nFinalement, seul moi peux voir les montants.",
     );
     expect(analysis.intentGroups).toHaveLength(1);
     const result = selectNextDiscoveryQuestion(analysis, []);
