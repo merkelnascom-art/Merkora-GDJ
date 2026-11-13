@@ -60,7 +60,7 @@ function cleanText(value: string): string {
 }
 
 function explicitDecision(text: string, question = ""): boolean {
-  if (/\bje valide\b|\bje choisis\b|\bma décision est\b|\bje confirme (?:mon choix|cette décision|que je veux|que je souhaite)\b|\bj'opte pour\b|\bje décide de\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text)) return true;
+  if (/\bje valide\b|\bje choisis\b|\bma décision est\b|\bje confirme (?:mon choix|cette décision|que je veux|que je souhaite)\b|\bj'opte pour\b|\bje décide de\b|\bje préfère\b|\bje retiens\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text)) return true;
   const shortAnswer = /^(?:oui|non|d'accord|exactement)(?:,?\s+je confirme)?[.\s,;:]*$/i.test(text.trim());
   const decisionQuestion = /\b(confirmez|validez|choisissez|retenez|même projet|séparés|regrouper|séparer|quelle option|quel format|quelle solution)\b/i.test(question);
   return (shortAnswer || /\bje confirme\b/i.test(text)) && decisionQuestion;
