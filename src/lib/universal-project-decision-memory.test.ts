@@ -129,9 +129,9 @@ describe("universal project decision memory", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       project_id: "project-123",
-      decision_type: "other",
+      decision_type: "clarification_answered",
       decision: "Je tiens un cahier.",
-      comment: "client_statement",
+      comment: "",
       actor_user_id: "user-1",
       actor_role: "client",
     });
