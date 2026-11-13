@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { buildProjectMemoryDecisionInserts, createDecisionMemory, hydrateDecisionMemory, projectMemoryRowsToConversationHistory, recordDecisionMemoryTurn, type StoredProjectDecision } from "@/lib/universal-project-decision-memory";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createMerkoraConversationReply, validateConversationInput } from "@/lib/assistant/merkora-conversation";
+import { createMerkoraConversationReply, validateConversationInput, type ConversationMessage } from "@/lib/assistant/merkora-conversation";
 import { mergeGeminiConversationReply } from "@/lib/assistant/gemini-conversation";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 
@@ -9,6 +10,15 @@ export const dynamic = "force-dynamic";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function storedConversationRowsToHistory(value: unknown): ConversationMessage[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).flatMap((row): ConversationMessage[] => {
+    if ((row.role !== "user" && row.role !== "assistant") ||
+      typeof row.content !== "string" || !row.content.trim()) return [];
+    return [{ role: row.role, content: row.content.slice(0, 5000) }];
+  }).slice(-60);
 }
 
 function validProjectId(value: unknown): value is string {
@@ -34,16 +44,28 @@ export async function GET(_request: Request, context: { params: Promise<{ projec
     if (!project.ok || !Array.isArray(project.data) || project.data.length !== 1) {
       return NextResponse.json({ error: "Projet introuvable." }, { status: project.ok ? 404 : 502 });
     }
-    const decisionsResult = await callUserData(
-      `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=100`,
-      "GET", token,
-    );
-    if (!decisionsResult.ok) return NextResponse.json({ error: "Impossible de charger la mémoire du dossier." }, { status: 502 });
-    const decisionRows = Array.isArray(decisionsResult.data)
+    const [decisionsResult, conversationResult] = await Promise.all([
+      callUserData(
+        `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=100`,
+        "GET", token,
+      ),
+      callUserData(
+        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=500`,
+        "GET", token,
+      ),
+    ]);
+    if (!decisionsResult.ok && !conversationResult.ok) {
+      return NextResponse.json({ error: "Impossible de charger la mémoire du dossier." }, { status: 502 });
+    }
+    const decisionRows = decisionsResult.ok && Array.isArray(decisionsResult.data)
       ? (decisionsResult.data.filter(isRecord) as StoredProjectDecision[]).reverse()
       : [];
     const decisionMemory = hydrateDecisionMemory(projectId, decisionRows);
-    const messages = projectMemoryRowsToConversationHistory(decisionRows);
+    const persistedConversation = conversationResult.ok
+      ? storedConversationRowsToHistory(conversationResult.data) : [];
+    const messages = persistedConversation.length
+      ? persistedConversation
+      : projectMemoryRowsToConversationHistory(decisionRows);
     return NextResponse.json({ messages, decisionMemory }, {
       headers: { "Cache-Control": "no-store" },
     });
@@ -84,12 +106,16 @@ export async function POST(
       return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
     }
 
-    const [decisionsResult, consentResult] = await Promise.all([
+    const [decisionsResult, consentResult, conversationResult] = await Promise.all([
       callUserData(
         `project_memory_decisions?select=id,decision_type,decision,comment,actor_role,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=100`,
         "GET", token,
       ),
       callUserData(`project_ai_processing_consents?select=consented_at,revoked_at&project_id=eq.${encodeURIComponent(projectId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, "GET", token),
+      callUserData(
+        `project_conversation_messages?select=role,content,created_at&project_id=eq.${encodeURIComponent(projectId)}&order=created_at.asc&limit=500`,
+        "GET", token,
+      ),
     ]);
     if (!decisionsResult.ok) {
       return NextResponse.json({ error: "Impossible de charger la mémoire durable de ce projet. Réessayez sans perdre votre message." }, { status: 502 });
@@ -101,7 +127,9 @@ export async function POST(
     const currentDecisionMemory = hydrateDecisionMemory(projectId, storedDecisionRows);
     const storedHistory = projectMemoryRowsToConversationHistory(storedDecisionRows);
     // Only server-persisted project history is trusted; browser history is untrusted input.
-    const history = storedHistory;
+    const persistedConversation = conversationResult.ok
+      ? storedConversationRowsToHistory(conversationResult.data) : [];
+    const history = persistedConversation.length ? persistedConversation : storedHistory;
     const projectContext = [
       typeof project.title === "string" ? project.title : "",
       typeof project.problem === "string" ? project.problem : "",
@@ -210,10 +238,30 @@ export async function POST(
       }
     }
 
+    const turnId = randomUUID();
+    const conversationSave = await callUserData("project_conversation_messages", "POST", token, [
+      {
+        project_id: projectId,
+        turn_id: turnId,
+        role: "user",
+        content: input.value.message.slice(0, 5000),
+        created_by: user.id,
+      },
+      {
+        project_id: projectId,
+        turn_id: turnId,
+        role: "assistant",
+        content: finalReply.assistantMessage.slice(0, 5000),
+        reply_payload: finalReply,
+        created_by: user.id,
+      },
+    ], "return=minimal");
+
     return NextResponse.json({
       reply: finalReply,
       project: { id: project.id, title: typeof project.title === "string" ? project.title : null },
       synchronized: true,
+      conversationSynchronized: conversationSave.ok,
       decisionMemory,
     }, { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   } catch {
