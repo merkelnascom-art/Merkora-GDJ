@@ -54,7 +54,7 @@ describe("mergeGeminiConversationReply", () => {
     expect(result?.extractedNeeds).toHaveLength(8);
   });
 
-  it("does not let model wording override a deterministic contradiction gate", () => {
+  it("does not let model wording or derived lists override a deterministic contradiction gate", () => {
     const blocked = createMerkoraConversationReply({
       message: "Seul moi peux voir les montants.",
       history: [
@@ -73,8 +73,8 @@ describe("mergeGeminiConversationReply", () => {
     expect(result?.assistantMessage).toBe(blocked.assistantMessage);
     expect(result?.status).toBe("needs_clarification");
     expect(result?.nextAction).toBe("clarify_need");
-    expect(result?.clarifyingQuestions[0]).toBe(blocked.clarifyingQuestions[0]);
+    expect(result?.clarifyingQuestions).toEqual(blocked.clarifyingQuestions);
+    expect(result?.extractedNeeds).toEqual([]);
     expect(result?.suggestedModules).toHaveLength(0);
   });
-
 });
