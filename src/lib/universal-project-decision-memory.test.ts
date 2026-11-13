@@ -267,4 +267,49 @@ describe("universal project decision memory", () => {
     expect(resumed.clientAnswers.at(-1)?.question).toBe("Comment procédez-vous aujourd'hui ?");
   });
 
+
+  it("merges ledger answers missing from conversation storage without duplicating turns", async () => {
+    const { mergeProjectConversationHistory } = await import("./universal-project-decision-memory");
+    const history = mergeProjectConversationHistory([
+      { role: "user", content: "Je veux recevoir un rapport chaque dimanche.", created_at: "2026-11-13T09:02:00.000Z" },
+      { role: "assistant", content: "Quel format de rapport préférez-vous ?", created_at: "2026-11-13T09:03:00.000Z" },
+    ], [
+      {
+        id: "answer-1",
+        decision_type: "clarification_answered",
+        decision: "Je note les contributions dans un cahier.",
+        comment: "Comment procédez-vous aujourd'hui ?",
+        actor_role: "client",
+        created_at: "2026-11-13T09:01:00.000Z",
+      },
+    ]);
+
+    expect(history).toEqual([
+      { role: "assistant", content: "Comment procédez-vous aujourd'hui ?" },
+      { role: "user", content: "Je note les contributions dans un cahier." },
+      { role: "user", content: "Je veux recevoir un rapport chaque dimanche." },
+      { role: "assistant", content: "Quel format de rapport préférez-vous ?" },
+    ]);
+  });
+
+  it("does not duplicate a clarification pair already present in conversation storage", async () => {
+    const { mergeProjectConversationHistory } = await import("./universal-project-decision-memory");
+    const rows = [{
+      decision_type: "clarification_answered",
+      decision: "Je note tout dans un cahier.",
+      comment: "Comment procédez-vous aujourd'hui ?",
+      actor_role: "client",
+      created_at: "2026-11-13T09:00:00.000Z",
+    }];
+    const history = mergeProjectConversationHistory([
+      { role: "assistant", content: "Comment procédez-vous aujourd'hui ?", created_at: "2026-11-13T08:59:00.000Z" },
+      { role: "user", content: "Je note tout dans un cahier.", created_at: "2026-11-13T09:00:00.000Z" },
+    ], rows);
+
+    expect(history).toEqual([
+      { role: "assistant", content: "Comment procédez-vous aujourd'hui ?" },
+      { role: "user", content: "Je note tout dans un cahier." },
+    ]);
+  });
+
 });
