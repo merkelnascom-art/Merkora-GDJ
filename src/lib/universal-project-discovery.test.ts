@@ -38,6 +38,18 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.stage).toBe("current_process");
   });
 
+  it("does not mistake an unrelated use of the word together for a project-scope answer", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Nous travaillons ensemble dans la famille." },
+    ]);
+
+    expect(result.stage).toBe("project_scope");
+    expect(result.nextQuestion).toMatch(/même projet|séparément/i);
+  });
+
   it("asks about current operations when the user only describes a desired outcome", () => {
     const analysis = analyzeUniversalProjectIntent("Je veux recevoir un résumé des dépenses de la maison.");
     const result = selectNextDiscoveryQuestion(analysis, []);
