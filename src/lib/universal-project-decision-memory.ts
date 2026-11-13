@@ -2,11 +2,11 @@ import type { ConversationMessage } from "./assistant/merkora-conversation";
 
 export const DECISION_MEMORY_VERSION = 1;
 
-export type ConfirmedAnswer = {
+export type ClientAnswer = {
   id: string;
   question: string;
   answer: string;
-  status: "confirmed";
+  status: "provided";
   source: "client";
   createdAt: string;
 };
@@ -26,7 +26,7 @@ export type DecisionMemory = {
   projectId: string;
   updatedAt: string;
   lastAssistantQuestion: string;
-  confirmedAnswers: ConfirmedAnswer[];
+  clientAnswers: ClientAnswer[];
   decisions: ProjectDecision[];
   hypotheses: Array<{
     statement: string;
@@ -44,7 +44,7 @@ export function createDecisionMemory(projectId: string): DecisionMemory {
     projectId,
     updatedAt: new Date().toISOString(),
     lastAssistantQuestion: "",
-    confirmedAnswers: [],
+    clientAnswers: [],
     decisions: [],
     hypotheses: [],
   };
@@ -77,7 +77,7 @@ export function recordDecisionMemoryTurn(
 ): DecisionMemory {
   const next: DecisionMemory = {
     ...memory,
-    confirmedAnswers: [...memory.confirmedAnswers],
+    clientAnswers: [...memory.clientAnswers],
     decisions: memory.decisions.map((decision) => ({ ...decision })),
     hypotheses: [...memory.hypotheses],
     updatedAt: new Date().toISOString(),
@@ -103,16 +103,16 @@ export function recordDecisionMemoryTurn(
   const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
 
   if (priorQuestion.includes("?") && content) {
-    const answerId = `answer-${next.confirmedAnswers.length + 1}`;
-    next.confirmedAnswers.push({
+    const answerId = `answer-${next.clientAnswers.length + 1}`;
+    next.clientAnswers.push({
       id: answerId,
       question: priorQuestion,
       answer: content,
-      status: "confirmed",
+      status: "provided",
       source: "client",
       createdAt: next.updatedAt,
     });
-    next.confirmedAnswers = next.confirmedAnswers.slice(-MAX_ENTRIES);
+    next.clientAnswers = next.clientAnswers.slice(-MAX_ENTRIES);
   }
 
   if (explicitDecision(content)) {
@@ -142,7 +142,7 @@ export function serializeDecisionMemory(memory: DecisionMemory): Record<string, 
     projectId: memory.projectId,
     updatedAt: memory.updatedAt,
     lastAssistantQuestion: memory.lastAssistantQuestion,
-    confirmedAnswers: memory.confirmedAnswers.slice(-MAX_ENTRIES),
+    clientAnswers: memory.clientAnswers.slice(-MAX_ENTRIES),
     decisions: memory.decisions.slice(-MAX_ENTRIES),
     hypotheses: memory.hypotheses.slice(-MAX_ENTRIES),
   };
@@ -152,12 +152,12 @@ export function parseDecisionMemory(value: unknown, expectedProjectId: string): 
   if (!isRecord(value) || value.version !== DECISION_MEMORY_VERSION ||
     value.projectId !== expectedProjectId || typeof value.updatedAt !== "string" ||
     typeof value.lastAssistantQuestion !== "string" ||
-    !Array.isArray(value.confirmedAnswers) || !Array.isArray(value.decisions) ||
+    !Array.isArray(value.clientAnswers) || !Array.isArray(value.decisions) ||
     !Array.isArray(value.hypotheses)) return null;
 
-  const confirmedAnswers = value.confirmedAnswers.filter((item): item is ConfirmedAnswer =>
+  const clientAnswers = value.clientAnswers.filter((item): item is ClientAnswer =>
     isRecord(item) && typeof item.id === "string" && typeof item.question === "string" &&
-    typeof item.answer === "string" && item.status === "confirmed" && item.source === "client" &&
+    typeof item.answer === "string" && item.status === "provided" && item.source === "client" &&
     typeof item.createdAt === "string",
   ).slice(-MAX_ENTRIES);
   const decisions = value.decisions.filter((item): item is ProjectDecision =>
@@ -181,7 +181,7 @@ export function parseDecisionMemory(value: unknown, expectedProjectId: string): 
     projectId: expectedProjectId,
     updatedAt: value.updatedAt,
     lastAssistantQuestion: value.lastAssistantQuestion.slice(0, MAX_TEXT),
-    confirmedAnswers,
+    clientAnswers,
     decisions,
     hypotheses,
   };
