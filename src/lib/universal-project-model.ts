@@ -39,6 +39,7 @@ export type UniversalProjectModel = {
   title: string;
   summary: string;
   sourceDescription: string;
+  currentSituation: string;
   needs: ProjectNeed[];
   relationships: ProjectRelationship[];
   processes: [];
@@ -161,6 +162,7 @@ export function buildUniversalProjectModel(
       ? `${needs.length} besoin(s) candidat(s) extrait(s) de la description ; leur priorité et leurs relations restent à confirmer.`
       : "La description ne permet pas encore d'identifier un besoin suffisamment précis.",
     sourceDescription: understanding.rawIntent,
+    currentSituation: understanding.currentSituation,
     needs,
     relationships,
     processes: [],
