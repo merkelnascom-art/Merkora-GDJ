@@ -132,6 +132,12 @@ function extractMatches(input: string, patterns: RegExp[]): string[] {
   return unique(patterns.flatMap((pattern) => [...input.matchAll(new RegExp(pattern.source, "gi"))].map((match) => match[0])));
 }
 
+function extractCurrentSituation(sentences: string[]): string {
+  return sentences.find((sentence) =>
+    /aujourd'hui|actuellement|pour le moment|en ce moment|jusqu'ici|on fait|nous faisons|je fais|notre façon actuelle/i.test(sentence),
+  ) ?? "";
+}
+
 function inferConstraints(text: string): string[] {
   const constraints: string[] = [];
   if (/connexion|internet|reseau|réseau|hors ligne|offline/i.test(text)) constraints.push("connectivité ou fonctionnement hors ligne à préciser");
@@ -252,7 +258,7 @@ export function analyzeUniversalProjectIntent(rawInput: string): UniversalProjec
   return {
     rawIntent,
     statedFacts,
-    currentSituation: evidenceSentences[0] ?? "",
+    currentSituation: extractCurrentSituation(evidenceSentences),
     desiredOutcomes,
     possibleCauses,
     hypotheses,
