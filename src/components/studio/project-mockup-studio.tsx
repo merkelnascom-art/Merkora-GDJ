@@ -133,6 +133,9 @@ export function ProjectMockupStudio({ project }: Props) {
               : {});
             setReviewStatus(saved.reviewStatus === "approved" || saved.reviewStatus === "changes_requested" ? saved.reviewStatus : "draft");
             setReviewNote(typeof saved.reviewNote === "string" ? saved.reviewNote.slice(0, 1200) : "");
+            setQuoteAmount(typeof saved.quoteAmount === "string" ? saved.quoteAmount.slice(0, 80) : "");
+            setQuoteDays(typeof saved.quoteDays === "string" ? saved.quoteDays.slice(0, 40) : "");
+            setQuotePaymentTerms(typeof saved.quotePaymentTerms === "string" ? saved.quotePaymentTerms.slice(0, 500) : "À convenir après échange avec le client");
             setClientQuoteResponse(saved.clientQuoteResponse === "accepted" || saved.clientQuoteResponse === "changes_requested" || saved.clientQuoteResponse === "negotiate" ? saved.clientQuoteResponse : "undecided");
             setClientQuoteNote(typeof saved.clientQuoteNote === "string" ? saved.clientQuoteNote.slice(0, 1200) : "");
             skipCloudSaveRef.current = true;
@@ -171,7 +174,7 @@ export function ProjectMockupStudio({ project }: Props) {
         discovery: project.discovery ?? null,
         studioConfig: {
           ...config, diagnosticSchemaVersion: 1, diagnosticResponses,
-          reviewStatus, reviewNote, clientQuoteResponse, clientQuoteNote,
+          reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote,
         },
         clientConfirmedChoices: {
           selectedSectorIds: config.selectedUniversalSectorIds ?? [],
@@ -184,6 +187,12 @@ export function ProjectMockupStudio({ project }: Props) {
           visualDirection: config.palette,
           diagnosticResponses,
           clientQuoteResponse,
+          quoteAmount,
+          quoteDays,
+          quotePaymentTerms,
+          reviewStatus,
+          reviewNote,
+          clientQuoteNote,
         },
         updatedAt: new Date().toISOString(),
       };
