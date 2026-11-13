@@ -144,4 +144,30 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.remainingGaps.length).toBeGreaterThan(0);
     expect(result.readyForSolutionReview).toBe(false);
   });
+
+  it("does not treat a refusal to inform visitors as a resolved consent gap", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux enregistrer les heures de visite de mes amis chez moi.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs ne seront pas informés." },
+    ]);
+
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.nextQuestion).toMatch(/informées|informés|accord/i);
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
+  it("does not treat lack of consent as permission to proceed to solution review", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux conserver un historique des visites de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Ils ne donneront pas leur accord." },
+    ]);
+
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
 });
