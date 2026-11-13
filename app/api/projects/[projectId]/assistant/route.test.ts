@@ -9,6 +9,10 @@ import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/li
 import { POST } from "./route";
 
 const user = { id: "client-1", email: "client@example.com", fullName: "Client" };
+const project = {
+  id: "MK-PROJECT-001", user_id: "client-1", title: "Gestion boutique",
+  problem: "Je perds le suivi des employés", desired_outcome: "Suivre les retards et rapports",
+};
 const context = { params: Promise.resolve({ projectId: "MK-PROJECT-001" }) };
 
 function request(body: unknown) {
@@ -19,18 +23,37 @@ function request(body: unknown) {
   });
 }
 
+function mockDatabase(consented = false) {
+  vi.mocked(callUserData).mockImplementation(async (path, method, _token, body) => {
+    if (path.startsWith("user_projects?")) return { ok: true, status: 200, data: [project] };
+    if (path.startsWith("project_workspace_state?")) return { ok: true, status: 200, data: [] };
+    if (path.startsWith("project_conversation_messages?")) {
+      return { ok: true, status: 200, data: [{ role: "user", content: "Contexte antérieur" }] };
+    }
+    if (path.startsWith("project_ai_processing_consents?")) {
+      return { ok: true, status: 200, data: consented ? [{ consented_at: "2026-11-13T08:00:00Z", revoked_at: null }] : [] };
+    }
+    if (path === "project_conversation_messages" && method === "POST") {
+      expect(Array.isArray(body)).toBe(true);
+      expect((body as unknown[]).length).toBe(2);
+      return { ok: true, status: 201, data: null };
+    }
+    return { ok: true, status: 200, data: [] };
+  });
+}
+
 beforeEach(() => {
   vi.mocked(isSameOrigin).mockReturnValue(true);
   vi.mocked(getCurrentUser).mockResolvedValue(user);
   vi.mocked(getAccessToken).mockResolvedValue("client-token");
-  vi.mocked(callUserData).mockResolvedValue({
-    ok: true, status: 200, data: [{
-      id: "MK-PROJECT-001", user_id: "client-1", title: "Gestion boutique",
-      problem: "Je perds le suivi des employés", desired_outcome: "Suivre les retards et rapports",
-    }],
-  });
+  mockDatabase();
 });
-afterEach(() => { delete process.env.GEMINI_API_KEY; delete process.env.GEMINI_MODEL; vi.clearAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_MODEL;
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("POST /api/projects/[projectId]/assistant", () => {
   it("refuses cross-origin requests before reading project data", async () => {
@@ -53,7 +76,7 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(String(vi.mocked(callUserData).mock.calls[0][0])).toContain("user_id=eq.client-1");
   });
 
-  it("returns structured provider-free advice for the authenticated project owner", async () => {
+  it("returns MerKora's deterministic analysis and persists both sides of the conversation", async () => {
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [],
@@ -62,27 +85,31 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     const body = await response.json();
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
-    expect(body.aiProviderCalled).toBe(false);
-    expect(body.reply.disclaimer).toMatch(/aucun module.*encore validé/i);
+    expect(body.synchronized).toBe(true);
+    expect(body).not.toHaveProperty("provider");
+    expect(body).not.toHaveProperty("aiProviderCalled");
+    expect(callUserData).toHaveBeenCalledWith(
+      "project_conversation_messages", "POST", "client-token",
+      expect.arrayContaining([expect.objectContaining({ role: "user" }), expect.objectContaining({ role: "assistant" })]),
+      "return=minimal",
+    );
   });
 
-  it("does not call Gemini when the client has not explicitly consented", async () => {
+  it("does not call an external AI provider without the project's recorded consent", async () => {
     process.env.GEMINI_API_KEY = "test-only-secret";
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [],
-      consent: false,
+      consent: true,
     }), context);
     expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.provider).toBe("local");
-    expect(body.aiProviderCalled).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("calls Gemini only after consent and preserves MerKora's module decisions", async () => {
+  it("uses the configured AI provider automatically after one-time project consent", async () => {
+    mockDatabase(true);
     process.env.GEMINI_API_KEY = "test-only-secret";
     const generated = {
       assistantMessage: "Nous allons préciser les retards et les mouvements de caisse.",
@@ -105,33 +132,29 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [],
-      consent: true,
     }), context);
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const body = await response.json();
-    expect(body.provider).toBe("gemini");
-    expect(body.aiProviderCalled).toBe(true);
     expect(body.reply.assistantMessage).toContain("préciser les retards");
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .not.toContain("unapproved-module");
     expect(JSON.stringify(body)).not.toContain("test-only-secret");
+    expect(body).not.toHaveProperty("provider");
   });
 
-  it("falls back to the deterministic reply when Gemini is unavailable", async () => {
+  it("falls back to MerKora's deterministic reply when the external provider is unavailable", async () => {
+    mockDatabase(true);
     process.env.GEMINI_API_KEY = "test-only-secret";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network unavailable")));
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [],
-      consent: true,
     }), context);
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.provider).toBe("unavailable");
-    expect(body.aiProviderCalled).toBe(false);
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
   });
