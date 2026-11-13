@@ -149,13 +149,17 @@ function buildEvaluation(
  * A privacy answer only closes the discovery gap when it states an affirmative
  * safeguard. A refusal or absence of consent must remain visible as unresolved.
  */
-function hasPositivePrivacyAnswer(text: string): boolean {
-  const negativeConsent = [
+function hasNegativePrivacyAnswer(text: string): boolean {
+  return hasAny(text, [
     /ne\s+(?:seront|sont|seraient|peuvent|pourront|veulent|doivent)\s+pas.{0,50}(?:inform|accord|consent)/i,
     /sans.{0,40}(?:informer|prévenir|avertir|accord|consentement)/i,
     /(?:pas|aucun|aucune|refus).{0,35}(?:accord|consentement)/i,
-  ];
-  if (hasAny(text, negativeConsent)) return false;
+    /je ne veux pas.{0,30}(?:inform|prévenir|avertir)/i,
+  ]);
+}
+
+function hasPositivePrivacyAnswer(text: string): boolean {
+  if (hasNegativePrivacyAnswer(text)) return false;
 
   const peopleInformed = hasAny(text, [
     /(?:seront|sont|seraient) inform(?:é|és|ées)/i,
@@ -216,10 +220,15 @@ export function selectNextDiscoveryQuestion(
   }
 
   if (analysis.privacyConsiderations.length > 0 && !hasPositivePrivacyAnswer(answers)) {
+    const explicitRefusal = hasNegativePrivacyAnswer(answers);
     gaps.push({
       stage: "privacy_and_consent",
-      question: "Les personnes concernées seront-elles informées et d'accord avec l'utilisation de leurs informations, et qui pourra les consulter ?",
-      reason: "La demande touche des informations concernant d'autres personnes.",
+      question: explicitRefusal
+        ? "Je ne peux pas recommander une collecte à l'insu des personnes. Préférez-vous abandonner cet historique ou envisager un dispositif transparent avec leur information et leur accord ?"
+        : "Les personnes concernées seront-elles informées et d'accord avec l'utilisation de leurs informations, et qui pourra les consulter ?",
+      reason: explicitRefusal
+        ? "Le client refuse l'information des personnes concernées ; une collecte cachée ne peut pas être proposée."
+        : "La demande touche à des informations concernant d'autres personnes ; leur information et leur accord restent à clarifier.",
     });
   }
 
