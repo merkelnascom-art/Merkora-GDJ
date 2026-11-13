@@ -74,13 +74,20 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
   ];
 
   return pairs.flatMap((pair) => {
-    const statementA = statements.find((statement) => pair.broad.test(statement));
-    const statementB = statements.find((statement) => pair.restrictive.test(statement));
-    if (!statementA || !statementB || statementA === statementB) return [];
+    const broadIndex = statements.findIndex((statement) => pair.broad.test(statement));
+    const restrictiveIndex = statements.findIndex((statement) => pair.restrictive.test(statement));
+    if (broadIndex < 0 || restrictiveIndex < 0 || broadIndex === restrictiveIndex) return [];
+
+    // An explicit later correction replaces the earlier preference; it is not
+    // an unresolved conflict that should block discovery.
+    const laterStatement = statements[Math.max(broadIndex, restrictiveIndex)];
+    const explicitCorrection = /\\b(finalement|je corrige|je change d'avis|je reviens sur ma décision|à la place de)\\b/i.test(laterStatement);
+    if (explicitCorrection) return [];
+
     return [{
       topic: pair.topic,
-      statementA,
-      statementB,
+      statementA: statements[broadIndex],
+      statementB: statements[restrictiveIndex],
       question: pair.question,
       confirmationRequired: true as const,
     }];
