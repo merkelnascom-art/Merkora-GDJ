@@ -202,6 +202,14 @@ export function selectNextDiscoveryQuestion(
     });
   }
 
+  if (analysis.privacyConsiderations.length > 0 && !hasPositivePrivacyAnswer(answers)) {
+    gaps.push({
+      stage: "privacy_and_consent",
+      question: "Les personnes concernées seront-elles informées et d'accord avec l'utilisation de leurs informations, et qui pourra les consulter ?",
+      reason: "La demande touche des informations concernant d'autres personnes.",
+    });
+  }
+
   if (!analysis.currentSituation && !hasAny(answers, [
     /aujourd'hui|actuellement|pour le moment|en ce moment|je note|on note|nous notons|cahier|registre|excel|tableur|whatsapp|à la main|manuellement|je ne fais rien|aucun suivi/i,
   ])) {
@@ -239,14 +247,6 @@ export function selectNextDiscoveryQuestion(
       stage: "constraints",
       question: "Quelles limites devons-nous respecter : budget, délais, appareils disponibles, connexion Internet ou temps disponible ?",
       reason: "Les contraintes pratiques ne sont pas encore connues.",
-    });
-  }
-
-  if (analysis.privacyConsiderations.length > 0 && !hasPositivePrivacyAnswer(answers)) {
-    gaps.push({
-      stage: "privacy_and_consent",
-      question: "Les personnes concernées seront-elles informées et d'accord avec l'utilisation de leurs informations, et qui pourra les consulter ?",
-      reason: "La demande touche des informations concernant d'autres personnes.",
     });
   }
 
