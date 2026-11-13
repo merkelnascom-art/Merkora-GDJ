@@ -6,6 +6,7 @@ import { getDomainOptionCatalog } from "../domain-options";
 import { analyzeUniversalProjectIntent, type UniversalProjectUnderstanding } from "../universal-project-understanding";
 import { buildUniversalProjectModel, type UniversalProjectModel } from "../universal-project-model";
 import { buildUniversalProjectBlueprint, type UniversalProjectBlueprint } from "../universal-project-blueprint";
+import { selectNextDiscoveryQuestion, type DiscoveryQuestionSelection } from "../universal-project-discovery";
 export type SuggestedModule = { id: string; title: string; description: string; reason: string };
 export type ConversationReply = {
   assistantMessage: string;
@@ -22,6 +23,7 @@ export type ConversationReply = {
   intentAnalysis: UniversalProjectUnderstanding;
   projectModel: UniversalProjectModel;
   projectBlueprint: UniversalProjectBlueprint;
+  discovery: DiscoveryQuestionSelection;
 };
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -88,6 +90,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   const intentAnalysis = analyzeUniversalProjectIntent(text);
   const projectModel = buildUniversalProjectModel(intentAnalysis);
   const projectBlueprint = buildUniversalProjectBlueprint(projectModel);
+  const discovery = selectNextDiscoveryQuestion(intentAnalysis, input.history);
   const match = identifyDomain(text);
   const mixedNeeds = intentAnalysis.intentGroups.length > 1;
   const vague = text.length < 35 ||
@@ -111,6 +114,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
     intentAnalysis,
     projectModel,
     projectBlueprint,
+    discovery,
   };
 
   if (vague || mixedNeeds || suggestedModules.length === 0 || !match.domain && legacyModules.length === 0) {
@@ -122,7 +126,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
           ? `Je repère le domaine « ${match.domain.label} ». Avant de proposer une solution, précisons votre activité et le résultat attendu.`
           : "Je vais d’abord comprendre votre situation, votre objectif et les personnes concernées. Ensuite seulement, nous chercherons la solution adaptée.",
       status: "needs_clarification",
-      clarifyingQuestions: [...new Set([...intentAnalysis.questions, ...clarifyingQuestions])].slice(0, 7),
+      clarifyingQuestions: [discovery.nextQuestion],
       extractedNeeds: intentAnalysis.intentGroups.map((group) => `${group.subject} : ${group.desiredAction}`).slice(0, 8),
       suggestedModules: [],
       nextAction: "clarify_need",
@@ -142,7 +146,7 @@ export function createMerkoraConversationReply(input: ConversationInput): Conver
   return {
     assistantMessage: `J'ai repéré le domaine « ${match.domain?.label ?? "à confirmer"} »${match.specialization ? ` et la spécialisation « ${match.specialization.label} »` : ""}. Voici des modules de départ que nous pouvons ajuster ensemble avant de créer le plan.`,
     status: "draft",
-    clarifyingQuestions: clarifyingQuestions.slice(0, 7),
+    clarifyingQuestions: [discovery.nextQuestion],
     extractedNeeds,
     suggestedModules,
     nextAction: "review_modules",
