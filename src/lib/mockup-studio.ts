@@ -12,6 +12,12 @@ export type MockupFormat = "website" | "mobile" | "dashboard";
 export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign" | "document_pack" | "presentation" | "training_program";
 export type DeliverableOption = { id: DeliverableFormat; label: string; description: string; reason: string };
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
+export const MOCKUP_PALETTE_TOKENS: Record<MockupPalette, { accent: string; accentSoft: string; accentDeep: string }> = {
+  violet: { accent: "#7865dc", accentSoft: "#f0edff", accentDeep: "#40317e" },
+  blue: { accent: "#3278ce", accentSoft: "#eaf3ff", accentDeep: "#173d70" },
+  emerald: { accent: "#159477", accentSoft: "#e7f8f2", accentDeep: "#075d4b" },
+  amber: { accent: "#c88322", accentSoft: "#fff4df", accentDeep: "#75420b" },
+};
 export type MockupConfig = {
   format: MockupFormat;
   palette: MockupPalette;
