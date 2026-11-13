@@ -90,6 +90,20 @@ describe("universal project decision memory", () => {
     expect(unrelated.decisions).toHaveLength(0);
   });
 
+  it("persists a short scope confirmation with the correct decision type", async () => {
+    const { buildProjectMemoryDecisionInserts } = await import("./universal-project-decision-memory");
+    const initial = createDecisionMemory("project-123");
+    const answered = recordDecisionMemoryTurn(initial, {
+      role: "user",
+      content: "Oui",
+    }, {
+      role: "assistant",
+      content: "Ces deux besoins doivent-ils être regroupés dans un même projet ?",
+    });
+    const rows = buildProjectMemoryDecisionInserts(answered, initial, "project-123", "user-1");
+    expect(rows.map((row) => row.decision_type)).toEqual(["clarification_answered", "scope_confirmed"]);
+  });
+
   it("does not treat an assistant suggestion or an unanswered question as a client decision", () => {
     const initial = createDecisionMemory("project-123");
     const updated = recordDecisionMemoryTurn(initial, {
