@@ -86,6 +86,22 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(body.reply.suggestedModules.map((item: { id: string }) => item.id))
       .toEqual(expect.arrayContaining(["staff-attendance", "cash-reports"]));
     expect(body.synchronized).toBe(true);
+    expect(callUserData).toHaveBeenCalledWith(
+      "rpc/save_project_workspace_state", "POST", "client-token",
+      expect.objectContaining({
+        p_project_id: "MK-PROJECT-001",
+        p_expected_revision: 0,
+        p_payload: expect.objectContaining({
+          decisionMemory: expect.objectContaining({
+            version: 1,
+            projectId: "MK-PROJECT-001",
+            clientAnswers: expect.any(Array),
+            decisions: expect.any(Array),
+            hypotheses: expect.any(Array),
+          }),
+        }),
+      }),
+    );
     expect(body).not.toHaveProperty("provider");
     expect(body).not.toHaveProperty("aiProviderCalled");
     expect(callUserData).toHaveBeenCalledWith(
