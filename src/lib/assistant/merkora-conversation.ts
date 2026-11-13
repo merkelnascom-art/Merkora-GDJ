@@ -87,7 +87,11 @@ function containsKeyword(text: string, keywords: string[]): boolean {
 
 export function createMerkoraConversationReply(input: ConversationInput): ConversationReply {
   const text = input.message.trim();
-  const intentAnalysis = analyzeUniversalProjectIntent(text);
+  const accumulatedProjectDescription = [
+    ...input.history.filter((item) => item.role === "user").map((item) => item.content),
+    text,
+  ].join("\\n").slice(-5000);
+  const intentAnalysis = analyzeUniversalProjectIntent(accumulatedProjectDescription);
   const projectModel = buildUniversalProjectModel(intentAnalysis);
   const projectBlueprint = buildUniversalProjectBlueprint(projectModel);
   const discovery = selectNextDiscoveryQuestion(intentAnalysis, input.history);
