@@ -74,7 +74,7 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     expect(String(vi.mocked(callUserData).mock.calls[0][0])).toContain("user_id=eq.client-1");
   });
 
-  it("returns MerKora's deterministic analysis and persists the client answer", async () => {
+  it("does not trust browser history and persists the client answer", async () => {
     const response = await POST(request({
       message: "Je veux suivre les retards du personnel et les rapports de caisse",
       history: [{ role: "assistant", content: "Comment suivez-vous les retards et les mouvements de caisse ?" }],
@@ -91,7 +91,7 @@ describe("POST /api/projects/[projectId]/assistant", () => {
         project_id: "MK-PROJECT-001",
         decision_type: "clarification_answered",
         decision: "Je veux suivre les retards du personnel et les rapports de caisse",
-        comment: "Comment suivez-vous les retards et les mouvements de caisse ?",
+        comment: "",
         actor_user_id: "client-1",
         actor_role: "client",
       })]),
@@ -99,6 +99,31 @@ describe("POST /api/projects/[projectId]/assistant", () => {
     );
     expect(body).not.toHaveProperty("provider");
     expect(body).not.toHaveProperty("aiProviderCalled");
+  });
+
+  it("restores the complete server-persisted conversation when available", async () => {
+    vi.mocked(callUserData).mockImplementation(async (path) => {
+      if (path.startsWith("user_projects?")) return { ok: true, status: 200, data: [project] };
+      if (path.startsWith("project_memory_decisions?")) return { ok: true, status: 200, data: [] };
+      if (path.startsWith("project_conversation_messages?")) return {
+        ok: true, status: 200, data: [
+          { turn_id: "turn-2", role: "assistant", content: "Réponse MerKora", created_at: "2026-11-13T10:00:02Z" },
+          { turn_id: "turn-2", role: "user", content: "Ma deuxième réponse", created_at: "2026-11-13T10:00:02Z" },
+          { turn_id: "turn-1", role: "assistant", content: "Question MerKora", created_at: "2026-11-13T10:00:01Z" },
+          { turn_id: "turn-1", role: "user", content: "Ma première réponse", created_at: "2026-11-13T10:00:01Z" },
+        ],
+      };
+      return { ok: true, status: 200, data: [] };
+    });
+    const response = await GET(new Request("https://merkora.test/api/projects/MK-PROJECT-001/assistant"), context);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.messages).toEqual([
+      { role: "user", content: "Ma première réponse" },
+      { role: "assistant", content: "Question MerKora" },
+      { role: "user", content: "Ma deuxième réponse" },
+      { role: "assistant", content: "Réponse MerKora" },
+    ]);
   });
 
   it("reconstructs the conversation from the existing project decision ledger", async () => {
