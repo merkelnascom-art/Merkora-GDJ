@@ -81,4 +81,15 @@ it("recognizes a personalized CV creation need without inventing home visits or 
   expect(result.intentGroups.map((group) => group.id)).toContain("career-documents");
   expect(result.intentGroups.map((group) => group.id)).not.toContain("visitors-and-events");
   expect(result.intentGroups.map((group) => group.id)).not.toContain("work-and-tasks");
+
+  it("treats a project budget as a constraint, not as a financial-management intent", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux créer un service de CV personnalisés. Mon budget maximal est de 100 000 FCFA.",
+    );
+
+    expect(analysis.intentGroups.map((group) => group.id)).toContain("career-documents");
+    expect(analysis.intentGroups.map((group) => group.id)).not.toContain("money-flow");
+    expect(analysis.constraints).toContain("budget et coût acceptable à préciser");
+  });
+
 });
