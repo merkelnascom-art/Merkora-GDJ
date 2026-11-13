@@ -68,6 +68,24 @@ describe("universal project decision memory", () => {
     expect(corrected.decisions[1].status).toBe("confirmed");
   });
 
+  it("marks an explicitly revised preference as superseding the previous confirmed decision", () => {
+    const initial = createDecisionMemory("project-123");
+    const first = recordDecisionMemoryTurn(initial, {
+      role: "user",
+      content: "Je choisis finalement une application web.",
+    });
+    const revised = recordDecisionMemoryTurn(first, {
+      role: "user",
+      content: "Finalement, je préfère une application mobile à la place.",
+    });
+
+    expect(revised.decisions).toHaveLength(2);
+    expect(revised.decisions[0].status).toBe("superseded");
+    expect(revised.decisions[0].supersededBy).toBe(revised.decisions[1].id);
+    expect(revised.decisions[1].status).toBe("confirmed");
+    expect(revised.decisions[1].supersedes).toBe(revised.decisions[0].id);
+  });
+
   it("treats a short yes or no as a decision only when the prior question asks for a choice", () => {
     const initial = createDecisionMemory("project-123");
     const yes = recordDecisionMemoryTurn(initial, {
