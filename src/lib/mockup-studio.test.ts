@@ -266,7 +266,7 @@ describe("buildMockupModel", () => {
         desiredOutcome: brief.desiredOutcome,
       }, { format: "website", palette: "violet", enabledModules: [] });
       const formats = model.recommendedDeliverables.map((item) => item.id);
-      expect(formats, brief.title).toEqual(expect.arrayContaining(brief.expected));
+      expect(formats, brief.title).toEqual(expect.arrayContaining([...brief.expected]));
     }
 
     const physicalOnly = buildMockupModel({
