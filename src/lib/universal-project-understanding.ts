@@ -53,7 +53,7 @@ const GROUPS: PatternGroup[] = [
     id: "money-flow",
     subject: "revenus, argent et mouvements financiers",
     action: "comprendre ou suivre les entrées et sorties d'argent",
-    patterns: [/argent|revenu|gagne|gagner|salaire|recette|depense|dépense|budget|cotisation|contribution|epargne|épargne|benefice|bénéfice/i],
+    patterns: [/argent|revenu|gagne|gagner|salaire|recette|depense|dépense|budget familial|budget du foyer|gestion du budget|suivi du budget|budget de fonctionnement|cotisation|contribution|epargne|épargne|benefice|bénéfice/i],
     questions: [
       "Souhaitez-vous suivre les revenus, les dépenses, les contributions de chacun, ou plusieurs de ces éléments ?",
       "Quelles personnes participeront volontairement au suivi, et qui pourra consulter les informations ?",
