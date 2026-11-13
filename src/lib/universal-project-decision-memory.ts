@@ -59,11 +59,11 @@ function cleanText(value: string): string {
 }
 
 function explicitDecision(text: string): boolean {
-  return /\bje confirme\b|\bje valide\b|\bje choisis\b|\bma décision est\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b/i.test(text);
+  return /\bje valide\b|\bje choisis\b|\bma décision est\b|\bje confirme (?:mon choix|cette décision|que je veux|que je souhaite)\b|\bj'opte pour\b|\bje décide de\b|\bje corrige ma décision\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text);
 }
 
 function isCorrection(text: string): boolean {
-  return /\bje corrige\b|\bje reviens sur ma décision\b|\bfinalement\b|\bje change d'avis\b/i.test(text);
+  return /\bje corrige\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text);
 }
 
 /**
