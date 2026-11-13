@@ -226,7 +226,7 @@ export function ProjectMockupStudio({ project }: Props) {
       }
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [ready, cloudLoaded, project, config, diagnosticResponses, reviewStatus, reviewNote, clientQuoteResponse, clientQuoteNote]);
+  }, [ready, cloudLoaded, project, config, diagnosticResponses, reviewStatus, reviewNote, quoteAmount, quoteDays, quotePaymentTerms, clientQuoteResponse, clientQuoteNote]);
 
   useEffect(() => {
     if (!ready) return;
