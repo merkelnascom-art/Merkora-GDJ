@@ -130,7 +130,11 @@ export function recordDecisionMemoryTurn(
   const previousContent = previousAssistantMessage?.role === "assistant"
     ? cleanText(previousAssistantMessage.content)
     : "";
-  const priorQuestion = previousContent.includes("?") ? previousContent : next.lastAssistantQuestion;
+  // The durable ledger is the source of truth across browser/session restarts.
+  // A previous assistant message may be a summary, not the actual question answered.
+  const priorQuestion = next.lastAssistantQuestion.includes("?")
+    ? next.lastAssistantQuestion
+    : previousContent.includes("?") ? previousContent : "";
 
   if (content) {
     const answerId = randomUUID();
@@ -254,15 +258,16 @@ export function hydrateDecisionMemory(
     const createdAt = typeof row.created_at === "string" ? row.created_at : memory.updatedAt;
     const id = typeof row.id === "string" ? row.id : `stored-${memory.clientAnswers.length + memory.decisions.length + 1}`;
     if (row.decision_type === "clarification_answered") {
+      const question = typeof row.comment === "string" ? row.comment.slice(0, MAX_TEXT) : "";
       memory.clientAnswers.push({
         id,
-        question: row.decision_type === "clarification_answered" && typeof row.comment === "string"
-          ? row.comment.slice(0, MAX_TEXT) : "",
+        question,
         answer: row.decision.slice(0, MAX_TEXT),
         status: "provided",
         source: "client",
         createdAt,
       });
+      if (question.includes("?")) memory.lastAssistantQuestion = question;
       continue;
     }
     if (["scope_confirmed", "change_requested", "module_selected", "module_rejected", "other"].includes(row.decision_type ?? "")) {
