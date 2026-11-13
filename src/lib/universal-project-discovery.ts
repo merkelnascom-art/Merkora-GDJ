@@ -114,7 +114,9 @@ export function selectNextDiscoveryQuestion(
     /même projet|séparément/i.test(previousAssistantQuestion) &&
     /^(oui|non|exactement|c'est ça|c'est cela|pas du tout)[.!? ]*$/i.test(latestStatement);
   const scopeAlreadyAnswered = shortAnswerToScopeQuestion || hasAny(answers, [
-    /même projet|un seul projet|ensemble|séparément|projets distincts|deux projets/i,
+    /même projet|un seul projet|projets distincts|deux projets|séparément/i,
+    /(?:ces|les|différents|deux) besoins.{0,60}ensemble/i,
+    /regrouper les besoins|séparer les projets/i,
   ]);
   // Compare client statements across turns, not just the latest message.
   const contradictions = detectContradictions(answers);
