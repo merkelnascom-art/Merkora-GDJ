@@ -88,6 +88,28 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.readyForSolutionReview).toBe(false);
   });
 
+  it("treats an explicit later correction as a replacement, not an unresolved contradiction", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Finalement, seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+    expect(result.stage).not.toBe("resolve_contradiction");
+  });
+
+  it("does not let assistant wording create a client-side contradiction", () => {
+    const analysis = analyzeUniversalProjectIntent("Seul moi peux consulter les montants.");
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "assistant", content: "Toute la famille pourra consulter les contributions." },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+  });
+
   it("detects a conflict between informed consent and covert collection", () => {
     const analysis = analyzeUniversalProjectIntent(
       "Les visiteurs seront informés et pourront donner leur accord.\nJe veux pourtant enregistrer leurs visites sans les prévenir.",
