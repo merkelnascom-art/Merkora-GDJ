@@ -67,7 +67,7 @@ function explicitDecision(text: string, question = ""): boolean {
 }
 
 function isCorrection(text: string): boolean {
-  return /\bje corrige\b|\bje reviens sur ma décision\b|\bje change d'avis\b/i.test(text);
+  return /\bje corrige\b|\bje reviens sur ma décision\b|\bje change d'avis\b|\bfinalement\b|\ben fait,?\s+je préfère\b|\bje préfère finalement\b|\bje ne veux plus\b|\bremplace(?:r)?\b|\bà la place de\b/i.test(text);
 }
 
 /**
