@@ -35,6 +35,9 @@ describe("MerKora profession reference", () => {
     const expanded = MERKORA_PROFESSION_CANDIDATES.filter((candidate) => candidate.sectorIds?.length);
     expect(expanded).toHaveLength(2000);
     expect(expanded.every((candidate) => candidate.sectorIds?.every((id) => sectorIds.has(id)))).toBe(true);
+    const usedSectorIds = new Set<string>(expanded.flatMap((candidate) => candidate.sectorIds ?? []));
+    expect(usedSectorIds.size).toBe(100);
+    expect([...sectorIds].every((id) => usedSectorIds.has(id))).toBe(true);
   });
 
   it("reaches exactly 2,000 and supports sector-specific profession filtering", () => {
