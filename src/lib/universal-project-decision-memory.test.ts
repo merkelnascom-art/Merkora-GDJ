@@ -18,9 +18,9 @@ describe("universal project decision memory", () => {
     });
     const recovered = parseDecisionMemory(serializeDecisionMemory(updated), "project-123");
 
-    expect(recovered?.confirmedAnswers).toHaveLength(1);
-    expect(recovered?.confirmedAnswers[0].answer).toContain("même projet");
-    expect(recovered?.confirmedAnswers[0].question).toContain("même projet");
+    expect(recovered?.clientAnswers).toHaveLength(1);
+    expect(recovered?.clientAnswers[0].answer).toContain("même projet");
+    expect(recovered?.clientAnswers[0].question).toContain("même projet");
   });
 
   it("keeps assistant hypotheses separate from client-confirmed decisions", () => {
@@ -29,7 +29,7 @@ describe("universal project decision memory", () => {
       role: "assistant",
       content: "Votre difficulté pourrait venir d'un manque de suivi. C'est une hypothèse à vérifier.",
     });
-    expect(updated.confirmedAnswers).toHaveLength(0);
+    expect(updated.clientAnswers).toHaveLength(0);
     expect(updated.hypotheses).toHaveLength(1);
     expect(updated.hypotheses[0].confirmationRequired).toBe(true);
   });
@@ -58,7 +58,7 @@ describe("universal project decision memory", () => {
       content: "Je propose une solution numérique. Souhaitez-vous la valider ?",
     });
     expect(updated.decisions).toHaveLength(0);
-    expect(updated.confirmedAnswers).toHaveLength(0);
+    expect(updated.clientAnswers).toHaveLength(0);
   });
 
   it("rejects a memory belonging to another project and unsupported versions", () => {
