@@ -53,4 +53,28 @@ describe("mergeGeminiConversationReply", () => {
     expect(result?.clarifyingQuestions).toHaveLength(7);
     expect(result?.extractedNeeds).toHaveLength(8);
   });
+
+  it("does not let model wording override a deterministic contradiction gate", () => {
+    const blocked = createMerkoraConversationReply({
+      message: "Seul moi peux voir les montants.",
+      history: [
+        { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+        { role: "assistant", content: "Qui doit pouvoir consulter les montants ?" },
+      ],
+    });
+    expect(blocked.discovery.stage).toBe("resolve_contradiction");
+    const result = mergeGeminiConversationReply({
+      assistantMessage: "Tout est clair. Votre solution est prête à être réalisée.",
+      clarifyingQuestions: ["Quel design préférez-vous ?"],
+      extractedNeeds: ["Créer un tableau de bord"],
+      moduleEnhancements: [],
+    }, blocked);
+
+    expect(result?.assistantMessage).toBe(blocked.assistantMessage);
+    expect(result?.status).toBe("needs_clarification");
+    expect(result?.nextAction).toBe("clarify_need");
+    expect(result?.clarifyingQuestions[0]).toBe(blocked.clarifyingQuestions[0]);
+    expect(result?.suggestedModules).toHaveLength(0);
+  });
+
 });
