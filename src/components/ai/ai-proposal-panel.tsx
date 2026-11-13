@@ -70,6 +70,12 @@ export function AiProposalPanel({ project, onApply }: Props) {
         setMessage("Pré-analyse locale gratuite préparée. Aucun appel à un modèle IA n’a été effectué.");
         return;
       }
+      const consentResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/ai-consent`, { cache: "no-store" });
+      const consentData = consentResponse.ok ? await consentResponse.json() as { consented?: boolean } : { consented: false };
+      setConsented(consentData.consented === true);
+      if (consentData.consented !== true) {
+        throw new Error("Autorisez le traitement assisté dans l'espace de conversation de ce projet avant de lancer cette analyse approfondie.");
+      }
       const response = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,7 +199,7 @@ export function AiProposalPanel({ project, onApply }: Props) {
       )}
 
       <div className="ai-proposal-actions">
-        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null || (status.enabled && !consented)}>
+        <button className="button button-primary" onClick={() => void analyze()} disabled={busy || status === null}>
           {busy ? "Analyse en cours…" : status?.enabled ? (analysis ? "Recommencer l’analyse" : "Analyser le projet") : "Préparer une analyse locale gratuite"}
         </button>
         {!status?.enabled && <span>Mode local sans frais : aucune requête n’est envoyée à un fournisseur IA. Les résultats restent préliminaires.</span>}
