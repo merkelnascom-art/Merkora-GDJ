@@ -45,9 +45,12 @@ Les agents d'une même phase peuvent être planifiés en parallèle. Une phase d
 
 - Les 35 spécialistes conservent leur identifiant, leur pôle et leur contrat descriptif.
 - Le sélecteur n'ajoute aucun spécialiste non demandé.
+- MerKora Core peut recommander une première équipe à partir des types de tâches et du périmètre du plan vérifié ; l'administrateur peut modifier cette sélection. Cette recommandation n'est pas une activation.
 - Les spécialistes compatibles sont préparés sous les six rôles d'exécution existants : analyst, architect, implementer, reviewer, tester et cross_checker.
 - Les spécialistes sans rôle générique sémantiquement adapté restent explicitement marqués `requires_specialized_runtime`. Ils ne sont pas envoyés arbitrairement à un modèle sous un faux rôle.
-- Le contrat de mission existant continue d'exiger un résultat structuré, une portée projet, des constats et une section de vérification.
+- Le brief et le plan versionnés sont relus côté serveur ; leurs empreintes et l'empreinte du périmètre sont vérifiées avant de construire le contexte transmis aux missions.
+- Le contrat de mission existant continue d'exiger un résultat structuré, une portée projet, des constats et une section de vérification. Le contexte client est explicitement traité comme une donnée non fiable, jamais comme une instruction système.
+- L'exécuteur réutilise le registre de fournisseurs existant et exige des contrôles distincts pour l'autorisation de démarrage, l'accès au projet, le consentement explicite au traitement IA externe, la réservation budgétaire et les portes humaines.
 - Le graphe d'exécution existant vérifie les dépendances ; le cycle d'exécution existant conserve les transitions, les approbations, les tentatives et les états d'échec.
 - Les rapports d'un fournisseur ne constituent pas des preuves indépendantes. Les tests doivent être exécutés par les mécanismes de vérification de confiance.
 
@@ -62,7 +65,7 @@ Le planificateur expose les portes suivantes, toutes à l'état `not_evaluated` 
 - autorisation distincte de mise en production, uniquement si une mission de déploiement est sélectionnée ;
 - acceptation de la livraison avant l'activation du support après livraison.
 
-Ces marqueurs ne créent aucune approbation et ne remplacent pas les routes, preuves et contrôles existants. La préparation d'un devis ne l'envoie pas. La préparation d'une livraison ne la publie pas. Le worker de fabrication ne doit pas devenir un déploiement automatique.
+Ces marqueurs ne créent aucune approbation et ne remplacent pas les routes, preuves et contrôles existants. Les validations et le consentement IA déjà associés au digest exact du plan doivent être vérifiés par le service appelant ; le worker existant vérifie aussi les validations et le paiement avant de réclamer un travail. La préparation d'un devis ne l'envoie pas. La préparation d'une livraison ne la publie pas. Le worker de fabrication ne doit pas devenir un déploiement automatique.
 
 ## 5. État exact de cette intégration
 
@@ -74,7 +77,9 @@ Ajouts réalisés dans la branche multi-agent :
 - adaptation prudente vers les rôles génériques existants ;
 - planificateur de missions avec dépendances ;
 - composition de workflow reliant les pôles, les contrats de mission et le graphe d'exécution ;
-- exécuteur serveur séquentiel réutilisant les adaptateurs fournisseurs existants, avec contrôle du démarrage, des droits projet, du budget et des portes humaines ;
+- exécuteur serveur séquentiel réutilisant le registre de fournisseurs existant, avec contrôle du démarrage, des droits projet, du consentement IA externe, du budget et des portes humaines ;
+- chargeur de contexte projet vérifiant les empreintes du brief, du plan et du périmètre avant de transmettre un contexte borné aux missions ;
+- recommandation déterministe de spécialistes à partir du plan versionné, modifiable par l'administrateur ;
 - séparation de la préparation d'exploitation, de la mise en production et du support après livraison ;
 - exigence d'un fournisseur indépendant pour les rôles de revue et de contre-vérification lorsque des travaux antérieurs doivent être contrôlés ;
 - tests ciblant le parcours complet, les barrières de phases, les spécialistes non raccordés, les refus d'autorisation, le budget et les portes humaines.
@@ -87,13 +92,12 @@ Les adaptateurs OpenAI, Anthropic et Gemini existent déjà dans le dépôt et l
 
 ## 6. Étapes restantes avant activation opérationnelle
 
-1. Raccorder le workflow au snapshot versionné du projet et au périmètre approuvé, sans relire des données hors du projet.
-2. Faire vérifier les portes humaines par les services d'approbation existants avant toute transition.
+1. Raccorder le service d'exécution aux validations exactes du projet et au consentement IA déjà stockés, avec contrôle des digests et du paiement.
+2. Relier les missions aux cinq tâches durables existantes de la fabrique et à leurs événements d'audit, sans créer un second système de file.
 3. Ajouter les adaptateurs spécialisés manquants pour les agents qui nécessitent des outils d'exploitation, de relation client ou de gestion administrative.
-4. Relier les missions aux tâches durables existantes de la fabrique et à leurs événements d'audit, sans créer un second système de file.
-5. Raccorder les preuves de tests et d'audit au contrôle de sortie.
-6. Effectuer un test Preview sur un projet de démonstration autorisé ; vérifier la reprise, les erreurs, les refus, les dépendances et la revue humaine.
-7. N'envisager une migration, une activation de fournisseur, un lancement Sandbox facturé, une fusion ou un déploiement qu'après revue explicite et autorisation distincte.
+4. Raccorder les preuves de tests et d'audit au contrôle de sortie.
+5. Effectuer un test Preview sur un projet de démonstration autorisé ; vérifier la reprise, les erreurs, les refus, les dépendances et la revue humaine.
+6. N'envisager une activation de fournisseur, un lancement Sandbox facturé, une fusion ou un déploiement qu'après revue explicite et autorisation distincte.
 
 ## 7. Garanties de périmètre
 
