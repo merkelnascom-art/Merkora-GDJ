@@ -25,7 +25,6 @@ function validPayload(value: unknown): value is WorkflowPayload {
     && text(value.workflowId, 30, 1)
     && /^[a-z0-9][a-z0-9-]{0,29}$/.test(value.workflowId)
     && Array.isArray(value.agentIds)
-    && value.agentIds.length >= 1
     && value.agentIds.length <= 35
     && value.agentIds.every((agentId) => text(agentId, 100, 1))
     && JSON.stringify(value).length <= 10_000;
@@ -81,6 +80,9 @@ export async function POST(
     return NextResponse.json({
       prepared: true,
       executionStarted: false,
+      selectionSource,
+      recommendedAgentIds: snapshot.recommendedAgentIds,
+      recommendationReasons: snapshot.recommendationReasons,
       sourceVersions: {
         briefVersion: snapshot.briefVersion,
         planVersion: snapshot.planVersion,
