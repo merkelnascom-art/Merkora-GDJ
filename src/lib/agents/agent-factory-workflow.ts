@@ -254,6 +254,7 @@ export function planAgentFactoryWorkflow(input: {
   workflowId: string;
   agentIds: readonly string[];
   contextReferences?: readonly string[];
+  contextInstructions?: readonly string[];
 }): AgentFactoryWorkflow {
   const projectId = input.projectId.trim();
   if (!projectId || projectId.length > 160) {
@@ -328,6 +329,7 @@ export function planAgentFactoryWorkflow(input: {
         `workflow:${input.workflowId}`,
         ...(input.contextReferences ?? []),
       ],
+      contextInstructions: input.contextInstructions,
     });
 
     return preparation.status === "prepared"
