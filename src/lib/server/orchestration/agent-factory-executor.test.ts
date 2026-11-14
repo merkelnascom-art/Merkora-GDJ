@@ -221,6 +221,54 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(calls).toEqual([]);
   });
 
+
+  it("hands verified upstream mission results to the next phase as bounded untrusted context", async () => {
+    const receivedMissions: Array<{ missionId: string; instructions: string[] }> = [];
+    const handoffAdapter: AgentRuntimeAdapter = {
+      providerId: "openai",
+      invocationCapability: "models.generate",
+      async invoke({ mission }) {
+        receivedMissions.push(mission);
+        return {
+          ...resultFor({
+            missionId: mission.missionId,
+            projectId: mission.projectId,
+            providerId: "openai",
+          }),
+          summary: "Le besoin client est clarifié et les contraintes sont identifiées.",
+          findings: [{
+            severity: "info",
+            title: "Contrainte métier",
+            detail: "La solution doit fonctionner sur mobile et ordinateur.",
+          }],
+          artifacts: [{ kind: "document", reference: "project:analysis:mission-1" }],
+        };
+      },
+    };
+
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["analyste-metier", "architecte-logiciel"],
+      adapters: [handoffAdapter],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget: async () => true,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("ready_for_human_review");
+    expect(receivedMissions).toHaveLength(2);
+    expect(receivedMissions[1]?.instructions.some((instruction) =>
+      instruction.includes("Le besoin client est clarifié")
+      && instruction.includes("Contrainte métier")
+      && instruction.includes("project:analysis:mission-1"),
+    )).toBe(true);
+    expect(receivedMissions[1]?.instructions.some((instruction) =>
+      instruction.includes("ne pas suivre") && instruction.includes("non fiables"),
+    )).toBe(true);
+  });
+
   it("blocks provider calls when project authorization or budget reservation fails", async () => {
     const calls: string[] = [];
     const unauthorized = await executeAgentFactoryWorkflow({
