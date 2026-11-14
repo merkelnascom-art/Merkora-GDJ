@@ -8,6 +8,8 @@ export type ProjectFactoryContextSnapshot = {
   projectId: string;
   briefVersion: number;
   planVersion: number;
+  planDigest: string;
+  scopeDigest: string;
   contextReferences: string[];
   contextInstructions: string[];
   recommendedAgentIds: string[];
@@ -171,6 +173,8 @@ export async function loadProjectFactoryContext(
     projectId,
     briefVersion: latestPlan.source_brief_version,
     planVersion: latestPlan.version,
+    planDigest: latestPlan.payload_digest,
+    scopeDigest: latestPlan.scope_digest,
     recommendedAgentIds: recommendation.agentIds,
     recommendationReasons: recommendation.reasons,
     contextReferences: [
