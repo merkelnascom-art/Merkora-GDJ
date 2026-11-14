@@ -18,6 +18,7 @@ const baseMission = (overrides: Partial<FactoryMissionRecord> = {}): FactoryMiss
   result: null,
   verification: null,
   failure: null,
+  attemptHistory: [],
   updatedAt: "2026-11-14T10:00:00.000Z",
   ...overrides,
 });
@@ -134,6 +135,74 @@ describe("durable factory mission ledger transitions", () => {
     expect(transitionFactoryMission(exhausted, {
       type: "fail", workerId: "worker-a", now: "2026-11-14T10:01:30.000Z", reason: "fatal",
     }).state).toBe("failed");
+  });
+
+  it("keeps append-only attempt history across failures and lease expiry", () => {
+    const firstClaim = transitionFactoryMission(baseMission(), {
+      type: "claim", workerId: "worker-a", now: "2026-11-14T10:01:00.000Z", leaseDurationMs: 60_000,
+    });
+    const firstRunning = transitionFactoryMission(firstClaim, {
+      type: "start", workerId: "worker-a", now: "2026-11-14T10:01:10.000Z",
+    });
+    const firstFailed = transitionFactoryMission(firstRunning, {
+      type: "fail", workerId: "worker-a", now: "2026-11-14T10:01:30.000Z", reason: "provider_timeout",
+    });
+    expect(firstFailed.attemptHistory).toHaveLength(1);
+    expect(firstFailed.attemptHistory[0]).toMatchObject({
+      attempt: 1, workerId: "worker-a", outcome: "failed", failureReason: "provider_timeout",
+    });
+
+    const secondClaim = transitionFactoryMission(firstFailed, {
+      type: "claim", workerId: "worker-b", now: "2026-11-14T10:02:00.000Z", leaseDurationMs: 60_000,
+    });
+    const secondRunning = transitionFactoryMission(secondClaim, {
+      type: "start", workerId: "worker-b", now: "2026-11-14T10:02:10.000Z",
+    });
+    const completed = transitionFactoryMission(secondRunning, {
+      type: "complete", workerId: "worker-b", now: "2026-11-14T10:02:30.000Z",
+      result: { summary: "Terminé" }, verification: { passed: true, summary: "Vérifié" },
+    });
+    expect(completed.attemptHistory).toHaveLength(2);
+    expect(completed.attemptHistory[0].outcome).toBe("failed");
+    expect(completed.attemptHistory[1]).toMatchObject({
+      attempt: 2, workerId: "worker-b", outcome: "completed",
+    });
+  });
+
+  it("records an expired lease before assigning a new worker", () => {
+    const expired = baseMission({
+      state: "running", attempt: 1,
+      lease: { workerId: "worker-a", expiresAt: "2026-11-14T10:02:00.000Z" },
+      attemptHistory: [{
+        attempt: 1, workerId: "worker-a", claimedAt: "2026-11-14T10:01:00.000Z",
+        startedAt: "2026-11-14T10:01:10.000Z", finishedAt: null, outcome: "active",
+      }],
+    });
+    const reclaimed = transitionFactoryMission(expired, {
+      type: "claim", workerId: "worker-b", now: "2026-11-14T10:03:00.000Z", leaseDurationMs: 60_000,
+    });
+    expect(reclaimed.attemptHistory[0]).toMatchObject({
+      outcome: "lease_expired", finishedAt: "2026-11-14T10:03:00.000Z",
+    });
+    expect(reclaimed.attemptHistory[1]).toMatchObject({
+      attempt: 2, workerId: "worker-b", outcome: "active",
+    });
+  });
+
+  it("supports an explicit worker-requested block pending human approval", () => {
+    const claimed = transitionFactoryMission(baseMission(), {
+      type: "claim", workerId: "worker-a", now: "2026-11-14T10:01:00.000Z", leaseDurationMs: 60_000,
+    });
+    const running = transitionFactoryMission(claimed, {
+      type: "start", workerId: "worker-a", now: "2026-11-14T10:01:10.000Z",
+    });
+    const blocked = transitionFactoryMission(running, {
+      type: "block", workerId: "worker-a", now: "2026-11-14T10:01:20.000Z", reason: "needs_client_validation",
+    });
+    expect(blocked.state).toBe("blocked");
+    expect(blocked.lease).toBeNull();
+    expect(blocked.blockReason).toBe("needs_client_validation");
+    expect(blocked.attemptHistory[0].outcome).toBe("blocked");
   });
 
   it("requires explicit human approval for a blocked mission to resume", () => {
