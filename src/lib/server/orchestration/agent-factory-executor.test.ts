@@ -158,7 +158,7 @@ describe("guarded MerKora factory workflow execution", () => {
       code: null,
     }]);
     expect(calls).toHaveLength(1);
-    expect(receivedInstructions.join("\\n")).toContain("UX/UI Designer");
+    expect(receivedInstructions.join("\\n")).toContain("UX/UI designer");
     expect(receivedInstructions.join("\\n")).toContain("ne confèrent aucune permission");
   });
 
