@@ -32,12 +32,13 @@ function connection(providerId: string): AgentRuntimeConnection {
   };
 }
 
-function adapter(providerId: string, calls: string[]): AgentRuntimeAdapter {
+function adapter(providerId: string, calls: string[], instructions?: string[]): AgentRuntimeAdapter {
   return {
     providerId,
     invocationCapability: "models.generate",
     async invoke({ mission }) {
       calls.push(`${providerId}:${mission.missionId}`);
+      instructions?.push(...mission.instructions);
       return resultFor({
         missionId: mission.missionId,
         projectId: mission.projectId,
@@ -54,16 +55,21 @@ const baseInput = {
   timeoutMs: 10_000,
   modelAliases: { openai: "fast", anthropic: "review", gemini: "deep" },
   authorizeExternalProcessing: async () => true,
+  projectContextInstructions: [
+    "Brief client vérifié : centre de formation.",
+    "Périmètre versionné : inscriptions et suivi financier.",
+  ],
 };
 
 describe("guarded MerKora factory workflow execution", () => {
   it("executes compatible missions sequentially by phase and checks human gates", async () => {
     const calls: string[] = [];
+    const receivedInstructions: string[] = [];
     const checkHumanGate = vi.fn(async () => true);
     const result = await executeAgentFactoryWorkflow({
       ...baseInput,
       agentIds: ["analyste-metier", "architecte-logiciel", "developpeur-backend"],
-      adapters: [adapter("openai", calls)],
+      adapters: [adapter("openai", calls, receivedInstructions)],
       connections: [connection("openai")],
       authorizeWorkflowStart: async () => true,
       authorizeAgent: async () => true,
@@ -76,6 +82,7 @@ describe("guarded MerKora factory workflow execution", () => {
       "analyste-metier", "architecte-logiciel", "developpeur-backend",
     ]);
     expect(calls).toHaveLength(3);
+    expect(receivedInstructions.join("\\n")).toContain("Brief client vérifié : centre de formation.");
     expect(result.gateResults.every((gate) => gate.approved)).toBe(true);
     expect(checkHumanGate).toHaveBeenCalled();
     expect(result.executionStarted).toBe(true);
