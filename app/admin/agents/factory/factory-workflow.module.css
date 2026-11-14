@@ -95,6 +95,12 @@
 .recommendation strong { color: #e3c889; }
 .recommendation span { color: #aeb7c6; line-height: 1.5; }
 .safetyNote { margin: 22px 0 0; padding: 14px; border-radius: 10px; background: #0b1422; color: #b6c0d0; font-size: 12px; line-height: 1.6; }
+.durableHandoff { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 24px; padding: 16px; border: 1px solid rgba(201,173,112,.35); border-radius: 12px; background: #0d1626; }
+.durableHandoff h3 { margin: 0 0 5px; font-size: 14px; }
+.durableHandoff p { margin: 0; color: #aeb7c6; font-size: 12px; line-height: 1.5; }
+.durableHandoff button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: linear-gradient(135deg, #d9c18b, #a88a51); color: #101827; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.durableHandoff button:disabled { opacity: .55; cursor: not-allowed; }
+.durableSuccess { margin: 12px 0 0; padding: 12px 14px; border: 1px solid #285b4c; border-radius: 10px; background: #102c27; color: #b7e7d4; font-size: 12px; line-height: 1.6; }
 
 @media (max-width: 900px) {
   .agentChoices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -105,7 +111,8 @@
   .page { width: min(100% - 22px, 1180px); padding-top: 20px; }
   .pole { padding: 14px; }
   .agentChoices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .selectionSummary, .prepareBar, .resultHeader { align-items: stretch; flex-direction: column; }
+  .selectionSummary, .prepareBar, .resultHeader, .durableHandoff { align-items: stretch; flex-direction: column; }
+  .durableHandoff button { width: 100%; }
   .selectionActions button { flex: 1; }
   .phase { grid-template-columns: 26px minmax(0, 1fr); }
   .phase > span:last-child { grid-column: 2; justify-self: start; }
