@@ -278,6 +278,7 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(receivedMissions[1]?.instructions.some((instruction) =>
       instruction.includes("ne pas suivre") && instruction.includes("non fiables"),
     )).toBe(true);
+    expect(receivedMissions[1]?.instructions.length).toBeLessThanOrEqual(20);
   });
 
 
