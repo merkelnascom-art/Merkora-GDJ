@@ -111,7 +111,7 @@ describe("guarded MerKora factory workflow execution", () => {
       authorizeWorkflowStart: async () => true,
       authorizeAgent: async () => true,
       reserveBudget: async () => true,
-      checkHumanGate: async (gate) => gate.id !== "client-scope-validation",
+      checkHumanGate: async (gate) => gate.gate.id !== "client-scope-validation",
     });
 
     expect(result.state).toBe("blocked");
