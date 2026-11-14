@@ -179,6 +179,44 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(twoProviderCalls[1]?.startsWith("anthropic:")).toBe(true);
   });
 
+
+  it("does not require production-release approval when no deployment task is selected", async () => {
+    const calls: string[] = [];
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["devops"],
+      adapters: [adapter("openai", calls)],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget: async () => true,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("ready_for_human_review");
+    expect(result.gateResults.map((gate) => gate.gateId))
+      .not.toContain("production-release-authorization");
+  });
+
+  it("requires delivery acceptance before starting post-delivery support", async () => {
+    const calls: string[] = [];
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["support-apres-livraison"],
+      adapters: [adapter("openai", calls)],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget: async () => true,
+      checkHumanGate: async (scope) => scope.gate.id !== "delivery-acceptance",
+    });
+
+    expect(result.state).toBe("blocked");
+    expect(result.invocations).toEqual([]);
+    expect(result.gateResults.find((gate) => gate.gateId === "delivery-acceptance")?.approved).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
   it("blocks provider calls when project authorization or budget reservation fails", async () => {
     const calls: string[] = [];
     const unauthorized = await executeAgentFactoryWorkflow({
