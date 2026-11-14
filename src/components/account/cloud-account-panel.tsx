@@ -44,7 +44,7 @@ export function CloudAccountPanel({ localProjects, localJourneys, onCloudProject
       const journey = (payload as Record<string, unknown>).journey;
       return journey && typeof journey === "object" && !Array.isArray(journey) ? [project.id, journey] as const : null;
     }));
-    const cloudJourneys = Object.fromEntries(journeyEntries.filter((entry): entry is readonly [string, unknown] => entry !== null));
+    const cloudJourneys = Object.fromEntries(journeyEntries.filter((entry): entry is readonly [string, object] => entry !== null));
     onCloudJourneysLoaded(cloudJourneys, projects);
     return projects.length;
   }, [onCloudProjectsLoaded, onCloudJourneysLoaded]);
