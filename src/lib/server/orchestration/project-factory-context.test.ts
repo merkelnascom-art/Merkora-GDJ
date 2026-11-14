@@ -29,6 +29,7 @@ const plan = {
   tasks: [
     {
       id: "task-analysis-01",
+      kind: "analysis",
       title: "Analyser le besoin",
       purpose: "Consolider les flux d'inscription.",
       deliverable: "Synthèse des flux",
