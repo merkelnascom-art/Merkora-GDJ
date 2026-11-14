@@ -12,6 +12,16 @@ export type FactoryMissionLease = {
   expiresAt: string;
 };
 
+export type FactoryMissionAttempt = {
+  attempt: number;
+  workerId: string;
+  claimedAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  outcome: "active" | "completed" | "failed" | "blocked" | "lease_expired";
+  failureReason?: string;
+};
+
 export type FactoryMissionRecord = {
   schemaVersion: 1;
   missionId: string;
@@ -26,6 +36,8 @@ export type FactoryMissionRecord = {
   result: { summary: string; artifactRefs?: string[] } | null;
   verification: { passed: boolean; summary: string } | null;
   failure: { reason: string; occurredAt: string } | null;
+  blockReason?: string | null;
+  attemptHistory: FactoryMissionAttempt[];
   updatedAt: string;
 };
 
@@ -41,6 +53,7 @@ export type FactoryMissionCommand =
       verification: FactoryMissionRecord["verification"];
     }
   | { type: "fail"; workerId: string; now: string; reason: string }
+  | { type: "block"; workerId: string; now: string; reason: string }
   | { type: "unblock"; approved: boolean; now: string };
 
 function timestamp(value: string): number {
@@ -65,6 +78,14 @@ function requireLeaseOwner(
     throw new Error("Le worker ne détient pas le bail de cette mission.");
   }
   return mission.lease;
+}
+
+function updateCurrentAttempt(
+  history: FactoryMissionAttempt[],
+  patch: Partial<FactoryMissionAttempt>,
+): FactoryMissionAttempt[] {
+  if (!history.length) return history;
+  return history.map((item, index) => index === history.length - 1 ? { ...item, ...patch } : item);
 }
 
 /**
@@ -92,6 +113,15 @@ export function transitionFactoryMission(
     if (mission.attempt >= mission.maxAttempts) {
       throw new Error("La limite de tentatives de cette mission est atteinte.");
     }
+
+    const previousAttemptExpired = mission.lease !== null;
+    const history = previousAttemptExpired
+      ? updateCurrentAttempt(mission.attemptHistory, {
+          finishedAt: command.now,
+          outcome: "lease_expired",
+        })
+      : mission.attemptHistory;
+
     return {
       ...mission,
       state: "claimed",
@@ -100,6 +130,17 @@ export function transitionFactoryMission(
         workerId: command.workerId,
         expiresAt: new Date(nowMs + command.leaseDurationMs).toISOString(),
       },
+      attemptHistory: [
+        ...history,
+        {
+          attempt: mission.attempt + 1,
+          workerId: command.workerId,
+          claimedAt: command.now,
+          startedAt: null,
+          finishedAt: null,
+          outcome: "active",
+        },
+      ],
       updatedAt: command.now,
     };
   }
@@ -107,13 +148,18 @@ export function transitionFactoryMission(
   if (command.type === "unblock") {
     if (mission.state !== "blocked") throw new Error("Seule une mission bloquée peut être débloquée.");
     if (!command.approved) return mission;
-    return { ...mission, state: "ready", lease: null, updatedAt: command.now };
+    return { ...mission, state: "ready", lease: null, blockReason: null, updatedAt: command.now };
   }
 
   if (command.type === "start") {
     requireLeaseOwner(mission, command.workerId, command.now);
     if (mission.state !== "claimed") throw new Error("Seule une mission réclamée peut démarrer.");
-    return { ...mission, state: "running", updatedAt: command.now };
+    return {
+      ...mission,
+      state: "running",
+      attemptHistory: updateCurrentAttempt(mission.attemptHistory, { startedAt: command.now }),
+      updatedAt: command.now,
+    };
   }
 
   if (command.type === "heartbeat") {
@@ -148,6 +194,10 @@ export function transitionFactoryMission(
       verification: command.verification,
       lease: null,
       failure: null,
+      attemptHistory: updateCurrentAttempt(mission.attemptHistory, {
+        finishedAt: command.now,
+        outcome: "completed",
+      }),
       updatedAt: command.now,
     };
   }
@@ -163,6 +213,30 @@ export function transitionFactoryMission(
       state: mission.attempt < mission.maxAttempts ? "ready" : "failed",
       lease: null,
       failure: { reason: command.reason, occurredAt: command.now },
+      attemptHistory: updateCurrentAttempt(mission.attemptHistory, {
+        finishedAt: command.now,
+        outcome: "failed",
+        failureReason: command.reason,
+      }),
+      updatedAt: command.now,
+    };
+  }
+
+  if (command.type === "block") {
+    requireLeaseOwner(mission, command.workerId, command.now);
+    if (mission.state !== "running" && mission.state !== "claimed") {
+      throw new Error("Seule une mission réclamée ou en cours peut être bloquée.");
+    }
+    if (!command.reason.trim()) throw new Error("Le motif du blocage est obligatoire.");
+    return {
+      ...mission,
+      state: "blocked",
+      lease: null,
+      blockReason: command.reason,
+      attemptHistory: updateCurrentAttempt(mission.attemptHistory, {
+        finishedAt: command.now,
+        outcome: "blocked",
+      }),
       updatedAt: command.now,
     };
   }
