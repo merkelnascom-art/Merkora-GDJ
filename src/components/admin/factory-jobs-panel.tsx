@@ -112,7 +112,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         <div>
           <div style={styles.eyebrow}>FABRIQUE LOGICIELLE</div>
           <h2 style={styles.title}>Travaux autorisés</h2>
-          <p style={styles.description}>Les travaux ne peuvent être construits qu'après les trois validations exactes du même plan.</p>
+          <p style={styles.description}>Les travaux ne peuvent être préparés qu'après les deux validations administratives exactes du même plan.</p>
         </div>
         <div style={styles.headingActions}>
           <button type="button" onClick={() => void verifyGitHubConnection()} disabled={checkingGithub} style={styles.refreshButton}>
@@ -168,6 +168,14 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
                     Télécharger le code généré
                   </a>
                 ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("admin-factory-planning")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  style={styles.regenerateButton}
+                >
+                  Régénérer le plan
+                </button>
                 {job.implementationStatus === "candidate_ready_for_human_review" ? (
                   <p style={styles.reviewNotice}>Version candidate compilée · revue humaine requise</p>
                 ) : null}
@@ -199,7 +207,7 @@ export function FactoryJobsPanel({ initialJobs, aiEnabled }: { initialJobs: Fact
         </div>
       )}
       {message ? <p role="status" style={styles.message}>{message}</p> : null}
-      <p style={styles.warning}>Le lancement déclenche GitHub Actions puis un Vercel Sandbox facturé à l'utilisation, après confirmation explicite. Le worker compile un squelette isolé ; l'IA externe reste séparée et soumise au consentement client et à une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
+      <p style={styles.warning}>Le lancement déclenche GitHub Actions puis un Vercel Sandbox facturé à l'utilisation, après confirmation explicite. L'IA externe reste désactivée dans ce parcours jusqu'à la mise en place d'un consentement client distinct et d'une confirmation de dépense. Aucun code n'est livré ni publié automatiquement.</p>
     </section>
   );
 }
@@ -250,6 +258,7 @@ const styles: Record<string, React.CSSProperties> = {
   taskEmpty: { margin: "10px 0 0", color: "#9992a8", fontSize: 11 },
   button: { border: 0, borderRadius: 10, padding: "11px 14px", background: "#5e35b1", color: "#fff", fontWeight: 700, fontSize: 12 },
   download: { display: "inline-block", marginTop: 9, color: "#5e35b1", fontSize: 12, fontWeight: 700, textDecoration: "underline" },
+  regenerateButton: { display: "inline-block", marginTop: 9, marginLeft: 12, border: "1px solid #b7a5df", borderRadius: 8, padding: "7px 10px", background: "#f7f4fc", color: "#5e35b1", fontSize: 11, fontWeight: 700, cursor: "pointer" },
   reviewNotice: { margin: "10px 0 0", color: "#24634b", fontSize: 12, fontWeight: 700 },
   aiButton: { display: "block", marginTop: 9, border: "1px solid #b7a5df", borderRadius: 10, padding: "9px 12px", background: "#f7f4fc", color: "#5e35b1", fontWeight: 700, fontSize: 11 },
   message: { margin: "16px 0 0", color: "#4d3b73", fontSize: 13, lineHeight: 1.6 },
