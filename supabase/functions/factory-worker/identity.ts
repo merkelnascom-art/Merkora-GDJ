@@ -2,6 +2,7 @@ const TRUSTED_REPOSITORY = "merkelnascom-art/Merkora-GDJ";
 const TRUSTED_REPOSITORY_ID = "1436120048";
 const TRUSTED_BRANCHES = new Set([
   "refs/heads/feature/merkora-factory-unified-runtime",
+  "refs/heads/feature/admin-owned-factory-planning",
   "refs/heads/feature/merkora-production-security-hardening",
   "refs/heads/main",
 ]);
