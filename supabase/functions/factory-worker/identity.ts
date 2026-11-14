@@ -70,8 +70,9 @@ export function readSpecialistWorkflowManifest(
       workflow.sourceVersions.planVersion !== expectedPlanVersion ||
       !Array.isArray(workflow.stages) || workflow.stages.length !== 5 ||
       !Array.isArray(workflow.unsupported) ||
-      !isRecord(workflow.missionPlan) || !Array.isArray(workflow.missionPlan.steps) ||
-      !Array.isArray(workflow.assignments)) {
+      !isRecord(workflow.plan) ||
+      !isRecord(workflow.plan.missionPlan) || !Array.isArray(workflow.plan.missionPlan.steps) ||
+      !Array.isArray(workflow.plan.assignments)) {
     return null;
   }
 
@@ -90,22 +91,26 @@ export function readSpecialistWorkflowManifest(
     return null;
   }
 
-  const missionIds = workflow.missionPlan.steps.flatMap((step) =>
+  const missionIds = (workflow.plan as Record<string, unknown>).missionPlan && isRecord((workflow.plan as Record<string, unknown>).missionPlan)
+    ? ((workflow.plan as Record<string, unknown>).missionPlan as Record<string, unknown>).steps
+    : [];
+  if (!Array.isArray(missionIds)) return null;
+  const normalizedMissionIds = missionIds.flatMap((step) =>
     isRecord(step) && typeof step.missionId === "string" && step.missionId.trim()
       ? [step.missionId]
       : []
   );
-  const assignmentIds = workflow.assignments.flatMap((assignment) =>
+  const assignmentIds = ((workflow.plan as Record<string, unknown>).assignments as unknown[]).flatMap((assignment) =>
     isRecord(assignment) && typeof assignment.missionId === "string" && assignment.missionId.trim()
       ? [assignment.missionId]
       : []
   );
-  if (missionIds.length < 1 || missionIds.length !== workflow.missionPlan.steps.length ||
-      assignmentIds.length !== workflow.assignments.length ||
-      missionIds.length !== assignmentIds.length ||
-      new Set(missionIds).size !== missionIds.length ||
+  if (normalizedMissionIds.length < 1 || normalizedMissionIds.length !== missionIds.length ||
+      assignmentIds.length !== ((workflow.plan as Record<string, unknown>).assignments as unknown[]).length ||
+      normalizedMissionIds.length !== assignmentIds.length ||
+      new Set(normalizedMissionIds).size !== normalizedMissionIds.length ||
       new Set(assignmentIds).size !== assignmentIds.length ||
-      missionIds.some((id) => !assignmentIds.includes(id))) {
+      normalizedMissionIds.some((id) => !assignmentIds.includes(id))) {
     return null;
   }
 
@@ -113,7 +118,7 @@ export function readSpecialistWorkflowManifest(
     workflowId: workflow.workflowId,
     projectId: expectedProjectId,
     planVersion: expectedPlanVersion,
-    missionCount: missionIds.length,
+    missionCount: normalizedMissionIds.length,
     unsupportedCount: workflow.unsupported.length,
     status: workflow.status,
   };
