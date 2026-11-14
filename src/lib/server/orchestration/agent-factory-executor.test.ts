@@ -96,7 +96,11 @@ describe("guarded MerKora factory workflow execution", () => {
 
     expect(result.state).toBe("blocked");
     expect(result.executionStarted).toBe(false);
-    expect(result.invocations).toEqual([]);
+    expect(result.invocations).toMatchObject([{
+      agentId: "merkora-core",
+      status: "blocked",
+      code: "WORKFLOW_START_NOT_AUTHORIZED",
+    }]);
     expect(calls).toEqual([]);
     expect(reserveBudget).not.toHaveBeenCalled();
   });
