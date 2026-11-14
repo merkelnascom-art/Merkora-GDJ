@@ -11,8 +11,10 @@ type FactoryPhaseId =
   | "fabrication"
   | "controle"
   | "governance-before-release"
-  | "exploitation"
-  | "relation-client";
+  | "exploitation-preparation"
+  | "production-release"
+  | "relation-client"
+  | "post-delivery-support";
 
 type FactoryPhaseDefinition = {
   id: FactoryPhaseId;
@@ -59,16 +61,28 @@ const FACTORY_PHASES: readonly FactoryPhaseDefinition[] = [
     purpose: "Contrôler le dossier et les autorisations avant la préparation de livraison ou d'exploitation.",
   },
   {
-    id: "exploitation",
+    id: "exploitation-preparation",
     label: "Préparer l'exploitation",
     poleId: "exploitation",
-    purpose: "Préparer environnements, supervision, maintenance et opérations autorisées.",
+    purpose: "Préparer environnements, supervision, maintenance et procédures d'incident sans publier en production.",
+  },
+  {
+    id: "production-release",
+    label: "Exécuter une mise en production autorisée",
+    poleId: "exploitation",
+    purpose: "Réaliser uniquement la publication explicitement autorisée et tracer son résultat.",
   },
   {
     id: "relation-client",
-    label: "Livrer et accompagner",
+    label: "Préparer la livraison et accompagner",
     poleId: "relation_client",
-    purpose: "Organiser la documentation, la formation, le support et le suivi client.",
+    purpose: "Préparer la documentation, la formation, les échanges et le transfert au client.",
+  },
+  {
+    id: "post-delivery-support",
+    label: "Assurer le support après livraison",
+    poleId: "relation_client",
+    purpose: "Ouvrir le suivi, traiter les demandes et accompagner l'évolution après acceptation de la livraison.",
   },
 ];
 
@@ -104,17 +118,17 @@ const PHASE_BY_AGENT: Readonly<Record<string, FactoryPhaseId>> = {
 
   "validation-administrative": "governance-before-release",
 
-  devops: "exploitation",
-  "gestionnaire-des-deploiements": "exploitation",
-  supervision: "exploitation",
-  maintenance: "exploitation",
-  "gestion-des-incidents": "exploitation",
+  devops: "exploitation-preparation",
+  "gestionnaire-des-deploiements": "production-release",
+  supervision: "exploitation-preparation",
+  maintenance: "exploitation-preparation",
+  "gestion-des-incidents": "exploitation-preparation",
 
   "assistant-client": "relation-client",
   "suivi-des-demandes": "relation-client",
   documentation: "relation-client",
   formation: "relation-client",
-  "support-apres-livraison": "relation-client",
+  "support-apres-livraison": "post-delivery-support",
 };
 
 export type FactoryHumanGate = {
@@ -168,7 +182,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
   {
     id: "production-release-authorization",
     label: "Autorisation distincte de toute mise en production",
-    blocksPhase: "exploitation",
+    blocksPhase: "production-release",
     status: "not_evaluated",
     authority: "authorized_release_owner",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
@@ -176,7 +190,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
   {
     id: "delivery-acceptance",
     label: "Réception et acceptation de la livraison",
-    blocksPhase: "relation-client",
+    blocksPhase: "post-delivery-support",
     status: "not_evaluated",
     authority: "client",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
