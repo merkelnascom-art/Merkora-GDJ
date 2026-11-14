@@ -36,14 +36,25 @@ export async function POST(
     }
 
     const jobResult = await callUserData(
-      `project_factory_jobs?select=id,status&project_id=eq.${encodeURIComponent(projectId)}&id=eq.${encodeURIComponent(jobId)}&limit=1`,
+      `project_factory_jobs?select=id,status,manifest&project_id=eq.${encodeURIComponent(projectId)}&id=eq.${encodeURIComponent(jobId)}&limit=1`,
       "GET", token,
     );
     if (!jobResult.ok) return NextResponse.json({ error: "Lecture du travail impossible." }, { status: 502 });
     const jobs = Array.isArray(jobResult.data) ? jobResult.data : [];
-    const job = jobs[0] as { id?: unknown; status?: unknown } | undefined;
+    const job = jobs[0] as { id?: unknown; status?: unknown; manifest?: unknown } | undefined;
     if (!job || job.status !== "queued") {
       return NextResponse.json({ error: "Seul un travail en attente peut être déclenché." }, { status: 409 });
+    }
+    if (job.manifest && typeof job.manifest === "object" && !Array.isArray(job.manifest) &&
+      Object.prototype.hasOwnProperty.call(job.manifest, "specialistWorkflow")) {
+      return NextResponse.json({
+        dispatched: false,
+        jobId,
+        status: "queued",
+        retryable: false,
+        code: "SPECIALIST_WORKFLOW_NOT_EXECUTABLE",
+        error: "Ce travail contient un manifeste de spécialistes planifié. Le worker durable ne sait pas encore exécuter ces missions ; aucun Sandbox n'a été lancé.",
+      }, { status: 409, headers: { "Cache-Control": "no-store" } });
     }
 
     const result = await dispatchMerkoraFactoryWorkflow(projectId, jobId);
