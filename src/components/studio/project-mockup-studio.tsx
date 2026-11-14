@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Project } from "@/lib/project-types";
+import { createConceptVersionId, createConceptValidationState, recordConceptDecision, type ConceptValidationState } from "@/lib/concept-validation";
 import { submitClientRequest } from "@/lib/client-request-submission";
 import {
   buildMockupModel,
@@ -11,7 +12,15 @@ import {
   type MockupPalette,
 } from "@/lib/mockup-studio";
 
-type Props = { project: Project; readOnlySnapshot?: { config: MockupConfig; reviewStatus: LocalReviewStatus; reviewNote?: string } };
+type Props = {
+  project: Project;
+  readOnlySnapshot?: { config: MockupConfig; reviewStatus: LocalReviewStatus; reviewNote?: string };
+  showValidation?: boolean;
+  selectedRecommendationIds?: string[];
+  onSelectedRecommendationIdsChange?: (ids: string[]) => void;
+  onConceptVersionChange?: (versionId: string) => void;
+  onConceptDecision?: (state: ConceptValidationState) => void;
+};
 type LocalReviewStatus = "draft" | "changes_requested" | "approved";
 type ClientQuoteResponse = "undecided" | "accepted" | "changes_requested" | "negotiate";
 type StoredMockupConfig = Partial<MockupConfig> & { paletteManuallySelected?: boolean; reviewStatus?: LocalReviewStatus; reviewNote?: string; quoteAmount?: string; quoteDays?: string; quotePaymentTerms?: string; clientQuoteResponse?: ClientQuoteResponse; clientQuoteNote?: string };
@@ -28,7 +37,7 @@ const paletteOptions: { value: MockupPalette; label: string }[] = [
   { value: "amber", label: "Ambre" },
 ];
 
-export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
+export function ProjectMockupStudio({ project, readOnlySnapshot, showValidation, selectedRecommendationIds, onSelectedRecommendationIdsChange, onConceptVersionChange, onConceptDecision }: Props) {
   const suggestedPalette = suggestPalette(project);
   const [config, setConfig] = useState<MockupConfig>(readOnlySnapshot?.config ?? { format: "website", palette: suggestedPalette, enabledModules: [] });
   const [paletteManuallySelected, setPaletteManuallySelected] = useState(false);
@@ -45,6 +54,18 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
   const [clientQuoteResponse, setClientQuoteResponse] = useState<ClientQuoteResponse>("undecided");
   const [clientQuoteNote, setClientQuoteNote] = useState("");
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
+
+  useEffect(() => {
+    if (!selectedRecommendationIds) return;
+    setConfig((current) => current.selectedRecommendationIds?.join("\\0") === selectedRecommendationIds.join("\\0")
+      ? current
+      : { ...current, selectedRecommendationIds: [...selectedRecommendationIds] });
+  }, [selectedRecommendationIds]);
+
+  useEffect(() => {
+    if (!onConceptVersionChange) return;
+    onConceptVersionChange(createConceptVersionId(project.id, project, config));
+  }, [project, config, onConceptVersionChange]);
   const brandInitials = model.title.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
   const storageKey = `${STORAGE_PREFIX}${project.id}`;
 
@@ -374,7 +395,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot }: Props) {
             {model.recommendations.length === 0 && <p className="mockup-control-hint">Aucune piste n’est disponible. Les pistes apparaîtront ici après l’analyse du besoin.</p>}
           </div>
 
-          <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
+          {showValidation !== false && <section className="mockup-review-panel" aria-labelledby="mockup-review-title">
             <div className="mockup-review-heading">
               <div>
                 <span className="mockup-control-title">Étape 03 · Retour sur le concept</span>
