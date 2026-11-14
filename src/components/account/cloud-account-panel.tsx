@@ -5,13 +5,13 @@ import { analyzeNeed } from "@/lib/discovery";
 import { fromCloudProjectRow, type CloudProjectRow, type Project } from "@/lib/project-types";
 
 type SafeUser = { id: string; email: string | null; fullName: string | null };
-type Props = { localProjects: Project[]; onCloudProjectsLoaded: (projects: Project[]) => void; storageReady: boolean };
+type Props = { localProjects: Project[]; localJourneys: Record<string, unknown>; onCloudProjectsLoaded: (projects: Project[]) => void; onCloudJourneysLoaded: (journeys: Record<string, unknown>) => void; storageReady: boolean };
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   return await response.json().catch(() => ({})) as Record<string, unknown>;
 }
 
-export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storageReady }: Props) {
+export function CloudAccountPanel({ localProjects, localJourneys, onCloudProjectsLoaded, onCloudJourneysLoaded, storageReady }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -33,8 +33,21 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
       return { ...project, discovery: analyzeNeed(project) };
     });
     onCloudProjectsLoaded(projects);
+    const journeyEntries = await Promise.all(projects.map(async (project) => {
+      const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}/workspace`, { cache: "no-store" });
+      if (!response.ok) return null;
+      const workspaceData = await readJson(response);
+      const workspace = workspaceData.workspace;
+      if (!workspace || typeof workspace !== "object") return null;
+      const payload = (workspace as Record<string, unknown>).payload;
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+      const journey = (payload as Record<string, unknown>).journey;
+      return journey && typeof journey === "object" && !Array.isArray(journey) ? [project.id, journey] as const : null;
+    }));
+    const cloudJourneys = Object.fromEntries(journeyEntries.filter((entry): entry is readonly [string, unknown] => entry !== null));
+    onCloudJourneysLoaded(cloudJourneys);
     return projects.length;
-  }, [onCloudProjectsLoaded]);
+  }, [onCloudProjectsLoaded, onCloudJourneysLoaded]);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -103,8 +116,40 @@ export function CloudAccountPanel({ localProjects, onCloudProjectsLoaded, storag
       });
       const data = await readJson(response);
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "La synchronisation a échoué.");
+      let journeySaved = 0;
+      let journeyConflict = 0;
+      for (const project of localProjects) {
+        const journey = localJourneys[project.id];
+        if (!journey || typeof journey !== "object" || Array.isArray(journey)) continue;
+        const workspaceResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/workspace`, { cache: "no-store" });
+        if (!workspaceResponse.ok) throw new Error("Impossible de vérifier la version en ligne d'un parcours. Les dossiers locaux sont conservés.");
+        const workspaceData = await readJson(workspaceResponse);
+        const workspace = workspaceData.workspace && typeof workspaceData.workspace === "object"
+          ? workspaceData.workspace as Record<string, unknown>
+          : null;
+        if (workspace && Number(workspace.revision) > 0) {
+          journeyConflict += 1;
+          continue;
+        }
+        const saveResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/workspace`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedRevision: 0,
+            payload: { journey },
+            eventType: "client_journey_saved",
+            summary: "Synchronisation initiale du parcours client",
+          }),
+        });
+        const saveData = await readJson(saveResponse);
+        if (!saveResponse.ok) {
+          if (saveResponse.status === 409) { journeyConflict += 1; continue; }
+          throw new Error(typeof saveData.error === "string" ? saveData.error : "La sauvegarde du parcours a échoué. Les dossiers locaux sont conservés.");
+        }
+        journeySaved += 1;
+      }
       const count = await loadCloudProjects();
-      setMessage(`Synchronisation terminée. ${count} dossier(s) disponibles en ligne.`);
+      setMessage(`Synchronisation terminée : ${count} dossier(s) en ligne, ${journeySaved} parcours sauvegardé(s)${journeyConflict ? `, ${journeyConflict} parcours déjà présents conservés sans écrasement` : ""}.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "La synchronisation a échoué. Les dossiers locaux sont conservés.");
     } finally {
