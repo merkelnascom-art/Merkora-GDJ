@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { planAgentFactoryWorkflow } from "@/lib/agents/agent-factory-workflow";
+import { loadProjectFactoryContext } from "@/lib/server/orchestration/project-factory-context";
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
@@ -67,54 +68,21 @@ export async function POST(
       return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
     }
 
-    const snapshot = await callUserData(
-      `project_memory_plan_versions?select=version,source_brief_version,payload_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&order=version.desc&limit=1`,
-      "GET",
-      token,
-    );
-    if (!snapshot.ok) {
-      return NextResponse.json({ error: "Lecture du plan projet impossible." }, { status: 502 });
-    }
-
-    const rows = Array.isArray(snapshot.data) ? snapshot.data : [];
-    const latest = rows[0];
-    if (
-      !record(latest)
-      || typeof latest.version !== "number"
-      || !Number.isInteger(latest.version)
-      || latest.version < 1
-      || typeof latest.source_brief_version !== "number"
-      || !Number.isInteger(latest.source_brief_version)
-      || latest.source_brief_version < 1
-      || !text(latest.payload_digest, 64, 64)
-      || !/^[a-f0-9]{64}$/i.test(latest.payload_digest)
-      || !text(latest.scope_digest, 64, 64)
-      || !/^[a-f0-9]{64}$/i.test(latest.scope_digest)
-    ) {
-      return NextResponse.json(
-        { error: "Aucun plan projet versionné et vérifiable n'est disponible. Préparez d'abord le plan administratif." },
-        { status: 409 },
-      );
-    }
+    const snapshot = await loadProjectFactoryContext(projectId, token);
 
     const workflow = planAgentFactoryWorkflow({
       projectId,
       workflowId: body.workflowId,
       agentIds: body.agentIds,
-      contextReferences: [
-        `project-brief-version:${latest.source_brief_version}`,
-        `project-plan-version:${latest.version}`,
-        `project-plan-digest:${latest.payload_digest}`,
-        `project-scope-digest:${latest.scope_digest}`,
-      ],
+      contextReferences: snapshot.contextReferences,
     });
 
     return NextResponse.json({
       prepared: true,
       executionStarted: false,
       sourceVersions: {
-        briefVersion: latest.source_brief_version,
-        planVersion: latest.version,
+        briefVersion: snapshot.briefVersion,
+        planVersion: snapshot.planVersion,
       },
       workflow,
     }, {
@@ -127,9 +95,22 @@ export async function POST(
       || message === "Identifiant d'agent invalide."
       || message === "Sélection d'agents vide."
       || message === "La sélection dépasse les 35 agents du catalogue.";
+    const missingProject = message === "PROJECT_NOT_FOUND";
+    const missingPlan = message === "PROJECT_PLAN_NOT_FOUND";
+    const invalidSnapshot = message === "PROJECT_CONTEXT_INTEGRITY_FAILED";
+    const status = knownSelectionError ? 400 : missingProject ? 404 : missingPlan || invalidSnapshot ? 409 : 502;
+    const errorMessage = knownSelectionError
+      ? message
+      : missingProject
+        ? "Projet introuvable ou inaccessible."
+        : missingPlan
+          ? "Aucun plan projet versionné n'est disponible. Préparez d'abord le plan administratif."
+          : invalidSnapshot
+            ? "Le plan ou le brief ne correspond plus à son empreinte d'intégrité."
+            : "Le workflow projet n'a pas pu être préparé.";
     return NextResponse.json(
-      { error: knownSelectionError ? message : "Le workflow projet n'a pas pu être préparé." },
-      { status: knownSelectionError ? 400 : 502, headers: { "Cache-Control": "no-store" } },
+      { error: errorMessage },
+      { status, headers: { "Cache-Control": "no-store" } },
     );
   }
 }
