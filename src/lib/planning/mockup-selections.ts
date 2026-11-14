@@ -2,7 +2,7 @@ import { buildMockupModel, type MockupConfig } from "../mockup-studio";
 import type { Project } from "../project-types";
 import type { ProjectPlanInput } from "./plan-types";
 
-type StoredStudioConfig = Partial<MockupConfig>;
+type StoredStudioConfig = Partial<MockupConfig> & { moduleSelectionConfirmed?: boolean };
 
 function isFormat(value: unknown): value is MockupConfig["format"] {
   return value === "website" || value === "mobile" || value === "dashboard";
@@ -23,7 +23,6 @@ export function buildSelectedPlanOptions(
     enabledModules: Array.isArray(saved.enabledModules)
       ? saved.enabledModules.filter((id): id is string => typeof id === "string")
       : [],
-    moduleSelectionConfirmed: saved.moduleSelectionConfirmed === true,
     ...(Array.isArray(saved.selectedRecommendationIds)
       ? { selectedRecommendationIds: saved.selectedRecommendationIds.filter((id): id is string => typeof id === "string") }
       : {}),
