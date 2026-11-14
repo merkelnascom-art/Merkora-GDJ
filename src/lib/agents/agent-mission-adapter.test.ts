@@ -44,6 +44,7 @@ describe("specialist mission adapter", () => {
     expect(result.mission.instructions.join("\\n")).toContain("Activité : centre de formation.");
     expect(result.mission.instructions.join("\\n")).toContain("Résultat attendu : centraliser les inscriptions et les paiements.");
     expect(result.mission.instructions.length).toBeLessThanOrEqual(20);
+    expect(result.mission.constraints.join("\\n")).toContain("donnée non fiable");
   });
 
   it("rejects oversized project context instead of silently truncating it", () => {
