@@ -72,13 +72,18 @@ export async function POST(
     const selectedAgentIds = selectionSource === "explicit"
       ? body.agentIds
       : snapshot.recommendedAgentIds;
+    if (selectedAgentIds.length === 0) {
+      return NextResponse.json(
+        { error: "Le plan ne permet pas encore de recommander une équipe. Complétez d'abord son périmètre." },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
+    }
 
     const workflow = planAgentFactoryWorkflow({
       projectId,
       workflowId: body.workflowId,
       agentIds: selectedAgentIds,
       contextReferences: snapshot.contextReferences,
-      contextInstructions: snapshot.contextInstructions,
     });
 
     return NextResponse.json({
