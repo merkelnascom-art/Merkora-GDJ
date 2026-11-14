@@ -46,6 +46,15 @@ describe("selectNextQuestion", () => {
     if (result.kind === "question") expect(result.question.id).toBe("next");
   });
 
+  it("rejects fabricated or out-of-range scoring inputs", () => {
+    expect(() => selectNextQuestion({
+      candidates: [candidate({ id: "invalid", dimension: "problem", impact: 1.4 })],
+      answeredDimensions: [],
+      deferredDimensions: [],
+      askedQuestionIds: [],
+    })).toThrow(RangeError);
+  });
+
   it("uses a stable identifier as a deterministic tie-breaker", () => {
     const result = selectNextQuestion({
       candidates: [
@@ -85,6 +94,15 @@ describe("contradiction checking", () => {
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0].status).toBe("apparent");
     expect(conflicts[0].evidenceIds).toEqual(["e1", "e2"]);
+  });
+
+  it("does not compare different data types as if they were contradictory values", () => {
+    const conflicts = detectApparentContradictions([
+      assertions[0],
+      { ...assertions[1], value: "false" },
+    ], ["opens_on_sunday"]);
+
+    expect(conflicts).toHaveLength(0);
   });
 
   it("does not compare different contexts or predicates not declared exclusive", () => {
