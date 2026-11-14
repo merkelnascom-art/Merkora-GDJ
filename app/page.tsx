@@ -1,8 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-
-type CommunicationMode = "voice" | "text";
+import React from "react";
 
 function MerKoraMascot() {
   return (
@@ -76,17 +74,6 @@ function MerKoraMascot() {
 }
 
 export default function HomePage() {
-  const [mode, setMode] = useState<CommunicationMode | null>(null);
-
-  function chooseMode(nextMode: CommunicationMode) {
-    setMode(nextMode);
-    try {
-      window.sessionStorage.setItem("merkora-v2-communication-mode", nextMode);
-    } catch {
-      // The welcome screen remains usable if session storage is unavailable.
-    }
-  }
-
   return (
     <main className="mk-v2-page">
       <div className="mk-v2-noise" aria-hidden="true" />
@@ -113,50 +100,17 @@ export default function HomePage() {
           </div>
 
           <div className="mk-choice-heading">
-            <span>COMMENT PRÉFÈRES-TU QU'ON DISCUTE ?</span>
-            <small>Choisis librement. Tu pourras changer plus tard.</small>
+            <span>ON COMMENCE PAR ÉCRIT</span>
+            <small>Prends ton temps. Tu peux raconter ton besoin avec tes propres mots.</small>
           </div>
 
-          <div className="mk-mode-grid" role="group" aria-label="Choisir un mode de communication">
-            <button
-              type="button"
-              className={`mk-mode-card ${mode === "voice" ? "is-selected" : ""}`}
-              aria-label="Choisir la conversation par la voix"
-              aria-pressed={mode === "voice"}
-              onClick={() => chooseMode("voice")}
-            >
-              <span className="mk-mode-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8" /></svg></span>
-              <span className="mk-mode-title">Par la voix</span>
-              <span className="mk-mode-description">Je préfère parler naturellement.</span>
-              <span className="mk-mode-check">{mode === "voice" ? "Choisi ✓" : "Choisir"}</span>
-            </button>
-            <button
-              type="button"
-              className={`mk-mode-card ${mode === "text" ? "is-selected" : ""}`}
-              aria-label="Choisir la conversation par écrit"
-              aria-pressed={mode === "text"}
-              onClick={() => chooseMode("text")}
-            >
-              <span className="mk-mode-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.8A2.5 2.5 0 0 1 4 13.5Z" /><path d="M8 8h8M8 11.5h5" /></svg></span>
-              <span className="mk-mode-title">Par écrit</span>
-              <span className="mk-mode-description">Je préfère écrire mes idées.</span>
-              <span className="mk-mode-check">{mode === "text" ? "Choisi ✓" : "Choisir"}</span>
-            </button>
+          <div className="mk-selection-note">
+            Tu peux commencer sans créer de compte. La conversation vocale sera proposée dans une prochaine étape.
           </div>
 
-          <div className="mk-selection-note" aria-live="polite">
-            {mode ? (
-              <><span className="mk-note-check">✓</span> Très bien. Je garde ton choix pour la suite de notre échange.</>
-            ) : (
-              <>Tu peux commencer sans créer de compte. Prends ton temps.</>
-            )}
-          </div>
-
-          {mode && (
-            <a className="mk-start-conversation" href="/conversation">
-              Commencer notre échange <span>→</span>
-            </a>
-          )}
+          <a className="mk-start-conversation" href="/conversation">
+            Commencer notre échange <span>→</span>
+          </a>
         </div>
 
         <div className="mk-welcome-visual">
