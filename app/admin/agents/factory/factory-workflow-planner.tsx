@@ -134,7 +134,7 @@ export function FactoryWorkflowPlanner() {
 
       <div className={styles.prepareBar}>
         <p>Le plan utilise la dernière version administrative enregistrée du projet. Aucun enregistrement ou lancement n'est effectué.</p>
-        <button type="button" onClick={prepareWorkflow} disabled={busy || selectedCount === 0}>
+        <button type="button" onClick={prepareWorkflow} disabled={busy}>
           {busy
             ? "Préparation…"
             : selectedCount === 0
