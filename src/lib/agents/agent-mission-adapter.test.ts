@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AGENT_POLES } from "./agent-catalog";
 import { prepareSpecialistMission } from "./agent-mission-adapter";
 
 describe("specialist mission adapter", () => {
@@ -56,19 +57,47 @@ describe("specialist mission adapter", () => {
     })).toThrow("Le contexte projet dépasse la limite de sept éléments.");
   });
 
-  it("does not force a specialist into an unrelated generic runtime role", () => {
-    const result = prepareSpecialistMission({
-      agentId: "ux-ui-designer",
-      missionId: "mission-design-01",
+  it("prepares all 35 catalog specialists with a purpose-specific model runtime role", () => {
+    const agents = AGENT_POLES.flatMap((pole) => pole.agents);
+    const prepared = agents.map((agent) => prepareSpecialistMission({
+      agentId: agent.id,
+      missionId: `mission-${agent.id}`,
       projectId: "project-01",
-    });
+    }));
 
-    expect(result).toEqual({
-      status: "requires_specialized_runtime",
-      agentId: "ux-ui-designer",
-      poleId: "conception",
-      reason: "NO_COMPATIBLE_EXISTING_RUNTIME_ROLE",
-    });
+    expect(agents).toHaveLength(35);
+    expect(prepared.every((item) => item.status === "prepared")).toBe(true);
+    expect(prepared.find((item) => item.status === "prepared" && item.agent.id === "ux-ui-designer"))
+      .toMatchObject({ status: "prepared", runtimeRole: "designer" });
+    expect(prepared.find((item) => item.status === "prepared" && item.agent.id === "preparation-des-devis"))
+      .toMatchObject({ status: "prepared", runtimeRole: "estimator" });
+    expect(prepared.find((item) => item.status === "prepared" && item.agent.id === "gestion-des-autorisations"))
+      .toMatchObject({ status: "prepared", runtimeRole: "governance_advisor" });
+    expect(prepared.find((item) => item.status === "prepared" && item.agent.id === "gestionnaire-des-deploiements"))
+      .toMatchObject({ status: "prepared", runtimeRole: "operations_planner" });
+    expect(prepared.find((item) => item.status === "prepared" && item.agent.id === "assistant-client"))
+      .toMatchObject({ status: "prepared", runtimeRole: "customer_success" });
+  });
+
+  it("keeps advisory specialists unable to approve, deploy, publish quotes or contact clients", () => {
+    const cases = [
+      { agentId: "preparation-des-devis", boundary: "Ne publie ni n'envoie un devis." },
+      { agentId: "gestion-des-autorisations", boundary: "Ne donne aucune autorisation et n'approuve aucune action." },
+      { agentId: "gestionnaire-des-deploiements", boundary: "Ne déclenche aucun déploiement ni changement de production." },
+      { agentId: "assistant-client", boundary: "Ne contacte pas le client et n'envoie aucun message." },
+    ];
+
+    for (const item of cases) {
+      const result = prepareSpecialistMission({
+        agentId: item.agentId,
+        missionId: `mission-${item.agentId}`,
+        projectId: "project-01",
+      });
+      expect(result.status).toBe("prepared");
+      if (result.status === "prepared") {
+        expect(result.mission.constraints.join("\\n")).toContain(item.boundary);
+      }
+    }
   });
 
   it("rejects unknown agent identifiers before creating a mission", () => {
