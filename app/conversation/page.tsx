@@ -74,7 +74,7 @@ export default function ConversationPage() {
 
         <div className="mk-conversation-copy">
           <span className="mk-eyebrow"><span /> PRENONS LE TEMPS DE COMPRENDRE</span>
-          <h1>Alors, raconte-moi.<br /><em>Je suis tout ouïe.</em></h1>
+          <h1>Alors, raconte-moi.<br /><em>Je suis là pour comprendre.</em></h1>
           <p className="mk-conversation-intro">Qu'aimerais-tu créer, améliorer, organiser ou résoudre ? Tu peux commencer par ce qui te préoccupe, même si ton idée n'est pas encore très claire.</p>
 
           <label className="mk-input-label" htmlFor="mk-first-message">DÉCRIS CE QUE TU SOUHAITES IMAGINER</label>
