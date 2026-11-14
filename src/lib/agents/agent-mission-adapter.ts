@@ -49,18 +49,22 @@ const EXISTING_RUNTIME_ROLE_BY_AGENT: Readonly<Record<string, AgentMissionRole>>
   "agent-de-correction": "implementer",
 };
 
-function buildMissionInstructions(agent: AgentDefinition): string[] {
+function buildMissionInstructions(
+  agent: AgentDefinition,
+  contextInstructions: readonly string[],
+): string[] {
   return [
     `Agent spécialisé : ${agent.name} (${agent.id}).`,
     `Pôle de rattachement : ${agent.poleId}.`,
     `Mission : ${agent.mission}`,
-    ...agent.responsibilities.slice(0, 4).map((item) => `Responsabilité : ${item}`),
-    ...agent.activationTriggers.slice(0, 2).map((item) => `Déclencheur : ${item}`),
-    ...agent.inputs.slice(0, 2).map((item) => `Entrée attendue : ${item}`),
-    ...agent.outputs.slice(0, 2).map((item) => `Sortie attendue : ${item}`),
-    ...agent.acceptanceCriteria.slice(0, 2).map((item) => `Critère d'acceptation : ${item}`),
-    ...agent.verificationMethods.slice(0, 2).map((item) => `Vérification : ${item}`),
-    ...agent.failureHandling.slice(0, 2).map((item) => `En cas d'échec : ${item}`),
+    ...agent.responsibilities.slice(0, 3).map((item) => `Responsabilité : ${item}`),
+    ...agent.activationTriggers.slice(0, 1).map((item) => `Déclencheur : ${item}`),
+    ...agent.inputs.slice(0, 1).map((item) => `Entrée attendue : ${item}`),
+    ...agent.outputs.slice(0, 1).map((item) => `Sortie attendue : ${item}`),
+    ...agent.acceptanceCriteria.slice(0, 1).map((item) => `Critère d'acceptation : ${item}`),
+    ...agent.verificationMethods.slice(0, 1).map((item) => `Vérification : ${item}`),
+    ...agent.failureHandling.slice(0, 1).map((item) => `En cas d'échec : ${item}`),
+    ...contextInstructions.map((item, index) => `Contexte projet ${index + 1} : ${item}`),
   ];
 }
 
@@ -75,6 +79,7 @@ export function prepareSpecialistMission(input: {
   missionId: string;
   projectId: string;
   contextReferences?: readonly string[];
+  contextInstructions?: readonly string[];
   approvalRequiredFor?: readonly string[];
 }): SpecialistMissionPreparation {
   const agent = getAgentDefinition(input.agentId);
@@ -92,12 +97,23 @@ export function prepareSpecialistMission(input: {
     };
   }
 
+  const contextInstructions = input.contextInstructions ?? [];
+  if (!Array.isArray(contextInstructions) || contextInstructions.length > 8) {
+    throw new Error("Le contexte projet dépasse la limite de huit éléments.");
+  }
+  const normalizedContext = contextInstructions.map((item) => {
+    if (typeof item !== "string" || !item.trim() || item.length > 1_800) {
+      throw new Error("Un élément du contexte projet est invalide.");
+    }
+    return item.trim();
+  });
+
   const mission = createAgentMissionEnvelope({
     missionId: input.missionId,
     projectId: input.projectId,
     role: runtimeRole,
     objective: agent.mission,
-    instructions: buildMissionInstructions(agent),
+    instructions: buildMissionInstructions(agent, normalizedContext),
     contextReferences: [
       `agent-catalog:${agent.id}`,
       ...(input.contextReferences ?? []),
