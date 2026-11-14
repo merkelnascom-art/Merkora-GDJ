@@ -311,6 +311,28 @@ describe("guarded MerKora factory workflow execution", () => {
     )).toBe(true);
   });
 
+
+  it("requires explicit project consent for external AI processing before reserving budget", async () => {
+    const calls: string[] = [];
+    const reserveBudget = vi.fn(async () => true);
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["analyste-metier"],
+      adapters: [adapter("openai", calls)],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      authorizeExternalProcessing: async () => false,
+      reserveBudget,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("blocked");
+    expect(result.invocations[0]?.code).toBe("EXTERNAL_PROCESSING_NOT_AUTHORIZED");
+    expect(reserveBudget).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+  });
+
   it("blocks provider calls when project authorization or budget reservation fails", async () => {
     const calls: string[] = [];
     const unauthorized = await executeAgentFactoryWorkflow({
