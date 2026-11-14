@@ -21,6 +21,7 @@ type FactoryFailureCode =
   | "MODEL_ALIAS_MISSING"
   | "INDEPENDENT_PROVIDER_REQUIRED"
   | "NOT_AUTHORIZED"
+  | "EXTERNAL_PROCESSING_NOT_AUTHORIZED"
   | "BUDGET_NOT_RESERVED";
 
 export type FactoryAgentInvocation = {
@@ -119,6 +120,7 @@ export async function executeAgentFactoryWorkflow(input: {
   workflowId: string;
   agentIds: readonly string[];
   contextReferences?: readonly string[];
+  projectContextInstructions?: readonly string[];
   adapters: readonly AgentRuntimeAdapter[];
   connections: readonly AgentRuntimeConnection[];
   modelAliases: Readonly<Record<string, string>>;
@@ -130,6 +132,14 @@ export async function executeAgentFactoryWorkflow(input: {
     agentId: string;
     missionId: string;
     role: AgentMissionRole;
+    providerId: string;
+    connectionId: string;
+    connectionOwner: AgentRuntimeConnection["owner"];
+  }) => Promise<boolean>;
+  authorizeExternalProcessing: (scope: {
+    projectId: string;
+    workflowId: string;
+    agentId: string;
     providerId: string;
     connectionId: string;
     connectionOwner: AgentRuntimeConnection["owner"];
@@ -326,6 +336,7 @@ export async function executeAgentFactoryWorkflow(input: {
         missionId: step.missionId,
         projectId: workflow.projectId,
         contextReferences: input.contextReferences,
+        contextInstructions: input.projectContextInstructions,
       });
       if (preparation.status !== "prepared") {
         invocations.push({
@@ -381,6 +392,30 @@ export async function executeAgentFactoryWorkflow(input: {
         invocations.push({
           agentId, missionId: step.missionId, phaseId: phase.id,
           providerId: provider.connection.providerId, status: "blocked", code: "NOT_AUTHORIZED",
+        });
+        blockedAgentIds.push(agentId);
+        phaseBlocked = true;
+        continue;
+      }
+
+      let externalProcessingAllowed = false;
+      try {
+        externalProcessingAllowed = await input.authorizeExternalProcessing({
+          projectId: workflow.projectId,
+          workflowId: workflow.workflowId,
+          agentId,
+          providerId: provider.connection.providerId,
+          connectionId: provider.connection.connectionId,
+          connectionOwner: provider.connection.owner,
+        });
+      } catch {
+        externalProcessingAllowed = false;
+      }
+      if (!externalProcessingAllowed) {
+        invocations.push({
+          agentId, missionId: step.missionId, phaseId: phase.id,
+          providerId: provider.connection.providerId, status: "blocked",
+          code: "EXTERNAL_PROCESSING_NOT_AUTHORIZED",
         });
         blockedAgentIds.push(agentId);
         phaseBlocked = true;
