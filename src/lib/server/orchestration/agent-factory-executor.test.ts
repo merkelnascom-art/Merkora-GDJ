@@ -184,7 +184,7 @@ describe("guarded MerKora factory workflow execution", () => {
     const calls: string[] = [];
     const result = await executeAgentFactoryWorkflow({
       ...baseInput,
-      agentIds: ["devops"],
+      agentIds: ["developpeur-backend"],
       adapters: [adapter("openai", calls)],
       connections: [connection("openai")],
       authorizeWorkflowStart: async () => true,
