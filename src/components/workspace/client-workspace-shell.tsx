@@ -11,6 +11,8 @@ type Props = {
   activeStage: ClientJourneyStage | "home";
   storageReady: boolean;
   onCloudProjectsLoaded: (projects: Project[]) => void;
+  onCloudJourneysLoaded: (journeys: Record<string, unknown>, projects: Project[]) => void;
+  localJourneys: Record<string, unknown>;
   onOpenHome: () => void;
   onStartProject: () => void;
   onNavigate: (stage: ClientJourneyStage) => void;
@@ -34,6 +36,8 @@ export function ClientWorkspaceShell({
   activeStage,
   storageReady,
   onCloudProjectsLoaded,
+  onCloudJourneysLoaded,
+  localJourneys,
   onOpenHome,
   onStartProject,
   onNavigate,
@@ -100,7 +104,7 @@ export function ClientWorkspaceShell({
           </div>
         </header>
         <div className="mk-cloud-account">
-          <CloudAccountPanel localProjects={projects} onCloudProjectsLoaded={onCloudProjectsLoaded} storageReady={storageReady} />
+          <CloudAccountPanel localProjects={projects} localJourneys={localJourneys} onCloudProjectsLoaded={onCloudProjectsLoaded} onCloudJourneysLoaded={(journeys) => onCloudJourneysLoaded(journeys, projects)} storageReady={storageReady} />
         </div>
         {activeProject && (
           <div className="mk-project-context">
