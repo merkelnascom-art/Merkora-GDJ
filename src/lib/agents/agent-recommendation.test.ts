@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AGENT_CATALOG } from "./agent-catalog";
 import { recommendAgentsForProjectPlan } from "./agent-recommendation";
 
 describe("MerKora Core specialist recommendations", () => {
@@ -82,9 +83,8 @@ describe("MerKora Core specialist recommendations", () => {
     });
 
     expect(new Set(result.agentIds).size).toBe(result.agentIds.length);
-    expect(result.agentIds).toEqual([...result.agentIds].sort((a, b) => {
-      const order = ["analyste-metier", "analyste-des-besoins"];
-      return order.indexOf(a) - order.indexOf(b);
-    }).filter((id) => id !== undefined));
+    expect(result.agentIds).toEqual(
+      AGENT_CATALOG.map((agent) => agent.id).filter((agentId) => result.agentIds.includes(agentId)),
+    );
   });
 });
