@@ -15,7 +15,7 @@ export type LaunchFactoryHandoffInput = {
 export type LaunchFactoryHandoffResult =
   | { status: "needs_project_link" }
   | { status: "awaiting_plan" }
-  | { status: "awaiting_approval"; missingApprovals: string[]; missingConsent?: true }
+  | { status: "awaiting_approval"; missingApprovals: string[] }
   | {
       status: "ready";
       planVersion: number;
@@ -25,7 +25,7 @@ export type LaunchFactoryHandoffResult =
       approvalIds: string[];
     };
 
-const REQUIRED_APPROVALS = ["client_scope", "admin_review", "execution_authorization"] as const;
+const REQUIRED_APPROVALS = ["admin_review", "execution_authorization"] as const;
 
 function isRecord(value: unknown): value is Row {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -36,8 +36,9 @@ function digestMatches(value: unknown): value is string {
 }
 
 /**
- * Decides whether an officially launched commercial request can be handed to
- * the factory. No data is written and no job is started by this function.
+ * Checks whether a launched commercial request is ready for internal factory
+ * execution. The client never approves an internal plan. No data is written and
+ * no job is started by this function.
  */
 export function evaluateLaunchFactoryHandoff(
   input: LaunchFactoryHandoffInput,
@@ -54,6 +55,8 @@ export function evaluateLaunchFactoryHandoff(
   const plan = input.plans.find((value) => {
     if (!isRecord(value) || !Number.isSafeInteger(value.version) || Number(value.version) < 1 ||
       !isRecord(value.payload) || !Array.isArray(value.payload.includedScope) ||
+      !Array.isArray(value.payload.tasks) || value.payload.tasks.length < 1 ||
+      value.payload.status === "needs_clarification" ||
       !digestMatches(value.payload_digest) || !digestMatches(value.scope_digest)) return false;
     return createProjectMemoryDigest(value.payload) === value.payload_digest &&
       createProjectMemoryDigest(value.payload.includedScope) === value.scope_digest;
@@ -64,7 +67,7 @@ export function evaluateLaunchFactoryHandoff(
 
   const exactApprovals = input.approvals.filter((value) =>
     isRecord(value) && value.project_id === input.projectId &&
-    value.plan_version === plan.version && value.decision === "approved" &&
+    value.plan_version === plan.version && value.decision === "approved" && value.actor_role === "admin" &&
     value.plan_digest === plan.payload_digest && value.scope_digest === plan.scope_digest &&
     typeof value.id === "string",
   ) as Row[];
@@ -76,14 +79,8 @@ export function evaluateLaunchFactoryHandoff(
   }
 
   const missingApprovals = REQUIRED_APPROVALS.filter((kind) => !approvalByKind.has(kind));
-  const clientApproval = approvalByKind.get("client_scope");
-  const missingConsent = clientApproval?.ai_processing_consent !== true;
-  if (missingApprovals.length || missingConsent) {
-    return {
-      status: "awaiting_approval",
-      missingApprovals: [...missingApprovals],
-      ...(missingConsent ? { missingConsent: true as const } : {}),
-    };
+  if (missingApprovals.length) {
+    return { status: "awaiting_approval", missingApprovals: [...missingApprovals] };
   }
 
   return {
