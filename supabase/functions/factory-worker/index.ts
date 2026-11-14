@@ -401,24 +401,59 @@ Deno.serve(async (request) => {
       return json({ error: "specialist_workflow_manifest_invalid" }, 409);
     }
 
-    // Existing approvals and payment have been revalidated above. The current
-    // five-task worker cannot claim specialist missions until the dedicated
-    // durable mission ledger and its atomic lease RPC are installed.
+    // The manifest is materialized only after the real project approvals,
+    // exact plan digests, explicit AI consent and confirmed payment passed.
     if (action === "verify") {
       return json({
         authorized: true,
         jobId: job.id,
         status: "queued",
-        eligible: false,
-        reason: "specialist_mission_ledger_required",
+        eligible: true,
+        executionEngine: "specialist_mission_ledger",
         specialistWorkflow,
         githubRunId: identity.runId,
       });
     }
+
+    const { data: initialized, error: initializationError } = await admin.rpc(
+      "initialize_factory_specialist_missions",
+      { p_job_id: job.id, p_project_id: job.project_id },
+    );
+    if (initializationError || !initialized) {
+      return json({ error: "specialist_mission_initialization_failed" }, 503);
+    }
+
+    // No provider call or mission lease is allowed until a durable, approved
+    // AI budget reservation is attached to this exact workflow.
+    const workflowRecord = isRecord(job.manifest) && isRecord(job.manifest.specialistWorkflow)
+      ? job.manifest.specialistWorkflow
+      : {};
+    const budgetReservationId = typeof workflowRecord.budgetReservationId === "string"
+      ? workflowRecord.budgetReservationId.trim()
+      : "";
+    if (!budgetReservationId) {
+      return json({
+        claimed: false,
+        specialistWorkflow: true,
+        initialized: true,
+        workflowId: specialistWorkflow.workflowId,
+        missionCount: initialized.missionCount,
+        reason: "specialist_budget_reservation_required",
+        sandboxStarted: false,
+        providerCallsPerformed: false,
+      });
+    }
+
     return json({
-      error: "specialist_mission_ledger_required",
-      specialistWorkflow,
-    }, 409);
+      claimed: false,
+      specialistWorkflow: true,
+      initialized: true,
+      workflowId: specialistWorkflow.workflowId,
+      missionCount: initialized.missionCount,
+      reason: "specialist_runtime_activation_pending",
+      sandboxStarted: false,
+      providerCallsPerformed: false,
+    });
   }
 
   if (action === "verify") {
