@@ -1,8 +1,27 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type CommunicationMode = "voice" | "text";
+type RecognitionAlternative = { transcript: string };
+type RecognitionResult = { isFinal: boolean; 0: RecognitionAlternative };
+type RecognitionEvent = { resultIndex: number; results: ArrayLike<RecognitionResult> };
+type RecognitionErrorEvent = { error: string };
+type BrowserSpeechRecognition = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: RecognitionEvent) => void) | null;
+  onerror: ((event: RecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+};
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: new () => BrowserSpeechRecognition;
+  webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+};
 
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
@@ -36,6 +55,11 @@ export default function ConversationPage() {
   const [mode, setMode] = useState<CommunicationMode>("text");
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("Le microphone n'est pas encore activé.");
+  const [voiceError, setVoiceError] = useState("");
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const finalTranscriptRef = useRef("");
 
   useEffect(() => {
     try {
@@ -46,16 +70,100 @@ export default function ConversationPage() {
     } catch {
       // La page reste utilisable si le stockage de session est indisponible.
     }
+    return () => recognitionRef.current?.abort();
   }, []);
 
   function selectMode(nextMode: CommunicationMode) {
     setMode(nextMode);
     setSaved(false);
+    if (nextMode === "text" && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+    }
     try {
       window.sessionStorage.setItem("merkora-v2-communication-mode", nextMode);
     } catch {
       // Le changement de mode reste visible dans l'interface.
     }
+  }
+
+  function startListening() {
+    const speechWindow = window as SpeechRecognitionWindow;
+    const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceError("La reconnaissance vocale n'est pas prise en charge par ce navigateur. Essaie Chrome ou utilise le mode écrit.");
+      setVoiceStatus("Microphone indisponible sur ce navigateur.");
+      return;
+    }
+    setVoiceError("");
+    const recognition = new Recognition();
+    recognition.lang = "fr-FR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    finalTranscriptRef.current = "";
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        if (result.isFinal) finalTranscriptRef.current += result[0].transcript;
+        else interim += result[0].transcript;
+      }
+      const combined = [finalTranscriptRef.current, interim].filter(Boolean).join(" ");
+      if (combined) {
+        setMessage((current) => {
+          const prefix = current.trim();
+          return prefix && !finalTranscriptRef.current.startsWith(prefix)
+            ? [prefix, combined].filter(Boolean).join(" ")
+            : combined;
+        });
+        setSaved(false);
+      }
+    };
+    recognition.onerror = (event) => {
+      setListening(false);
+      const messages: Record<string, string> = {
+        "not-allowed": "L'accès au microphone a été refusé. Autorise le microphone dans les réglages du navigateur.",
+        "no-speech": "Je n'ai pas entendu de parole. Tu peux réessayer.",
+        "audio-capture": "Aucun microphone utilisable n'a été détecté.",
+        network: "Le service de reconnaissance vocale est momentanément indisponible.",
+      };
+      const detail = messages[event.error] || "Une erreur a interrompu la reconnaissance vocale. Réessaie ou passe en mode écrit.";
+      setVoiceError(detail);
+      setVoiceStatus("Écoute interrompue.");
+    };
+    recognition.onend = () => {
+      setListening(false);
+      setVoiceStatus("Écoute terminée. Tu peux corriger la transcription ou reprendre.");
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+      setListening(true);
+      setVoiceStatus("MerKora t'écoute… Parle naturellement.");
+    } catch {
+      setListening(false);
+      setVoiceError("Le microphone n'a pas pu démarrer. Vérifie son autorisation puis réessaie.");
+    }
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    setListening(false);
+    setVoiceStatus("Écoute arrêtée. Tu peux relire et corriger ton message.");
+  }
+
+  function speakIntroduction() {
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      setVoiceError("La lecture audio n'est pas prise en charge par ce navigateur.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(
+      "Alors, raconte-moi. Je suis tout ouïe. Qu'aimerais-tu créer, améliorer, organiser ou résoudre ? Tu peux commencer par ce qui te préoccupe, même si ton idée n'est pas encore très claire."
+    );
+    utterance.lang = "fr-FR";
+    utterance.rate = 0.96;
+    window.speechSynthesis.speak(utterance);
   }
 
   function keepMessage() {
@@ -83,7 +191,7 @@ export default function ConversationPage() {
         <div className="mk-orb-column">
           <span className="mk-eyebrow"><span /> ESPACE DE CONVERSATION</span>
           <MerKoraOrb mode={mode} />
-          <div className="mk-orb-status"><i /> {mode === "voice" ? "Mode voix sélectionné" : "Mode écrit sélectionné"}</div>
+          <div className="mk-orb-status"><i /> {mode === "voice" ? (listening ? "MerKora t'écoute" : "Mode voix sélectionné") : "Mode écrit sélectionné"}</div>
           <p className="mk-orb-caption">Une idée, un besoin, une envie de changement.<br /><b>On commence par comprendre.</b></p>
         </div>
 
@@ -91,6 +199,17 @@ export default function ConversationPage() {
           <span className="mk-eyebrow"><span /> PRENONS LE TEMPS DE COMPRENDRE</span>
           <h1>Alors, raconte-moi.<br /><em>Je suis tout ouïe.</em></h1>
           <p className="mk-conversation-intro">Qu'aimerais-tu créer, améliorer, organiser ou résoudre ? Tu peux commencer par ce qui te préoccupe, même si ton idée n'est pas encore très claire.</p>
+
+          <div className="mk-voice-tools" hidden={mode !== "voice"} aria-label="Outils du mode voix">
+            <div className="mk-voice-actions">
+              <button type="button" className="mk-microphone-button" onClick={startListening} disabled={listening}>◉ {listening ? "Microphone actif" : "Activer le microphone"}</button>
+              <button type="button" className="mk-stop-voice-button" onClick={stopListening} disabled={!listening}>Arrêter l'écoute</button>
+              <button type="button" className="mk-speak-button" onClick={speakIntroduction}>Écouter la présentation</button>
+            </div>
+            <p className="mk-voice-status" role="status" aria-live="polite">{voiceStatus}</p>
+            {voiceError && <p className="mk-voice-error" role="alert">{voiceError}</p>}
+            <p className="mk-voice-disclosure">La transcription vocale remplit le champ ci-dessous et reste modifiable. La réponse intelligente à voix haute sera disponible après connexion du moteur IA.</p>
+          </div>
 
           <label className="mk-input-label" htmlFor="mk-first-message">DÉCRIS CE QUE TU SOUHAITES IMAGINER</label>
           <textarea
@@ -124,7 +243,7 @@ export default function ConversationPage() {
             <button type="button" className={mode === "text" ? "active" : ""} onClick={() => selectMode("text")}>Écrit</button>
             <button type="button" className={mode === "voice" ? "active" : ""} onClick={() => selectMode("voice")}>Voix</button>
           </div>
-          {mode === "voice" && <p className="mk-voice-notice">Le mode voix est sélectionné. La capture du microphone et la réponse audio seront activées lors de la connexion du service vocal.</p>}
+          {mode === "voice" && <p className="mk-voice-notice">Le mode voix est actif : tu peux parler pour remplir ton message. Relis et corrige la transcription avant de la conserver.</p>}
 
           <button type="button" className="mk-continue-button" onClick={keepMessage} disabled={!message.trim()}>
             Garder mon message <span>→</span>
