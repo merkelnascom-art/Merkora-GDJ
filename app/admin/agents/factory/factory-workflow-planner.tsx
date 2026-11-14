@@ -143,7 +143,12 @@ export function FactoryWorkflowPlanner() {
           <span>Identifiant du projet</span>
           <input
             value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
+            onChange={(event) => {
+              setProjectId(event.target.value);
+              setWorkflow(null);
+              setDurableJob(null);
+              setError("");
+            }}
             placeholder="Identifiant exact du projet MerKora"
             autoComplete="off"
           />
@@ -293,7 +298,9 @@ export function FactoryWorkflowPlanner() {
           )}
 
           <p className={styles.safetyNote}>
-            Ce résultat est une préparation de missions. Les spécialistes sans runtime adapté restent bloqués. Aucun appel IA, budget, worker, modification de base, déploiement ou livraison n'a été déclenché.
+            {durableJob
+              ? "Le manifeste des missions est enregistré dans le travail durable. Les spécialistes non raccordés restent bloqués ; aucun appel IA, budget, worker, Sandbox, déploiement ou livraison n'a été déclenché."
+              : "Ce résultat est une préparation de missions. Les spécialistes sans runtime adapté restent bloqués. Aucun appel IA, budget, worker, modification de base, déploiement ou livraison n'a été déclenché."}
           </p>
         </section>
       )}
