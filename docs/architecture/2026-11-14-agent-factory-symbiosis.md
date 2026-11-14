@@ -79,7 +79,11 @@ Ajouts réalisés dans la branche multi-agent :
 - exigence d'un fournisseur indépendant pour les rôles de revue et de contre-vérification lorsque des travaux antérieurs doivent être contrôlés ;
 - tests ciblant le parcours complet, les barrières de phases, les spécialistes non raccordés, les refus d'autorisation, le budget et les portes humaines.
 
-Le workflow généré porte volontairement `status: planned` et `executionEnabled: false`. L'exécuteur ne démarre que lorsqu'un service serveur l'appelle explicitement et que les callbacks de démarrage, d'autorisation projet, de budget et de validation humaine sont tous fournis et satisfaits. Il n'est pas encore raccordé à une route applicative ni à la persistance durable des tâches. Il ne modifie donc pas, à lui seul, le dossier client ou la file de fabrication.
+Le workflow généré porte volontairement `status: planned` et `executionEnabled: false`. L'écran administrateur `/admin/agents/factory` appelle la route protégée `/api/admin/projects/[projectId]/agents/workflow`, qui lit le dernier snapshot immuable du brief et du plan, puis prépare le workflow sans écrire en base. Les dépendances sont affichées à l'administrateur.
+
+L'exécuteur serveur séquentiel existe comme couche métier testable et sait transmettre aux missions de la phase suivante un contexte borné provenant des résultats précédents : résumés, constats, références d'artefacts et rapports de vérification. Ces contenus restent explicitement marqués comme données non fiables ; les agents d'une même phase ne reçoivent pas les résultats de leurs pairs. En revanche, l'exécuteur n'est pas encore appelé par une route ou un worker, n'enregistre pas ses résultats dans une file durable et n'est pas raccordé au registre de budget.
+
+Les adaptateurs OpenAI, Anthropic et Gemini existent déjà dans le dépôt et le runtime serveur est configurable par variables d'environnement. Mais la composition réelle de ces fournisseurs avec l'exécuteur multi-pôles, les connexions d'organisation/clients, le contrôle du budget durable et l'audit des missions restent à raccorder. Aucun appel réel à ces fournisseurs n'est effectué par l'écran de planification.
 
 ## 6. Étapes restantes avant activation opérationnelle
 
