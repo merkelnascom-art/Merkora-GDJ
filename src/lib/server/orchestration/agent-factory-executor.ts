@@ -73,7 +73,7 @@ export type AgentFactoryExecutionResult = {
  */
 
 function truncateHandoffText(value: string, max: number): string {
-  const normalized = value.replace(/\\s+/g, " ").trim();
+  const normalized = value.replace(/\s+/g, " ").trim();
   return normalized.length <= max ? normalized : `${normalized.slice(0, max - 1)}…`;
 }
 
