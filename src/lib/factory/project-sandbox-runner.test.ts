@@ -4,6 +4,7 @@ import { runProjectBuildInSandbox, type ProjectSandbox } from "./project-sandbox
 
 function source() {
   return generateProjectSource({
+    projectId: "MK-TEST-SANDBOX-001",
     projectName: "Gestion RH",
     projectDescription: "Gérer les équipes.",
     modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
