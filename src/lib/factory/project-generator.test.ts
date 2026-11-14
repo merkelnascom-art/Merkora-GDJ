@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { generateProjectSource, type ProjectSourceInput } from "./project-generator";
 
 const input: ProjectSourceInput = {
+  projectId: "MK-TEST-000001",
   projectName: "Gestion de présence",
   projectDescription: "Suivre les arrivées et retards du personnel.",
   modules: [
@@ -17,33 +18,41 @@ describe("generateProjectSource", () => {
     expect(result.files.map((file) => file.path)).toContain("package.json");
     expect(result.files.map((file) => file.path)).toContain("src/app/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/components/module-workspace.tsx");
+    expect(result.files.map((file) => file.path)).toContain("src/components/project-team-management.tsx");
+    expect(result.files.map((file) => file.path)).toContain("src/app/team/page.tsx");
+    expect(result.files.map((file) => file.path)).toContain(".env.example");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("<ModuleWorkspace");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("localStorage");
+    expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain('projectId={"MK-TEST-000001"}');
+    expect(result.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("project_module_data");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("signInWithPassword");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("canView");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("canEdit");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("project_team_memberships");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("Accès en consultation uniquement");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("upsert");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).not.toContain("localStorage");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("aria-label");
-    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("setStorageWarning");
+    expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain("Récupérer les données du module");
     expect(result.files.find((file) => file.path === "src/components/module-workspace.tsx")?.content).toContain('role="status"');
-    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.2.0");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("1.8.0");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("ProjectTeamLink");
+    expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain('projectId={"MK-TEST-000001"}');
+    const teamPage = result.files.find((file) => file.path === "src/app/team/page.tsx")?.content ?? "";
+    expect(teamPage).toContain('projectId={"MK-TEST-000001"}');
+    expect(teamPage).toContain('id: "attendance"');
+    const teamWorkspace = result.files.find((file) => file.path === "src/components/project-team-management.tsx")?.content ?? "";
+    expect(teamWorkspace).toContain("project-team-invite");
+    expect(teamWorkspace).toContain("project-team-accept");
+    expect(teamWorkspace).toContain("project-team-revoke");
+    expect(teamWorkspace).toContain("Consultation");
+    expect(teamWorkspace).toContain("Modification");
+    expect(teamWorkspace).toContain("Révoquer l'accès");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/attendance/page.tsx");
     expect(result.files.map((file) => file.path)).toContain("src/app/modules/staff/page.tsx");
     expect(result.files.find((file) => file.path === "src/app/modules/attendance/page.tsx")?.content).toContain("Pointage et retards.");
     expect(result.files.find((file) => file.path === "src/app/page.tsx")?.content).toContain("Présences");
     expect(result.files.every((file) => file.content.length > 0)).toBe(true);
-  });
-
-  it("carries the approved domain and specialization into the generated workspace", () => {
-    const result = generateProjectSource({
-      ...input,
-      domainId: "voyage-tourisme-creation-jeux",
-      domainLabel: "Voyages, tourisme, loisirs, création et jeux",
-      specializationId: "game-design",
-    });
-    const page = result.files.find((file) => file.path === "src/app/page.tsx")?.content ?? "";
-    const readme = result.files.find((file) => file.path === "README.md")?.content ?? "";
-    expect(result.domainId).toBe("voyage-tourisme-creation-jeux");
-    expect(result.domainLabel).toContain("Voyages");
-    expect(result.specializationId).toBe("game-design");
-    expect(page).toContain("Domaine métier");
-    expect(readme).toContain("game-design");
   });
 
   it("escapes untrusted text before placing it in generated JSX", () => {
@@ -88,4 +97,102 @@ describe("generateProjectSource", () => {
   it("produces a deterministic manifest digest for identical input", () => {
     expect(generateProjectSource(input).digest).toBe(generateProjectSource(input).digest);
   });
+
+  it("generates Asho Sweet catalogue, custom-order, and cart workflows instead of generic local task lists", () => {
+    const sweetShop = generateProjectSource({
+      projectId: "MK-MWAWRAVH-1FWG",
+      projectName: "Asho Sweet 🧁🎂",
+      projectDescription: "Catalogue de gâteaux, commandes personnalisées et validation de panier.",
+      modules: [
+        { id: "catalogue-de-gateau-et-de-patisserie", title: "Catalogue de gâteaux et pâtisseries", description: "Présenter les produits et leurs prix." },
+        { id: "commande-personnalisee", title: "Commande personnalisée", description: "Recueillir les demandes de créations sur mesure." },
+        { id: "panier-et-validation-de-commande", title: "Panier et validation de commande", description: "Récapituler et valider les commandes." },
+      ],
+    });
+    const paths = sweetShop.files.map((file) => file.path);
+    expect(paths).toContain("src/components/sweet-shop-workspace.tsx");
+    expect(paths).toContain("src/components/customer-account-panel.tsx");
+    expect(paths).toContain(".env.example");
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/catalogue-de-gateau-et-de-patisserie/page.tsx")?.content).toContain('mode="catalogue"');
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/commande-personnalisee/page.tsx")?.content).toContain('mode="custom-order"');
+    expect(sweetShop.files.find((file) => file.path === "src/app/modules/panier-et-validation-de-commande/page.tsx")?.content).toContain('mode="cart"');
+    const workspace = sweetShop.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    expect(workspace).toContain("Prix en FCFA");
+    expect(workspace).toContain('const STOREFRONT_SLUG = "asho-sweet-vh1fwg"');
+    expect(workspace).toContain('const PROJECT_ID = "MK-MWAWRAVH-1FWG"');
+    expect(workspace).toContain("loadTeamAccess");
+    expect(workspace).toContain("teamAccess.catalogueEdit");
+    expect(workspace).toContain("teamAccess.ordersView");
+    expect(workspace).toContain("teamAccess.customView");
+    expect(workspace).toContain("Gérer mon équipe");
+    expect(workspace).toContain("createClient");
+    expect(workspace).toContain("signInWithPassword");
+    expect(workspace).toContain("project_store_orders");
+    expect(workspace).toContain("project_store_custom_requests");
+    expect(workspace).toContain("creation_type");
+    expect(workspace).toContain("fulfillment_method");
+    expect(workspace).toContain("Adresse de livraison");
+    expect(workspace).toContain("Retrait sur place");
+    expect(workspace).toContain("En préparation");
+    expect(workspace).toContain("Devis proposé");
+    expect(workspace).toContain("sessionStorage");
+    expect(workspace).toContain("Voir mon panier");
+    expect(workspace).not.toContain("localStorage");
+    expect(workspace).toContain("Le catalogue sera affiché ici");
+
+    expect(workspace).toContain("if (store.is_published) void loadPublicProducts(store.id)");
+    expect(workspace).toContain("if (adminOpen && userId && (teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView)) void loadAdminData(store.id)");
+    expect(workspace).toContain('storage.from("project-store-references").upload');
+    expect(workspace).toContain("reference_image_path");
+    expect(workspace).toContain("createSignedUrl");
+    expect(workspace).toContain('select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at")');
+    expect(workspace).not.toContain('.select("*")');
+    expect(workspace).toContain("Photo d'exemple");
+    expect(workspace).toContain('storage.from("project-store-product-images").upload');
+    expect(workspace).toContain("productImageFile");
+    expect(workspace).toContain("Photo de votre réalisation");
+
+    expect(workspace).toContain("sans paiement");
+    expect(workspace).toContain("CustomerAccountPanel");
+    expect(workspace).toContain("merkora-store-order-submitted");
+    const accountPanel = sweetShop.files.find((file) => file.path === "src/components/customer-account-panel.tsx")?.content ?? "";
+    expect(accountPanel).toContain("signUp");
+    expect(accountPanel).toContain("signInWithPassword");
+    expect(accountPanel).toContain("customer_user_id");
+    expect(accountPanel).toContain("project_store_orders");
+    expect(accountPanel).toContain("project_store_custom_requests");
+    expect(accountPanel).toContain("createSignedUrl");
+    expect(accountPanel).toContain("Mes commandes");
+    expect(accountPanel).toContain("Mes demandes personnalisées");
+    expect(accountPanel).toContain("window.addEventListener");
+    expect(accountPanel).toContain("window.removeEventListener");
+    expect(accountPanel).toContain("merkora-store-order-submitted");
+    const accountOutput = ts.transpileModule(accountPanel, {
+      compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+      reportDiagnostics: true,
+    });
+    expect(accountOutput.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)).toEqual([]);
+    expect(sweetShop.files.find((file) => file.path === "package.json")?.content).toContain('"@supabase/supabase-js": "2.119.0"');
+    const workspaceOutput = ts.transpileModule(workspace, {
+      compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+      reportDiagnostics: true,
+    });
+    expect(workspaceOutput.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)).toEqual([]);
+  });
+
+  it("isolates storefront slugs across projects that reuse the same store modules", () => {
+    const modules = [
+      { id: "catalogue-de-gateau-et-de-patisserie", title: "Catalogue", description: "Produits." },
+      { id: "commande-personnalisee", title: "Commandes", description: "Demandes." },
+      { id: "panier-et-validation-de-commande", title: "Panier", description: "Validation." },
+    ];
+    const first = generateProjectSource({ projectId: "MK-PROJECT-000001", projectName: "Asho Sweet", projectDescription: "Boutique.", modules });
+    const second = generateProjectSource({ projectId: "MK-PROJECT-000002", projectName: "Asho Sweet", projectDescription: "Boutique.", modules });
+    const firstWorkspace = first.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    const secondWorkspace = second.files.find((file) => file.path === "src/components/sweet-shop-workspace.tsx")?.content ?? "";
+    expect(firstWorkspace).toContain('const STOREFRONT_SLUG = "asho-sweet-000001"');
+    expect(secondWorkspace).toContain('const STOREFRONT_SLUG = "asho-sweet-000002"');
+    expect(firstWorkspace).not.toBe(secondWorkspace);
+  });
+
 });
