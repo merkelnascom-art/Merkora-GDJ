@@ -83,8 +83,8 @@ describe("specialist mission adapter", () => {
     const cases = [
       { agentId: "preparation-des-devis", boundary: "ne publie ni n'envoie un devis" },
       { agentId: "gestion-des-autorisations", boundary: "ne donne aucune autorisation et n'approuve aucune action" },
-      { agentId: "gestionnaire-des-deploiements", boundary: "Ne déclenche aucun déploiement ni changement de production." },
-      { agentId: "assistant-client", boundary: "Ne contacte pas le client et n'envoie aucun message." },
+      { agentId: "gestionnaire-des-deploiements", boundary: "ne déclenche aucun déploiement ni changement de production" },
+      { agentId: "assistant-client", boundary: "ne contacte pas le client et n'envoie aucun message" },
     ];
 
     for (const item of cases) {
