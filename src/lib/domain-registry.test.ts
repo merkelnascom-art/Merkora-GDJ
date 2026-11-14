@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as domainRegistry from "./domain-registry";
 import { identifyDomain, MERKORA_DOMAINS } from "./domain-registry";
 
 const samples = [
@@ -49,5 +50,32 @@ describe("MerKora universal domain registry", () => {
 
   it("does not invent a domain for a vague request", () => {
     expect(identifyDomain("Je veux améliorer quelque chose.").domain).toBeNull();
+  });
+
+  it("identifies every materially supported domain in a hybrid project", () => {
+    const identifyProjectDomains = Reflect.get(domainRegistry, "identifyProjectDomains");
+    expect(identifyProjectDomains).toBeTypeOf("function");
+
+    const result = (identifyProjectDomains as (input: string) => {
+      matches: Array<{ domain: { id: string } | null }>;
+      isHybrid: boolean;
+    })("Je veux vendre en ligne les récoltes de ma ferme, gérer les commandes et suivre les livraisons.");
+
+    expect(result.isHybrid).toBe(true);
+    expect(result.matches.map((match) => match.domain?.id)).toEqual(
+      expect.arrayContaining(["agriculture-environnement", "commerce", "transport-logistique"]),
+    );
+  });
+
+  it("keeps vague requests unclassified in hybrid recognition", () => {
+    const identifyProjectDomains = Reflect.get(domainRegistry, "identifyProjectDomains") as
+      | ((input: string) => { matches: unknown[]; isHybrid: boolean })
+      | undefined;
+
+    expect(identifyProjectDomains).toBeTypeOf("function");
+    expect(identifyProjectDomains!("Je veux améliorer quelque chose.")).toEqual({
+      matches: [],
+      isHybrid: false,
+    });
   });
 });
