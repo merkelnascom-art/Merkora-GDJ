@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && (github.ref == 'refs/heads/feature/merkora-factory-unified-runtime' || github.ref == 'refs/heads/feature/admin-owned-factory-planning' || github.ref == 'refs/heads/feature/merkora-production-security-hardening' || github.ref == 'refs/heads/main')
+    if: github.repository == 'merkelnascom-art/Merkora-GDJ' && (github.ref == 'refs/heads/feature/merkora-factory-unified-runtime' || github.ref == 'refs/heads/feature/admin-owned-factory-planning' || github.ref == 'refs/heads/integration/merkora-consolidation' || github.ref == 'refs/heads/feature/merkora-production-security-hardening' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
