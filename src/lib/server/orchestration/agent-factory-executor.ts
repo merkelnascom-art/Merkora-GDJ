@@ -389,7 +389,7 @@ export async function executeAgentFactoryWorkflow(
         status: phase.agentIds.length === 0 ? "not_selected" : "blocked",
         agentIds: [...phase.agentIds],
       })),
-      gateResults: [],
+      gateResults: [...earlyGateResults],
       invocations: preflightFailures,
       completedResults: [],
       blockedAgentIds: [...new Set(preflightFailures.map((item) => item.agentId))],
