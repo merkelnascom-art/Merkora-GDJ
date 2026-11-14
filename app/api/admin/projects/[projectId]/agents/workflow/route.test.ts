@@ -39,6 +39,8 @@ beforeEach(() => {
     projectId: "project-001",
     briefVersion: 3,
     planVersion: 4,
+    planDigest: "a".repeat(64),
+    scopeDigest: "b".repeat(64),
     contextReferences: [
       "project-brief-version:3",
       "project-brief-digest:brief-digest",
