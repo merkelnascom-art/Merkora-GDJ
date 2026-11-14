@@ -71,7 +71,7 @@ describe("MerKora end-to-end multi-pole factory workflow", () => {
     expect(test?.dependsOn).toEqual(["factory-002-developpeur-frontend"]);
   });
 
-  it("does not invent omitted specialists and marks unsupported specialists for dedicated runtime work", () => {
+  it("does not invent omitted specialists and routes selected specialists to dedicated model roles", () => {
     const workflow = planAgentFactoryWorkflow({
       projectId: "project-001",
       workflowId: "factory-003",
@@ -83,10 +83,11 @@ describe("MerKora end-to-end multi-pole factory workflow", () => {
     ]);
     expect(workflow.assignments.map((item) => item.status)).toEqual([
       "prepared",
-      "requires_specialized_runtime",
-      "requires_specialized_runtime",
+      "prepared",
+      "prepared",
     ]);
-    expect(workflow.assignments[1]?.reason).toBe("NO_COMPATIBLE_EXISTING_RUNTIME_ROLE");
+    expect(workflow.assignments[1]?.reason).toBeUndefined();
+    expect(workflow.assignments[2]?.reason).toBeUndefined();
   });
 
   it("keeps human approval gates explicit and never activates execution or tools", () => {
