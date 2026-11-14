@@ -68,11 +68,15 @@ export async function POST(
     }
 
     const snapshot = await loadProjectFactoryContext(projectId, token);
+    const selectionSource = body.agentIds.length > 0 ? "explicit" : "core_recommendation";
+    const selectedAgentIds = selectionSource === "explicit"
+      ? body.agentIds
+      : snapshot.recommendedAgentIds;
 
     const workflow = planAgentFactoryWorkflow({
       projectId,
       workflowId: body.workflowId,
-      agentIds: body.agentIds,
+      agentIds: selectedAgentIds,
       contextReferences: snapshot.contextReferences,
       contextInstructions: snapshot.contextInstructions,
     });
