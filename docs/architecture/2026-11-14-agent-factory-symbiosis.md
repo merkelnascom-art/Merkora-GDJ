@@ -102,12 +102,14 @@ Un adaptateur pur `factory-task-mission-bridge` décrit désormais la correspond
 
 Les missions d'exploitation, de mise en production, de relation client et de support après livraison qui ne disposent pas d'une tâche durable équivalente sont signalées comme non raccordées. L'adaptateur refuse un workflow déjà activé et retourne toujours `executionEnabled: false`.
 
-Cette première liaison est volontairement un contrat de correspondance testé, pas encore une écriture dans la file. Le schéma des tâches et le worker actuel restent inchangés : il attend exactement les cinq tâches historiques et réalise aujourd'hui un scaffold applicatif, pas l'exécution des 35 spécialistes. La prochaine intégration devra transporter ce manifeste dans le job durable puis faire évoluer le worker de manière compatible, sans lancer les spécialistes non pris en charge ni contourner les autorisations, budgets et validations.
+Le manifeste est maintenant transporté dans le champ JSONB `manifest.specialistWorkflow` du job créé par la route admin existante `POST /api/admin/projects/[projectId]/factory/jobs`, au sein de la même RPC transactionnelle qui crée les cinq tâches durables historiques. Pour l'ajouter, la route exige un workflow explicite, recharge le brief et le plan versionnés, vérifie leurs empreintes via le chargeur de contexte, et refuse une version de plan qui n'est plus la dernière version vérifiée. Le manifeste conserve les phases, les pôles, les affectations, le graphe de missions, les portes humaines, les versions source et la correspondance avec les cinq tâches. Les spécialistes sans équivalent restent dans `unsupported` ; aucun faux routage n'est créé.
+
+La route de dispatch GitHub refuse désormais un job qui porte `manifest.specialistWorkflow` avec le code `SPECIALIST_WORKFLOW_NOT_EXECUTABLE`. Cela empêche le worker historique de démarrer un Sandbox payant en ignorant silencieusement le manifeste multi-agents. Les jobs ordinaires, sans manifeste spécialiste, gardent leur chemin de dispatch existant. Le schéma Supabase, les cinq tâches, le worker et les tables restent inchangés ; le manifeste est seulement persisté avec le job, pas encore consommé par un moteur d'exécution multi-agents.
 
 ## 6. Étapes restantes avant activation opérationnelle
 
 1. Raccorder le service d'exécution aux validations exactes du projet et au consentement IA déjà stockés, avec contrôle des digests et du paiement.
-2. Relier les missions aux cinq tâches durables existantes de la fabrique et à leurs événements d'audit, sans créer un second système de file.
+2. Faire consommer le manifeste durable par le worker multi-agents, avec reprise/idempotence par mission et événements d'audit associés, sans créer un second système de file.
 3. Ajouter les adaptateurs spécialisés manquants pour les agents qui nécessitent des outils d'exploitation, de relation client ou de gestion administrative.
 4. Raccorder les preuves de tests et d'audit au contrôle de sortie.
 5. Effectuer un test Preview sur un projet de démonstration autorisé ; vérifier la reprise, les erreurs, les refus, les dépendances et la revue humaine.
