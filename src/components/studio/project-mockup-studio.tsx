@@ -60,7 +60,7 @@ export function ProjectMockupStudio({ project, showValidation = false, selectedR
   const [diagnosticResponses, setDiagnosticResponses] = useState<Record<string, string>>({});
   const [conceptValidation, setConceptValidation] = useState<ConceptValidationState>(() => createConceptValidationState("pending"));
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
-  const brandInitials = model.title.trim().split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
+  const brandInitials = model.title.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
   const selectedSectorIds = config.selectedUniversalSectorIds ?? [];
   const visibleProfessionCandidates = selectedSectorIds.length
     ? model.professionCandidates.filter((candidate) => candidate.sectorIds?.some((sectorId) => selectedSectorIds.includes(sectorId)))
