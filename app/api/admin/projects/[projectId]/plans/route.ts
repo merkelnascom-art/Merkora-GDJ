@@ -54,13 +54,15 @@ export async function POST(request: Request, context: Context) {
   const { projectId } = await context.params;
   if (!projectId || projectId.length > 160) return jsonError("Projet invalide.", 400);
 
-  const projectResult = await callUserData<Row[]>(`user_projects?${query({ select: "id", id: `eq.${projectId}`, limit: "1" })}`, "GET", accessToken);
+  const projectResult = await callUserData(`user_projects?${query({ select: "id", id: `eq.${projectId}`, limit: "1" })}`, "GET", accessToken);
   if (!projectResult.ok) return jsonError("Impossible de vérifier le dossier client.", 503);
-  if (!Array.isArray(projectResult.data) || !projectResult.data.length) return jsonError("Dossier introuvable.", 404);
+  const projectRows = Array.isArray(projectResult.data) ? projectResult.data as Row[] : [];
+  if (!projectRows.length) return jsonError("Dossier introuvable.", 404);
 
   const previous = await callUserData<Row[]>(`project_memory_plan_versions?${query({ select: "version", project_id: `eq.${projectId}`, order: "version.desc", limit: "1" })}`, "GET", accessToken);
   if (!previous.ok) return jsonError("Impossible de lire les versions précédentes du plan.", 503);
-  const lastVersion = Number(Array.isArray(previous.data) ? previous.data[0]?.version ?? 0 : 0);
+  const previousRows = Array.isArray(previous.data) ? previous.data as Row[] : [];
+  const lastVersion = Number(previousRows[0]?.version ?? 0);
   if (!Number.isSafeInteger(lastVersion) || lastVersion < 0) return jsonError("Historique de versions incohérent.", 409);
 
   const requestId = randomUUID();
@@ -84,13 +86,14 @@ export async function POST(request: Request, context: Context) {
     },
     "return=representation",
   );
-  if (!saved.ok || !Array.isArray(saved.data) || !saved.data[0]) {
+  const savedRows = Array.isArray(saved.data) ? saved.data as Row[] : [];
+  if (!saved.ok || !savedRows[0]) {
     return jsonError("Le plan n'a pas pu être enregistré. Vérifiez les droits et réessayez.", saved.status >= 500 ? 503 : 409);
   }
 
   return NextResponse.json({
     created: true,
-    planId: saved.data[0].id,
+    planId: savedRows[0].id,
     projectId,
     version,
     requestId,
