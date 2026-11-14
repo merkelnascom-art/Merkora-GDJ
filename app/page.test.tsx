@@ -41,7 +41,7 @@ describe("MerKora GDJ V2 conversation screen", () => {
 
   it("keeps the text input available and is transparent about AI connection status", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
-    expect(html).toContain("Décris ce que tu souhaites imaginer");
-    expect(html).toContain("Le moteur de compréhension sera connecté");
+    expect(html).toContain("DÉCRIS CE QUE TU SOUHAITES IMAGINER");
+    expect(html).toContain("La capture du microphone et la réponse audio seront activées");
   });
 });
