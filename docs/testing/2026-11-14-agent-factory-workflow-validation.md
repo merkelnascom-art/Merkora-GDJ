@@ -23,20 +23,22 @@ La suite doit couvrir :
 
 ## Contrôle manuel de l'administrateur
 
-Sur une Preview autorisée, après raccordement à une interface de planification :
+Sur une Preview autorisée, ouvrir `/admin/agents/factory` avec un compte administrateur et :
 
-1. Ouvrir un projet de test et vérifier que le bon propriétaire et le bon périmètre sont utilisés.
-2. Vérifier que MerKora Core propose les pôles nécessaires sans activer tous les agents par défaut.
-3. Vérifier que les phases et dépendances affichées correspondent aux choix retenus.
-4. Vérifier qu'un agent sans runtime spécialisé apparaît comme bloqué, et non comme exécuté.
-5. Refuser une validation client ou administrative et confirmer que la fabrication ne démarre pas.
-6. Refuser l'autorisation de mise en production et confirmer qu'aucune publication n'est effectuée.
-7. Vérifier les résultats, les preuves indépendantes, les événements d'audit et la reprise après échec.
+1. Saisir l'identifiant exact d'un projet de test possédant déjà un brief et un plan versionnés.
+2. Vérifier que la route de préparation lit le dernier snapshot et affiche ses versions sans créer de nouvelle ligne.
+3. Vérifier que MerKora Core propose les pôles nécessaires sans activer tous les agents par défaut ; « Sélectionner les 35 » doit rester un choix explicite.
+4. Vérifier que les phases, l'ordre topologique et les dépendances affichées correspondent aux choix retenus.
+5. Vérifier qu'un agent sans runtime spécialisé apparaît comme non raccordé, et non comme exécuté.
+6. Vérifier que les tests du moteur transmettent les résultats amont à la phase suivante sans fuite entre agents d'une même phase.
+7. Avant toute activation ultérieure, refuser une validation client ou administrative et confirmer que la fabrication ne démarre pas.
+8. Refuser l'autorisation de mise en production et confirmer qu'aucune publication n'est effectuée.
+9. Vérifier les résultats, les preuves indépendantes, les événements d'audit et la reprise après échec.
 
 ## Limites de cette phase
 
 - Les tests utilisent des adaptateurs factices ; ils ne font aucun appel réel à OpenAI, Anthropic ou Gemini.
 - Aucun worker, Vercel Sandbox, paiement ou déploiement n'est lancé.
-- Le nouvel exécuteur n'est pas encore raccordé à une route ou à une persistance durable ; ce raccordement doit réutiliser les services existants et faire l'objet d'une phase distincte.
+- L'interface de planification et la route de lecture seule sont raccordées au snapshot de plan versionné. Le lancement réel multi-pôles, la persistance durable et le budget restent bloqués jusqu'à une phase d'intégration distincte.
 - Aucun schéma ni aucune donnée Supabase n'est modifié.
 - Aucun merge ni déploiement de production n'est autorisé par ce travail.
