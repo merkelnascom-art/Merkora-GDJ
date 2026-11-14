@@ -28,6 +28,7 @@ export function detectApparentContradictions(
       if (!exclusive.has(left.predicate)) continue;
       if (left.subject !== right.subject || left.predicate !== right.predicate) continue;
       if (left.scopeKey !== right.scopeKey || left.contextKey !== right.contextKey) continue;
+      if (typeof left.value !== typeof right.value) continue;
       if (sameValue(left.value, right.value)) continue;
 
       const assertionIds = [left.id, right.id].sort((a, b) => a.localeCompare(b)) as [string, string];
