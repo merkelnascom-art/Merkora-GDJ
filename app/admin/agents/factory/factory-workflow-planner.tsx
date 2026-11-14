@@ -59,6 +59,7 @@ export function FactoryWorkflowPlanner() {
   function clearSelection() {
     setSelectedAgentIds([]);
     setWorkflow(null);
+    setDurableJob(null);
     setError("");
   }
 
