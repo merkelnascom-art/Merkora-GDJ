@@ -212,13 +212,6 @@ export async function executeAgentFactoryWorkflow(input: {
   };
 
   const phaseIndex = new Map(workflow.phases.map((phase, index) => [phase.id, index]));
-  const gatesByPhase = new Map<string, FactoryHumanGate[]>();
-  for (const gate of workflow.humanGates) {
-    const list = gatesByPhase.get(gate.blocksPhase) ?? [];
-    list.push(gate);
-    gatesByPhase.set(gate.blocksPhase, list);
-  }
-
   for (let index = 0; index < workflow.phases.length; index += 1) {
     const phase = workflow.phases[index];
     if (!phase) continue;
@@ -365,7 +358,6 @@ export async function executeAgentFactoryWorkflow(input: {
         continue;
       }
 
-      completedResults.push(outcome.result);
       if (outcome.result.status !== "completed") {
         invocations.push({
           agentId, missionId: step.missionId, phaseId: phase.id,
@@ -379,6 +371,7 @@ export async function executeAgentFactoryWorkflow(input: {
         continue;
       }
 
+      completedResults.push(outcome.result);
       const requiresReview = outcome.result.requiresHumanDecision
         || outcome.result.findings.some((finding) => finding.severity === "warning" || finding.severity === "critical");
       invocations.push({
