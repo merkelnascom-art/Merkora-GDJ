@@ -35,6 +35,7 @@ beforeEach(() => {
   vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user });
   vi.mocked(loadProjectFactoryContext).mockReset().mockResolvedValue({
     projectId: "MK-PROJECT-001", briefVersion: 2, planVersion: 3,
+    planDigest: plan.payload_digest, scopeDigest: plan.scope_digest,
     contextReferences: ["project-plan-version:3"],
     contextInstructions: ["Contexte projet vérifié."],
     recommendedAgentIds: ["analyste-metier"], recommendationReasons: { "analyste-metier": ["Analyse du besoin"] },
@@ -145,6 +146,7 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
   it("rejects a specialist workflow based on an older plan version", async () => {
     vi.mocked(loadProjectFactoryContext).mockResolvedValueOnce({
       projectId: "MK-PROJECT-001", briefVersion: 2, planVersion: 4,
+      planDigest: plan.payload_digest, scopeDigest: plan.scope_digest,
       contextReferences: ["project-plan-version:4"],
       contextInstructions: ["Contexte projet vérifié."],
       recommendedAgentIds: ["analyste-metier"], recommendationReasons: { "analyste-metier": ["Analyse du besoin"] },
