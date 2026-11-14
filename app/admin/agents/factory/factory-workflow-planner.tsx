@@ -159,8 +159,16 @@ export function FactoryWorkflowPlanner() {
                   <h3>{phase.label}</h3>
                   <p>{phase.purpose}</p>
                   <div className={styles.phaseAgents}>
-                    {phase.agentIds.length
-                      ? phase.agentIds.map((id) => <span key={id}>{id}</span>)
+                    {phase.missionIds.length
+                      ? phase.missionIds.map((missionId) => {
+                          const step = workflow.workflow.missionPlan.steps.find((item) => item.missionId === missionId);
+                          return (
+                            <div className={styles.mission} key={missionId}>
+                              <span>{step?.agentName ?? missionId}</span>
+                              <small>Prérequis : {step?.dependsOn.length ? step.dependsOn.join(", ") : "aucun"}</small>
+                            </div>
+                          );
+                        })
                       : <small>Aucun spécialiste sélectionné dans cette phase.</small>}
                   </div>
                 </div>
@@ -169,6 +177,11 @@ export function FactoryWorkflowPlanner() {
                 </span>
               </article>
             ))}
+          </div>
+
+          <div className={styles.executionOrder}>
+            <h3>Ordre topologique calculé</h3>
+            <p>{workflow.workflow.executionOrder.join(" → ")}</p>
           </div>
 
           <div className={styles.assignmentPanel}>
