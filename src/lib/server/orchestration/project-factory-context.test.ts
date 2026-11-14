@@ -46,9 +46,6 @@ const plan = {
 function mockValidSnapshot() {
   vi.mocked(callUserData)
     .mockResolvedValueOnce({
-      ok: true, status: 200, data: [{ id: "project-001", user_id: "user-001" }],
-    })
-    .mockResolvedValueOnce({
       ok: true,
       status: 200,
       data: [{
@@ -91,14 +88,11 @@ describe("loadProjectFactoryContext", () => {
     expect(result.contextInstructions.join("\\n")).toContain("Centre de formation");
     expect(result.contextInstructions.join("\\n")).toContain("Centraliser les inscriptions");
     expect(result.contextInstructions.every((item) => item.length <= 1_800)).toBe(true);
-    expect(callUserData).toHaveBeenCalledTimes(3);
+    expect(callUserData).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a tampered project plan before building agent context", async () => {
     vi.mocked(callUserData).mockReset()
-      .mockResolvedValueOnce({
-        ok: true, status: 200, data: [{ id: "project-001", user_id: "user-001" }],
-      })
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -119,9 +113,6 @@ describe("loadProjectFactoryContext", () => {
   it("rejects a missing source brief instead of inventing project context", async () => {
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({
-        ok: true, status: 200, data: [{ id: "project-001", user_id: "user-001" }],
-      })
-      .mockResolvedValueOnce({
         ok: true,
         status: 200,
         data: [{
@@ -138,12 +129,12 @@ describe("loadProjectFactoryContext", () => {
       .rejects.toThrow("PROJECT_CONTEXT_INTEGRITY_FAILED");
   });
 
-  it("rejects access to a project without an accessible owner record", async () => {
+  it("rejects a project without a versioned plan", async () => {
     vi.mocked(callUserData).mockReset()
       .mockResolvedValueOnce({ ok: true, status: 200, data: [] });
 
     await expect(loadProjectFactoryContext("project-001", "admin-token"))
-      .rejects.toThrow("PROJECT_NOT_FOUND");
+      .rejects.toThrow("PROJECT_PLAN_NOT_FOUND");
     expect(callUserData).toHaveBeenCalledTimes(1);
   });
 });
