@@ -2,17 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 
-type CommunicationMode = "voice" | "text";
-
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
   { icon: "◈", label: "Commerce", text: "Mieux suivre les ventes de mon activité" },
   { icon: "⌁", label: "Une idée", text: "J'ai une idée à développer" },
 ];
 
-function MerKoraOrb({ mode }: { mode: CommunicationMode }) {
+function MerKoraOrb() {
   return (
-    <div className={`mk-orb-scene mk-orb-${mode}`} role="img" aria-label="Sphère intelligente MerKora">
+    <div className="mk-orb-scene mk-orb-text" role="img" aria-label="Sphère intelligente MerKora">
       <div className="mk-orb-halo" />
       <div className="mk-orb-ring mk-orb-ring-a" />
       <div className="mk-orb-ring mk-orb-ring-b" />
@@ -33,30 +31,17 @@ function MerKoraOrb({ mode }: { mode: CommunicationMode }) {
 }
 
 export default function ConversationPage() {
-  const [mode, setMode] = useState<CommunicationMode>("text");
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     try {
-      const stored = window.sessionStorage.getItem("merkora-v2-communication-mode");
-      if (stored === "voice" || stored === "text") setMode(stored);
       const draft = window.sessionStorage.getItem("merkora-v2-first-message");
       if (draft) setMessage(draft);
     } catch {
       // La page reste utilisable si le stockage de session est indisponible.
     }
   }, []);
-
-  function selectMode(nextMode: CommunicationMode) {
-    setMode(nextMode);
-    setSaved(false);
-    try {
-      window.sessionStorage.setItem("merkora-v2-communication-mode", nextMode);
-    } catch {
-      // Le changement de mode reste visible dans l'interface.
-    }
-  }
 
   function keepMessage() {
     if (!message.trim()) return;
@@ -82,8 +67,8 @@ export default function ConversationPage() {
       <section className="mk-conversation-layout">
         <div className="mk-orb-column">
           <span className="mk-eyebrow"><span /> ESPACE DE CONVERSATION</span>
-          <MerKoraOrb mode={mode} />
-          <div className="mk-orb-status"><i /> {mode === "voice" ? "Mode voix sélectionné" : "Mode écrit sélectionné"}</div>
+          <MerKoraOrb />
+          <div className="mk-orb-status"><i /> Conversation écrite</div>
           <p className="mk-orb-caption">Une idée, un besoin, une envie de changement.<br /><b>On commence par comprendre.</b></p>
         </div>
 
@@ -119,12 +104,7 @@ export default function ConversationPage() {
           </div>
           <p className="mk-free-note">Tu peux aussi raconter ton besoin librement. Aucun domaine ni type de projet n'est imposé.</p>
 
-          <div className="mk-mode-switch" aria-label="Mode de communication">
-            <span>Notre façon d'échanger</span>
-            <button type="button" className={mode === "text" ? "active" : ""} onClick={() => selectMode("text")}>Écrit</button>
-            <button type="button" className={mode === "voice" ? "active" : ""} onClick={() => selectMode("voice")}>Voix</button>
-          </div>
-          {mode === "voice" && <p className="mk-voice-notice">Le mode voix est sélectionné. La capture du microphone et la réponse audio seront activées lors de la connexion du service vocal.</p>}
+
 
           <button type="button" className="mk-continue-button" onClick={keepMessage} disabled={!message.trim()}>
             Garder mon message <span>→</span>
