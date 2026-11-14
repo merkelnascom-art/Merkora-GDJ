@@ -101,17 +101,6 @@ export async function loadProjectFactoryContext(
     throw new Error("PROJECT_CONTEXT_SCOPE_INVALID");
   }
 
-  const projectResult = await callUserData(
-    `user_projects?select=id,user_id&id=eq.${encodeURIComponent(projectId)}&limit=1`,
-    "GET",
-    accessToken,
-  );
-  if (!projectResult.ok) throw new Error("PROJECT_CONTEXT_READ_FAILED");
-  const projectRows = Array.isArray(projectResult.data) ? projectResult.data : [];
-  if (!record(projectRows[0]) || typeof projectRows[0].user_id !== "string") {
-    throw new Error("PROJECT_NOT_FOUND");
-  }
-
   const planResult = await callUserData(
     `project_memory_plan_versions?select=version,source_brief_version,payload,payload_digest,scope_digest&project_id=eq.${encodeURIComponent(projectId)}&order=version.desc&limit=1`,
     "GET",
