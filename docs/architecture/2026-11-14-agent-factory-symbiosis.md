@@ -90,6 +90,20 @@ L'exécuteur serveur séquentiel existe comme couche métier testable et sait tr
 
 Les adaptateurs OpenAI, Anthropic et Gemini existent déjà dans le dépôt et le runtime serveur est configurable par variables d'environnement. Mais la composition réelle de ces fournisseurs avec l'exécuteur multi-pôles, les connexions d'organisation/clients, le contrôle du budget durable et l'audit des missions restent à raccorder. Aucun appel réel à ces fournisseurs n'est effectué par l'écran de planification.
 
+### Pont vers les cinq tâches durables existantes
+
+Un adaptateur pur `factory-task-mission-bridge` décrit désormais la correspondance entre les missions planifiées et les cinq clés de tâches déjà utilisées par `project_factory_tasks` :
+
+- `prepare_specification` : intelligence, conception et gouvernance avant fabrication ;
+- `generate_application` : missions de fabrication ;
+- `run_quality_checks` : missions de contrôle ;
+- `repair_and_retest` : spécialiste de correction ;
+- `human_delivery_review` : conservée comme étape de revue humaine, sans y placer artificiellement des agents non équivalents.
+
+Les missions d'exploitation, de mise en production, de relation client et de support après livraison qui ne disposent pas d'une tâche durable équivalente sont signalées comme non raccordées. L'adaptateur refuse un workflow déjà activé et retourne toujours `executionEnabled: false`.
+
+Cette première liaison est volontairement un contrat de correspondance testé, pas encore une écriture dans la file. Le schéma des tâches et le worker actuel restent inchangés : il attend exactement les cinq tâches historiques et réalise aujourd'hui un scaffold applicatif, pas l'exécution des 35 spécialistes. La prochaine intégration devra transporter ce manifeste dans le job durable puis faire évoluer le worker de manière compatible, sans lancer les spécialistes non pris en charge ni contourner les autorisations, budgets et validations.
+
 ## 6. Étapes restantes avant activation opérationnelle
 
 1. Raccorder le service d'exécution aux validations exactes du projet et au consentement IA déjà stockés, avec contrôle des digests et du paiement.
