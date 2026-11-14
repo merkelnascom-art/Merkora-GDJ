@@ -86,8 +86,10 @@ const specialistManifest = {
       { taskKey: "human_delivery_review", missionIds: [], agentIds: [] },
     ],
     unsupported: [],
-    missionPlan: { steps: [{ missionId: "mission-1" }, { missionId: "mission-2" }] },
-    assignments: [{ missionId: "mission-1" }, { missionId: "mission-2" }],
+    plan: {
+      missionPlan: { steps: [{ missionId: "mission-1" }, { missionId: "mission-2" }] },
+      assignments: [{ missionId: "mission-1" }, { missionId: "mission-2" }],
+    },
   },
 };
 
