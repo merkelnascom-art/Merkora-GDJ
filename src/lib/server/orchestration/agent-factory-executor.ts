@@ -307,6 +307,7 @@ export async function executeAgentFactoryWorkflow(input: {
 
     let phaseBlocked = false;
     let phaseNeedsReview = false;
+    const upstreamResults = [...completedResults];
 
     for (const agentId of phase.agentIds) {
       const step = workflow.missionPlan.steps.find((item) => item.agentId === agentId);
@@ -336,13 +337,13 @@ export async function executeAgentFactoryWorkflow(input: {
         continue;
       }
 
-      const handoff = buildInterPoleHandoff(completedResults);
+      const handoff = buildInterPoleHandoff(upstreamResults);
       const mission = handoff
         ? {
             ...preparation.mission,
             contextReferences: [
               ...preparation.mission.contextReferences,
-              ...completedResults.slice(-5).map((result) => `mission-result:${result.missionId}`),
+              ...upstreamResults.slice(-5).map((result) => `mission-result:${result.missionId}`),
             ],
             instructions: [...preparation.mission.instructions, handoff],
           }
