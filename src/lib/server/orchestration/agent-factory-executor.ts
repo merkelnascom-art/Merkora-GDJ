@@ -231,11 +231,10 @@ export async function executeAgentFactoryWorkflow(
   const independentProviderByRole = new Map<"reviewer" | "cross_checker", string>();
   const independentProviderIds = new Set<string>();
   const phaseResults: FactoryPhaseExecution[] = [];
-  const gateResults: FactoryGateResult[] = [];
+  const gateResults: FactoryGateResult[] = [...earlyGateResults];
   const invocations: FactoryAgentInvocation[] = [];
   const completedResults: AgentMissionResult[] = [];
   const blockedAgentIds: string[] = [];
-  const checkedGateIds = new Set<FactoryHumanGate["id"]>();
   let executionStarted = false;
   let terminalState: AgentFactoryExecutionResult["state"] = "ready_for_human_review";
 
@@ -297,6 +296,50 @@ export async function executeAgentFactoryWorkflow(
     if (!modelAlias) return { code: "MODEL_ALIAS_MISSING" };
     return { connection, modelAlias };
   };
+
+  // Resolve gates that block the very first selected phase before runtime
+  // preflight. This preserves the approval-first behavior for workflows whose
+  // only selected work is, for example, post-delivery support.
+  const checkedGateIds = new Set<FactoryHumanGate["id"]>();
+  const earliestSelectedPhaseIndex = workflow.phases.findIndex((phase) => phase.agentIds.length > 0);
+  const earlyGateResults: FactoryGateResult[] = [];
+  if (earliestSelectedPhaseIndex >= 0) {
+    for (const gate of workflow.humanGates) {
+      const gateIndex = workflow.phases.findIndex((phase) => phase.id === gate.blocksPhase);
+      const appliesToSelectedWork = workflow.phases.some((phase) =>
+        phase.agentIds.length > 0 && gate.requiredFor.includes(phase.id),
+      );
+      if (!appliesToSelectedWork || gateIndex < 0 || gateIndex > earliestSelectedPhaseIndex) continue;
+      let approved = false;
+      try {
+        approved = await input.checkHumanGate({
+          projectId: workflow.projectId,
+          workflowId: workflow.workflowId,
+          gate,
+        });
+      } catch {
+        approved = false;
+      }
+      checkedGateIds.add(gate.id);
+      earlyGateResults.push({ gateId: gate.id, approved });
+      if (!approved) {
+        return {
+          workflow,
+          state: "blocked",
+          executionStarted: false,
+          phaseResults: workflow.phases.map((phase) => ({
+            phaseId: phase.id,
+            status: phase.agentIds.length === 0 ? "not_selected" : "blocked",
+            agentIds: [...phase.agentIds],
+          })),
+          gateResults: earlyGateResults,
+          invocations: [],
+          completedResults: [],
+          blockedAgentIds: [],
+        };
+      }
+    }
+  }
 
   // Preflight every selected specialist and provider before the first billable
   // invocation. This prevents partial execution when a later pole has no
