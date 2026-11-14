@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,8 @@ function validProjectId(value: unknown): value is string {
 export async function GET(request: Request, context: { params: Promise<{ projectId: string }> }) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
   try {
+    const admin = await getAdminAccess();
+    if (!admin.ok) return NextResponse.json({ error: "Le plan de fabrication est réservé à l’administration." }, { status: admin.reason === "unauthenticated" ? 401 : 403 });
     const { projectId } = await context.params;
     if (!validProjectId(projectId)) return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
     const token = await getAccessToken(await cookies());
