@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getAdminAccess } from "@/lib/server/admin-access";
+import { planAgentFactoryWorkflow } from "@/lib/agents/agent-factory-workflow";
+import { bridgeWorkflowToDurableFactoryTasks } from "@/lib/server/orchestration/factory-task-mission-bridge";
+import { loadProjectFactoryContext } from "@/lib/server/orchestration/project-factory-context";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
 
-type LaunchBody = { planVersion: number; correlationId: string };
+type LaunchBody = {
+  planVersion: number;
+  correlationId: string;
+  workflow?: { workflowId: string; agentIds: string[] };
+};
 const REQUIRED_APPROVALS = ["client_scope", "admin_review", "execution_authorization"] as const;
 const TASKS = [
   { task_key: "prepare_specification", state: "not_started", dependencies: [], evidence_required: true, external_side_effect: false, result_is_known: true },
@@ -19,9 +26,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 function validBody(value: unknown): value is LaunchBody {
-  return isRecord(value) && Number.isSafeInteger(value.planVersion) && Number(value.planVersion) > 0 &&
-    typeof value.correlationId === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.correlationId);
+  if (!isRecord(value) || !Number.isSafeInteger(value.planVersion) || Number(value.planVersion) <= 0 ||
+    typeof value.correlationId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.correlationId)) {
+    return false;
+  }
+  if (value.workflow === undefined) return true;
+  return isRecord(value.workflow)
+    && typeof value.workflow.workflowId === "string"
+    && /^[a-z0-9][a-z0-9-]{0,29}$/.test(value.workflow.workflowId)
+    && Array.isArray(value.workflow.agentIds)
+    && value.workflow.agentIds.length > 0
+    && value.workflow.agentIds.length <= 35
+    && value.workflow.agentIds.every((agentId) =>
+      typeof agentId === "string" && agentId.length > 0 && agentId.length <= 100
+    );
 }
 
 export async function POST(request: Request, context: { params: Promise<{ projectId: string }> }) {
@@ -81,6 +100,69 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       return NextResponse.json({ error: "Cette demande de lancement existe déjà." }, { status: 409 });
     }
 
+    let specialistWorkflow: Record<string, unknown> | undefined;
+    if (body.workflow) {
+      let snapshot;
+      try {
+        snapshot = await loadProjectFactoryContext(projectId, token);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "";
+        const status = reason === "PROJECT_NOT_FOUND" ? 404
+          : reason === "PROJECT_PLAN_NOT_FOUND" || reason === "PROJECT_CONTEXT_INTEGRITY_FAILED" ? 409
+          : 502;
+        return NextResponse.json({
+          error: status === 404 ? "Projet introuvable ou inaccessible."
+            : status === 409 ? "Le contexte projet n'est pas complet ou son intégrité n'est pas vérifiée."
+            : "Impossible de charger le contexte projet vérifié.",
+        }, { status, headers: { "Cache-Control": "no-store" } });
+      }
+      if (snapshot.planVersion !== body.planVersion) {
+        return NextResponse.json({
+          error: "La sélection des spécialistes doit utiliser la dernière version vérifiée du plan.",
+          requestedPlanVersion: body.planVersion,
+          currentPlanVersion: snapshot.planVersion,
+        }, { status: 409, headers: { "Cache-Control": "no-store" } });
+      }
+
+      let workflow;
+      let bridge;
+      try {
+        workflow = planAgentFactoryWorkflow({
+          projectId,
+          workflowId: body.workflow.workflowId,
+          agentIds: body.workflow.agentIds,
+          contextReferences: snapshot.contextReferences,
+          contextInstructions: snapshot.contextInstructions,
+        });
+        bridge = bridgeWorkflowToDurableFactoryTasks(workflow);
+      } catch (error) {
+        return NextResponse.json({
+          error: error instanceof Error ? error.message : "La sélection des spécialistes est invalide.",
+        }, { status: 400, headers: { "Cache-Control": "no-store" } });
+      }
+
+      specialistWorkflow = {
+        ...bridge,
+        selectionSource: "explicit_admin",
+        sourceVersions: {
+          briefVersion: snapshot.briefVersion,
+          planVersion: snapshot.planVersion,
+        },
+        plan: {
+          contractVersion: workflow.contractVersion,
+          core: workflow.core,
+          status: workflow.status,
+          phases: workflow.phases,
+          poles: workflow.poles,
+          assignments: workflow.assignments,
+          missionPlan: workflow.missionPlan,
+          executionOrder: workflow.executionOrder,
+          humanGates: workflow.humanGates,
+          guarantees: workflow.guarantees,
+        },
+      };
+    }
+
     const jobPayload = {
       project_id: projectId, plan_version: body.planVersion,
       plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
@@ -92,6 +174,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
         stages: TASKS.map((task) => task.task_key),
         executionMode: "manual_worker_required",
         deliveryRequiresHumanReview: true,
+        ...(specialistWorkflow ? { specialistWorkflow } : {}),
       },
       requested_by: user.id, authorized_by: user.id,
       approval_ids: exactApprovalRows.map((approval) => approval.id), correlation_id: body.correlationId,
