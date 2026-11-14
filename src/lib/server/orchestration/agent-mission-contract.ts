@@ -4,7 +4,14 @@ export type AgentMissionRole =
   | "implementer"
   | "reviewer"
   | "tester"
-  | "cross_checker";
+  | "cross_checker"
+  | "designer"
+  | "functional_analyst"
+  | "technical_writer"
+  | "estimator"
+  | "governance_advisor"
+  | "operations_planner"
+  | "customer_success";
 
 export type AgentMissionEnvelope = {
   contractVersion: 1;
@@ -51,6 +58,8 @@ export type AgentMissionResult = {
 
 const ROLES = new Set<AgentMissionRole>([
   "analyst", "architect", "implementer", "reviewer", "tester", "cross_checker",
+  "designer", "functional_analyst", "technical_writer", "estimator",
+  "governance_advisor", "operations_planner", "customer_success",
 ]);
 const FINDING_SEVERITIES = new Set(["info", "warning", "critical"]);
 const ARTIFACT_KINDS = new Set(["patch", "document", "test_report", "design", "deployment_reference"]);
