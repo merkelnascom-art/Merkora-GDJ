@@ -75,6 +75,7 @@ export async function POST(
       workflowId: body.workflowId,
       agentIds: body.agentIds,
       contextReferences: snapshot.contextReferences,
+      contextInstructions: snapshot.contextInstructions,
     });
 
     return NextResponse.json({
