@@ -292,6 +292,61 @@ export async function executeAgentFactoryWorkflow(
     return { connection, modelAlias };
   };
 
+  // Preflight every selected specialist and provider before the first billable
+  // invocation. This prevents partial execution when a later pole has no
+  // compatible runtime, provider, model alias, or independent reviewer.
+  const preflightFailures: FactoryAgentInvocation[] = [];
+  for (const assignment of workflow.assignments) {
+    const step = workflow.missionPlan.steps.find((item) => item.agentId === assignment.agentId);
+    if (!step) {
+      preflightFailures.push({
+        agentId: assignment.agentId, missionId: assignment.missionId,
+        phaseId: assignment.phaseId, providerId: null,
+        status: "blocked", code: "NO_COMPATIBLE_PROVIDER",
+      });
+      continue;
+    }
+    const preparation = prepareSpecialistMission({
+      agentId: assignment.agentId,
+      missionId: step.missionId,
+      projectId: workflow.projectId,
+      contextReferences: input.contextReferences,
+      contextInstructions: input.projectContextInstructions,
+    });
+    if (preparation.status !== "prepared") {
+      preflightFailures.push({
+        agentId: assignment.agentId, missionId: step.missionId,
+        phaseId: assignment.phaseId, providerId: null,
+        status: "blocked", code: "SPECIALIZED_RUNTIME_REQUIRED",
+      });
+      continue;
+    }
+    const provider = chooseProvider(preparation.runtimeRole);
+    if ("code" in provider) {
+      preflightFailures.push({
+        agentId: assignment.agentId, missionId: step.missionId,
+        phaseId: assignment.phaseId, providerId: null,
+        status: "blocked", code: provider.code,
+      });
+    }
+  }
+  if (preflightFailures.length > 0) {
+    return {
+      workflow,
+      state: "blocked",
+      executionStarted: false,
+      phaseResults: workflow.phases.map((phase) => ({
+        phaseId: phase.id,
+        status: phase.agentIds.length === 0 ? "not_selected" : "blocked",
+        agentIds: [...phase.agentIds],
+      })),
+      gateResults: [],
+      invocations: preflightFailures,
+      completedResults: [],
+      blockedAgentIds: [...new Set(preflightFailures.map((item) => item.agentId))],
+    };
+  }
+
   const phaseIndex = new Map(workflow.phases.map((phase, index) => [phase.id, index]));
   for (let index = 0; index < workflow.phases.length; index += 1) {
     const phase = workflow.phases[index];
@@ -366,6 +421,8 @@ export async function executeAgentFactoryWorkflow(
         contextInstructions: input.projectContextInstructions,
       });
       if (preparation.status !== "prepared") {
+        // The full-workflow preflight should make this unreachable. Keep the
+        // runtime boundary fail-closed if the catalog changes mid-process.
         invocations.push({
           agentId, missionId: step.missionId, phaseId: phase.id,
           providerId: null, status: "blocked", code: "SPECIALIZED_RUNTIME_REQUIRED",
@@ -389,6 +446,8 @@ export async function executeAgentFactoryWorkflow(
 
       const provider = chooseProvider(preparation.runtimeRole);
       if ("code" in provider) {
+        // Likewise, a provider configuration change between preflight and
+        // invocation is treated as a hard stop, never as a fallback.
         invocations.push({
           agentId, missionId: step.missionId, phaseId: phase.id,
           providerId: null, status: "blocked", code: provider.code,
