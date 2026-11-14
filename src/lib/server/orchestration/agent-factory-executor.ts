@@ -303,7 +303,6 @@ export async function executeAgentFactoryWorkflow(
   const earliestSelectedPhaseIndex = workflow.phases.findIndex((phase) => phase.agentIds.length > 0);
   const earlyGateResults: FactoryGateResult[] = [];
   const gateResults: FactoryGateResult[] = [...earlyGateResults];
-  const gateResults: FactoryGateResult[] = [...earlyGateResults];
   if (earliestSelectedPhaseIndex >= 0) {
     for (const gate of workflow.humanGates) {
       const gateIndex = workflow.phases.findIndex((phase) => phase.id === gate.blocksPhase);
