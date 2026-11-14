@@ -82,6 +82,9 @@ describe("loadProjectFactoryContext", () => {
       planVersion: 2,
     });
     expect(result.contextReferences).toContain("project-plan-version:2");
+    expect(result.recommendedAgentIds).toContain("analyste-metier");
+    expect(result.recommendedAgentIds).toContain("chercheur-documentaire");
+    expect(result.recommendationReasons["analyste-metier"]?.length).toBeGreaterThan(0);
     expect(result.contextReferences).toContain("project-brief-version:1");
     expect(result.contextInstructions).toHaveLength(4);
     expect(result.contextInstructions.join("\\n")).toContain("Centre de formation");
