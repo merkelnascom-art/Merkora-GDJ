@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AgentMissionResult } from "./agent-mission-contract";
 import type { AgentRuntimeAdapter, AgentRuntimeConnection } from "./provider-execution";
-import { executeAgentFactoryWorkflow } from "./agent-factory-executor";
+import {
+  executeAgentFactoryWorkflow,
+  executeConfiguredAgentFactoryWorkflow,
+} from "./agent-factory-executor";
 
 function resultFor(input: {
   missionId: string;
@@ -318,6 +321,29 @@ describe("guarded MerKora factory workflow execution", () => {
     )).toBe(true);
   });
 
+
+
+  it("respects the existing provider runtime kill switch and never registers a provider by assumption", async () => {
+    const calls: string[] = [];
+    const reserveBudget = vi.fn(async () => true);
+    const result = await executeConfiguredAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["analyste-metier"],
+      env: { MERKORA_AGENT_RUNTIME_ENABLED: "false" },
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      authorizeExternalProcessing: async () => true,
+      reserveBudget,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("blocked");
+    expect(result.invocations[0]?.code).toBe("NO_COMPATIBLE_PROVIDER");
+    expect(result.executionStarted).toBe(false);
+    expect(reserveBudget).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+  });
 
   it("requires explicit project consent for external AI processing before reserving budget", async () => {
     const calls: string[] = [];
