@@ -5,7 +5,7 @@ import { analyzeNeed } from "@/lib/discovery";
 import { fromCloudProjectRow, type CloudProjectRow, type Project } from "@/lib/project-types";
 
 type SafeUser = { id: string; email: string | null; fullName: string | null };
-type Props = { localProjects: Project[]; localJourneys: Record<string, unknown>; onCloudProjectsLoaded: (projects: Project[]) => void; onCloudJourneysLoaded: (journeys: Record<string, unknown>) => void; storageReady: boolean };
+type Props = { localProjects: Project[]; localJourneys: Record<string, unknown>; onCloudProjectsLoaded: (projects: Project[]) => void; onCloudJourneysLoaded: (journeys: Record<string, unknown>, projects: Project[]) => void; storageReady: boolean };
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   return await response.json().catch(() => ({})) as Record<string, unknown>;
@@ -45,7 +45,7 @@ export function CloudAccountPanel({ localProjects, localJourneys, onCloudProject
       return journey && typeof journey === "object" && !Array.isArray(journey) ? [project.id, journey] as const : null;
     }));
     const cloudJourneys = Object.fromEntries(journeyEntries.filter((entry): entry is readonly [string, unknown] => entry !== null));
-    onCloudJourneysLoaded(cloudJourneys);
+    onCloudJourneysLoaded(cloudJourneys, projects);
     return projects.length;
   }, [onCloudProjectsLoaded, onCloudJourneysLoaded]);
 
