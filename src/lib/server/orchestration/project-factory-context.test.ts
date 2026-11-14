@@ -78,6 +78,8 @@ describe("loadProjectFactoryContext", () => {
       projectId: "project-001",
       briefVersion: 1,
       planVersion: 2,
+      planDigest: createProjectMemoryDigest(plan),
+      scopeDigest: createProjectMemoryDigest(plan.includedScope),
     });
     expect(result.contextReferences).toContain("project-plan-version:2");
     expect(result.recommendedAgentIds).toContain("analyste-metier");
