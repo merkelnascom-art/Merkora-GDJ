@@ -23,6 +23,8 @@ La suite doit couvrir :
 
 ## Contrôle manuel de l'administrateur
 
+La route `GET /api/admin/agents/runtime-readiness` expose uniquement l'état de configuration serveur des fournisseurs. Elle exige un compte administrateur, ne retourne ni clé ni nom de modèle, et doit toujours indiquer `providerCallsPerformed: false`, `spendingStarted: false` et `projectConnectionCheckRequired: true`. Elle ne prouve pas qu'une connexion client donnée est autorisée ou utilisable.
+
 Sur une Preview autorisée, ouvrir `/admin/agents/factory` avec un compte administrateur et :
 
 1. Saisir l'identifiant exact d'un projet de test possédant déjà un brief et un plan versionnés.
