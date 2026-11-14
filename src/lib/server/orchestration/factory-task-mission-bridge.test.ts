@@ -53,6 +53,6 @@ describe("bridgeWorkflowToDurableFactoryTasks", () => {
     expect(() => bridgeWorkflowToDurableFactoryTasks({
       ...workflow,
       executionEnabled: true,
-    })).toThrow("Le pont de tâches ne peut accepter qu'un workflow non activé.");
+    } as unknown as typeof workflow)).toThrow("Le pont de tâches ne peut accepter qu'un workflow non activé.");
   });
 });
