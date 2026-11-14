@@ -159,6 +159,31 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(calls).toEqual([]);
   });
 
+  it("preflights the entire selected team before the first provider call", async () => {
+    const calls: string[] = [];
+    const reserveBudget = vi.fn(async () => true);
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["analyste-metier", "architecte-logiciel", "ux-ui-designer"],
+      adapters: [adapter("openai", calls)],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("blocked");
+    expect(result.executionStarted).toBe(false);
+    expect(result.invocations).toMatchObject([{
+      agentId: "ux-ui-designer",
+      status: "blocked",
+      code: "SPECIALIZED_RUNTIME_REQUIRED",
+    }]);
+    expect(calls).toEqual([]);
+    expect(reserveBudget).not.toHaveBeenCalled();
+  });
+
   it("requires an independent provider for reviewer and cross-checker work", async () => {
     const calls: string[] = [];
     const oneProvider = await executeAgentFactoryWorkflow({
@@ -175,6 +200,8 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(oneProvider.state).toBe("blocked");
     expect(oneProvider.invocations.find((item) => item.agentId === "auditeur-de-code")?.code)
       .toBe("INDEPENDENT_PROVIDER_REQUIRED");
+    expect(calls).toEqual([]);
+    expect(oneProvider.executionStarted).toBe(false);
 
     const twoProviderCalls: string[] = [];
     const twoProviders = await executeAgentFactoryWorkflow({
