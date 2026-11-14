@@ -1,3 +1,4 @@
+import { recommendAgentsForProjectPlan } from "@/lib/agents/agent-recommendation";
 import { matchesProjectMemoryDigest } from "@/lib/factory/project-memory-digest";
 import { callUserData } from "@/lib/server/supabase-rest";
 
@@ -9,6 +10,8 @@ export type ProjectFactoryContextSnapshot = {
   planVersion: number;
   contextReferences: string[];
   contextInstructions: string[];
+  recommendedAgentIds: string[];
+  recommendationReasons: Readonly<Record<string, readonly string[]>>;
 };
 
 function record(value: unknown): value is JsonRecord {
@@ -162,10 +165,25 @@ export async function loadProjectFactoryContext(
     throw new Error("PROJECT_CONTEXT_INTEGRITY_FAILED");
   }
 
+  const recommendation = recommendAgentsForProjectPlan({
+    domainId: typeof plan.domainId === "string" ? plan.domainId : null,
+    summary: optionalText(plan.summary, 1_000),
+    tasks: Array.isArray(plan.tasks)
+      ? plan.tasks.flatMap((task) => record(task) && typeof task.kind === "string" ? [{ kind: task.kind }] : [])
+      : [],
+    includedScope: plan.includedScope.flatMap((item) => record(item) ? [{
+      id: optionalText(item.id, 100),
+      title: optionalText(item.title, 160),
+      description: optionalText(item.description, 500),
+    }] : []),
+  });
+
   return {
     projectId,
     briefVersion: latestPlan.source_brief_version,
     planVersion: latestPlan.version,
+    recommendedAgentIds: recommendation.agentIds,
+    recommendationReasons: recommendation.reasons,
     contextReferences: [
       `project-brief-version:${latestPlan.source_brief_version}`,
       `project-brief-digest:${briefRow.payload_digest}`,
