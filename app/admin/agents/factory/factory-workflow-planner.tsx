@@ -9,6 +9,9 @@ type PreparedWorkflowResponse = {
   prepared: boolean;
   executionStarted: false;
   sourceVersions: { briefVersion: number; planVersion: number };
+  selectionSource: "explicit" | "core_recommendation";
+  recommendedAgentIds: string[];
+  recommendationReasons: Readonly<Record<string, readonly string[]>>;
   workflow: AgentFactoryWorkflow;
 };
 
@@ -49,11 +52,6 @@ export function FactoryWorkflowPlanner() {
       setError("Saisissez l'identifiant du projet.");
       return;
     }
-    if (selectedAgentIds.length === 0) {
-      setError("Sélectionnez au moins un spécialiste.");
-      return;
-    }
-
     setBusy(true);
     try {
       const workflowId = `factory-${Date.now().toString(36)}`;
@@ -68,6 +66,9 @@ export function FactoryWorkflowPlanner() {
       const payload = await response.json() as PreparedWorkflowResponse | { error?: string };
       if (!response.ok || !("workflow" in payload)) {
         throw new Error("error" in payload && payload.error ? payload.error : "Préparation du workflow impossible.");
+      }
+      if (selectedAgentIds.length === 0) {
+        setSelectedAgentIds(payload.workflow.poles.flatMap((pole) => pole.selectedAgentIds));
       }
       setWorkflow(payload);
     } catch (cause) {
@@ -134,7 +135,11 @@ export function FactoryWorkflowPlanner() {
       <div className={styles.prepareBar}>
         <p>Le plan utilise la dernière version administrative enregistrée du projet. Aucun enregistrement ou lancement n'est effectué.</p>
         <button type="button" onClick={prepareWorkflow} disabled={busy || selectedCount === 0}>
-          {busy ? "Préparation…" : "Préparer le workflow"}
+          {busy
+            ? "Préparation…"
+            : selectedCount === 0
+              ? "Recommander l'équipe et préparer"
+              : "Préparer le workflow sélectionné"}
         </button>
       </div>
 
@@ -146,6 +151,7 @@ export function FactoryWorkflowPlanner() {
             <div>
               <span className={styles.eyebrow}>PLAN PRÉPARÉ · NON EXÉCUTÉ</span>
               <h2>Workflow {workflow.workflow.workflowId}</h2>
+              <p>{workflow.selectionSource === "core_recommendation" ? "Équipe recommandée par MerKora Core à partir du plan versionné." : "Équipe sélectionnée explicitement par l'administrateur."}</p>
               <p>Brief v{workflow.sourceVersions.briefVersion} · Plan v{workflow.sourceVersions.planVersion} · {workflow.workflow.missionPlan.steps.length} missions ordonnées</p>
             </div>
             <span className={styles.status}>Aucune exécution</span>
@@ -192,6 +198,16 @@ export function FactoryWorkflowPlanner() {
                 <strong className={assignment.status === "prepared" ? styles.prepared : styles.runtimeMissing}>
                   {assignment.status === "prepared" ? "Mission préparée" : "Runtime spécialisé requis"}
                 </strong>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.recommendations}>
+            <h3>Pourquoi MerKora Core recommande ces spécialistes</h3>
+            {workflow.recommendedAgentIds.map((agentId) => (
+              <div className={styles.recommendation} key={agentId}>
+                <strong>{agentId}</strong>
+                <span>{workflow.recommendationReasons[agentId]?.join(" ") ?? "Rôle utile au parcours du projet."}</span>
               </div>
             ))}
           </div>
