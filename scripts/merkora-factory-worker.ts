@@ -169,9 +169,6 @@ async function main() {
     projectId: String(project.id ?? project.project_id ?? ""),
     projectName: String(project.title ?? "Projet MerKora"),
     projectDescription: `${String(project.problem ?? "")} Objectif : ${String(project.desired_outcome ?? "")}`.slice(0, 500),
-    domainId: typeof plan.domainId === "string" ? plan.domainId : null,
-    domainLabel: typeof plan.domainLabel === "string" ? plan.domainLabel : String(plan.domain ?? "Domaine à confirmer"),
-    specializationId: typeof plan.specializationId === "string" ? plan.specializationId : null,
     modules,
   });
   const archive = createProjectArchive(source);
@@ -185,9 +182,9 @@ async function main() {
     sourceDigest: source.digest,
     generatorVersion: source.generatorVersion,
     moduleIds: source.moduleIds,
-    domainId: source.domainId,
-    domainLabel: source.domainLabel,
-    specializationId: source.specializationId,
+    domainId: typeof plan.domainId === "string" ? plan.domainId : null,
+    domainLabel: typeof plan.domainLabel === "string" ? plan.domainLabel : String(plan.domain ?? "Domaine à confirmer"),
+    specializationId: typeof plan.specializationId === "string" ? plan.specializationId : null,
     fileCount: source.files.length,
     result: build.ok ? "passed" : "failed",
     stage: build.stage,
