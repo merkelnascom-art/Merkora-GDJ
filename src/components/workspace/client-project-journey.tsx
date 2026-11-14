@@ -93,7 +93,7 @@ export function ClientProjectJourney({
             <h1>Voici une première forme <em>à explorer.</em></h1>
             <p>Cette représentation est un support de discussion construit à partir du dossier. Elle n’est pas encore une décision définitive.</p>
           </div>
-          <ProjectMockupStudio project={project} selectedRecommendationIds={decisions.selectedProposalIds} onSelectedRecommendationIdsChange={(ids) => onDecisionsChange({ ...decisions, selectedProposalIds: ids, proposalSelectionConfirmed: true })} onConceptVersionChange={onConceptVersionChange} />
+          <ProjectMockupStudio project={project} showValidation={false} selectedRecommendationIds={decisions.selectedProposalIds} onSelectedRecommendationIdsChange={(ids) => onDecisionsChange({ ...decisions, selectedProposalIds: ids, proposalSelectionConfirmed: true })} onConceptVersionChange={onConceptVersionChange} />
           <ProjectPlanPreview project={project} />
           <div className="mk-step-footer">
             <div><strong>Cette direction vous convient-elle comme base de travail ?</strong><p>Vous pourrez encore modifier les éléments à l’étape suivante.</p></div>
