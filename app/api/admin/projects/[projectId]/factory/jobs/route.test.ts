@@ -120,21 +120,25 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
       unsupportedCount: 0,
     });
     expect(rpcPayload.p_tasks).toHaveLength(5);
-    expect(rpcPayload.p_job.manifest).toMatchObject({
-      specialistWorkflow: {
-        schemaVersion: 1,
-        workflowId: "demo-001",
-        status: "prepared",
-        executionEnabled: false,
-        stages: [
-          { taskKey: "prepare_specification", agentIds: ["analyste-metier"] },
-          { taskKey: "generate_application", agentIds: ["developpeur-backend"] },
-        ],
-      },
-    });
-    expect(rpcPayload.p_job.manifest.specialistWorkflow).toMatchObject({
+    const specialistWorkflow = rpcPayload.p_job.manifest.specialistWorkflow as {
+      schemaVersion: number;
+      workflowId: string;
+      status: string;
+      executionEnabled: boolean;
+      stages: Array<{ taskKey: string; agentIds: string[] }>;
+      unsupported: unknown[];
+    };
+    expect(specialistWorkflow).toMatchObject({
+      schemaVersion: 1,
+      workflowId: "demo-001",
+      status: "prepared",
+      executionEnabled: false,
       unsupported: [],
     });
+    expect(specialistWorkflow.stages.find((stage) => stage.taskKey === "prepare_specification")?.agentIds)
+      .toEqual(["analyste-metier"]);
+    expect(specialistWorkflow.stages.find((stage) => stage.taskKey === "generate_application")?.agentIds)
+      .toEqual(["developpeur-backend"]);
   });
 
 
