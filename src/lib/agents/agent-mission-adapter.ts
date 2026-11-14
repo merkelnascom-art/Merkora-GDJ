@@ -98,8 +98,8 @@ export function prepareSpecialistMission(input: {
   }
 
   const contextInstructions = input.contextInstructions ?? [];
-  if (!Array.isArray(contextInstructions) || contextInstructions.length > 8) {
-    throw new Error("Le contexte projet dépasse la limite de huit éléments.");
+  if (!Array.isArray(contextInstructions) || contextInstructions.length > 7) {
+    throw new Error("Le contexte projet dépasse la limite de sept éléments.");
   }
   const normalizedContext = contextInstructions.map((item) => {
     if (typeof item !== "string" || !item.trim() || item.length > 1_800) {
