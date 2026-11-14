@@ -42,22 +42,24 @@ export async function POST(request: Request, context: Context) {
   const kind = body.approvalKind;
   if (kind !== "client_scope" && !isAdmin) return error("Cette validation est réservée à l'administrateur.", 403);
 
-  const planResult = await callUserData<Row[]>(
+  const planResult = await callUserData(
     `project_memory_plan_versions?${query({ select: "version,payload_digest,scope_digest,payload", project_id: `eq.${projectId}`, version: `eq.${version}`, limit: "1" })}`,
     "GET",
     accessToken,
   );
   if (!planResult.ok) return error("Impossible de vérifier le plan.", 503);
-  const plan = Array.isArray(planResult.data) ? planResult.data[0] : null;
+  const planRows = Array.isArray(planResult.data) ? planResult.data as Row[] : [];
+  const plan = planRows[0] ?? null;
   if (!plan || typeof plan.payload_digest !== "string" || typeof plan.scope_digest !== "string") return error("Plan introuvable.", 404);
 
   if (!isAdmin) {
-    const projectResult = await callUserData<Row[]>(
+    const projectResult = await callUserData(
       `user_projects?${query({ select: "id,user_id", id: `eq.${projectId}`, user_id: `eq.${user.id}`, limit: "1" })}`,
       "GET",
       accessToken,
     );
-    if (!projectResult.ok || !Array.isArray(projectResult.data) || !projectResult.data.length) return error("Vous n'êtes pas autorisé à valider ce projet.", 403);
+    const ownedProjects = Array.isArray(projectResult.data) ? projectResult.data as Row[] : [];
+    if (!projectResult.ok || !ownedProjects.length) return error("Vous n'êtes pas autorisé à valider ce projet.", 403);
   }
 
   const payload = plan.payload && typeof plan.payload === "object" ? plan.payload as Record<string, unknown> : {};
@@ -66,7 +68,7 @@ export async function POST(request: Request, context: Context) {
     return error("Référence de demande absente du plan.", 409);
   }
 
-  const existing = await callUserData<Row[]>(
+  const existing = await callUserData(
     `project_memory_approvals?${query({
       select: "id,decision", project_id: `eq.${projectId}`, plan_version: `eq.${version}`,
       approval_kind: `eq.${kind}`, request_id: `eq.${requestId}`, limit: "1",
@@ -75,9 +77,10 @@ export async function POST(request: Request, context: Context) {
     accessToken,
   );
   if (!existing.ok) return error("Impossible de vérifier les validations existantes.", 503);
-  if (Array.isArray(existing.data) && existing.data.length) return error("Cette validation a déjà été enregistrée.", 409);
+  const existingRows = Array.isArray(existing.data) ? existing.data as Row[] : [];
+  if (existingRows.length) return error("Cette validation a déjà été enregistrée.", 409);
 
-  const inserted = await callUserData<Row[]>(
+  const inserted = await callUserData(
     `project_memory_approvals?${query({ select: "id,approval_kind,decision,created_at" })}`,
     "POST",
     accessToken,
@@ -96,8 +99,9 @@ export async function POST(request: Request, context: Context) {
     },
     "return=representation",
   );
-  if (!inserted.ok || !Array.isArray(inserted.data) || !inserted.data[0]) {
+  const insertedRows = Array.isArray(inserted.data) ? inserted.data as Row[] : [];
+  if (!inserted.ok || !insertedRows[0]) {
     return error("La validation n'a pas pu être enregistrée.", inserted.status >= 500 ? 503 : 409);
   }
-  return NextResponse.json({ approved: true, approval: inserted.data[0] }, { status: 201 });
+  return NextResponse.json({ approved: true, approval: insertedRows[0] }, { status: 201 });
 }
