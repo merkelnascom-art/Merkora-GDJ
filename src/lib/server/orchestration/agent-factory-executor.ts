@@ -213,7 +213,13 @@ export async function executeAgentFactoryWorkflow(input: {
     // selected specialist, so omitting an agent cannot bypass an approval.
     const dueGates = workflow.humanGates.filter((gate) => {
       const gateIndex = phaseIndex.get(gate.blocksPhase);
-      return gateIndex !== undefined && gateIndex <= index && !checkedGateIds.has(gate.id);
+      const appliesToSelectedWork = workflow.phases.some((candidate) =>
+        candidate.agentIds.length > 0 && gate.requiredFor.includes(candidate.id),
+      );
+      return appliesToSelectedWork
+        && gateIndex !== undefined
+        && gateIndex <= index
+        && !checkedGateIds.has(gate.id);
     });
 
     for (const gate of dueGates) {
