@@ -1,0 +1,204 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { AGENT_POLES } from "@/lib/agents/agent-catalog";
+import type { AgentFactoryWorkflow } from "@/lib/agents/agent-factory-workflow";
+import styles from "./factory-workflow.module.css";
+
+type PreparedWorkflowResponse = {
+  prepared: boolean;
+  executionStarted: false;
+  sourceVersions: { briefVersion: number; planVersion: number };
+  workflow: AgentFactoryWorkflow;
+};
+
+export function FactoryWorkflowPlanner() {
+  const [projectId, setProjectId] = useState("");
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [workflow, setWorkflow] = useState<PreparedWorkflowResponse | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const selectedCount = selectedAgentIds.length;
+  const selectedSet = useMemo(() => new Set(selectedAgentIds), [selectedAgentIds]);
+
+  function toggleAgent(agentId: string) {
+    setSelectedAgentIds((current) => current.includes(agentId)
+      ? current.filter((id) => id !== agentId)
+      : [...current, agentId]);
+    setWorkflow(null);
+    setError("");
+  }
+
+  function selectAll() {
+    setSelectedAgentIds(AGENT_POLES.flatMap((pole) => pole.agents.map((agent) => agent.id)));
+    setWorkflow(null);
+    setError("");
+  }
+
+  function clearSelection() {
+    setSelectedAgentIds([]);
+    setWorkflow(null);
+    setError("");
+  }
+
+  async function prepareWorkflow() {
+    setError("");
+    setWorkflow(null);
+    if (projectId.trim().length < 3) {
+      setError("Saisissez l'identifiant du projet.");
+      return;
+    }
+    if (selectedAgentIds.length === 0) {
+      setError("Sélectionnez au moins un spécialiste.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const workflowId = `factory-${Date.now().toString(36)}`;
+      const response = await fetch(
+        `/api/admin/projects/${encodeURIComponent(projectId.trim())}/agents/workflow`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workflowId, agentIds: selectedAgentIds }),
+        },
+      );
+      const payload = await response.json() as PreparedWorkflowResponse | { error?: string };
+      if (!response.ok || !("workflow" in payload)) {
+        throw new Error("error" in payload && payload.error ? payload.error : "Préparation du workflow impossible.");
+      }
+      setWorkflow(payload);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Une erreur inattendue est survenue.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <a href="/admin/agents" className={styles.back}>← Organigramme des agents</a>
+        <span className={styles.eyebrow}>MERKORA GDJ · ORCHESTRATION</span>
+        <h1>Préparer le workflow de fabrication</h1>
+        <p>Reliez un plan projet versionné aux spécialistes nécessaires. MerKora Core prépare les missions et leurs dépendances, sans les exécuter.</p>
+      </header>
+
+      <section className={styles.setup}>
+        <label className={styles.projectField}>
+          <span>Identifiant du projet</span>
+          <input
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+            placeholder="Identifiant exact du projet MerKora"
+            autoComplete="off"
+          />
+        </label>
+        <div className={styles.selectionSummary}>
+          <div><strong>{selectedCount}/35</strong><span>spécialistes sélectionnés</span></div>
+          <div className={styles.selectionActions}>
+            <button type="button" onClick={selectAll}>Sélectionner les 35</button>
+            <button type="button" onClick={clearSelection}>Tout désélectionner</button>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.poles}>
+        {AGENT_POLES.map((pole, index) => {
+          const count = pole.agents.filter((agent) => selectedSet.has(agent.id)).length;
+          return (
+            <article className={styles.pole} key={pole.id}>
+              <div className={styles.poleHeader}>
+                <span className={styles.poleNumber}>0{index + 1}</span>
+                <div><h2>{pole.name}</h2><p>{pole.objective} · {count}/{pole.agents.length} sélectionnés</p></div>
+              </div>
+              <div className={styles.agentChoices}>
+                {pole.agents.map((agent) => (
+                  <label key={agent.id} className={selectedSet.has(agent.id) ? styles.agentSelected : styles.agent}>
+                    <input
+                      type="checkbox"
+                      checked={selectedSet.has(agent.id)}
+                      onChange={() => toggleAgent(agent.id)}
+                    />
+                    <span>{agent.name}</span>
+                  </label>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </section>
+
+      <div className={styles.prepareBar}>
+        <p>Le plan utilise la dernière version administrative enregistrée du projet. Aucun enregistrement ou lancement n'est effectué.</p>
+        <button type="button" onClick={prepareWorkflow} disabled={busy || selectedCount === 0}>
+          {busy ? "Préparation…" : "Préparer le workflow"}
+        </button>
+      </div>
+
+      {error && <p className={styles.error} role="alert">{error}</p>}
+
+      {workflow && (
+        <section className={styles.result} aria-live="polite">
+          <div className={styles.resultHeader}>
+            <div>
+              <span className={styles.eyebrow}>PLAN PRÉPARÉ · NON EXÉCUTÉ</span>
+              <h2>Workflow {workflow.workflow.workflowId}</h2>
+              <p>Brief v{workflow.sourceVersions.briefVersion} · Plan v{workflow.sourceVersions.planVersion} · {workflow.workflow.missionPlan.steps.length} missions ordonnées</p>
+            </div>
+            <span className={styles.status}>Aucune exécution</span>
+          </div>
+
+          <div className={styles.phaseList}>
+            {workflow.workflow.phases.map((phase, index) => (
+              <article className={styles.phase} key={phase.id}>
+                <span className={styles.phaseNumber}>{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h3>{phase.label}</h3>
+                  <p>{phase.purpose}</p>
+                  <div className={styles.phaseAgents}>
+                    {phase.agentIds.length
+                      ? phase.agentIds.map((id) => <span key={id}>{id}</span>)
+                      : <small>Aucun spécialiste sélectionné dans cette phase.</small>}
+                  </div>
+                </div>
+                <span className={phase.status === "planned" ? styles.planned : styles.notSelected}>
+                  {phase.status === "planned" ? "Planifiée" : "Non sélectionnée"}
+                </span>
+              </article>
+            ))}
+          </div>
+
+          <div className={styles.assignmentPanel}>
+            <h3>Raccordement au runtime existant</h3>
+            {workflow.workflow.assignments.map((assignment) => (
+              <div className={styles.assignment} key={assignment.agentId}>
+                <span>{assignment.agentId}</span>
+                <strong className={assignment.status === "prepared" ? styles.prepared : styles.runtimeMissing}>
+                  {assignment.status === "prepared" ? "Mission préparée" : "Runtime spécialisé requis"}
+                </strong>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.gates}>
+            <h3>Validations humaines à vérifier</h3>
+            {workflow.workflow.humanGates.map((gate) => (
+              <div className={styles.gate} key={gate.id}>
+                <span>{gate.label}</span>
+                <small>{gate.requiredFor.join(" · ")}</small>
+                <strong>Non évaluée</strong>
+              </div>
+            ))}
+          </div>
+
+          <p className={styles.safetyNote}>
+            Ce résultat est une préparation de missions. Les spécialistes sans runtime adapté restent bloqués. Aucun appel IA, budget, worker, modification de base, déploiement ou livraison n'a été déclenché.
+          </p>
+        </section>
+      )}
+    </main>
+  );
+}
