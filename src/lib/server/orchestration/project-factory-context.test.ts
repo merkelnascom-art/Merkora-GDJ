@@ -88,7 +88,7 @@ describe("loadProjectFactoryContext", () => {
     expect(result.contextInstructions.join("\\n")).toContain("Centre de formation");
     expect(result.contextInstructions.join("\\n")).toContain("Centraliser les inscriptions");
     expect(result.contextInstructions.every((item) => item.length <= 1_800)).toBe(true);
-    expect(callUserData).toHaveBeenCalledTimes(1);
+    expect(callUserData).toHaveBeenCalledTimes(2);
   });
 
   it("rejects a tampered project plan before building agent context", async () => {
@@ -107,7 +107,7 @@ describe("loadProjectFactoryContext", () => {
 
     await expect(loadProjectFactoryContext("project-001", "admin-token"))
       .rejects.toThrow("PROJECT_CONTEXT_INTEGRITY_FAILED");
-    expect(callUserData).toHaveBeenCalledTimes(2);
+    expect(callUserData).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a missing source brief instead of inventing project context", async () => {
