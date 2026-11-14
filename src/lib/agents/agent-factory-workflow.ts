@@ -1,6 +1,7 @@
 import { AGENT_POLES, type AgentPoleId } from "./agent-catalog";
 import { resolveAgentSelection } from "./agent-selection";
 import { prepareSpecialistMission, type SpecialistMissionPreparation } from "./agent-mission-adapter";
+import type { AgentMissionEnvelope, AgentMissionRole } from "../server/orchestration/agent-mission-contract";
 import { createAgentMissionPlan, type AgentMissionRequest, type AgentMissionPlan } from "./agent-mission-plan";
 import { orderExecutionTasks } from "../server/orchestration/execution-graph";
 
@@ -236,6 +237,8 @@ export type AgentFactoryWorkflow = {
     phaseId: FactoryPhaseId;
     missionId: string;
     status: SpecialistMissionPreparation["status"];
+    runtimeRole?: AgentMissionRole;
+    mission?: AgentMissionEnvelope;
     reason?: "NO_COMPATIBLE_EXISTING_RUNTIME_ROLE";
   }>;
   missionPlan: AgentMissionPlan;
@@ -339,6 +342,8 @@ export function planAgentFactoryWorkflow(input: {
           phaseId: PHASE_BY_AGENT[agent.id],
           missionId,
           status: preparation.status,
+          runtimeRole: preparation.runtimeRole,
+          mission: preparation.mission,
         }
       : {
           agentId: agent.id,
