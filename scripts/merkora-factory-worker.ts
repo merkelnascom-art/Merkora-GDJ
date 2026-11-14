@@ -65,6 +65,8 @@ async function runSandbox(files: Array<{ path: string; content: string }>) {
   });
 
   try {
+    // Ensure the workspace exists before writing generated files.
+    await sandbox.mkDir("/vercel/sandbox");
     await sandbox.writeFiles(files.map((file) => ({
       path: file.path,
       content: Buffer.from(file.content, "utf8"),
@@ -164,6 +166,7 @@ async function main() {
   });
 
   const source = generateProjectSource({
+    projectId: String(project.id ?? project.project_id ?? ""),
     projectName: String(project.title ?? "Projet MerKora"),
     projectDescription: `${String(project.problem ?? "")} Objectif : ${String(project.desired_outcome ?? "")}`.slice(0, 500),
     domainId: typeof plan.domainId === "string" ? plan.domainId : null,
