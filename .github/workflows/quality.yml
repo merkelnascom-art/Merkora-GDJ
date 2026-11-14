@@ -32,7 +32,7 @@ jobs:
       - name: Test factory worker identity
         run: deno test --node-modules-dir=auto supabase/functions/factory-worker/identity_test.ts
       - name: Project team function tests
-        run: deno test --node-modules-dir=auto supabase/functions/project-team-invite/index_test.ts supabase/functions/project-team-accept/index_test.ts supabase/functions/project-team-revoke/index_test.ts
+        run: deno test --allow-read=./supabase/functions --node-modules-dir=auto supabase/functions/project-team-invite/index_test.ts supabase/functions/project-team-accept/index_test.ts supabase/functions/project-team-revoke/index_test.ts
       - name: Unit tests
         run: npm test
       - name: Production build
