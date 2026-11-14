@@ -114,6 +114,18 @@ export default function HomePage() {
     });
   }, []);
 
+  const mergeCloudJourneys = useCallback((cloudJourneys: Record<string, unknown>, cloudProjects: Project[]) => {
+    setJourneys((current) => {
+      const next = { ...current };
+      for (const [projectId, value] of Object.entries(cloudJourneys)) {
+        const project = cloudProjects.find((item) => item.id === projectId) ??
+          projects.find((item) => item.id === projectId);
+        if (project) next[projectId] = restoreJourneyRecord(projectId, value, project);
+      }
+      return next;
+    });
+  }, [projects]);
+
   useEffect(() => {
     try {
       const savedProjects = window.localStorage.getItem(PROJECTS_STORAGE_KEY);
@@ -322,6 +334,8 @@ export default function HomePage() {
       activeStage={showForm ? "home" : workspaceView}
       storageReady={storageReady}
       onCloudProjectsLoaded={mergeCloudProjects}
+      onCloudJourneysLoaded={mergeCloudJourneys}
+      localJourneys={journeys}
       onOpenHome={openHome}
       onStartProject={() => startDiscovery()}
       onNavigate={handleStageChange}
