@@ -173,6 +173,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
     id: "execution-authorization",
     label: "Autorisation explicite de lancer la fabrication",
     blocksPhase: "fabrication",
+    requiredFor: ["fabrication"],
     status: "not_evaluated",
     authority: "authorized_administrator",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
