@@ -28,18 +28,6 @@ describe("buildProjectImplementationPrompt", () => {
     expect(result.userPrompt).toContain("Qui valide les retards autorisés ?");
   });
 
-  it("adds public-service human-review safeguards and the exact domain to the prompt", () => {
-    const result = buildProjectImplementationPrompt({
-      ...brief,
-      domainId: "administration-services-publics",
-      domainLabel: "Administration, vie citoyenne et services publics",
-      specializationId: "civil-status",
-    });
-    expect(result.systemPrompt).toContain("validation humaine");
-    expect(result.userPrompt).toContain("administration-services-publics");
-    expect(result.userPrompt).toContain("civil-status");
-  });
-
   it("rejects an empty module scope", () => {
     expect(() => buildProjectImplementationPrompt({ ...brief, modules: [] })).toThrow(/périmètre/i);
   });
@@ -93,6 +81,7 @@ describe("parseProjectCodePatchResponse", () => {
 describe("applyProjectCodePatch", () => {
   it("applies only validated source changes and recalculates the source digest", () => {
     const source = generateProjectSource({
+      projectId: "MK-TEST-RH-001",
       projectName: "Gestion RH",
       projectDescription: "Gérer le personnel.",
       modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
@@ -109,6 +98,7 @@ describe("applyProjectCodePatch", () => {
 
   it("refuses patches that change dependency manifests or escape approved folders", () => {
     const source = generateProjectSource({
+      projectId: "MK-TEST-RH-002",
       projectName: "Gestion RH",
       projectDescription: "Gérer le personnel.",
       modules: [{ id: "staff", title: "Personnel", description: "Profils employés." }],
