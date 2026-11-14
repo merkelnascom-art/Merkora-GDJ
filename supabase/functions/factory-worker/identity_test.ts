@@ -1,4 +1,5 @@
-import { isPlannedSpecialistWorkflowManifest, isTrustedGitHubWorkflowClaims } from "./identity.ts";
+import * as identity from "./identity.ts";
+const { isTrustedGitHubWorkflowClaims } = identity;
 
 const validClaims: Record<string, unknown> = {
   repository: "merkelnascom-art/Merkora-GDJ",
@@ -57,12 +58,13 @@ Deno.test("requires numeric GitHub run and attempt identifiers", () => {
 });
 
 Deno.test("identifies specialist manifests so the legacy worker cannot silently process them", () => {
-  if (!isPlannedSpecialistWorkflowManifest({
-    specialistWorkflow: { status: "prepared", executionEnabled: false },
-  })) {
+  const guard = (identity as unknown as Record<string, unknown>).isPlannedSpecialistWorkflowManifest;
+  if (typeof guard !== "function") throw new Error("specialist manifest guard is not implemented");
+  const isPlanned = guard as (manifest: unknown) => boolean;
+  if (!isPlanned({ specialistWorkflow: { status: "prepared", executionEnabled: false } })) {
     throw new Error("a planned specialist manifest must be detected");
   }
-  if (isPlannedSpecialistWorkflowManifest({ kind: "merkora_project_factory_job" })) {
+  if (isPlanned({ kind: "merkora_project_factory_job" })) {
     throw new Error("an ordinary legacy factory job must remain dispatchable");
   }
 });
