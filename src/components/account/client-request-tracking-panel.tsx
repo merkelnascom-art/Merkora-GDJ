@@ -10,6 +10,7 @@ type RequestItem = {
   admin_status: string;
   created_at: string;
   updated_at: string;
+  payload?: { recordType?: string; version?: number; studio?: { reviewStatus?: string; reviewNote?: string }; officialDecision?: { status?: string; recordedAt?: string } };
 };
 
 const labels: Record<string, { title: string; explanation: string }> = {
@@ -38,6 +39,7 @@ export function ClientRequestTrackingPanel() {
       const data = await response.json().catch(() => ({})) as { requests?: RequestItem[]; launches?: Launch[]; error?: string };
       if (!response.ok) throw new Error(data.error || "Impossible de charger le suivi.");
       setItems(Array.isArray(data.requests) ? data.requests : []);
+      setLaunches(Array.isArray(data.launches) ? data.launches : []);
       setLoaded(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Le suivi est indisponible.");
@@ -57,6 +59,9 @@ export function ClientRequestTrackingPanel() {
     };
   }, [load]);
 
+  const ordinaryItems = items.filter((item) => item.payload?.recordType !== "mockup_version");
+  const mockupVersions = items.filter((item) => item.payload?.recordType === "mockup_version");
+
   return (
     <section className="panel" style={{ maxWidth: 1100, margin: "18px auto 0", padding: 22, border: "1px solid #e7e2f0", borderRadius: 18, background: "#fff" }}>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -68,9 +73,29 @@ export function ClientRequestTrackingPanel() {
         <button className="button button-quiet" onClick={() => void load()} disabled={busy}>{busy ? "Actualisation…" : "Actualiser ↻"}</button>
       </div>
       {error && <p role="alert" style={{ marginTop: 14, color: "#b42318", background: "#fff2f0", padding: 12, borderRadius: 10 }}>{error}</p>}
-      {loaded && !error && items.length === 0 && <p style={{ marginTop: 14, padding: 16, background: "#f8f7fb", borderRadius: 12, color: "#716c80" }}>Aucune demande envoyée depuis ce compte pour le moment. Les dossiers conservés uniquement sur cet appareil ne sont pas encore des demandes en ligne.</p>}
+      {loaded && !error && ordinaryItems.length === 0 && mockupVersions.length === 0 && <p style={{ marginTop: 14, padding: 16, background: "#f8f7fb", borderRadius: 12, color: "#716c80" }}>Aucune demande envoyée depuis ce compte pour le moment. Les dossiers conservés uniquement sur cet appareil ne sont pas encore des demandes en ligne.</p>}
+      {mockupVersions.length > 0 && <section style={{ marginTop: 18, padding: 16, background: "#fbfaff", border: "1px solid #e7e2f0", borderRadius: 14 }}>
+        <div className="eyebrow">STUDIO & CONCEPT</div>
+        <h3 style={{ margin: "6px 0" }}>Historique de vos validations</h3>
+        <p style={{ color: "#716c80", fontSize: 13, lineHeight: 1.6 }}>Chaque envoi conserve la version exacte de votre maquette et votre décision. Une validation du concept ne vaut pas acceptation du devis.</p>
+        <div style={{ display: "grid", gap: 10 }}>
+          {mockupVersions.map((item) => {
+            const decision = item.payload?.officialDecision;
+            const status = decision?.status ?? item.payload?.studio?.reviewStatus;
+            const title = status === "approved" && decision ? "Concept validé officiellement" : status === "changes_requested" ? "Modifications demandées" : decision ? "Version transmise à MerKora" : "Ancienne version de prototype";
+            return <article key={item.id} style={{ padding: 12, background: "#fff", border: "1px solid #e7e2f0", borderRadius: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8 }}>
+                <strong>{item.project_title} · Version {item.payload?.version ?? "—"}</strong>
+                <strong style={{ color: status === "approved" && decision ? "#176b45" : "#6e56a5" }}>{title}</strong>
+              </div>
+              {item.payload?.studio?.reviewNote && <p style={{ margin: "8px 0", whiteSpace: "pre-wrap" }}>Votre commentaire : {item.payload.studio.reviewNote}</p>}
+              <p style={{ margin: "6px 0 0", color: "#716c80", fontSize: 12 }}>{decision?.recordedAt ? "Enregistré côté serveur le " + new Date(decision.recordedAt).toLocaleString("fr-FR") : "Enregistrement antérieur au parcours officiel."}</p>
+            </article>;
+          })}
+        </div>
+      </section>}
       <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
-        {items.map(item => {
+        {ordinaryItems.map(item => {
           const launch = launches.find(entry => entry.request_id === item.id);
           const status = labels[item.admin_status] ?? { title: "Statut à vérifier", explanation: "Le statut de ce dossier doit être confirmé auprès de MerKora." };
           return (
