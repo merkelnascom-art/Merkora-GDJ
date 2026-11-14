@@ -126,7 +126,7 @@ Deno.test("rejects malformed stage sets and mission-assignment mismatches", () =
   if (read({ specialistWorkflow: { ...workflow, stages: workflow.stages.slice(1) } }, "MK-PROJECT-001", 3) !== null) {
     throw new Error("all five existing durable task stages must be present");
   }
-  if (read({ specialistWorkflow: { ...workflow, assignments: [{ missionId: "mission-other" }] } }, "MK-PROJECT-001", 3) !== null) {
+  if (read({ specialistWorkflow: { ...workflow, plan: { ...workflow.plan, assignments: [{ missionId: "mission-other" }] } } }, "MK-PROJECT-001", 3) !== null) {
     throw new Error("mission assignments must match the planned mission set");
   }
 });
