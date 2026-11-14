@@ -1,6 +1,7 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { callUserData, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
+import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,10 @@ const KINDS = new Set(["client_scope", "admin_review", "execution_authorization"
 
 function error(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
+}
+
+function query(values: Record<string, string>): string {
+  return new URLSearchParams(values).toString();
 }
 
 export async function POST(request: Request, context: Context) {
@@ -28,25 +33,32 @@ export async function POST(request: Request, context: Context) {
   const version = Number(rawVersion);
   if (!projectId || projectId.length > 160 || !Number.isSafeInteger(version) || version < 1) return error("Projet ou version invalide.", 400);
 
-  const user = await getCurrentUser();
-  if (!user) return error("Authentification requise.", 401);
+  const cookieStore = await cookies();
+  const [user, accessToken] = await Promise.all([
+    getCurrentUser(cookieStore),
+    getAccessToken(cookieStore),
+  ]);
+  if (!user || !accessToken) return error("Authentification requise.", 401);
   const admin = await getAdminAccess();
   const isAdmin = admin.ok;
   const kind = body.approvalKind;
   if (kind !== "client_scope" && !isAdmin) return error("Cette validation est réservée à l'administrateur.", 403);
 
-  const planResult = await callUserData<Row[]>("project_memory_plan_versions", "GET", {
-    select: "version,payload_digest,scope_digest,payload",
-    project_id: `eq.${projectId}`, version: `eq.${version}`, limit: "1",
-  });
+  const planResult = await callUserData<Row[]>(
+    `project_memory_plan_versions?${query({ select: "version,payload_digest,scope_digest,payload", project_id: `eq.${projectId}`, version: `eq.${version}`, limit: "1" })}`,
+    "GET",
+    accessToken,
+  );
   if (!planResult.ok) return error("Impossible de vérifier le plan.", 503);
   const plan = Array.isArray(planResult.data) ? planResult.data[0] : null;
   if (!plan || typeof plan.payload_digest !== "string" || typeof plan.scope_digest !== "string") return error("Plan introuvable.", 404);
 
   if (!isAdmin) {
-    const projectResult = await callUserData<Row[]>("user_projects", "GET", {
-      select: "id", id: `eq.${projectId}`, limit: "1",
-    });
+    const projectResult = await callUserData<Row[]>(
+      `user_projects?${query({ select: "id", id: `eq.${projectId}`, limit: "1" })}`,
+      "GET",
+      accessToken,
+    );
     if (!projectResult.ok || !Array.isArray(projectResult.data) || !projectResult.data.length) return error("Vous n'êtes pas autorisé à valider ce projet.", 403);
   }
 
@@ -56,26 +68,36 @@ export async function POST(request: Request, context: Context) {
     return error("Référence de demande absente du plan.", 409);
   }
 
-  const existing = await callUserData<Row[]>("project_memory_approvals", "GET", {
-    select: "id,decision", project_id: `eq.${projectId}`, plan_version: `eq.${version}`,
-    approval_kind: `eq.${kind}`, request_id: `eq.${requestId}`, limit: "1",
-  });
+  const existing = await callUserData<Row[]>(
+    `project_memory_approvals?${query({
+      select: "id,decision", project_id: `eq.${projectId}`, plan_version: `eq.${version}`,
+      approval_kind: `eq.${kind}`, request_id: `eq.${requestId}`, limit: "1",
+    })}`,
+    "GET",
+    accessToken,
+  );
   if (!existing.ok) return error("Impossible de vérifier les validations existantes.", 503);
   if (Array.isArray(existing.data) && existing.data.length) return error("Cette validation a déjà été enregistrée.", 409);
 
-  const inserted = await callUserData<Row[]>("project_memory_approvals", "POST", { select: "id,approval_kind,decision,created_at" }, {
-    project_id: projectId,
-    plan_version: version,
-    approval_kind: kind,
-    decision: "approved",
-    plan_digest: plan.payload_digest,
-    scope_digest: plan.scope_digest,
-    actor_user_id: user.id,
-    actor_role: isAdmin ? "admin" : "client",
-    comment: body.comment.trim(),
-    request_id: requestId,
-    ai_processing_consent: body.aiProcessingConsent,
-  });
+  const inserted = await callUserData<Row[]>(
+    `project_memory_approvals?${query({ select: "id,approval_kind,decision,created_at" })}`,
+    "POST",
+    accessToken,
+    {
+      project_id: projectId,
+      plan_version: version,
+      approval_kind: kind,
+      decision: "approved",
+      plan_digest: plan.payload_digest,
+      scope_digest: plan.scope_digest,
+      actor_user_id: user.id,
+      actor_role: isAdmin ? "admin" : "client",
+      comment: body.comment.trim(),
+      request_id: requestId,
+      ai_processing_consent: body.aiProcessingConsent,
+    },
+    "return=representation",
+  );
   if (!inserted.ok || !Array.isArray(inserted.data) || !inserted.data[0]) {
     return error("La validation n'a pas pu être enregistrée.", inserted.status >= 500 ? 503 : 409);
   }
