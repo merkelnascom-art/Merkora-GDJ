@@ -133,6 +133,18 @@ async function main() {
   }
 
   const claim = await callWorker(supabaseUrl, token, { action: "claim", projectId, jobId });
+  if (claim.specialistWorkflow === true && claim.claimed !== true) {
+    const workflowId = typeof claim.workflowId === "string" ? claim.workflowId : "unknown";
+    const reason = typeof claim.reason === "string" ? claim.reason : "specialist_execution_not_ready";
+    console.log(
+      `Specialist workflow ${workflowId}: mission packets initialized; execution held (${reason}). `
+      + "No provider call and no Sandbox were started.",
+    );
+    return;
+  }
+  if (claim.specialistWorkflow === true) {
+    throw new Error("The specialist mission runner is not yet enabled in this worker.");
+  }
   if (claim.claimed !== true || !claim.project || !claim.plan || !Array.isArray(claim.tasks)) {
     throw new Error("The factory job was not claimed with a complete approved payload.");
   }
