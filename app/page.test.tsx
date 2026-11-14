@@ -12,10 +12,11 @@ describe("MerKora GDJ V2 welcome screen", () => {
     expect(html).toContain("Alors, qu'est-ce qu'on imagine");
   });
 
-  it("offers voice and text as explicit communication choices", () => {
+  it("offers written communication only while voice is paused", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("Choisir la conversation par la voix");
-    expect(html).toContain("Choisir la conversation par écrit");
+    expect(html).toContain("Par écrit");
+    expect(html).not.toContain("Par la voix");
+    expect(html).not.toContain("Choisir la conversation par la voix");
   });
 
   it("does not require an account to begin", () => {
@@ -25,7 +26,7 @@ describe("MerKora GDJ V2 welcome screen", () => {
 });
 
 describe("MerKora GDJ V2 conversation screen", () => {
-  it("presents the animated orb as the central listening visual", () => {
+  it("presents the animated orb as the central conversation visual", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
     expect(html).toContain('aria-label="Sphère intelligente MerKora"');
     expect(html).toContain("Les ondes de MerKora");
@@ -39,9 +40,11 @@ describe("MerKora GDJ V2 conversation screen", () => {
     expect(html).toContain("Tu peux aussi raconter ton besoin librement");
   });
 
-  it("keeps the text input available and is transparent about AI connection status", () => {
+  it("keeps a text-only input and removes voice mode controls", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
     expect(html).toContain("DÉCRIS CE QUE TU SOUHAITES IMAGINER");
-    expect(html).toContain("Notre façon d'échanger");
+    expect(html).not.toContain("Notre façon d'échanger");
+    expect(html).not.toContain(">Voix<");
+    expect(html).not.toContain("Mode voix sélectionné");
   });
 });
