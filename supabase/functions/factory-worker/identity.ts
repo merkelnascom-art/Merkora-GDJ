@@ -34,3 +34,87 @@ export function isPlannedSpecialistWorkflowManifest(manifest: unknown): boolean 
     Object.prototype.hasOwnProperty.call(manifest, "specialistWorkflow")
   );
 }
+
+
+export type ValidatedSpecialistWorkflowManifest = Readonly<{
+  workflowId: string;
+  projectId: string;
+  planVersion: number;
+  missionCount: number;
+  unsupportedCount: number;
+  status: "prepared" | "requires_specialized_task_runtime";
+}>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+/**
+ * Validates the persisted specialist plan before the worker considers it.
+ * This is deliberately a manifest validator, not a mission lease or execution
+ * authorization. Human approvals and payment are checked separately.
+ */
+export function readSpecialistWorkflowManifest(
+  manifest: unknown,
+  expectedProjectId: string,
+  expectedPlanVersion: number,
+): ValidatedSpecialistWorkflowManifest | null {
+  if (!isPlannedSpecialistWorkflowManifest(manifest) || !isRecord(manifest)) return null;
+  const workflow = manifest.specialistWorkflow;
+  if (!isRecord(workflow) || workflow.schemaVersion !== 1 ||
+      workflow.executionEnabled !== false ||
+      workflow.projectId !== expectedProjectId ||
+      typeof workflow.workflowId !== "string" || !workflow.workflowId.trim() ||
+      (workflow.status !== "prepared" && workflow.status !== "requires_specialized_task_runtime") ||
+      !isRecord(workflow.sourceVersions) ||
+      workflow.sourceVersions.planVersion !== expectedPlanVersion ||
+      !Array.isArray(workflow.stages) || workflow.stages.length !== 5 ||
+      !Array.isArray(workflow.unsupported) ||
+      !isRecord(workflow.missionPlan) || !Array.isArray(workflow.missionPlan.steps) ||
+      !Array.isArray(workflow.assignments)) {
+    return null;
+  }
+
+  const expectedTaskKeys = [
+    "prepare_specification",
+    "generate_application",
+    "run_quality_checks",
+    "repair_and_retest",
+    "human_delivery_review",
+  ];
+  const taskKeys = workflow.stages.flatMap((stage) =>
+    isRecord(stage) && typeof stage.taskKey === "string" ? [stage.taskKey] : []
+  );
+  if (taskKeys.length !== 5 || new Set(taskKeys).size !== 5 ||
+      expectedTaskKeys.some((key) => !taskKeys.includes(key))) {
+    return null;
+  }
+
+  const missionIds = workflow.missionPlan.steps.flatMap((step) =>
+    isRecord(step) && typeof step.missionId === "string" && step.missionId.trim()
+      ? [step.missionId]
+      : []
+  );
+  const assignmentIds = workflow.assignments.flatMap((assignment) =>
+    isRecord(assignment) && typeof assignment.missionId === "string" && assignment.missionId.trim()
+      ? [assignment.missionId]
+      : []
+  );
+  if (missionIds.length < 1 || missionIds.length !== workflow.missionPlan.steps.length ||
+      assignmentIds.length !== workflow.assignments.length ||
+      missionIds.length !== assignmentIds.length ||
+      new Set(missionIds).size !== missionIds.length ||
+      new Set(assignmentIds).size !== assignmentIds.length ||
+      missionIds.some((id) => !assignmentIds.includes(id))) {
+    return null;
+  }
+
+  return {
+    workflowId: workflow.workflowId,
+    projectId: expectedProjectId,
+    planVersion: expectedPlanVersion,
+    missionCount: missionIds.length,
+    unsupportedCount: workflow.unsupported.length,
+    status: workflow.status,
+  };
+}
