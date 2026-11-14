@@ -34,8 +34,10 @@ Le planificateur de cette branche relie le catalogue des 35 spécialistes au gra
 4. **Fabrication** — construire les composants et livrables retenus.
 5. **Contrôle** — tester, auditer, détecter les erreurs et transmettre les corrections.
 6. **Gouvernance avant livraison** — vérifier le dossier administratif et les conditions de sortie.
-7. **Exploitation** — préparer les environnements, la supervision, la maintenance et les opérations autorisées.
-8. **Relation client** — documenter, former, livrer, suivre les demandes et accompagner après livraison.
+7. **Préparation de l'exploitation** — préparer les environnements, la supervision, la maintenance et les procédures d'incident sans publication en production.
+8. **Mise en production** — exécuter uniquement une publication explicitement autorisée.
+9. **Relation client** — préparer la documentation, la formation et le transfert au client.
+10. **Support après livraison** — ouvrir le suivi et traiter les demandes après acceptation de la livraison.
 
 Les agents d'une même phase peuvent être planifiés en parallèle. Une phase dépend de toutes les missions de la phase précédente sélectionnée. Les phases non nécessaires ne sont pas artificiellement activées. Le pôle transversal intervient à deux moments de gouvernance et ses contrôles peuvent aussi être sollicités par les autres pôles.
 
@@ -51,14 +53,14 @@ Les agents d'une même phase peuvent être planifiés en parallèle. Une phase d
 
 ## 4. Portes de décision
 
-Le planificateur expose les portes suivantes, toutes à l'état `not_evaluated` jusqu'à lecture de la source d'autorisation existante :
+Le planificateur expose les portes suivantes, toutes à l'état `not_evaluated` jusqu'à lecture de la source d'autorisation existante. Chaque porte précise les phases qui la rendent obligatoire : une validation de mise en production n'est pas exigée lorsqu'aucune tâche de mise en production n'est prévue.
 
 - validation du périmètre par le client ;
 - revue administrative du plan et du devis ;
 - autorisation explicite de fabrication ;
 - acceptation des contrôles qualité ;
-- autorisation distincte de mise en production ;
-- acceptation de la livraison par le client.
+- autorisation distincte de mise en production, uniquement si une mission de déploiement est sélectionnée ;
+- acceptation de la livraison avant l'activation du support après livraison.
 
 Ces marqueurs ne créent aucune approbation et ne remplacent pas les routes, preuves et contrôles existants. La préparation d'un devis ne l'envoie pas. La préparation d'une livraison ne la publie pas. Le worker de fabrication ne doit pas devenir un déploiement automatique.
 
@@ -72,9 +74,12 @@ Ajouts réalisés dans la branche multi-agent :
 - adaptation prudente vers les rôles génériques existants ;
 - planificateur de missions avec dépendances ;
 - composition de workflow reliant les pôles, les contrats de mission et le graphe d'exécution ;
-- tests ciblant le parcours complet, les barrières de phases, les spécialistes non raccordés et les portes humaines.
+- exécuteur serveur séquentiel réutilisant les adaptateurs fournisseurs existants, avec contrôle du démarrage, des droits projet, du budget et des portes humaines ;
+- séparation de la préparation d'exploitation, de la mise en production et du support après livraison ;
+- exigence d'un fournisseur indépendant pour les rôles de revue et de contre-vérification lorsque des travaux antérieurs doivent être contrôlés ;
+- tests ciblant le parcours complet, les barrières de phases, les spécialistes non raccordés, les refus d'autorisation, le budget et les portes humaines.
 
-Le workflow généré porte volontairement `status: planned` et `executionEnabled: false`. Il ne déclenche ni appel IA, ni worker, ni budget, ni modification de données, ni déploiement. Le planificateur est une couche de coordination, pas encore le raccordement opérationnel final au dossier client et à la file de fabrication.
+Le workflow généré porte volontairement `status: planned` et `executionEnabled: false`. L'exécuteur ne démarre que lorsqu'un service serveur l'appelle explicitement et que les callbacks de démarrage, d'autorisation projet, de budget et de validation humaine sont tous fournis et satisfaits. Il n'est pas encore raccordé à une route applicative ni à la persistance durable des tâches. Il ne modifie donc pas, à lui seul, le dossier client ou la file de fabrication.
 
 ## 6. Étapes restantes avant activation opérationnelle
 
