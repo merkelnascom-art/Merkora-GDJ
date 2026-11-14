@@ -1,52 +1,15 @@
 import type { Project } from "./project-types";
-import { identifyDomain } from "./domain-registry";
-import { analyzeNeed } from "./discovery";
-import { getDomainOptionCatalog, type DomainOption } from "./domain-options";
-import { getUniversalFamilyById } from "./universal-reference";
-import { getUniversalFamilyCandidatesForOperationalDomain } from "./universal-domain-mapping";
-import type { ProfessionCandidate } from "./profession-reference";
-import type { BusinessSignalAnalysis } from "./business-signal-analysis";
-import { buildActivityDiagnosticPlan, type ActivityDiagnosticPlan } from "./activity-diagnostic";
 
 export type MockupFormat = "website" | "mobile" | "dashboard";
-export type SolutionFormat = "human" | "organizational" | "documentary" | "physical" | "digital" | "hybrid";
-export type ConceptPreviewKind = "exploration" | "universal" | "digital_selection" | "digital";
-export const SOLUTION_FORMAT_LABELS: Record<SolutionFormat, string> = {
-  human: "Accompagnement humain",
-  organizational: "Organisation et processus",
-  documentary: "Documents et ressources",
-  physical: "Solution physique",
-  digital: "Solution numérique",
-  hybrid: "Solution hybride",
-};
-export type DeliverableFormat = "web_app" | "mobile_app" | "poster" | "business_plan" | "visual_mockup" | "physical_prototype" | "service_blueprint" | "technical_specification" | "communication_campaign" | "document_pack" | "presentation" | "training_program";
-export type DeliverableOption = { id: DeliverableFormat; label: string; description: string; reason: string };
 export type MockupPalette = "violet" | "blue" | "emerald" | "amber";
-export const MOCKUP_PALETTE_TOKENS: Record<MockupPalette, { accent: string; accentSoft: string; accentDeep: string }> = {
-  violet: { accent: "#7865dc", accentSoft: "#f0edff", accentDeep: "#40317e" },
-  blue: { accent: "#3278ce", accentSoft: "#eaf3ff", accentDeep: "#173d70" },
-  emerald: { accent: "#159477", accentSoft: "#e7f8f2", accentDeep: "#075d4b" },
-  amber: { accent: "#c88322", accentSoft: "#fff4df", accentDeep: "#75420b" },
-};
 export type MockupConfig = {
   format: MockupFormat;
-  /** Universal solution family, explicitly selected by the client. */
-  solutionFormat?: SolutionFormat | null;
-  /** Display format is confirmed only after an explicit choice in the digital path. */
-  formatConfirmed?: boolean;
   palette: MockupPalette;
   enabledModules: string[];
-  /** True only after the client has actively confirmed a module selection. */
-  moduleSelectionConfirmed?: boolean;
   /** Missing means legacy/default behavior: show every proposed solution track. */
   selectedRecommendationIds?: string[];
-  /** Profession candidates are selected only after explicit client confirmation. */
-  selectedProfessionCandidateIds?: string[];
-  selectedUniversalSectorIds?: string[];
-  /** Client-selected output formats; recommendations are never auto-confirmed. */
-  selectedDeliverableFormats?: string[];
 };
-export type MockupModule = DomainOption;
+export type MockupModule = { id: string; title: string; description: string };
 export type MockupRecommendation = MockupModule & { reason: string };
 export type MockupDomain = "bakery" | "education" | "operations" | "creative" | "digital" | "general";
 export type MockupModel = {
@@ -55,138 +18,15 @@ export type MockupModel = {
   supportingCopy: string;
   domain: MockupDomain;
   domainLabel: string;
-  domainId: string | null;
-  specializationId: string | null;
-  universalFamilyCandidates: Array<{ id: string; label: string }>;
-  professionCandidates: ProfessionCandidate[];
-  businessSignals: BusinessSignalAnalysis;
-  selectedProfessionCandidates: ProfessionCandidate[];
-  activityDiagnostic: ActivityDiagnosticPlan;
-  transversalOptions: MockupModule[];
   format: MockupFormat;
   formatLabel: string;
-  previewKind: ConceptPreviewKind;
-  solutionFormat: SolutionFormat | null;
-  solutionFormatLabel: string;
-  formatConfirmed: boolean;
   palette: MockupPalette;
   modules: MockupModule[];
   visibleModules: MockupModule[];
   recommendations: MockupRecommendation[];
   visibleRecommendations: MockupRecommendation[];
   conceptNotice: string;
-  recommendedDeliverables: DeliverableOption[];
-  selectedDeliverableFormats: DeliverableFormat[];
 };
-
-
-export function resolveConceptPresentation(config: Pick<MockupConfig, "format" | "solutionFormat" | "formatConfirmed">): {
-  kind: ConceptPreviewKind;
-  solutionFormat: SolutionFormat | null;
-  solutionFormatLabel: string;
-  format: MockupFormat | null;
-  formatConfirmed: boolean;
-} {
-  const formats: MockupFormat[] = ["website", "mobile", "dashboard"];
-  const solutionFormats: SolutionFormat[] = ["human", "organizational", "documentary", "physical", "digital", "hybrid"];
-  const validDisplayFormat = formats.includes(config.format) ? config.format : null;
-  const validSolutionFormat = solutionFormats.includes(config.solutionFormat as SolutionFormat)
-    ? config.solutionFormat as SolutionFormat
-    : null;
-
-  // Older saved studio records used a display format without a universal format field.
-  // Preserve that explicit legacy choice, while new records start with solutionFormat: null.
-  const isLegacyDisplayChoice = config.solutionFormat === undefined &&
-    config.formatConfirmed === undefined && validDisplayFormat !== null;
-  if (validSolutionFormat === "digital" || isLegacyDisplayChoice) {
-    const confirmed = validDisplayFormat !== null && (config.formatConfirmed === true || isLegacyDisplayChoice);
-    return {
-      kind: confirmed ? "digital" : "digital_selection",
-      solutionFormat: "digital",
-      solutionFormatLabel: SOLUTION_FORMAT_LABELS.digital,
-      format: confirmed ? validDisplayFormat : null,
-      formatConfirmed: confirmed,
-    };
-  }
-  if (validSolutionFormat) {
-    return {
-      kind: "universal",
-      solutionFormat: validSolutionFormat,
-      solutionFormatLabel: SOLUTION_FORMAT_LABELS[validSolutionFormat],
-      format: null,
-      formatConfirmed: true,
-    };
-  }
-  return {
-    kind: "exploration",
-    solutionFormat: null,
-    solutionFormatLabel: "Direction à explorer",
-    format: null,
-    formatConfirmed: false,
-  };
-}
-
-export const DELIVERABLE_FORMAT_CATALOG: readonly Omit<DeliverableOption, "reason">[] = [
-  { id: "web_app", label: "Site ou plateforme web", description: "Un service accessible depuis un navigateur.", },
-  { id: "mobile_app", label: "Application mobile", description: "Un parcours adapté aux téléphones.", },
-  { id: "poster", label: "Affiche ou support visuel", description: "Un support prêt à être décliné pour impression ou diffusion.", },
-  { id: "business_plan", label: "Business plan et modèle économique", description: "Une étude de faisabilité, des coûts et des revenus à vérifier.", },
-  { id: "visual_mockup", label: "Maquette visuelle ou 3D", description: "Une représentation du produit, du service ou de son expérience.", },
-  { id: "physical_prototype", label: "Prototype ou kit physique", description: "Un objet, équipement, kit ou prototype à spécifier.", },
-  { id: "service_blueprint", label: "Plan de service et parcours opérationnel", description: "Les étapes, acteurs, partenaires et opérations du service.", },
-  { id: "technical_specification", label: "Cahier des charges technique", description: "Les exigences, contraintes, composants et critères de validation.", },
-  { id: "communication_campaign", label: "Campagne de communication", description: "Un dispositif de sensibilisation, promotion ou mobilisation.", },
-  { id: "document_pack", label: "Dossier documentaire et modèles", description: "Guides, procédures, formulaires, devis, factures, rapports et listes de contrôle.", },
-  { id: "presentation", label: "Présentation ou dossier de pitch", description: "Un support structuré pour expliquer le concept à une équipe, un partenaire ou un financeur.", },
-  { id: "training_program", label: "Programme de formation ou d’accompagnement", description: "Un parcours d’apprentissage, d’essai, de coaching ou de reconversion avec étapes et évaluations.", },
-];
-
-function recommendDeliverables(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome">): DeliverableOption[] {
-  const text = `${project.title} ${project.problem} ${project.desiredOutcome}`.toLocaleLowerCase("fr");
-  const selected = new Set<DeliverableFormat>(["visual_mockup"]);
-  const reasons = new Map<DeliverableFormat, string>([
-    ["visual_mockup", "Une représentation aide à comparer le concept avant de le réaliser."],
-  ]);
-  const add = (id: DeliverableFormat, reason: string) => { selected.add(id); reasons.set(id, reason); };
-
-  if (/application|plateforme|logiciel|site web|réserver|reservation|réservation|catalogue|commande|mettre en relation|espace client|outil de gestion|interface|lister les outils|emprunt|prêt d.outils|pret d.outils/.test(text)) {
-    add("web_app", "Le projet comporte un parcours numérique, une réservation ou une mise en relation à organiser.");
-  }
-  if (/mobile|téléphone|telephone|smartphone|géolocalisation|geolocalisation/.test(text)) {
-    add("mobile_app", "L'usage sur téléphone semble important dans le parcours décrit.");
-  }
-  if (/kit|produit|matériel|materiel|équipement|equipement|prototype|objet|fabrication|balcon|casier|outil|bagage|valise|physique|aménagement|amenagement|aménagé|amenage|véhicule|vehicule/.test(text)) {
-    add("physical_prototype", "Le résultat attendu comprend un produit, un équipement ou un objet physique à définir.");
-    add("business_plan", "Un modèle économique aidera à estimer les coûts, la fabrication et la commercialisation.");
-  }
-  if (/service|accompagnement|réseau|reseau|partenaire|covoiturage|coworking|prêt|pret|consigne|formation|reconversion|retrait|cohabitation|intergénération|intergeneration|emprunt|voisinage/.test(text)) {
-    add("service_blueprint", "Le projet dépend d'étapes de service, de rôles humains ou de partenaires à coordonner.");
-  }
-  if (/affiche|campagne|sensibilisation|tri des déchets|tri des dechets|communication|événement|evenement|promotion/.test(text)) {
-    add("poster", "Un support visuel peut rendre le message ou l'offre immédiatement compréhensible.");
-    add("communication_campaign", "Le besoin évoque une action de communication à organiser et mesurer.");
-  }
-  if (/entreprise|commerce|budget|prix|vente|revenu|invendu|coût|cout|rentabilité|rentabilite|marché|marche/.test(text) ||
-    project.category === "business" || project.category === "organization") {
-    add("business_plan", "Le projet implique des coûts, des revenus ou une organisation économique à clarifier.");
-  }
-  if (/guide|pas-à-pas|pas a pas|manuel|formulaire|devis|facture|contrat|procédure|procedure|checklist|liste de contrôle|rapport/.test(text)) {
-    add("document_pack", "Des documents pratiques aideront à utiliser, exploiter ou gérer la solution au quotidien.");
-  }
-  if (/pitch|présentation|presentation|diaporama|présenter aux investisseurs|presenter aux investisseurs/.test(text)) {
-    add("presentation", "Un support de présentation permettra d’expliquer le concept à des interlocuteurs ciblés.");
-  }
-  if (/formation|reconversion|initiation|apprentissage|coaching|accompagnement professionnel|atelier/.test(text)) {
-    add("training_program", "Le résultat attendu repose sur un parcours d’apprentissage ou d’accompagnement progressif.");
-  }
-  if (/technique|matériel|materiel|machine|installation|maintenance|norme|sécurité|securite/.test(text)) {
-    add("technical_specification", "Des exigences techniques et des critères de validation devront être définis.");
-  }
-
-  return DELIVERABLE_FORMAT_CATALOG
-    .filter((item) => selected.has(item.id))
-    .map((item) => ({ ...item, reason: reasons.get(item.id) ?? "Format proposé à confirmer avec le client." }));
-}
 
 const formatLabels: Record<MockupFormat, string> = {
   website: "Site web",
@@ -243,21 +83,48 @@ const digitalModules: MockupModule[] = [
   { id: "help-center", title: "Aide et accompagnement", description: "Prévoir des explications et des points de contact." },
 ];
 
-function detectDomain(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome">): MockupDomain {
-  // Classification must be grounded only in the client's original brief.
-  // AI recommendations are derived output and must never feed back into the
-  // source-of-truth signals used to choose a domain.
+function detectDomain(project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">): MockupDomain {
   const text = [
     project.title,
     project.problem,
     project.desiredOutcome,
+    ...project.recommendations.flatMap((item) => [item.title, item.description, item.reason]),
   ].join(" ").toLocaleLowerCase("fr");
 
+  if (/pâtisserie|patisserie|gâteau|gateau|cake|cupcake|tarte|biscuit|boulangerie|crème|creme|génoise|genoise|ganache|commande de gâteau|commande de gateau/.test(text)) return "bakery";
   if (/élève|eleve|étudiant|etudiant|orientation|métier|metier|bac\b|formation|école|ecole|scolaire|aptitude|bulletin/.test(text)) return "education";
   if (/équipe|equipe|employé|employe|personnel|présence|presence|retard|tâche|tache|stock|caisse|vente|boutique|horaire|responsable/.test(text) || project.category === "organization" || project.category === "business") return "operations";
   if (/logo|affiche|identité visuelle|identite visuelle|communication|créatif|creatif|graphique|impression|vidéo|video|marque/.test(text) || project.category === "creative") return "creative";
   if (/application|plateforme|logiciel|site web|numérique|numerique|outil|automatisation|espace client/.test(text) || project.category === "digital") return "digital";
   return "general";
+}
+
+export function suggestPalette(
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">,
+): MockupPalette {
+  const brief = [project.title, project.problem, project.desiredOutcome]
+    .join(" ")
+    .toLocaleLowerCase("fr");
+
+  // A color explicitly requested in the client's brief always wins.
+  if (/\b(bleu|bleue|blue|marine|navy)\b/.test(brief)) return "blue";
+  if (/\b(vert|verte|verts|vertes|émeraude|emeraude|green)\b/.test(brief)) return "emerald";
+  if (/\b(violet|violette|purple|prune)\b/.test(brief)) return "violet";
+  if (/\b(ambre|orange|doré|dorée|or|gold|jaune)\b/.test(brief)) return "amber";
+
+  const domain = detectDomain(project);
+  if (domain === "education" || domain === "digital") return "blue";
+  if (domain === "operations") {
+    return /finance|financier|financière|trésorerie|tresorerie|budget|comptab|caisse|revenu|dépense|depense|vente|chiffre d'affaires/.test(brief)
+      ? "emerald"
+      : "blue";
+  }
+  if (domain === "creative") {
+    return /mode|vêtement|vetement|beauté|beaute|luxe|bijou|cosmétique|cosmetique/.test(brief)
+      ? "amber"
+      : "violet";
+  }
+  return "blue";
 }
 
 function recommendationId(title: string): string {
@@ -285,42 +152,15 @@ function modulesFor(domain: MockupDomain): MockupModule[] {
 }
 
 export function buildMockupModel(
-  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations" | "budget" | "urgency"> & { discovery?: Pick<NonNullable<Project["discovery"]>, "professionCandidates" | "universalFamilyCandidates" | "businessSignals"> },
+  project: Pick<Project, "title" | "category" | "problem" | "desiredOutcome" | "recommendations">,
   config: MockupConfig,
 ): MockupModel {
   const domain = detectDomain(project);
-  const match = identifyDomain([project.title, project.problem, project.desiredOutcome].join(" "));
-  const trustedMatch = match.domain && match.confidence !== "low" ? match : null;
-  const catalog = getDomainOptionCatalog(trustedMatch ?? { domain: null, specialization: null, confidence: "low", score: 0 });
-  const freshDiscovery = analyzeNeed({
-    title: project.title,
-    category: project.category,
-    problem: project.problem,
-    desiredOutcome: project.desiredOutcome,
-    budget: project.budget,
-    urgency: project.urgency,
-  });
-  const discovery = project.discovery ?? freshDiscovery;
-  const familyIds = discovery.universalFamilyCandidates?.length
-    ? discovery.universalFamilyCandidates
-    : trustedMatch?.domain ? getUniversalFamilyCandidatesForOperationalDomain(trustedMatch.domain.id) : [];
-  const universalFamilyCandidates = familyIds.flatMap((id) => {
-    const family = getUniversalFamilyById(id);
-    return family ? [{ id: family.id, label: family.label }] : [];
-  });
-  const professionCandidates = discovery.professionCandidates ?? freshDiscovery.professionCandidates;
-  const businessSignals = discovery.businessSignals ?? freshDiscovery.businessSignals;
-  const selectedProfessionIds = new Set(config.selectedProfessionCandidateIds ?? []);
-  const selectedProfessionCandidates = professionCandidates.filter((candidate) => selectedProfessionIds.has(candidate.id));
-  const activityDiagnostic = buildActivityDiagnosticPlan({ familyIds: universalFamilyCandidates.map((family) => family.id), sectorIds: config.selectedUniversalSectorIds ?? [], professionTitles: selectedProfessionCandidates.map((candidate) => candidate.title) });
-  const legacyModules = modulesFor(domain).map((item) => ({ ...item, group: "metier" as const }));
-  const modules: MockupModule[] = trustedMatch ? catalog.domainOptions : legacyModules;
-  const transversalOptions = trustedMatch ? catalog.transversalOptions : [];
-  const allOptions = [...modules, ...transversalOptions];
-  const allowedIds = new Set(allOptions.map((item) => item.id));
+  const modules = modulesFor(domain);
+  const allowedIds = new Set(modules.map((item) => item.id));
   const requested = config.enabledModules.filter((id) => allowedIds.has(id));
-  const visibleModules = config.moduleSelectionConfirmed || requested.length > 0
-    ? allOptions.filter((item) => requested.includes(item.id))
+  const visibleModules = requested.length > 0
+    ? modules.filter((item) => requested.includes(item.id))
     : modules;
 
   const recommendations: MockupRecommendation[] = domain === "bakery" ? bakeryRecommendations : project.recommendations.map((item) => ({
@@ -334,7 +174,6 @@ export function buildMockupModel(
     ? recommendations
     : recommendations.filter((item) => selectedRecommendationIds.includes(item.id));
 
-  const presentation = resolveConceptPresentation(config);
   const title = project.title.trim() || "Votre projet";
   const supportingCopy = project.desiredOutcome.trim()
     || "Un aperçu de travail à préciser avec les besoins et les choix du client.";
@@ -343,30 +182,14 @@ export function buildMockupModel(
     headline: title,
     supportingCopy,
     domain,
-    domainLabel: trustedMatch?.domain?.label ?? domainLabels[domain],
-    domainId: trustedMatch?.domain?.id ?? null,
-    specializationId: trustedMatch?.specialization?.id ?? null,
-    universalFamilyCandidates,
-    professionCandidates,
-    businessSignals,
-    selectedProfessionCandidates,
-    activityDiagnostic,
-    transversalOptions,
+    domainLabel: domainLabels[domain],
     format: config.format,
-    formatLabel: presentation.kind === "digital" && presentation.format
-      ? formatLabels[presentation.format]
-      : presentation.kind === "digital_selection" ? "Aperçu numérique à choisir" : presentation.solutionFormatLabel,
-    previewKind: presentation.kind,
-    solutionFormat: presentation.solutionFormat,
-    solutionFormatLabel: presentation.solutionFormatLabel,
-    formatConfirmed: presentation.formatConfirmed,
+    formatLabel: formatLabels[config.format],
     palette: config.palette,
-    modules: allOptions,
+    modules,
     visibleModules,
     recommendations,
     visibleRecommendations,
     conceptNotice: "Maquette conceptuelle assemblée par MerKora à partir du dossier. Elle illustre une direction possible ; ce n’est pas encore un produit fonctionnel ni une image générée par IA.",
-    recommendedDeliverables: recommendDeliverables(project),
-    selectedDeliverableFormats: (config.selectedDeliverableFormats ?? []).filter((id): id is DeliverableFormat => DELIVERABLE_FORMAT_CATALOG.some((item) => item.id === id)),
   };
 }
