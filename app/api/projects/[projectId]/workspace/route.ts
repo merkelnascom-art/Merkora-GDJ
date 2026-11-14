@@ -66,7 +66,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const allowedEvents = new Set([
       "workspace_created", "diagnostic_answer_saved", "sector_confirmed",
       "profession_confirmed", "deliverable_selected", "client_decision",
-      "client_change_requested", "conversation_turn_saved",
+      "client_change_requested", "conversation_turn_saved", "client_journey_saved",
     ]);
     const summary = raw.summary.trim().slice(0, 1000);
     if (!allowedEvents.has(raw.eventType) || !summary) {
