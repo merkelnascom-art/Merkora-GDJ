@@ -7,11 +7,10 @@ export const dynamic = "force-dynamic";
 
 type Body = {
   planVersion: number;
-  approvalKind: "client_scope" | "admin_review" | "execution_authorization";
+  approvalKind: "admin_review" | "execution_authorization";
   decision: "approved" | "changes_requested";
   comment: string;
   requestId: string;
-  aiProcessingConsent?: boolean;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -20,11 +19,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function validBody(value: unknown): value is Body {
   if (!isRecord(value)) return false;
   return Number.isSafeInteger(value.planVersion) && Number(value.planVersion) > 0 &&
-    ["client_scope", "admin_review", "execution_authorization"].includes(String(value.approvalKind)) &&
+    ["admin_review", "execution_authorization"].includes(String(value.approvalKind)) &&
     ["approved", "changes_requested"].includes(String(value.decision)) &&
     typeof value.comment === "string" && value.comment.length <= 2000 &&
-    (value.approvalKind !== "client_scope" || typeof value.aiProcessingConsent === "boolean") &&
-    (value.approvalKind === "client_scope" || value.aiProcessingConsent === undefined) &&
     typeof value.requestId === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.requestId);
 }
@@ -33,18 +30,15 @@ export async function POST(request: Request, context: { params: Promise<{ projec
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Données invalides." }, { status: 400 }); }
-  if (!validBody(body)) return NextResponse.json({ error: "La validation transmise est invalide." }, { status: 400 });
+  if (!validBody(body)) return NextResponse.json({ error: "Seules les validations internes du plan sont acceptées ici." }, { status: 400 });
 
   try {
     const store = await cookies();
     const [user, token, admin] = await Promise.all([
       getCurrentUser(store), getAccessToken(store), getAdminAccess(),
     ]);
-    if (!user || !token) return NextResponse.json({ error: "Connectez-vous pour valider ce plan." }, { status: 401 });
-    const isAdmin = admin.ok;
-    if ((isAdmin && body.approvalKind === "client_scope") || (!isAdmin && body.approvalKind !== "client_scope")) {
-      return NextResponse.json({ error: "Vous n'êtes pas autorisé à effectuer ce type de validation." }, { status: 403 });
-    }
+    if (!user || !token) return NextResponse.json({ error: "Connexion administrateur requise." }, { status: 401 });
+    if (!admin.ok) return NextResponse.json({ error: "Seul l'administrateur peut valider le plan de fabrication." }, { status: 403 });
 
     const { projectId } = await context.params;
     if (typeof projectId !== "string" || projectId.length < 3 || projectId.length > 100) {
@@ -65,9 +59,9 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       project_id: projectId, plan_version: body.planVersion,
       approval_kind: body.approvalKind, decision: body.decision,
       plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
-      actor_user_id: user.id, actor_role: isAdmin ? "admin" : "client",
+      actor_user_id: user.id, actor_role: "admin",
       comment: body.comment.trim(), request_id: body.requestId,
-      ai_processing_consent: body.approvalKind === "client_scope" ? body.aiProcessingConsent : false,
+      ai_processing_consent: false,
     }, "return=representation");
     if (!approval.ok) {
       return NextResponse.json(
@@ -76,18 +70,16 @@ export async function POST(request: Request, context: { params: Promise<{ projec
       );
     }
 
-    if (isAdmin) {
-      const event = await callUserData("project_memory_events", "POST", token, {
-        project_id: projectId, event_type: "approval_recorded",
-        actor_user_id: user.id, actor_role: "admin",
-        correlation_id: body.requestId, plan_version: body.planVersion,
-        summary: `Validation administrative « ${body.approvalKind} » : ${body.decision}.`,
-        payload: { approval_kind: body.approvalKind, decision: body.decision },
-      }, "return=minimal");
-      if (!event.ok) return NextResponse.json({ error: "La validation est enregistrée, mais l'événement d'audit doit être réconcilié." }, { status: 502 });
-    }
+    const event = await callUserData("project_memory_events", "POST", token, {
+      project_id: projectId, event_type: "approval_recorded",
+      actor_user_id: user.id, actor_role: "admin",
+      correlation_id: body.requestId, plan_version: body.planVersion,
+      summary: `Validation administrative « ${body.approvalKind} » : ${body.decision}.`,
+      payload: { approval_kind: body.approvalKind, decision: body.decision },
+    }, "return=minimal");
+    if (!event.ok) return NextResponse.json({ error: "La validation est enregistrée, mais l'événement d'audit doit être réconcilié." }, { status: 502 });
 
-    return NextResponse.json({ saved: true, approvalKind: body.approvalKind, decision: body.decision, aiProcessingConsent: body.approvalKind === "client_scope" ? body.aiProcessingConsent : false }, {
+    return NextResponse.json({ saved: true, approvalKind: body.approvalKind, decision: body.decision }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
