@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { planAgentFactoryWorkflow } from "@/lib/agents/agent-factory-workflow";
 import { loadProjectFactoryContext } from "@/lib/server/orchestration/project-factory-context";
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
+import { getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const dynamic = "force-dynamic";
 
