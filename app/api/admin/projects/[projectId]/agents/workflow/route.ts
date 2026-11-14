@@ -80,10 +80,12 @@ export async function POST(
     const latest = rows[0];
     if (
       !record(latest)
+      || typeof latest.version !== "number"
       || !Number.isInteger(latest.version)
-      || Number(latest.version) < 1
+      || latest.version < 1
+      || typeof latest.source_brief_version !== "number"
       || !Number.isInteger(latest.source_brief_version)
-      || Number(latest.source_brief_version) < 1
+      || latest.source_brief_version < 1
       || !text(latest.payload_digest, 64, 64)
       || !/^[a-f0-9]{64}$/i.test(latest.payload_digest)
       || !text(latest.scope_digest, 64, 64)
@@ -122,7 +124,9 @@ export async function POST(
     const message = error instanceof Error ? error.message : "";
     const knownSelectionError = message.startsWith("Agent inconnu :")
       || message === "Identifiant de workflow invalide."
-      || message === "Sélection d'agents vide.";
+      || message === "Identifiant d'agent invalide."
+      || message === "Sélection d'agents vide."
+      || message === "La sélection dépasse les 35 agents du catalogue.";
     return NextResponse.json(
       { error: knownSelectionError ? message : "Le workflow projet n'a pas pu être préparé." },
       { status: knownSelectionError ? 400 : 502, headers: { "Cache-Control": "no-store" } },
