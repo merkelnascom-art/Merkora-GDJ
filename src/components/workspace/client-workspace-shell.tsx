@@ -104,7 +104,7 @@ export function ClientWorkspaceShell({
           </div>
         </header>
         <div className="mk-cloud-account">
-          <CloudAccountPanel localProjects={projects} localJourneys={localJourneys} onCloudProjectsLoaded={onCloudProjectsLoaded} onCloudJourneysLoaded={(journeys) => onCloudJourneysLoaded(journeys, projects)} storageReady={storageReady} />
+          <CloudAccountPanel localProjects={projects} localJourneys={localJourneys} onCloudProjectsLoaded={onCloudProjectsLoaded} onCloudJourneysLoaded={onCloudJourneysLoaded} storageReady={storageReady} />
         </div>
         {activeProject && (
           <div className="mk-project-context">
