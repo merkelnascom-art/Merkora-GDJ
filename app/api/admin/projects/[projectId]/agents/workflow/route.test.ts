@@ -47,6 +47,12 @@ beforeEach(() => {
       "project-scope-digest:scope-digest",
     ],
     contextInstructions: ["Contexte client validé.", "Périmètre du plan versionné."],
+    recommendedAgentIds: ["analyste-metier", "architecte-logiciel", "developpeur-backend"],
+    recommendationReasons: {
+      "analyste-metier": ["Compréhension du besoin."],
+      "architecte-logiciel": ["Conception du périmètre."],
+      "developpeur-backend": ["Réalisation logicielle."],
+    },
   });
 });
 
@@ -75,6 +81,7 @@ describe("POST /api/admin/projects/[projectId]/agents/workflow", () => {
     expect(body).toMatchObject({
       prepared: true,
       executionStarted: false,
+      selectionSource: "explicit",
       sourceVersions: { briefVersion: 3, planVersion: 4 },
     });
     expect(body.workflow).toMatchObject({
@@ -88,6 +95,20 @@ describe("POST /api/admin/projects/[projectId]/agents/workflow", () => {
     expect(body.workflow.missionPlan.steps.every((step: { execution: string }) => step.execution === "not_started"))
       .toBe(true);
     expect(loadProjectFactoryContext).toHaveBeenCalledWith("project-001", "admin-token");
+  });
+
+
+  it("uses MerKora Core recommendations when the administrator has not selected agents", async () => {
+    const response = await POST(request({ workflowId: "factory-core-01", agentIds: [] }), context);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.selectionSource).toBe("core_recommendation");
+    expect(body.recommendedAgentIds).toEqual([
+      "analyste-metier", "architecte-logiciel", "developpeur-backend",
+    ]);
+    expect(body.workflow.missionPlan.steps.map((step: { agentId: string }) => step.agentId))
+      .toEqual(body.recommendedAgentIds);
   });
 
   it("blocks when the project has no verified versioned plan", async () => {
