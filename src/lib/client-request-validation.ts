@@ -7,12 +7,13 @@ export function isValidClientRequestPayload(value: unknown): value is Record<str
   const p = value as Record<string, unknown>;
   if (!p.project || typeof p.project !== "object" || Array.isArray(p.project)) return false;
   const project = p.project as Record<string, unknown>;
+  const isMockupVersion = p.recordType === "mockup_version";
   if (!maxText(project.id, 160) || project.id.trim().length < 3 ||
-      !maxText(project.title, 160) || !project.title.trim() ||
-      !maxText(project.category, 40) ||
+      !maxText(project.title, 160) || !project.title.trim()) return false;
+  if (!isMockupVersion && (!maxText(project.category, 40) ||
       !maxText(project.problem, 2500) || !maxText(project.desiredOutcome, 1500) ||
       !maxText(project.budget, 100) || !maxText(project.urgency, 20) ||
-      !Array.isArray(project.recommendations) || project.recommendations.length > 20) return false;
+      !Array.isArray(project.recommendations) || project.recommendations.length > 20)) return false;
   if (!p.studio || typeof p.studio !== "object" || Array.isArray(p.studio)) return false;
   const studio = p.studio as Record<string, unknown>;
   const displayFormats = new Set(["website", "mobile", "dashboard"]);
@@ -22,6 +23,10 @@ export function isValidClientRequestPayload(value: unknown): value is Record<str
       (studio.solutionFormat !== null && studio.solutionFormat !== undefined && !solutionFormats.has(String(studio.solutionFormat))) ||
       (studio.formatConfirmed === true && (studio.solutionFormat !== "digital" || !displayFormats.has(String(studio.format))))) return false;
   if (studio.reviewStatus !== undefined && (!maxText(studio.reviewStatus, 30) || !statuses.has(String(studio.reviewStatus)))) return false;
+  if (isMockupVersion && (!maxText(studio.reviewStatus, 30) || !statuses.has(String(studio.reviewStatus)) ||
+      !Array.isArray(studio.enabledModules) || studio.enabledModules.length > 30 ||
+      !studio.enabledModules.every((id) => typeof id === "string" && id.length <= 120) ||
+      (studio.selectedRecommendationIds !== undefined && (!Array.isArray(studio.selectedRecommendationIds) || studio.selectedRecommendationIds.length > 20 || !studio.selectedRecommendationIds.every((id) => typeof id === "string" && id.length <= 160))))) return false;
   if (p.quote !== undefined) {
     if (!p.quote || typeof p.quote !== "object" || Array.isArray(p.quote)) return false;
     const quote = p.quote as Record<string, unknown>;
