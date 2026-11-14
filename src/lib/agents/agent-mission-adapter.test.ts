@@ -81,7 +81,7 @@ describe("specialist mission adapter", () => {
 
   it("keeps advisory specialists unable to approve, deploy, publish quotes or contact clients", () => {
     const cases = [
-      { agentId: "preparation-des-devis", boundary: "Ne publie ni n'envoie un devis." },
+      { agentId: "preparation-des-devis", boundary: "ne publie ni n'envoie un devis" },
       { agentId: "gestion-des-autorisations", boundary: "Ne donne aucune autorisation et n'approuve aucune action." },
       { agentId: "gestionnaire-des-deploiements", boundary: "Ne déclenche aucun déploiement ni changement de production." },
       { agentId: "assistant-client", boundary: "Ne contacte pas le client et n'envoie aucun message." },
