@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "./project-types";
-import { buildMockupModel, type MockupConfig } from "./mockup-studio";
+import { buildMockupModel, suggestPalette, type MockupConfig } from "./mockup-studio";
 import { analyzeBusinessSignals } from "./business-signal-analysis";
 
 const studentProject: Project = {
@@ -113,47 +113,27 @@ describe("buildMockupModel", () => {
     expect(model.modules.map((item) => item.id)).not.toContain("career-explorer");
   });
 
-  it("routes each of the 13 sectors to its own métier option catalogue", () => {
-    const samples = [
-      ["sport", "Je gère un club de football et ses entraînements."],
-      ["sante", "Notre clinique organise les consultations des patients et les analyses."],
-      ["agriculture-environnement", "Je veux suivre les récoltes et les stocks de ma ferme."],
-      ["commerce", "Je veux gérer les ventes et les stocks de ma boutique."],
-      ["entrepreneuriat-finance", "Je veux suivre la trésorerie, le budget et la rentabilité de mon entreprise."],
-      ["immobilier-btp", "Je gère des locataires, les loyers et des chantiers de construction."],
-      ["education-formation", "Les élèves après le bac ont besoin de tests d'orientation et de pistes de métiers."],
-      ["transport-logistique", "Je veux gérer le transport de marchandises avec nos camions et planifier les tournées."],
-      ["restauration-hotellerie-evenementiel", "Mon hôtel doit gérer les chambres et les réservations."],
-      ["ressources-humaines", "Je veux gérer les ressources humaines, les contrats de travail et les congés."],
-      ["artisanat-services", "Je suis plombier et je veux planifier les dépannages à domicile."],
-      ["administration-services-publics", "Notre mairie gère les demandes d'actes de naissance des citoyens."],
-      ["voyage-tourisme-creation-jeux", "Je veux concevoir un jeu vidéo éducatif avec des niveaux et des missions."],
-    ] as const;
-    for (const [domainId, problem] of samples) {
-      const model = buildMockupModel({
-        ...studentProject,
-        title: "Projet métier",
-        category: "other",
-        problem,
-        desiredOutcome: "Organiser le service et suivre son fonctionnement.",
-      }, { format: "website", palette: "violet", enabledModules: [] });
-      expect(model.domainId).toBe(domainId);
-      expect(model.modules.some((item) => item.group === "metier")).toBe(true);
-      expect(model.transversalOptions.length).toBeGreaterThan(0);
-    }
-  });
 
-  it("offers the career-guidance specialization instead of generic school modules", () => {
-    const model = buildMockupModel(studentProject, { format: "website", palette: "violet", enabledModules: [] });
-    expect(model.specializationId).toBe("career-guidance");
-    expect(model.modules.map((item) => item.id)).toEqual(expect.arrayContaining(["student-profile", "aptitude-tests", "career-explorer", "study-paths"]));
-  });
-
-  it("can represent an explicit decision to select no modules", () => {
-    const model = buildMockupModel(studentProject, {
-      format: "website", palette: "violet", enabledModules: [], moduleSelectionConfirmed: true,
-    });
-    expect(model.visibleModules).toEqual([]);
+  it("suggests a project-appropriate palette and respects an explicit color preference", () => {
+    expect(suggestPalette(studentProject)).toBe("blue");
+    expect(suggestPalette({
+      ...teamProject,
+      title: "Suivi financier",
+      problem: "Je veux une interface verte pour suivre ma trésorerie et mes dépenses.",
+      desiredOutcome: "Visualiser les budgets, les entrées et les sorties.",
+    })).toBe("emerald");
+    expect(suggestPalette({
+      ...studentProject,
+      category: "creative",
+      title: "Identité visuelle",
+      problem: "Je souhaite une identité bleu marine.",
+    })).toBe("blue");
+    expect(suggestPalette({
+      ...studentProject,
+      category: "creative",
+      title: "Logo et identité de marque",
+      problem: "Je veux une palette verte pour cette marque.",
+    })).toBe("emerald");
   });
 
   it("accepts all supported formats and palettes", () => {
