@@ -1,6 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
-import { isPlannedSpecialistWorkflowManifest, isTrustedGitHubWorkflowClaims } from "./identity.ts";
+import {
+  isPlannedSpecialistWorkflowManifest,
+  isTrustedGitHubWorkflowClaims,
+  readSpecialistWorkflowManifest,
+} from "./identity.ts";
 
 const AUDIENCE = "merkora-gdj-factory";
 const ISSUER = "https://token.actions.githubusercontent.com";
@@ -119,13 +123,6 @@ Deno.serve(async (request) => {
     .select("id,project_id,status,plan_version,plan_digest,scope_digest,approval_ids,correlation_id,manifest,requested_by,authorized_by")
     .eq("id", body.jobId).eq("project_id", body.projectId).maybeSingle();
   if (jobError || !job) return json({ error: "factory_job_not_found" }, 404);
-
-  // This worker only builds the legacy scaffold. Refuse both preflight and claim
-  // for multi-agent manifests so no specialist job can silently fall back to it.
-  if ((action === "verify" || action === "claim") &&
-    isPlannedSpecialistWorkflowManifest(job.manifest)) {
-    return json({ error: "specialist_workflow_requires_multi_agent_worker" }, 409);
-  }
 
   // A claimed run can report a safe failure without leaving the job indefinitely in building.
   if (action === "fail") {
@@ -393,6 +390,36 @@ Deno.serve(async (request) => {
     Number(l.required_amount) > 0 &&
     Number(l.confirmed_amount_at_launch) >= Number(l.required_amount)
   )) return json({ error: "commercial_launch_or_payment_not_confirmed" }, 409);
+
+  if (isPlannedSpecialistWorkflowManifest(job.manifest)) {
+    const specialistWorkflow = readSpecialistWorkflowManifest(
+      job.manifest,
+      job.project_id,
+      job.plan_version,
+    );
+    if (!specialistWorkflow) {
+      return json({ error: "specialist_workflow_manifest_invalid" }, 409);
+    }
+
+    // Existing approvals and payment have been revalidated above. The current
+    // five-task worker cannot claim specialist missions until the dedicated
+    // durable mission ledger and its atomic lease RPC are installed.
+    if (action === "verify") {
+      return json({
+        authorized: true,
+        jobId: job.id,
+        status: "queued",
+        eligible: false,
+        reason: "specialist_mission_ledger_required",
+        specialistWorkflow,
+        githubRunId: identity.runId,
+      });
+    }
+    return json({
+      error: "specialist_mission_ledger_required",
+      specialistWorkflow,
+    }, 409);
+  }
 
   if (action === "verify") {
     return json({
