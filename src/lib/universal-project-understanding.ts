@@ -22,7 +22,7 @@ const INTENT_LEXICONS: Array<{ id: string; pattern: RegExp }> = [
   { id: "education_and_training", pattern: /élève|eleve|étudiant|etudiant|formation|cours|enseignant|apprenant/i },
   { id: "staff_and_operations", pattern: /employé|employe|personnel|salarié|salarie|horaire|retard|planning|équipe|equipe/i },
   { id: "documents_and_records", pattern: /document|dossier|archive|registre|cahier|formulaire|justificatif/i },
-  { id: "communication_and_follow_up", pattern: /message|notification|rappel|discussion|suivi|rapport|résumé|resume/i },
+  { id: "communication_and_follow_up", pattern: /message|notification|rappel|discussion|suivi|rapport/i },
 ];
 
 const CURRENT_PROCESS = /(?:aujourd'hui|actuellement|pour le moment|en ce moment)[^.!?\n]*(?:je|on|nous|ils|elles|utilise|note|gère|gere|fait|suiv|enregistr)[^.!?\n]*|(?:je note|on note|nous notons|je gère|je gere|on gère|on gere|nous gérons|nous gerons|j'utilise|nous utilisons)[^.!?\n]*/i;
