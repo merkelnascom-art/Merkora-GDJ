@@ -100,7 +100,10 @@ const specialistManifest = {
     ],
     unsupported: [],
     plan: {
-      missionPlan: { steps: [{ missionId: "mission-1" }, { missionId: "mission-2" }] },
+      missionPlan: { steps: [
+        { sequence: 1, missionId: "mission-1", dependsOn: [] },
+        { sequence: 2, missionId: "mission-2", dependsOn: ["mission-1"] },
+      ] },
       assignments: [
         { missionId: "mission-1", agentId: "analyste-metier", runtimeRole: "analyst", mission: makeMission("mission-1", "analyst") },
         { missionId: "mission-2", agentId: "developpeur-backend", runtimeRole: "implementer", mission: makeMission("mission-2", "implementer") },
@@ -144,5 +147,38 @@ Deno.test("rejects malformed stage sets and mission-assignment mismatches", () =
   }
   if (read({ specialistWorkflow: { ...workflow, plan: { ...workflow.plan, assignments: [{ missionId: "mission-other", agentId: "analyste-metier", runtimeRole: "analyst", mission: makeMission("mission-other", "analyst") }] } } }, "MK-PROJECT-001", 3) !== null) {
     throw new Error("mission assignments must match the planned mission set");
+  }
+});
+
+
+Deno.test("rejects unknown and cyclic mission dependencies before the worker can claim them", () => {
+  const read = (identity as unknown as Record<string, unknown>).readSpecialistWorkflowManifest as
+    (manifest: unknown, projectId: string, planVersion: number) => unknown;
+  const workflow = specialistManifest.specialistWorkflow;
+  const unknownDependency = {
+    ...workflow,
+    plan: {
+      ...workflow.plan,
+      missionPlan: { steps: [
+        { sequence: 1, missionId: "mission-1", dependsOn: ["missing-mission"] },
+        { sequence: 2, missionId: "mission-2", dependsOn: ["mission-1"] },
+      ] },
+    },
+  };
+  const cycle = {
+    ...workflow,
+    plan: {
+      ...workflow.plan,
+      missionPlan: { steps: [
+        { sequence: 1, missionId: "mission-1", dependsOn: ["mission-2"] },
+        { sequence: 2, missionId: "mission-2", dependsOn: ["mission-1"] },
+      ] },
+    },
+  };
+  if (read({ specialistWorkflow: unknownDependency }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("a mission dependency missing from the plan must be rejected");
+  }
+  if (read({ specialistWorkflow: cycle }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("a cyclic mission graph must be rejected");
   }
 });
