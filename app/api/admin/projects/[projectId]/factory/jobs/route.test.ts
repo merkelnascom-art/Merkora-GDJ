@@ -33,13 +33,13 @@ beforeEach(() => {
   vi.mocked(getCurrentUser).mockResolvedValue(user);
   vi.mocked(getAccessToken).mockResolvedValue("token");
   vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user });
-  vi.mocked(loadProjectFactoryContext).mockResolvedValue({
+  vi.mocked(loadProjectFactoryContext).mockReset().mockResolvedValue({
     projectId: "MK-PROJECT-001", briefVersion: 2, planVersion: 3,
     contextReferences: ["project-plan-version:3"],
     contextInstructions: ["Contexte projet vérifié."],
     recommendedAgentIds: ["analyste-metier"], recommendationReasons: { "analyste-metier": ["Analyse du besoin"] },
   });
-  vi.mocked(callUserData)
+  vi.mocked(callUserData).mockReset()
     .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
     .mockResolvedValueOnce({ ok: true, status: 200, data: approvalRows })
     .mockResolvedValueOnce({ ok: true, status: 200, data: [] })
