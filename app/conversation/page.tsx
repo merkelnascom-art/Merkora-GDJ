@@ -208,7 +208,7 @@ export default function ConversationPage() {
             </div>
             <p className="mk-voice-status" role="status" aria-live="polite">{voiceStatus}</p>
             {voiceError && <p className="mk-voice-error" role="alert">{voiceError}</p>}
-            <p className="mk-voice-disclosure">La transcription vocale remplit le champ ci-dessous et reste modifiable. La réponse intelligente à voix haute sera disponible après connexion du moteur IA.</p>
+            <p className="mk-voice-disclosure"><strong>Transcription vocale</strong><br />La transcription remplit le champ ci-dessous et reste modifiable. La réponse intelligente à voix haute sera disponible après connexion du moteur IA.</p>
           </div>
 
           <label className="mk-input-label" htmlFor="mk-first-message">DÉCRIS CE QUE TU SOUHAITES IMAGINER</label>
