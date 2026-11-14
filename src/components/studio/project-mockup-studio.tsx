@@ -60,6 +60,7 @@ export function ProjectMockupStudio({ project, showValidation = false, selectedR
   const [diagnosticResponses, setDiagnosticResponses] = useState<Record<string, string>>({});
   const [conceptValidation, setConceptValidation] = useState<ConceptValidationState>(() => createConceptValidationState("pending"));
   const model = useMemo(() => buildMockupModel(project, config), [project, config]);
+  const brandInitials = model.title.trim().split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]?.toLocaleUpperCase("fr") ?? "").join("") || "AS";
   const selectedSectorIds = config.selectedUniversalSectorIds ?? [];
   const visibleProfessionCandidates = selectedSectorIds.length
     ? model.professionCandidates.filter((candidate) => candidate.sectorIds?.some((sectorId) => selectedSectorIds.includes(sectorId)))
@@ -408,7 +409,7 @@ export function ProjectMockupStudio({ project, showValidation = false, selectedR
       <div className="mockup-studio-heading">
         <div>
           <div className="eyebrow">ÉTAPE 02 · CONCEPTION VISUELLE</div>
-          <h3 id="mockup-studio-title">Studio de maquettes MerKora</h3>
+          <h3 id="mockup-studio-title">Studio de conception du projet</h3>
           <p>MerKora assemble un premier aperçu à partir du dossier. Le client pourra comparer les directions, demander des changements et valider le concept avant le devis.</p>
         </div>
         <span className="mockup-concept-badge">Concept · non fonctionnel</span>
@@ -599,8 +600,8 @@ export function ProjectMockupStudio({ project, showValidation = false, selectedR
           ) : model.format === "mobile" ? (
             <div className="mockup-phone">
               <div className="mockup-phone-top"><span /> <span>•••</span></div>
-              <div className="mockup-preview-brand"><span className="mockup-brand-mark">M</span><strong>{model.title}</strong><button type="button" aria-label="Menu conceptuel">☰</button></div>
-              <div className="mockup-hero mockup-hero-mobile"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">Découvrir les pistes <span>→</span></button></div>
+              <div className="mockup-preview-brand"><span className="mockup-brand-mark">{brandInitials}</span><strong>{model.title}</strong><button type="button" aria-label="Menu conceptuel">☰</button></div>
+              <div className="mockup-hero mockup-hero-mobile"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.domain === "bakery" ? "Voir le catalogue" : "Découvrir les pistes"} <span>→</span></button></div>
               <div className="mockup-module-stack">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><div><h5>{item.title}</h5><p>{item.description}</p></div><span className="mockup-card-arrow">↗</span></article>)}</div>
               {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution"><h5>{Array.isArray(config.selectedRecommendationIds) ? "Pistes retenues par le client" : "Pistes proposées à examiner"}</h5>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><div><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></div></article>)}</section>}
               <div className="mockup-phone-footer">Concept d’interface · aperçu</div>
@@ -609,10 +610,10 @@ export function ProjectMockupStudio({ project, showValidation = false, selectedR
             <div className={`mockup-browser ${model.format === "dashboard" ? "is-dashboard" : ""}`}>
               <div className="mockup-browser-chrome"><span /><span /><span /><div>aperçu.merkora / {model.title.toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-")}</div></div>
               <div className="mockup-browser-body">
-                {model.format === "dashboard" && <aside className="mockup-demo-sidebar"><div className="mockup-demo-logo">M <span>{model.title}</span></div><span className="is-active">Vue d’ensemble</span><span>Mes espaces</span><span>Ressources</span><span>Paramètres</span><div className="mockup-demo-user">Profil de démonstration</div></aside>}
+                {model.format === "dashboard" && <aside className="mockup-demo-sidebar"><div className="mockup-demo-logo"><b className="mockup-brand-mark">{brandInitials}</b> <span>{model.title}</span></div><span className="is-active">Vue d’ensemble</span><span>Mes espaces</span><span>Ressources</span><span>Paramètres</span><div className="mockup-demo-user">Profil de démonstration</div></aside>}
                 <div className="mockup-demo-main">
-                  {model.format === "website" && <nav className="mockup-demo-nav"><div className="mockup-demo-logo">M <span>{model.title}</span></div><div><span>Découvrir</span><span>Parcours</span><span>À propos</span></div><button type="button">Commencer ↗</button></nav>}
-                  <div className="mockup-hero"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.format === "dashboard" ? "Continuer le parcours" : "Découvrir les pistes"} <span>→</span></button><div className="mockup-hero-orbit" aria-hidden="true"><span>✳</span></div></div>
+                  {model.format === "website" && <nav className="mockup-demo-nav"><div className="mockup-demo-logo"><b className="mockup-brand-mark">{brandInitials}</b> <span>{model.title}</span></div><div><span>Découvrir</span><span>Parcours</span><span>À propos</span></div><button type="button">Commencer ↗</button></nav>}
+                  <div className="mockup-hero"><span className="mockup-kicker">{model.domainLabel}</span><h4>{model.headline}</h4><p>{model.supportingCopy}</p><button type="button" className="mockup-preview-cta">{model.domain === "bakery" ? "Voir le catalogue" : model.format === "dashboard" ? "Continuer le parcours" : "Découvrir les pistes"} <span>→</span></button><div className="mockup-hero-orbit" aria-hidden="true"><span>✳</span></div></div>
                   <div className="mockup-preview-section-title"><div><span>VOTRE ESPACE</span><h5>Ce que vous pourrez explorer</h5></div><span className="mockup-section-counter">{model.visibleModules.length} bloc(s) conceptuels</span></div>
                   <div className="mockup-module-grid">{model.visibleModules.map((item, index) => <article className="mockup-content-card" key={item.id}><span className="mockup-card-index">0{index + 1}</span><h5>{item.title}</h5><p>{item.description}</p><span className="mockup-card-arrow">↗</span></article>)}</div>
                   {model.visibleRecommendations.length > 0 && <section className="mockup-solution-tracks" aria-label="Pistes de solution"><div className="mockup-preview-section-title"><div><span>{Array.isArray(config.selectedRecommendationIds) ? "PISTES RETENUES" : "PISTES PROPOSÉES"}</span><h5>{Array.isArray(config.selectedRecommendationIds) ? "Les pistes que vous avez retenues" : "Des pistes à examiner"}</h5></div><span className="mockup-section-counter">{model.visibleRecommendations.length} piste(s)</span></div>{model.visibleRecommendations.map((item) => <article className="mockup-content-card" key={item.id}><h5>{item.title}</h5><p>{item.description}</p><small>Pourquoi : {item.reason}</small></article>)}</section>}
