@@ -48,7 +48,7 @@ export type MockupConfig = {
 };
 export type MockupModule = DomainOption;
 export type MockupRecommendation = MockupModule & { reason: string };
-export type MockupDomain = "education" | "operations" | "creative" | "digital" | "general";
+export type MockupDomain = "bakery" | "education" | "operations" | "creative" | "digital" | "general";
 export type MockupModel = {
   title: string;
   headline: string;
@@ -195,12 +195,26 @@ const formatLabels: Record<MockupFormat, string> = {
 };
 
 const domainLabels: Record<MockupDomain, string> = {
+  bakery: "Pâtisserie et commandes",
   education: "Orientation et éducation",
   operations: "Organisation et opérations",
   creative: "Création et communication",
   digital: "Service numérique",
   general: "Concept général",
 };
+
+const bakeryModules: MockupModule[] = [
+  { id: "product-catalog", title: "Nos créations", description: "Parcourir les gâteaux, cakes et pâtisseries avec photos, formats et prix." },
+  { id: "custom-order", title: "Créer ma commande", description: "Décrire le gâteau souhaité, choisir les saveurs, la taille, la décoration et la quantité." },
+  { id: "cart-checkout", title: "Mon panier et ma commande", description: "Vérifier les produits, les quantités, le prix estimé et les informations de retrait ou livraison." },
+  { id: "order-tracking", title: "Suivre ma commande", description: "Retrouver la confirmation, la préparation et le statut de chaque commande." },
+  { id: "customer-contact", title: "Conseil et contact", description: "Échanger avec la pâtisserie pour préciser une demande spéciale ou un événement." },
+];
+const bakeryRecommendations: MockupRecommendation[] = [
+  { id: "catalogue-produits", title: "Catalogue de gâteaux et pâtisseries", description: "Présenter les créations avec leurs photos, formats et prix.", reason: "Les visiteurs peuvent découvrir les produits et comparer les prix avant de commander." },
+  { id: "commande-personnalisee", title: "Commande personnalisée", description: "Permettre de choisir le type de gâteau, les saveurs, la taille, la décoration et la date souhaitée.", reason: "Chaque client peut expliquer précisément ce qu’il souhaite, même pour une création spéciale." },
+  { id: "panier-validation", title: "Panier et validation de commande", description: "Récapituler les produits, quantités, prix et modalités de retrait ou de livraison.", reason: "Le client vérifie sa demande avant de la transmettre à Asho Sweet." },
+];
 
 const educationModules: MockupModule[] = [
   { id: "student-profile", title: "Mon profil", description: "Intérêts, matières appréciées, compétences et objectifs à explorer." },
@@ -257,6 +271,7 @@ function recommendationId(title: string): string {
 
 function modulesFor(domain: MockupDomain): MockupModule[] {
   switch (domain) {
+    case "bakery": return bakeryModules;
     case "education": return educationModules;
     case "operations": return operationsModules;
     case "creative": return creativeModules;
@@ -308,7 +323,7 @@ export function buildMockupModel(
     ? allOptions.filter((item) => requested.includes(item.id))
     : modules;
 
-  const recommendations: MockupRecommendation[] = project.recommendations.map((item) => ({
+  const recommendations: MockupRecommendation[] = domain === "bakery" ? bakeryRecommendations : project.recommendations.map((item) => ({
     id: recommendationId(item.title),
     title: item.title,
     description: item.description,
