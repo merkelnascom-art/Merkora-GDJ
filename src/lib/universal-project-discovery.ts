@@ -99,7 +99,7 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
     // An explicit later correction replaces the earlier preference; it is not
     // an unresolved conflict that should block discovery.
     const laterStatement = statements[Math.max(broadIndex, restrictiveIndex)];
-    const explicitCorrection = /\b(finalement|en fait|je corrige|je change d'avis|je reviens sur ma décision|à la place de|je ne veux plus|je préfère)\b/i.test(laterStatement);
+    const explicitCorrection = /\b(finalement|en fait|je corrige|je change d'avis|je reviens sur ma décision|à la place de)\b/i.test(laterStatement);
     if (explicitCorrection) return [];
 
     return [{
