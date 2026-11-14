@@ -117,6 +117,21 @@ async function main() {
   }
 
   const token = await getGitHubOidcToken();
+  const preflight = await callWorker(supabaseUrl, token, { action: "verify", projectId, jobId });
+  if (preflight.eligible !== true) {
+    if (preflight.reason === "specialist_mission_ledger_required") {
+      const specialist = preflight.specialistWorkflow as Record<string, unknown> | undefined;
+      console.log(
+        `Specialist workflow ${String(specialist?.workflowId ?? "unknown")} is approved and validated, `
+        + "but no Sandbox was started: the durable mission ledger is not installed yet.",
+      );
+      return;
+    }
+    throw new Error(typeof preflight.reason === "string"
+      ? preflight.reason
+      : "The factory job did not pass its authorization preflight.");
+  }
+
   const claim = await callWorker(supabaseUrl, token, { action: "claim", projectId, jobId });
   if (claim.claimed !== true || !claim.project || !claim.plan || !Array.isArray(claim.tasks)) {
     throw new Error("The factory job was not claimed with a complete approved payload.");
