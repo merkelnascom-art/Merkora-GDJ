@@ -1,4 +1,4 @@
-export const MERKORA_DOMAIN_VERSION = "1.1.0";
+export const MERKORA_DOMAIN_VERSION = "1.0.0";
 
 export type DomainId =
   | "sport"
@@ -91,9 +91,7 @@ export const MERKORA_DOMAINS: DomainProfile[] = [
     keywords: ["école", "ecole", "élève", "eleve", "étudiant", "etudiant", "université", "universite", "formation", "apprenant", "enseignant", "professeur", "orientation", "orientation scolaire", "orientation professionnelle", "parcours scolaire", "bac", "métier", "metier", "relevé", "releve", "résultat scolaire", "resultat scolaire", "test d orientation", "formation professionnelle", "choix de carrière", "cours", "examen", "note scolaire", "bibliothèque", "bibliotheque", "e-learning"],
     questions: ["Quel public apprendra ou sera accompagné ?", "Quels programmes, cours ou parcours faut-il gérer ?", "Faut-il gérer les inscriptions, présences, évaluations ou résultats ?", "Les enseignants, parents ou responsables doivent-ils disposer d'espaces distincts ?", "L'objectif est-il pédagogique, administratif, d'orientation ou plusieurs à la fois ?"],
     modules: [moduleItem("education-learners", "Apprenants et inscriptions", "Profils, inscriptions, groupes et parcours."), moduleItem("education-learning", "Cours et ressources", "Programmes, contenus, supports et activités."), moduleItem("education-assessment", "Évaluations et progression", "Tests, résultats, compétences et suivi.")],
-    specializations: [
-      { id: "career-guidance", label: "Orientation scolaire et professionnelle", keywords: ["orientation", "métier", "metier", "bac", "relevé", "releve", "choix de carrière", "test d orientation"], questions: ["Les résultats scolaires, les intérêts, les aptitudes ou les préférences doivent-ils être pris en compte ?", "Qui relira les résultats et accompagnera le jeune avant une décision d'orientation ?"], modules: [moduleItem("student-profile", "Profil de l'élève", "Intérêts, matières appréciées, compétences et objectifs à explorer."), moduleItem("aptitude-tests", "Tests et activités", "Questionnaires et exercices de réflexion à interpréter avec prudence."), moduleItem("career-explorer", "Explorer les métiers", "Découvrir plusieurs familles de métiers et comprendre leurs activités."), moduleItem("study-paths", "Formations et écoles", "Comparer les parcours d'études et les conditions d'accès à vérifier.")] },
-    ],
+    specializations: [],
   },
   {
     id: "transport-logistique", number: 8, label: "Transport, logistique et automobile",
