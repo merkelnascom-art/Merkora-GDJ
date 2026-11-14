@@ -52,8 +52,8 @@ describe("specialist mission adapter", () => {
       agentId: "analyste-metier",
       missionId: "mission-context-02",
       projectId: "project-01",
-      contextInstructions: Array.from({ length: 9 }, (_, index) => `Contexte ${index}`),
-    })).toThrow("Le contexte projet dépasse la limite de huit éléments.");
+      contextInstructions: Array.from({ length: 8 }, (_, index) => `Contexte ${index}`),
+    })).toThrow("Le contexte projet dépasse la limite de sept éléments.");
   });
 
   it("does not force a specialist into an unrelated generic runtime role", () => {
