@@ -34,6 +34,12 @@ describe("complete MerKora factory workflow contract", () => {
 
     expect(workflow.assignments.filter((assignment) => assignment.status === "prepared")).toHaveLength(35);
     expect(workflow.assignments.filter((assignment) => assignment.status === "requires_specialized_runtime")).toHaveLength(0);
+    expect(workflow.assignments.every((assignment) =>
+      assignment.status === "prepared"
+      && assignment.mission?.missionId === assignment.missionId
+      && assignment.mission.projectId === "project-001"
+      && assignment.runtimeRole === assignment.mission.role
+    )).toBe(true);
     expect(workflow.assignments.every((assignment) => assignment.status !== "prepared" || !assignment.reason)).toBe(true);
   });
 
