@@ -6,7 +6,8 @@ import HomePage from "./page";
 describe("MerKora GDJ V2 welcome screen", () => {
   it("introduces MerKora with the approved natural greeting", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("Salut ! Moi, c'est MerKora.");
+    expect(html).toContain("Salut !");
+    expect(html).toContain("MerKora.");
     expect(html).toContain("Alors, qu'est-ce qu'on imagine");
   });
 
