@@ -183,15 +183,24 @@ export function AgentFactoryWorkflowPlanner() {
             <article><strong>{specializedCount}</strong><span>Runtimes spécialisés requis</span></article>
           </div>
           <ol className="mk-factory-planner__phases">
-            {result.workflow.phases.map((phase, index) => (
-              <li key={phase.id} data-empty={phase.agentIds.length === 0}>
-                <span className="mk-factory-planner__phase-number">{String(index + 1).padStart(2, "0")}</span>
-                <div><h3>{phase.label}</h3><p>{phase.purpose}</p>
-                  <small>{phase.agentIds.length ? phase.agentIds.map((id) => AGENT_CATALOG.find((agent) => agent.id === id)?.name ?? id).join(" · ") : "Aucun agent sélectionné"}</small>
-                </div>
-                <strong>{STATUS_LABELS[phase.status] ?? phase.status}</strong>
-              </li>
-            ))}
+            {result.workflow.phases.map((phase, index) => {
+              const phaseSteps = result.workflow?.missionPlan.steps.filter((step) => phase.agentIds.includes(step.agentId)) ?? [];
+              return (
+                <li key={phase.id} data-empty={phase.agentIds.length === 0}>
+                  <span className="mk-factory-planner__phase-number">{String(index + 1).padStart(2, "0")}</span>
+                  <div><h3>{phase.label}</h3><p>{phase.purpose}</p>
+                    <small>{phase.agentIds.length ? phase.agentIds.map((id) => AGENT_CATALOG.find((agent) => agent.id === id)?.name ?? id).join(" · ") : "Aucun agent sélectionné"}</small>
+                    {phaseSteps.length > 0 && <ul className="mk-factory-planner__dependencies">
+                      {phaseSteps.map((step) => <li key={step.missionId}>
+                        <strong>{AGENT_CATALOG.find((agent) => agent.id === step.agentId)?.name ?? step.agentId}</strong>
+                        <span>{step.dependsOn.length ? `Attend : ${step.dependsOn.join(" · ")}` : "Aucune dépendance précédente"}</span>
+                      </li>)}
+                    </ul>}
+                  </div>
+                  <strong>{STATUS_LABELS[phase.status] ?? phase.status}</strong>
+                </li>
+              );
+            })}
           </ol>
           <section className="mk-factory-planner__subsection">
             <h3>Raccordement des 35 spécialistes</h3>
