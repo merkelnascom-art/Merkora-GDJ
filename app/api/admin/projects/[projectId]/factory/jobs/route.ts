@@ -204,6 +204,16 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     return NextResponse.json({
       created: true, jobId: handoff.job_id, status: "queued",
       taskCount: handoff.task_count, executionStarted: false,
+      ...(specialistWorkflow ? {
+        specialistWorkflow: {
+          status: specialistWorkflow.status,
+          executionEnabled: false,
+          unsupportedCount: Array.isArray(specialistWorkflow.unsupported)
+            ? specialistWorkflow.unsupported.reduce((count, item) =>
+                count + (isRecord(item) && Array.isArray(item.agentIds) ? item.agentIds.length : 0), 0)
+            : 0,
+        },
+      } : {}),
       message: "Le travail est préparé. Aucun agent ni déploiement n'a été lancé.",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
