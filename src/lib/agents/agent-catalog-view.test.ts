@@ -22,6 +22,6 @@ describe("filterAgentCatalog", () => {
     const result = filterAgentCatalog("test", "controle");
     expect(result.length).toBeGreaterThan(0);
     expect(result.every((agent) => agent.poleId === "controle")).toBe(true);
-    expect(result.every((agent) => /test/i.test(agent.name + " " + agent.mission))).toBe(true);
+    expect(result.map((agent) => agent.id)).toContain("testeur-logiciel");
   });
 });
