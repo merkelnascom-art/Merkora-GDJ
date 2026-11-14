@@ -59,7 +59,7 @@ export async function POST(request: Request, context: Context) {
   const projectRows = Array.isArray(projectResult.data) ? projectResult.data as Row[] : [];
   if (!projectRows.length) return jsonError("Dossier introuvable.", 404);
 
-  const previous = await callUserData<Row[]>(`project_memory_plan_versions?${query({ select: "version", project_id: `eq.${projectId}`, order: "version.desc", limit: "1" })}`, "GET", accessToken);
+  const previous = await callUserData(`project_memory_plan_versions?${query({ select: "version", project_id: `eq.${projectId}`, order: "version.desc", limit: "1" })}`, "GET", accessToken);
   if (!previous.ok) return jsonError("Impossible de lire les versions précédentes du plan.", 503);
   const previousRows = Array.isArray(previous.data) ? previous.data as Row[] : [];
   const lastVersion = Number(previousRows[0]?.version ?? 0);
@@ -70,7 +70,7 @@ export async function POST(request: Request, context: Context) {
   const versionedPayload = { ...payload, requestId };
   const payloadDigest = digest(versionedPayload);
   const scopeDigest = digest(scope);
-  const saved = await callUserData<Row[]>(
+  const saved = await callUserData(
     `project_memory_plan_versions?${query({ select: "id,version,payload_digest,scope_digest" })}`,
     "POST",
     accessToken,
