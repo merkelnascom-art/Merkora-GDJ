@@ -231,7 +231,6 @@ export async function executeAgentFactoryWorkflow(
   const independentProviderByRole = new Map<"reviewer" | "cross_checker", string>();
   const independentProviderIds = new Set<string>();
   const phaseResults: FactoryPhaseExecution[] = [];
-  const gateResults: FactoryGateResult[] = [];
   const invocations: FactoryAgentInvocation[] = [];
   const completedResults: AgentMissionResult[] = [];
   const blockedAgentIds: string[] = [];
@@ -303,6 +302,7 @@ export async function executeAgentFactoryWorkflow(
   const checkedGateIds = new Set<FactoryHumanGate["id"]>();
   const earliestSelectedPhaseIndex = workflow.phases.findIndex((phase) => phase.agentIds.length > 0);
   const earlyGateResults: FactoryGateResult[] = [];
+  const gateResults: FactoryGateResult[] = [...earlyGateResults];
   const gateResults: FactoryGateResult[] = [...earlyGateResults];
   if (earliestSelectedPhaseIndex >= 0) {
     for (const gate of workflow.humanGates) {
