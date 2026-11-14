@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/server/admin-access";
-import { callUserData, isSameOrigin } from "@/lib/server/supabase-rest";
+import { callUserData, getAccessToken, isSameOrigin } from "@/lib/server/supabase-rest";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,10 +27,16 @@ function digest(value: unknown): string {
   return createHash("sha256").update(canonical(value)).digest("hex");
 }
 
+function query(values: Record<string, string>): string {
+  return new URLSearchParams(values).toString();
+}
+
 export async function POST(request: Request, context: Context) {
   if (!isSameOrigin(request)) return jsonError("Origine de la requête refusée.", 403);
   const access = await getAdminAccess();
   if (!access.ok) return jsonError(access.reason === "unauthenticated" ? "Authentification requise." : "Accès administrateur requis.", access.reason === "unauthenticated" ? 401 : 403);
+  const accessToken = await getAccessToken(await cookies());
+  if (!accessToken) return jsonError("Authentification requise.", 401);
 
   let input: unknown;
   try { input = await request.json(); } catch { return jsonError("Corps JSON invalide.", 400); }
@@ -47,15 +54,11 @@ export async function POST(request: Request, context: Context) {
   const { projectId } = await context.params;
   if (!projectId || projectId.length > 160) return jsonError("Projet invalide.", 400);
 
-  const projectResult = await callUserData<Row[]>("user_projects", "GET", {
-    select: "id", id: `eq.${projectId}`, limit: "1",
-  });
+  const projectResult = await callUserData<Row[]>(`user_projects?${query({ select: "id", id: `eq.${projectId}`, limit: "1" })}`, "GET", accessToken);
   if (!projectResult.ok) return jsonError("Impossible de vérifier le dossier client.", 503);
   if (!Array.isArray(projectResult.data) || !projectResult.data.length) return jsonError("Dossier introuvable.", 404);
 
-  const previous = await callUserData<Row[]>("project_memory_plan_versions", "GET", {
-    select: "version", project_id: `eq.${projectId}`, order: "version.desc", limit: "1",
-  });
+  const previous = await callUserData<Row[]>(`project_memory_plan_versions?${query({ select: "version", project_id: `eq.${projectId}`, order: "version.desc", limit: "1" })}`, "GET", accessToken);
   if (!previous.ok) return jsonError("Impossible de lire les versions précédentes du plan.", 503);
   const lastVersion = Number(Array.isArray(previous.data) ? previous.data[0]?.version ?? 0 : 0);
   if (!Number.isSafeInteger(lastVersion) || lastVersion < 0) return jsonError("Historique de versions incohérent.", 409);
@@ -65,16 +68,22 @@ export async function POST(request: Request, context: Context) {
   const versionedPayload = { ...payload, requestId };
   const payloadDigest = digest(versionedPayload);
   const scopeDigest = digest(scope);
-  const saved = await callUserData<Row[]>("project_memory_plan_versions", "POST", { select: "id,version,payload_digest,scope_digest" }, {
-    project_id: projectId,
-    version,
-    source_brief_version: 1,
-    planner_version: raw.plannerVersion.trim(),
-    payload: versionedPayload,
-    payload_digest: payloadDigest,
-    scope_digest: scopeDigest,
-    created_by: access.user.id,
-  });
+  const saved = await callUserData<Row[]>(
+    `project_memory_plan_versions?${query({ select: "id,version,payload_digest,scope_digest" })}`,
+    "POST",
+    accessToken,
+    {
+      project_id: projectId,
+      version,
+      source_brief_version: 1,
+      planner_version: raw.plannerVersion.trim(),
+      payload: versionedPayload,
+      payload_digest: payloadDigest,
+      scope_digest: scopeDigest,
+      created_by: access.user.id,
+    },
+    "return=representation",
+  );
   if (!saved.ok || !Array.isArray(saved.data) || !saved.data[0]) {
     return jsonError("Le plan n'a pas pu être enregistré. Vérifiez les droits et réessayez.", saved.status >= 500 ? 503 : 409);
   }
