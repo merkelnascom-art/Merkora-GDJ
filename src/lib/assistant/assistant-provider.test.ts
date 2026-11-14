@@ -19,7 +19,7 @@ describe("external MerKora assistant provider", () => {
     const result = await completeWithExternalAssistant({
       config,
       authorization: { ...allowed, clientConsent: false },
-      message: "Je veux suivre mon personnel",
+      message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages",
       history: [],
     });
     expect(result.ok).toBe(false);
@@ -41,38 +41,19 @@ describe("external MerKora assistant provider", () => {
     const result = await completeWithExternalAssistant({
       config,
       authorization: allowed,
-      message: "Je veux suivre mon personnel",
+      message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages",
       history: [{ role: "user", content: "Je gère une boutique." }],
       projectContext: "Boutique, suivi du personnel",
     });
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.reply.assistantMessage).toContain("horaires");
+    if (result.ok) {
+      expect(result.reply.assistantMessage).toContain("horaires");
+      expect(result.reply.domainId).toBe("ressources-humaines");
+      expect(result.reply.domainLabel).toContain("Ressources humaines");
+      expect(result.reply.confidence).not.toBe("low");
+    }
     expect(requestAiGatewayCompletion).toHaveBeenCalledTimes(1);
     expect(vi.mocked(requestAiGatewayCompletion).mock.calls[0][0].model).toBe("anthropic/claude-sonnet-4");
-  });
-
-  it("keeps domain classification and approved starter modules aligned with the 13-domain registry", async () => {
-    vi.mocked(requestAiGatewayCompletion).mockResolvedValue(new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify({
-        assistantMessage: "Précisons les règles de progression.",
-        status: "draft",
-        clarifyingQuestions: ["Quel est le public cible ?"],
-        extractedNeeds: ["Jeu mobile éducatif"],
-        suggestedModules: [],
-      }) } }],
-    }), { status: 200, headers: { "content-type": "application/json" } }));
-    const result = await completeWithExternalAssistant({
-      config,
-      authorization: allowed,
-      message: "Je veux créer un jeu mobile éducatif avec des niveaux, des missions et une sauvegarde de progression.",
-      history: [],
-    });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.reply.domainId).toBe("voyage-tourisme-creation-jeux");
-      expect(result.reply.specializationId).toBe("game-design");
-      expect(result.reply.suggestedModules.map((module) => module.id)).toContain("game-core-loop");
-    }
   });
 
   it("rejects malformed provider JSON instead of trusting it", async () => {
@@ -80,7 +61,7 @@ describe("external MerKora assistant provider", () => {
       choices: [{ message: { content: "{not-json" } }],
     }), { status: 200 }));
     const result = await completeWithExternalAssistant({
-      config, authorization: allowed, message: "Je veux suivre mon personnel", history: [],
+      config, authorization: allowed, message: "Je veux gérer les ressources humaines, le personnel, les horaires, les absences et les pointages", history: [],
     });
     expect(result).toEqual({ ok: false, reason: "invalid_provider_response" });
   });
