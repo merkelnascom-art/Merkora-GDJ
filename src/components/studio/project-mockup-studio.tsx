@@ -411,7 +411,7 @@ export function ProjectMockupStudio({ project, readOnlySnapshot, showValidation,
               <button type="button" className="button button-primary" disabled={submittingVersion} onClick={() => void submitVersion("approved")}>{submittingVersion ? "Enregistrement sécurisé…" : "Valider officiellement ce concept"}</button>
             </div>
             <p className="mockup-local-note">Votre décision et vos commentaires sont transmis de manière sécurisée à MerKora. Le serveur vérifie votre compte et votre accès au projet, puis conserve une version horodatée du concept. Cette validation porte sur la maquette uniquement : elle ne vaut pas acceptation du devis ni autorisation de fabrication.</p>{versionMessage && <p className="mockup-local-note" role="status">{versionMessage}</p>}
-          </section>
+          </section>}
           {serverApproved && (
             <section className="mockup-quote-panel" aria-labelledby="mockup-quote-title">
               <div className="mockup-review-heading">
