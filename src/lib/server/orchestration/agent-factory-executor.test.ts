@@ -137,12 +137,13 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(result.gateResults.find((gate) => gate.gateId === "client-scope-validation")?.approved).toBe(false);
   });
 
-  it("never forces a specialist without a compatible runtime into a provider call", async () => {
+  it("executes a designer through its dedicated model role without granting design-tool access", async () => {
     const calls: string[] = [];
+    const receivedInstructions: string[] = [];
     const result = await executeAgentFactoryWorkflow({
       ...baseInput,
       agentIds: ["ux-ui-designer"],
-      adapters: [adapter("openai", calls)],
+      adapters: [adapter("openai", calls, receivedInstructions)],
       connections: [connection("openai")],
       authorizeWorkflowStart: async () => true,
       authorizeAgent: async () => true,
@@ -150,13 +151,15 @@ describe("guarded MerKora factory workflow execution", () => {
       checkHumanGate: async () => true,
     });
 
-    expect(result.state).toBe("blocked");
-    expect(result.invocations[0]).toMatchObject({
+    expect(result.state).toBe("ready_for_human_review");
+    expect(result.invocations).toMatchObject([{
       agentId: "ux-ui-designer",
-      status: "blocked",
-      code: "SPECIALIZED_RUNTIME_REQUIRED",
-    });
-    expect(calls).toEqual([]);
+      status: "completed",
+      code: null,
+    }]);
+    expect(calls).toHaveLength(1);
+    expect(receivedInstructions.join("\\n")).toContain("UX/UI Designer");
+    expect(receivedInstructions.join("\\n")).toContain("ne confèrent aucune permission");
   });
 
   it("preflights the entire selected team before the first provider call", async () => {
@@ -164,7 +167,7 @@ describe("guarded MerKora factory workflow execution", () => {
     const reserveBudget = vi.fn(async () => true);
     const result = await executeAgentFactoryWorkflow({
       ...baseInput,
-      agentIds: ["analyste-metier", "architecte-logiciel", "ux-ui-designer"],
+      agentIds: ["analyste-metier", "architecte-logiciel", "auditeur-de-code"],
       adapters: [adapter("openai", calls)],
       connections: [connection("openai")],
       authorizeWorkflowStart: async () => true,
@@ -176,9 +179,9 @@ describe("guarded MerKora factory workflow execution", () => {
     expect(result.state).toBe("blocked");
     expect(result.executionStarted).toBe(false);
     expect(result.invocations).toMatchObject([{
-      agentId: "ux-ui-designer",
+      agentId: "auditeur-de-code",
       status: "blocked",
-      code: "SPECIALIZED_RUNTIME_REQUIRED",
+      code: "INDEPENDENT_PROVIDER_REQUIRED",
     }]);
     expect(calls).toEqual([]);
     expect(reserveBudget).not.toHaveBeenCalled();
