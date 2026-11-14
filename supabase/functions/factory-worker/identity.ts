@@ -49,6 +49,45 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
+function hasValidMissionDependencyGraph(steps: readonly unknown[]): boolean {
+  const byId = new Map<string, string[]>();
+  const sequences = new Set<number>();
+
+  for (const value of steps) {
+    if (!isRecord(value) || typeof value.missionId !== "string" ||
+        !/^[a-z0-9][a-z0-9-]{0,79}$/.test(value.missionId) ||
+        !Number.isSafeInteger(value.sequence) || Number(value.sequence) < 1 ||
+        !Array.isArray(value.dependsOn) || value.dependsOn.length > 20 ||
+        byId.has(value.missionId) || sequences.has(Number(value.sequence)) ||
+        value.dependsOn.some((dependency) => typeof dependency !== "string")) {
+      return false;
+    }
+    byId.set(value.missionId, value.dependsOn as string[]);
+    sequences.add(Number(value.sequence));
+  }
+
+  for (const [missionId, dependencies] of byId) {
+    if (dependencies.some((dependency) => dependency === missionId || !byId.has(dependency))) {
+      return false;
+    }
+  }
+
+  const states = new Map<string, "visiting" | "visited">();
+  const visit = (missionId: string): boolean => {
+    const state = states.get(missionId);
+    if (state === "visited") return true;
+    if (state === "visiting") return false;
+    states.set(missionId, "visiting");
+    for (const dependency of byId.get(missionId) ?? []) {
+      if (!visit(dependency)) return false;
+    }
+    states.set(missionId, "visited");
+    return true;
+  };
+
+  return [...byId.keys()].every(visit);
+}
+
 /**
  * Validates the persisted specialist plan before the worker considers it.
  * This is deliberately a manifest validator, not a mission lease or execution
@@ -94,7 +133,7 @@ export function readSpecialistWorkflowManifest(
   const missionIds = (workflow.plan as Record<string, unknown>).missionPlan && isRecord((workflow.plan as Record<string, unknown>).missionPlan)
     ? ((workflow.plan as Record<string, unknown>).missionPlan as Record<string, unknown>).steps
     : [];
-  if (!Array.isArray(missionIds)) return null;
+  if (!Array.isArray(missionIds) || !hasValidMissionDependencyGraph(missionIds)) return null;
   const normalizedMissionIds = missionIds.flatMap((step) =>
     isRecord(step) && typeof step.missionId === "string" && step.missionId.trim()
       ? [step.missionId]
