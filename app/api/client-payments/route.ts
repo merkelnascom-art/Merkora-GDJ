@@ -9,9 +9,17 @@ const uuid = (value: unknown): value is string => typeof value === "string" && /
 type PaymentChannel = { label: string; number: string };
 function getPaymentChannels(): Record<string, PaymentChannel> {
   try {
-    const raw: unknown = JSON.parse(process.env.MERKORA_PAYMENT_CHANNELS_JSON ?? "{}");
+    const raw: unknown = JSON.parse(process.env.MERKORA_PAYMENT_CHANNELS_JSON ?? JSON.stringify({
+      celtiis_cash: { number: "0192023534" },
+      mtn_momo: { number: "0197731270" },
+    }));
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-    const source = raw as Record<string, unknown>;
+    const configured = raw as Record<string, unknown>;
+    const source: Record<string, unknown> = {
+      celtiis_cash: { number: "0192023534" },
+      mtn_momo: { number: "0197731270" },
+      ...configured,
+    };
     const channels: Record<string, PaymentChannel> = {};
     for (const key of ["mtn_momo", "celtiis_cash"] as const) {
       const item = source[key];
