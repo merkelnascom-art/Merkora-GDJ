@@ -47,6 +47,10 @@ L’interface permet de relire, modifier, retirer ou ajouter des pistes et des a
 
 L’analyse concurrentielle accepte jusqu’à cinq entrées fournies par l’utilisateur (nom, URL/source, offre observée, prix et notes). En mode local, MerKora n’effectue aucune recherche web, ne vérifie pas les prix et ne prétend pas connaître les offres actuelles. Les informations manquantes doivent être vérifiées à partir de sources publiques datées.
 
+## Architecture multi-agents
+
+L'organigramme cible de MerKora GDJ est défini dans [`docs/architecture/multi-agent-organization.md`](docs/architecture/multi-agent-organization.md). Il fixe MerKora Core comme orchestrateur central, six pôles spécialisés et un pôle transversal Gestion et administration. Cette organisation constitue la cible architecturale; elle ne signifie pas que tous les agents sont déjà implémentés.
+
 ## Référentiel métier universel
 
 Le catalogue des 13 domaines est implémenté dans `src/lib/domain-registry.ts`. Chaque profil décrit son périmètre, ses mots-clés, ses questions métier, ses modules de départ et, lorsque nécessaire, ses spécialisations (par exemple : services à domicile, état civil, agence de voyages, production audiovisuelle et conception de jeux).
