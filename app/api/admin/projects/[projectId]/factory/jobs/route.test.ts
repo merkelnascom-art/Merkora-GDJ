@@ -5,8 +5,12 @@ vi.mock("@/lib/server/admin-access", () => ({ getAdminAccess: vi.fn() }));
 vi.mock("@/lib/server/supabase-rest", () => ({
   callUserData: vi.fn(), getAccessToken: vi.fn(), getCurrentUser: vi.fn(), isSameOrigin: vi.fn(),
 }));
+vi.mock("@/lib/server/orchestration/project-factory-context", () => ({
+  loadProjectFactoryContext: vi.fn(),
+}));
 import { getAdminAccess } from "@/lib/server/admin-access";
 import { callUserData, getAccessToken, getCurrentUser, isSameOrigin } from "@/lib/server/supabase-rest";
+import { loadProjectFactoryContext } from "@/lib/server/orchestration/project-factory-context";
 import { POST } from "./route";
 
 const user = { id: "admin-1", email: "merkelnascom@gmail.com", fullName: "Admin" };
@@ -29,6 +33,12 @@ beforeEach(() => {
   vi.mocked(getCurrentUser).mockResolvedValue(user);
   vi.mocked(getAccessToken).mockResolvedValue("token");
   vi.mocked(getAdminAccess).mockResolvedValue({ ok: true, user });
+  vi.mocked(loadProjectFactoryContext).mockResolvedValue({
+    projectId: "MK-PROJECT-001", briefVersion: 2, planVersion: 3,
+    contextReferences: ["project-plan-version:3"],
+    contextInstructions: ["Contexte projet vérifié."],
+    recommendedAgentIds: ["analyste-metier"], recommendationReasons: { "analyste-metier": ["Analyse du besoin"] },
+  });
   vi.mocked(callUserData)
     .mockResolvedValueOnce({ ok: true, status: 200, data: [plan] })
     .mockResolvedValueOnce({ ok: true, status: 200, data: approvalRows })
@@ -91,6 +101,48 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     expect((rpcPayload.p_job.manifest as Record<string, unknown>).approvalIds).toEqual(["approval-1", "approval-2", "approval-3"]);
     expect(rpcPayload.p_tasks).toHaveLength(5);
     expect(rpcPayload.p_tasks[1]).toMatchObject({ task_key: "generate_application", dependencies: ["prepare_specification"] });
+  });
+
+
+  it("persists the verified specialist workflow manifest alongside the existing five durable tasks without starting execution", async () => {
+    const response = await POST(makeRequest({
+      ...body,
+      workflow: { workflowId: "demo-001", agentIds: ["analyste-metier", "developpeur-backend"] },
+    }), context);
+    expect(response.status).toBe(200);
+    const calls = vi.mocked(callUserData).mock.calls;
+    const rpcPayload = calls[3][3] as { p_job: { manifest: Record<string, unknown> }; p_tasks: Array<Record<string, unknown>> };
+    expect(loadProjectFactoryContext).toHaveBeenCalledWith("MK-PROJECT-001", "token");
+    expect(rpcPayload.p_tasks).toHaveLength(5);
+    expect(rpcPayload.p_job.manifest).toMatchObject({
+      specialistWorkflow: {
+        schemaVersion: 1,
+        workflowId: "demo-001",
+        status: "prepared",
+        executionEnabled: false,
+        stages: [
+          { taskKey: "prepare_specification", agentIds: ["analyste-metier"] },
+          { taskKey: "generate_application", agentIds: ["developpeur-backend"] },
+        ],
+      },
+    });
+    expect(rpcPayload.p_job.manifest.specialistWorkflow).toMatchObject({
+      unsupported: [],
+    });
+  });
+
+  it("records unsupported specialists in the durable manifest without misrouting them or enabling execution", async () => {
+    const response = await POST(makeRequest({
+      ...body,
+      workflow: { workflowId: "demo-002", agentIds: ["devops"] },
+    }), context);
+    expect(response.status).toBe(200);
+    const rpcPayload = vi.mocked(callUserData).mock.calls[3][3] as { p_job: { manifest: Record<string, unknown> } };
+    expect(rpcPayload.p_job.manifest.specialistWorkflow).toMatchObject({
+      status: "requires_specialized_task_runtime",
+      executionEnabled: false,
+      unsupported: [{ phaseId: "exploitation-preparation", agentIds: ["devops"] }],
+    });
   });
 
   it("does not create a second job for an existing correlation id", async () => {
