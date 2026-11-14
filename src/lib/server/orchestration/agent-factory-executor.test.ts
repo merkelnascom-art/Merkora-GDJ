@@ -53,6 +53,7 @@ const baseInput = {
   contextReferences: ["project:brief:v1", "project:plan:v2"],
   timeoutMs: 10_000,
   modelAliases: { openai: "fast", anthropic: "review", gemini: "deep" },
+  authorizeExternalProcessing: async () => true,
 };
 
 describe("guarded MerKora factory workflow execution", () => {
