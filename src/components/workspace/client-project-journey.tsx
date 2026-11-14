@@ -111,7 +111,7 @@ export function ClientProjectJourney({
             <h1>Adaptons le concept à <em>vos choix.</em></h1>
             <p>Modifiez les éléments de présentation et les fonctions proposées. Vos ajustements restent modifiables avant validation.</p>
           </div>
-          <ProjectMockupStudio project={project} selectedRecommendationIds={decisions.selectedProposalIds} onSelectedRecommendationIdsChange={(ids) => onDecisionsChange({ ...decisions, selectedProposalIds: ids, proposalSelectionConfirmed: true })} onConceptVersionChange={onConceptVersionChange} />
+          <ProjectMockupStudio project={project} showValidation={false} selectedRecommendationIds={decisions.selectedProposalIds} onSelectedRecommendationIdsChange={(ids) => onDecisionsChange({ ...decisions, selectedProposalIds: ids, proposalSelectionConfirmed: true })} onConceptVersionChange={onConceptVersionChange} />
           <div className="mk-step-footer">
             <div><strong>Vous gardez la main sur la direction retenue.</strong><p>La validation intervient dans l’étape suivante, après votre vérification.</p></div>
             <button className="mk-primary-button" disabled={!decisions.selectedConceptId} onClick={() => onStageChange("validation")}>Vérifier le concept <span>→</span></button>
