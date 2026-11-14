@@ -43,6 +43,7 @@ describe("factory workflow fail-closed policy callbacks", () => {
       timeoutMs: 10_000,
       authorizeWorkflowStart: async () => true,
       authorizeAgent: async () => true,
+      authorizeExternalProcessing: async () => true,
       reserveBudget: async () => true,
       checkHumanGate: async ({ gate }) => {
         if (gate.id === "execution-authorization") throw new Error("unavailable");
@@ -95,6 +96,7 @@ describe("factory workflow fail-closed policy callbacks", () => {
       timeoutMs: 10_000,
       authorizeWorkflowStart: async () => true,
       authorizeAgent: async () => true,
+      authorizeExternalProcessing: async () => true,
       reserveBudget: async () => { throw new Error("budget service unavailable"); },
       checkHumanGate: async () => true,
     });
