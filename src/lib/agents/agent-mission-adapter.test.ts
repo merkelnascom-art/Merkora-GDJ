@@ -26,6 +26,35 @@ describe("specialist mission adapter", () => {
     expect(result.mission.constraints.join("\n")).toContain("Aucune modification de production");
   });
 
+
+  it("includes bounded project context in the specialist mission packet", () => {
+    const result = prepareSpecialistMission({
+      agentId: "analyste-metier",
+      missionId: "mission-context-01",
+      projectId: "project-01",
+      contextInstructions: [
+        "Activité : centre de formation.",
+        "Problème confirmé : le suivi des inscriptions est dispersé.",
+        "Résultat attendu : centraliser les inscriptions et les paiements.",
+      ],
+    });
+
+    expect(result.status).toBe("prepared");
+    if (result.status !== "prepared") return;
+    expect(result.mission.instructions.join("\\n")).toContain("Activité : centre de formation.");
+    expect(result.mission.instructions.join("\\n")).toContain("Résultat attendu : centraliser les inscriptions et les paiements.");
+    expect(result.mission.instructions.length).toBeLessThanOrEqual(20);
+  });
+
+  it("rejects oversized project context instead of silently truncating it", () => {
+    expect(() => prepareSpecialistMission({
+      agentId: "analyste-metier",
+      missionId: "mission-context-02",
+      projectId: "project-01",
+      contextInstructions: Array.from({ length: 9 }, (_, index) => `Contexte ${index}`),
+    })).toThrow("Le contexte projet dépasse la limite de huit éléments.");
+  });
+
   it("does not force a specialist into an unrelated generic runtime role", () => {
     const result = prepareSpecialistMission({
       agentId: "ux-ui-designer",
