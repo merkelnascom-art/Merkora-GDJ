@@ -141,6 +141,7 @@ export type FactoryHumanGate = {
     | "delivery-acceptance";
   label: string;
   blocksPhase: FactoryPhaseId;
+  requiredFor: readonly FactoryPhaseId[];
   status: "not_evaluated";
   authority: "client" | "authorized_administrator" | "authorized_release_owner";
   enforcement: "must_be_checked_by_existing_approval_or_release_service";
@@ -150,7 +151,11 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
   {
     id: "client-scope-validation",
     label: "Validation du besoin et du périmètre par le client",
-    blocksPhase: "governance-before-build",
+    blocksPhase: "fabrication",
+    requiredFor: [
+      "fabrication", "controle", "governance-before-release",
+      "exploitation-preparation", "production-release", "relation-client", "post-delivery-support",
+    ],
     status: "not_evaluated",
     authority: "client",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
@@ -159,6 +164,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
     id: "administrative-review",
     label: "Revue administrative du plan et du devis",
     blocksPhase: "fabrication",
+    requiredFor: ["fabrication"],
     status: "not_evaluated",
     authority: "authorized_administrator",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
@@ -175,6 +181,10 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
     id: "quality-acceptance",
     label: "Acceptation des contrôles et des preuves qualité",
     blocksPhase: "governance-before-release",
+    requiredFor: [
+      "governance-before-release", "exploitation-preparation",
+      "production-release", "relation-client", "post-delivery-support",
+    ],
     status: "not_evaluated",
     authority: "authorized_administrator",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
@@ -183,6 +193,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
     id: "production-release-authorization",
     label: "Autorisation distincte de toute mise en production",
     blocksPhase: "production-release",
+    requiredFor: ["production-release"],
     status: "not_evaluated",
     authority: "authorized_release_owner",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
@@ -191,6 +202,7 @@ const HUMAN_GATES: readonly FactoryHumanGate[] = [
     id: "delivery-acceptance",
     label: "Réception et acceptation de la livraison",
     blocksPhase: "post-delivery-support",
+    requiredFor: ["post-delivery-support"],
     status: "not_evaluated",
     authority: "client",
     enforcement: "must_be_checked_by_existing_approval_or_release_service",
