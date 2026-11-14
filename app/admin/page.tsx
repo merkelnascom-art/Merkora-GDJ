@@ -7,6 +7,7 @@ import { CloudClientRequestsPanel } from "@/components/admin/cloud-client-reques
 import { AdminQuotesPanel } from "@/components/admin/admin-quotes-panel";
 import { AdminPaymentsPanel } from "@/components/admin/admin-payments-panel";
 import { FactoryJobsPanel } from "@/components/admin/factory-jobs-panel";
+import { AdminFactoryPlanningPanel } from "@/components/admin/admin-factory-planning-panel";
 import { AdminWorkspaceShell } from "@/components/admin/admin-workspace-shell";
 import { callUserData, getAccessToken } from "@/lib/server/supabase-rest";
 
@@ -128,7 +129,8 @@ export default async function AdminPage() {
 
       <section id="realization" className="mk-admin-section">
         <div className="mk-admin-section-heading"><div><span>04 · EXÉCUTION</span><h2>Réalisation</h2><p>Suivre les jobs techniques, les tâches et les contrôles humains avant livraison.</p></div></div>
-        <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={process.env.MERKORA_AI_ENABLED === "true"} />
+        <AdminFactoryPlanningPanel />
+      <FactoryJobsPanel initialJobs={jobsWithTasks} aiEnabled={false} />
       </section>
 
       <section id="clients" className="mk-admin-section">
