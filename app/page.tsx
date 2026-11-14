@@ -114,7 +114,7 @@ export default function HomePage() {
         </div>
 
         <div className="mk-welcome-visual">
-          <div className="mk-visual-label"><span className="mk-live-dot" /> PRÉSENT POUR VOUS ÉCOUTER</div>
+          <div className="mk-visual-label"><span className="mk-live-dot" /> PRÉSENT POUR T'ACCOMPAGNER</div>
           <MerKoraMascot />
           <div className="mk-visual-caption">
             <span className="mk-caption-star">✦</span>
