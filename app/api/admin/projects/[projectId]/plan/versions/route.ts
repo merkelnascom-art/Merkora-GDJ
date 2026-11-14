@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 type Payload = {
   plannerVersion: string;
+  requestId: string;
   selectedOptions?: PlanSelectedOption[];
   approvedScope?: PlanScopeInput[];
   confirmedConstraints?: ConfirmedConstraint[];
@@ -23,7 +24,8 @@ function text(value: unknown, max: number, min = 0): value is string {
   return typeof value === "string" && value.length <= max && value.trim().length >= min;
 }
 function validPayload(value: unknown): value is Payload {
-  if (!record(value) || !text(value.plannerVersion, 100, 1)) return false;
+  if (!record(value) || !text(value.plannerVersion, 100, 1) ||
+    typeof value.requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.requestId)) return false;
   const options = value.selectedOptions ?? [];
   const scope = value.approvedScope ?? [];
   const constraints = value.confirmedConstraints ?? [];
@@ -59,27 +61,70 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     const { projectId } = await context.params;
     if (!text(projectId, 100, 3)) return NextResponse.json({ error: "Projet introuvable." }, { status: 404 });
 
-    const projectResult = await callUserData(
-      `user_projects?select=id,user_id,title,category,problem,desired_outcome,budget,urgency&id=eq.${encodeURIComponent(projectId)}&limit=1`,
+    const requestResult = await callUserData(
+      "client_requests?select=id,user_id,project_id,payload&id=eq." + encodeURIComponent(body.requestId) + "&project_id=eq." + encodeURIComponent(projectId) + "&limit=1",
       "GET", token,
     );
-    if (!projectResult.ok) return NextResponse.json({ error: "Lecture du projet impossible." }, { status: 502 });
-    const project = Array.isArray(projectResult.data) ? projectResult.data[0] : null;
-    if (!record(project) || typeof project.user_id !== "string" ||
-      !text(project.title, 160, 1) || !text(project.category, 40, 1) ||
-      !text(project.problem, 2500, 1) || !text(project.desired_outcome, 1500, 1) ||
-      !text(project.budget, 100) || !text(project.urgency, 40)) {
-      return NextResponse.json({ error: "Projet introuvable ou incomplet." }, { status: 404 });
+    if (!requestResult.ok) return NextResponse.json({ error: "Impossible de vérifier le dossier commercial source." }, { status: 502 });
+    const sourceRequest = Array.isArray(requestResult.data) ? requestResult.data[0] : null;
+    if (!record(sourceRequest) || sourceRequest.id !== body.requestId ||
+      sourceRequest.project_id !== projectId || typeof sourceRequest.user_id !== "string" ||
+      !record(sourceRequest.payload)) {
+      return NextResponse.json({ error: "Le dossier client ne correspond pas à ce projet." }, { status: 409 });
+    }
+
+    const launchResult = await callUserData(
+      "client_project_launches?select=id,request_id,client_user_id,quote_version_id,invoice_id,launched_at&request_id=eq." + encodeURIComponent(body.requestId) + "&limit=1",
+      "GET", token,
+    );
+    if (!launchResult.ok) return NextResponse.json({ error: "Impossible de vérifier le lancement commercial." }, { status: 502 });
+    const officialLaunch = Array.isArray(launchResult.data) ? launchResult.data[0] : null;
+    if (!record(officialLaunch) || officialLaunch.request_id !== body.requestId ||
+      officialLaunch.client_user_id !== sourceRequest.user_id ||
+      typeof officialLaunch.quote_version_id !== "string" || typeof officialLaunch.invoice_id !== "string") {
+      return NextResponse.json({ error: "Plan interne réservé aux lancements commerciaux vérifiés." }, { status: 409 });
+    }
+
+    const requestPayload = sourceRequest.payload;
+    const requestProject = record(requestPayload.project) ? requestPayload.project : null;
+    if (!requestProject || requestProject.id !== projectId ||
+      !text(requestProject.title, 160, 1) || !text(requestProject.category, 40, 1) ||
+      !text(requestProject.problem, 2500, 1) || !text(requestProject.desiredOutcome, 1500, 1) ||
+      !text(requestProject.budget, 100) || !text(requestProject.urgency, 40)) {
+      return NextResponse.json({ error: "Le dossier commercial ne contient pas un besoin projet complet." }, { status: 409 });
+    }
+    const project = {
+      title: requestProject.title as string,
+      category: requestProject.category as string,
+      problem: requestProject.problem as string,
+      desiredOutcome: requestProject.desiredOutcome as string,
+      budget: requestProject.budget as string,
+      urgency: requestProject.urgency as string,
+    };
+    const requestStudio = record(requestPayload.studio) ? requestPayload.studio : {};
+    const recommendations = Array.isArray(requestProject.recommendations) ? requestProject.recommendations : [];
+    const selectedIds = Array.isArray(requestStudio.selectedRecommendationIds)
+      ? requestStudio.selectedRecommendationIds.filter((value): value is string => typeof value === "string")
+      : [];
+    const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const selectedOptions: PlanSelectedOption[] = recommendations.flatMap((value) => {
+      if (!record(value) || !text(value.title, 160, 1) || !text(value.description, 800)) return [];
+      const id = text(value.id, 100, 1) ? value.id : slugify(value.title);
+      return selectedIds.includes(id) ? [{ id, title: value.title, description: value.description }] : [];
+    });
+    if (selectedOptions.length !== new Set(selectedIds).size) {
+      return NextResponse.json({ error: "Certains choix du Studio ne correspondent pas aux recommandations enregistrées." }, { status: 409 });
     }
 
     const need: NeedInput = {
       title: project.title, category: project.category as NeedInput["category"],
-      problem: project.problem, desiredOutcome: project.desired_outcome,
+      problem: project.problem, desiredOutcome: project.desiredOutcome,
       budget: project.budget, urgency: project.urgency,
     };
     const briefPayload = {
       title: project.title, category: project.category, problem: project.problem,
-      desiredOutcome: project.desired_outcome, budget: project.budget, urgency: project.urgency,
+      desiredOutcome: project.desiredOutcome, budget: project.budget, urgency: project.urgency,
     };
     const briefLatest = await latestVersion(
       `project_memory_brief_versions?select=version&project_id=eq.${encodeURIComponent(projectId)}&order=version.desc&limit=1`, token,
@@ -98,7 +143,7 @@ export async function POST(request: Request, context: { params: Promise<{ projec
     const plan = generateProjectPlan({
       projectId, briefVersion, planVersion: planLatest + 1,
       plannerVersion: body.plannerVersion, need,
-      selectedOptions: body.selectedOptions ?? [],
+      selectedOptions,
       approvedScope: body.approvedScope ?? [],
       confirmedConstraints: body.confirmedConstraints ?? [],
     });
