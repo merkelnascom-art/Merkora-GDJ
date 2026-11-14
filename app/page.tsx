@@ -118,6 +118,7 @@ export default function HomePage() {
     setJourneys((current) => {
       const next = { ...current };
       for (const [projectId, value] of Object.entries(cloudJourneys)) {
+        if (next[projectId]) continue;
         const project = cloudProjects.find((item) => item.id === projectId) ??
           projects.find((item) => item.id === projectId);
         if (project) next[projectId] = restoreJourneyRecord(projectId, value, project);
