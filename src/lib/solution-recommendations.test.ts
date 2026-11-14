@@ -21,55 +21,54 @@ describe("validateNeed", () => {
 });
 
 describe("buildRecommendations", () => {
-  it("routes a team-management need to human-resources modules", () => {
+  it("suggests operational steps for a team-management need", () => {
     const recommendations = buildRecommendations(validNeed);
-    const titles = recommendations.map((item) => item.title);
-    expect(titles).toContain("Dossiers du personnel");
-    expect(titles).toContain("Temps et absences");
-    expect(titles).not.toContain("Organiser les opérations commerciales");
+    expect(recommendations.some((item) => item.title === "Mettre au clair le fonctionnement")).toBe(true);
   });
 
-  it("does not recommend shop or team management for career orientation", () => {
+  it("offers measurable tracking when the user describes a monitoring need", () => {
     const recommendations = buildRecommendations({
       ...validNeed,
-      title: "Student Vision",
+      problem: "Je ne peux pas suivre les ventes et voir les écarts de caisse chaque jour.",
+      desiredOutcome: "Avoir un historique et un tableau de bord des recettes.",
+    });
+    expect(recommendations.some((item) => item.title === "Créer un suivi mesurable")).toBe(true);
+  });
+
+  it("compares digital approaches without assuming a custom app is always necessary", () => {
+    const recommendations = buildRecommendations({
+      ...validNeed,
+      category: "digital",
+      title: "Créer une plateforme",
+      problem: "Je veux une application en ligne pour suivre les demandes de mes clients.",
+      desiredOutcome: "Les clients peuvent déposer une demande et consulter son état.",
+    });
+    const digital = recommendations.find((item) => item.title === "Comparer les options numériques");
+    expect(digital).toBeDefined();
+    expect(digital?.tradeoff).toContain("outil existant");
+    expect(digital?.nextStep).toBeTruthy();
+  });
+
+  it("adds an immediate reversible action for urgent needs", () => {
+    const recommendations = buildRecommendations({ ...validNeed, urgency: "urgent" });
+    expect(recommendations.some((item) => item.title === "Prévoir une mesure immédiate")).toBe(true);
+  });
+
+  it("always returns a first clarification step and no more than four items", () => {
+    const recommendations = buildRecommendations({
+      ...validNeed,
       category: "other",
-      problem: "Les élèves après le bac ne savent pas quels métiers choisir selon leurs relevés et leurs résultats.",
-      desiredOutcome: "Proposer des métiers adaptés après des tests d'orientation.",
+      problem: "Je veux un objectif général sans domaine précis.",
     });
-    const titles = recommendations.map((item) => item.title);
-    expect(titles).toContain("Explorer l’orientation scolaire et professionnelle");
-    expect(titles).not.toContain("Structurer le fonctionnement");
-  });
-
-  it("suggests commerce and staff operations for a shop-management need", () => {
-    const recommendations = buildRecommendations({
-      ...validNeed,
-      title: "Suivi de ma boutique",
-      category: "business",
-      problem: "Je ne maîtrise pas les ventes, les stocks et les retards de mon personnel.",
-      desiredOutcome: "Suivre la caisse, les stocks, les ventes et les présences.",
-    });
-    const titles = recommendations.map((item) => item.title);
-    expect(titles).toContain("Organiser les opérations commerciales");
-    expect(titles).not.toContain("Explorer l’orientation scolaire et professionnelle");
-  });
-
-  it("keeps vague descriptions exploratory instead of asserting a domain", () => {
-    const recommendations = buildRecommendations({
-      ...validNeed,
-      title: "Mon projet",
-      category: "other",
-      problem: "Je veux améliorer quelque chose mais je ne sais pas encore quoi.",
-      desiredOutcome: "Trouver une meilleure direction.",
-    });
-    expect(recommendations.some((item) => /préciser|clarifier/i.test(item.title))).toBe(true);
-  });
-
-  it("always starts by clarifying the need and never returns more than four items", () => {
-    const recommendations = buildRecommendations({ ...validNeed, category: "other", problem: "Je veux un objectif général sans domaine précis." });
-    expect(recommendations[0].title).toBe("Clarifier le besoin");
+    expect(recommendations[0].title).toBe("Préciser le problème à résoudre");
     expect(recommendations.length).toBeLessThanOrEqual(4);
+  });
+
+  it("provides tradeoffs and next steps when an option includes them", () => {
+    const recommendations = buildRecommendations(validNeed);
+    const actionable = recommendations.find((item) => item.tradeoff || item.nextStep);
+    expect(actionable).toBeDefined();
+    expect(actionable?.nextStep).toBeTruthy();
   });
 });
 
