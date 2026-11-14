@@ -25,15 +25,15 @@ describe("complete MerKora factory workflow contract", () => {
     expect(workflow.humanGates.every((gate) => gate.status === "not_evaluated")).toBe(true);
   });
 
-  it("keeps the sixteen compatible generic-role adapters separate from nineteen specialized runtimes", () => {
+  it("connects all thirty-five catalog specialists to a typed model runtime role", () => {
     const workflow = planAgentFactoryWorkflow({
       projectId: "project-001",
       workflowId: "factory-runtime-coverage",
       agentIds: AGENT_CATALOG.map((agent) => agent.id),
     });
 
-    expect(workflow.assignments.filter((assignment) => assignment.status === "prepared")).toHaveLength(16);
-    expect(workflow.assignments.filter((assignment) => assignment.status === "requires_specialized_runtime")).toHaveLength(19);
+    expect(workflow.assignments.filter((assignment) => assignment.status === "prepared")).toHaveLength(35);
+    expect(workflow.assignments.filter((assignment) => assignment.status === "requires_specialized_runtime")).toHaveLength(0);
     expect(workflow.assignments.every((assignment) => assignment.status !== "prepared" || !assignment.reason)).toBe(true);
   });
 
