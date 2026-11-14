@@ -650,3 +650,10 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .mk-admin-footer{padding:17px 0;border-top:1px solid #e7e8f0;color:#9399aa;font-size:9px;text-align:center}
 @media(max-width:920px){.mk-admin-shell{grid-template-columns:1fr}.mk-admin-sidebar{position:relative;height:auto;padding:14px 16px}.mk-admin-brand{padding:0 4px 13px}.mk-admin-nav-caption,.mk-admin-sidebar-footer{display:none}.mk-admin-nav{display:flex;gap:4px;overflow-x:auto;padding-top:6px;scrollbar-width:thin}.mk-admin-nav a{flex:0 0 auto;padding:8px 10px;white-space:nowrap}.mk-admin-nav a>span{width:15px}.mk-admin-topbar{position:relative}}
 @media(max-width:620px){.mk-admin-topbar{align-items:flex-start;padding:12px 15px}.mk-admin-account{max-width:48%;text-align:right}.mk-admin-account strong{overflow-wrap:anywhere;font-size:8px}.mk-admin-content{padding:18px 14px 42px}.mk-admin-page-heading{align-items:flex-start;flex-direction:column}.mk-admin-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mk-admin-placeholder{align-items:flex-start;flex-wrap:wrap}.mk-admin-placeholder>small{width:100%;padding-left:51px}}
+
+/* Consolidated palette and client-specific mockup branding. */
+.mockup-preview-wrap.palette-violet{--mockup-accent:#7865dc;--mockup-accent-soft:#f0edff;--mockup-accent-deep:#40317e}
+.mockup-preview-wrap.palette-blue{--mockup-accent:#3278ce;--mockup-accent-soft:#eaf3ff;--mockup-accent-deep:#173d70}
+.mockup-preview-wrap.palette-emerald{--mockup-accent:#159477;--mockup-accent-soft:#e7f8f2;--mockup-accent-deep:#075d4b}
+.mockup-preview-wrap.palette-amber{--mockup-accent:#c88322;--mockup-accent-soft:#fff4df;--mockup-accent-deep:#75420b}
+.mockup-brand-mark{display:inline-grid;place-items:center;flex:0 0 auto;width:27px;height:27px;border-radius:8px;background:var(--mockup-accent);color:#fff;font-size:11px;font-weight:900;letter-spacing:0}
