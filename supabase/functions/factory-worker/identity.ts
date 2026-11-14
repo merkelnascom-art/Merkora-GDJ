@@ -23,3 +23,14 @@ export function isTrustedGitHubWorkflowClaims(
     typeof claims.run_id === "string" && /^\d+$/.test(claims.run_id) &&
     typeof claims.run_attempt === "string" && /^\d+$/.test(claims.run_attempt);
 }
+
+/**
+ * The legacy scaffold worker must never claim a job carrying a planned
+ * multi-agent manifest it does not know how to execute.
+ */
+export function isPlannedSpecialistWorkflowManifest(manifest: unknown): boolean {
+  return Boolean(
+    manifest && typeof manifest === "object" && !Array.isArray(manifest) &&
+    Object.prototype.hasOwnProperty.call(manifest, "specialistWorkflow")
+  );
+}
