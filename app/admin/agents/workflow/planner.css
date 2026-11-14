@@ -66,3 +66,11 @@
   .mk-factory-planner__phases li { grid-template-columns: 34px minmax(0,1fr); }
   .mk-factory-planner__phases li > strong { grid-column: 2; text-align: left; }
 }
+
+.mk-factory-planner__dependencies { display: grid; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
+.mk-factory-planner__dependencies li { display: grid; grid-template-columns: minmax(100px, 170px) minmax(0,1fr); gap: 8px; padding: 6px 8px; border-radius: 7px; background: #f8f7fb; font-size: 10px; }
+.mk-factory-planner__dependencies li strong { color: #514a62; text-align: left; }
+.mk-factory-planner__dependencies li span { color: #8b8498; overflow-wrap: anywhere; }
+@media(max-width:600px) {
+  .mk-factory-planner__dependencies li { grid-template-columns: 1fr; }
+}
