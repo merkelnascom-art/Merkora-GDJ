@@ -24,7 +24,8 @@ describe("selectNextDiscoveryQuestion", () => {
     ]);
 
     expect(result.stage).not.toBe("project_scope");
-    expect(result.nextQuestion).toMatch(/procédez-vous aujourd'hui/i);
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.nextQuestion).toMatch(/informées|accord/i);
   });
 
   it("understands a short yes or no answer when the preceding assistant question defines the topic", () => {
@@ -35,7 +36,19 @@ describe("selectNextDiscoveryQuestion", () => {
       { role: "assistant", content: "Ces besoins font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?" },
     ]);
 
-    expect(result.stage).toBe("current_process");
+    expect(result.stage).toBe("privacy_and_consent");
+  });
+
+  it("does not mistake an unrelated use of the word together for a project-scope answer", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Nous travaillons ensemble dans la famille." },
+    ]);
+
+    expect(result.stage).toBe("project_scope");
+    expect(result.nextQuestion).toMatch(/même projet|séparément/i);
   });
 
   it("asks about current operations when the user only describes a desired outcome", () => {
@@ -59,8 +72,9 @@ describe("selectNextDiscoveryQuestion", () => {
 
   it("detects conflicting access instructions and asks for clarification before proceeding", () => {
     const analysis = analyzeUniversalProjectIntent(
-      "Toute ma famille doit pouvoir consulter les contributions.\nFinalement, seul moi peux voir les montants.",
+      "Toute ma famille doit pouvoir consulter les contributions.\nSeul moi peux voir les montants.",
     );
+    expect(analysis.intentGroups).toHaveLength(1);
     const result = selectNextDiscoveryQuestion(analysis, []);
 
     expect(result.stage).toBe("resolve_contradiction");
@@ -68,6 +82,58 @@ describe("selectNextDiscoveryQuestion", () => {
       expect.objectContaining({ topic: "access", confirmationRequired: true }),
     ]));
     expect(result.nextQuestion).toMatch(/qui doit réellement pouvoir/i);
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
+  it("detects conflicting access requirements stated in different conversation turns", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.stage).toBe("resolve_contradiction");
+    expect(result.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "access", confirmationRequired: true }),
+    ]));
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
+  it("treats an explicit later correction as a replacement, not an unresolved contradiction", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Finalement, seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+    expect(result.stage).not.toBe("resolve_contradiction");
+  });
+
+  it("does not let assistant wording create a client-side contradiction", () => {
+    const analysis = analyzeUniversalProjectIntent("Seul moi peux consulter les montants.");
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "assistant", content: "Toute la famille pourra consulter les contributions." },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+  });
+
+  it("detects a conflict between informed consent and covert collection", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Les visiteurs seront informés et pourront donner leur accord.\nJe veux pourtant enregistrer leurs visites sans les prévenir.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, []);
+
+    expect(result.stage).toBe("resolve_contradiction");
+    expect(result.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "consent", confirmationRequired: true }),
+    ]));
+    expect(result.nextQuestion).toMatch(/informée|informé|accepter ou refuser/i);
     expect(result.readyForSolutionReview).toBe(false);
   });
 
@@ -79,4 +145,112 @@ describe("selectNextDiscoveryQuestion", () => {
     expect(result.remainingGaps.length).toBeGreaterThan(0);
     expect(result.readyForSolutionReview).toBe(false);
   });
+
+
+  it("prioritizes visitor consent clarification before routine process questions", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux enregistrer les visites de mes amis chez moi.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs ne seront pas informés." },
+    ]);
+
+    expect(result.stage).toBe("privacy_and_consent");
+    expect(result.nextQuestion).toMatch(/informées|informés|accord/i);
+    expect(result.evaluation.blockingStages).toContain("privacy_and_consent");
+  });
+
+  it("does not treat a refusal to inform visitors as a resolved consent gap", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux enregistrer les heures de visite de mes amis chez moi.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs ne seront pas informés." },
+    ]);
+
+    expect(result.remainingGaps).toContain("privacy_and_consent");
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
+  it("does not treat lack of consent as permission to proceed to solution review", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux conserver un historique des visites de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Ils ne donneront pas leur accord." },
+    ]);
+
+    expect(result.remainingGaps).toContain("privacy_and_consent");
+    expect(result.readyForSolutionReview).toBe(false);
+  });
+
+
+  it("accepts an explicit affirmative information and agreement safeguard", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je veux conserver un historique des visites de mes amis.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Les visiteurs seront informés et pourront donner leur accord." },
+    ]);
+
+    expect(result.remainingGaps).not.toContain("privacy_and_consent");
+  });
+
+
+  it("reports confirmed client statements separately from hypotheses and unresolved blockers", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Aujourd'hui je note les contributions dans un cahier. Je veux recevoir un résumé chaque dimanche.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Mon budget maximal est de 100 000 FCFA." },
+      { role: "assistant", content: "Je suppose que vous gérez une petite association." },
+    ]);
+
+    expect(result.evaluation.clientStatements).toEqual(expect.arrayContaining([
+      expect.stringMatching(/Aujourd'hui je note les contributions/),
+      expect.stringMatching(/100 000 FCFA/),
+    ]));
+    expect(result.evaluation.hypothesesToConfirm).toEqual(
+      analysis.hypotheses.map((hypothesis) => hypothesis.statement),
+    );
+    expect(result.evaluation.blockingStages).toEqual(result.remainingGaps);
+    expect(result.evaluation.status).toBe("blocked");
+    expect(result.evaluation.solutionReviewAllowed).toBe(false);
+    expect(result.evaluation.evidenceCoverage).toEqual(analysis.analysisMetrics);
+    expect(result.evaluation.coverageMeaning).toBe("coverage_indicator_not_confidence");
+    expect(result.evaluation.clientStatements.join(" ")).not.toMatch(/petite association/i);
+  });
+
+  it("marks the evaluation reviewable only after every discovery gap is answered", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Aujourd'hui je note les contributions dans un cahier. Je veux recevoir un résumé chaque dimanche.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Je suis seul à gérer cela." },
+      { role: "user", content: "Mon budget maximal est de 100 000 FCFA." },
+      { role: "user", content: "Je veux seulement suivre les montants et les dates." },
+    ]);
+
+    expect(result.evaluation.status).toBe(result.readyForSolutionReview ? "reviewable" : "blocked");
+    expect(result.evaluation.solutionReviewAllowed).toBe(result.readyForSolutionReview);
+    if (result.readyForSolutionReview) {
+      expect(result.evaluation.blockingStages).toEqual([]);
+    }
+  });
+
+
+  it("treats an 'en fait' clarification as an explicit replacement of an earlier access preference", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "En fait, seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+    expect(result.stage).not.toBe("resolve_contradiction");
+  });
+
+
 });

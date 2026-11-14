@@ -3,7 +3,7 @@ name: Quality checks
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feature/merkora-orchestration-v1, integration/merkora-consolidation]
 
 jobs:
   verify:
@@ -17,8 +17,22 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Dependency vulnerability report
+        run: |
+          npm audit --json > /tmp/merkora-npm-audit.json || true
+          node -e 'const r=require("/tmp/merkora-npm-audit.json"); console.log("Dependency audit:", JSON.stringify(r.metadata?.vulnerabilities ?? {})); for (const [name, item] of Object.entries(r.vulnerabilities ?? {})) console.log(name + ": " + item.severity + " | direct=" + item.isDirect + " | fixAvailable=" + JSON.stringify(item.fixAvailable));'
       - name: Type check
         run: npm run typecheck
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Supabase Edge Functions
+        run: deno check --node-modules-dir=auto supabase/functions/factory-worker/index.ts supabase/functions/project-team-invite/index.ts supabase/functions/project-team-accept/index.ts supabase/functions/project-team-revoke/index.ts
+      - name: Test factory worker identity
+        run: deno test --node-modules-dir=auto supabase/functions/factory-worker/identity_test.ts
+      - name: Project team function tests
+        run: deno test --allow-read=./supabase/functions --node-modules-dir=auto supabase/functions/project-team-invite/index_test.ts supabase/functions/project-team-accept/index_test.ts supabase/functions/project-team-revoke/index_test.ts
       - name: Unit tests
         run: npm test
       - name: Production build

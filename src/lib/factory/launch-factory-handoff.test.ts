@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+import { createProjectMemoryDigest } from "./project-memory-digest";
+import { evaluateLaunchFactoryHandoff } from "./launch-factory-handoff";
+
+const projectId = "MK-PROJECT-001";
+const ownerId = "owner-1";
+const requestId = "d1c2d3e4-f567-4890-8abc-1234567890ab";
+const payload = { includedScope: [{ id: "staff", title: "Personnel", description: "Gestion du personnel." }], status: "ready_for_review", tasks: [{ id: "task-1" }] };
+const plan = {
+  version: 2, payload,
+  payload_digest: createProjectMemoryDigest(payload),
+  scope_digest: createProjectMemoryDigest(payload.includedScope),
+  source_brief_version: 1,
+};
+const approvals = ["admin_review", "execution_authorization"].map((approval_kind, index) => ({
+  id: `approval-${index + 1}`, approval_kind, decision: "approved", actor_role: "admin",
+  project_id: projectId, plan_version: 2, plan_digest: plan.payload_digest, scope_digest: plan.scope_digest,
+}));
+const base = {
+  projectId, ownerId, requestId,
+  requests: [{ id: requestId, project_id: projectId, user_id: ownerId }],
+  projects: [{ id: projectId, user_id: ownerId }],
+  plans: [plan], approvals,
+};
+
+describe("evaluateLaunchFactoryHandoff", () => {
+  it("allows the factory handoff with the two exact internal approvals and no client plan approval", () => {
+    expect(evaluateLaunchFactoryHandoff(base)).toMatchObject({
+      status: "ready", planVersion: 2, planDigest: plan.payload_digest,
+      scopeDigest: plan.scope_digest, approvalIds: ["approval-1", "approval-2"],
+    });
+  });
+
+  it("requires an exact owner-matched request and project", () => {
+    expect(evaluateLaunchFactoryHandoff({ ...base, projects: [{ id: projectId, user_id: "other" }] }))
+      .toMatchObject({ status: "needs_project_link" });
+    expect(evaluateLaunchFactoryHandoff({ ...base, requests: [] }))
+      .toMatchObject({ status: "needs_project_link" });
+  });
+
+  it("waits when the project has no plan", () => {
+    expect(evaluateLaunchFactoryHandoff({ ...base, plans: [] }))
+      .toMatchObject({ status: "awaiting_plan" });
+  });
+
+  it("does not authorize a plan that still needs clarification or has no executable tasks", () => {
+    const incompletePayload = { ...payload, status: "needs_clarification", tasks: [] };
+    const incompletePlan = {
+      ...plan, payload: incompletePayload,
+      payload_digest: createProjectMemoryDigest(incompletePayload),
+      scope_digest: createProjectMemoryDigest(incompletePayload.includedScope),
+    };
+    expect(evaluateLaunchFactoryHandoff({ ...base, plans: [incompletePlan] }))
+      .toMatchObject({ status: "awaiting_plan" });
+  });
+
+  it("waits when either internal approval is missing or belongs to another plan digest", () => {
+    expect(evaluateLaunchFactoryHandoff({ ...base, approvals: approvals.slice(0, 1) }))
+      .toMatchObject({ status: "awaiting_approval" });
+    expect(evaluateLaunchFactoryHandoff({
+      ...base, approvals: approvals.map((item) => ({ ...item, plan_digest: "f".repeat(64) })),
+    })).toMatchObject({ status: "awaiting_approval" });
+  });
+
+  it("does not treat a legacy client_scope approval as an internal approval", () => {
+    expect(evaluateLaunchFactoryHandoff({
+      ...base,
+      approvals: [
+        { ...approvals[0], approval_kind: "client_scope" },
+        approvals[1],
+      ],
+    })).toMatchObject({ status: "awaiting_approval" });
+  });
+
+  it("rejects a plan whose payload digest no longer matches", () => {
+    expect(evaluateLaunchFactoryHandoff({
+      ...base, plans: [{ ...plan, payload_digest: "f".repeat(64) }],
+    })).toMatchObject({ status: "awaiting_plan" });
+  });
+});

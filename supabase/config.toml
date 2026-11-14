@@ -1,0 +1,13 @@
+project_id = "tvwkickjtqjqwoiidmxj"
+
+[functions.factory-worker]
+verify_jwt = false
+
+[functions.project-team-invite]
+verify_jwt = true
+
+[functions.project-team-accept]
+verify_jwt = true
+
+[functions.project-team-revoke]
+verify_jwt = true

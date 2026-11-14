@@ -1,0 +1,563 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-12",
+  "repository": "merkelnascom-art/Merkora-GDJ",
+  "branch": "feature/merkora-rebuild-foundation",
+  "resources": [
+    {
+      "id": "universal-sector-guide-2026-11-12",
+      "title": "Guide universel MerKora : questionnaire, 20 secteurs, architectures et prompts",
+      "description": "Guide signalé dans l'historique de conversation comme couvrant un questionnaire universel, 20 secteurs, des architectures, des prompts de développement, des exemples SQL, des fusions de super-applications et des variables OpenAI/Gemini. Le contenu original complet n'est pas encore disponible comme fichier à extraire.",
+      "kind": "documentation",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "business-processes"
+      ],
+      "tags": [
+        "user-supplied",
+        "universal-questionnaire",
+        "architecture",
+        "prompts",
+        "sql",
+        "super-app"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Guide fourni dans la conversation MerKora du 12 novembre 2026",
+        "location": "Historique de conversation, message utilisateur horodaté 2026-11-12T13:23:50Z; fichier autonome non retrouvé dans la Library"
+      },
+      "version": 1,
+      "status": "needs_extraction",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Le contexte historique confirme les thèmes, mais ne contient pas le texte intégral à importer.",
+        "Ne pas reconstruire les prompts, exemples SQL ou noms des 20 secteurs sans retrouver le message/document source complet."
+      ]
+    },
+    {
+      "id": "activity-sectors-500",
+      "title": "Catalogue annoncé des 500 secteurs d'activité",
+      "description": "Source de référence attendue par le propriétaire pour étendre la couverture sectorielle de MerKora. Aucun fichier ou liste complète de 500 entrées n'a été localisé lors de l'inventaire initial.",
+      "kind": "sector",
+      "sectors": [],
+      "tags": [
+        "catalogue-attendu",
+        "500-secteurs",
+        "source-manquante"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Catalogue original des 500 secteurs (non localisé)",
+        "location": "Source attendue dans les ressources antérieures; absente des 265 éléments de la Library inventoriés et non retrouvée par recherche sémantique"
+      },
+      "version": 1,
+      "status": "needs_extraction",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Aucune des 500 entrées n'est créée ou supposée dans ce manifeste.",
+        "La taxonomie MerKora doit rester ouverte aux secteurs inconnus et aux projets multi-sectoriels.",
+        "Rechercher le fichier ou le message original avant toute extraction."
+      ]
+    },
+    {
+      "id": "merkora-design-2026-10-27",
+      "title": "Spécification de conception MerKora GDJ",
+      "description": "Vision, parcours client, modèle économique, devis, impayés, confidentialité, permissions, sous-systèmes et feuille de route.",
+      "kind": "documentation",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "digital-services"
+      ],
+      "tags": [
+        "merkora-core",
+        "product-principles",
+        "business-model",
+        "security"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-27-merkora-gdj-design.md",
+        "location": "ChatGPT Library:/2026-10-27-merkora-gdj-design.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Document de conception; ne prouve pas que toutes les fonctions décrites sont implémentées.",
+        "À rapprocher de la spécification universelle du 12 novembre avant de déclarer une règle active."
+      ]
+    },
+    {
+      "id": "merkora-platform-design-2026-10-28",
+      "title": "Conception de la plateforme MerKora GDJ",
+      "description": "Vision centrée sur le besoin, découverte libre, dialogue hybride, diagnostic adaptatif, solutions pertinentes, maquettes conceptuelles, devis et validation humaine.",
+      "kind": "documentation",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "digital-services"
+      ],
+      "tags": [
+        "merkora-core",
+        "discovery",
+        "design",
+        "client-journey"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-28-merkora-gdj-platform-design.md",
+        "location": "GitHub:docs/specs/2026-10-28-merkora-gdj-platform-design.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Spécification antérieure du dépôt; à comparer à la spécification universelle validée du 12 novembre."
+      ]
+    },
+    {
+      "id": "merkora-universal-design-2026-11-12",
+      "title": "Conception de la plateforme universelle MerKora GDJ",
+      "description": "Architecture adaptative, gouvernance des connaissances, questionnaire, moteur de solutions, usine universelle, tests, réparations bornées, sécurité, administration et livraison.",
+      "kind": "documentation",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "digital-services"
+      ],
+      "tags": [
+        "merkora-core",
+        "approved-design",
+        "universal-platform",
+        "architecture"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-11-12-merkora-universal-platform-design.md",
+        "location": "GitHub:docs/specs/2026-11-12-merkora-universal-platform-design.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Document de conception approuvé par le propriétaire le 12 novembre 2026.",
+        "Le contenu sera converti en connaissances structurées après comparaison et revue."
+      ]
+    },
+    {
+      "id": "merkora-ai-improvements-plan",
+      "title": "Plan d'intégration IA, amélioration et concurrence",
+      "description": "Contrat de fournisseur IA côté serveur, garde de coût, analyse structurée et analyse concurrentielle sans inventer de faits.",
+      "kind": "workflow",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "business-analysis"
+      ],
+      "tags": [
+        "merkora-core",
+        "ai-safety",
+        "cost-controls",
+        "analysis"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-28-merkora-ai-improvements-competition.md",
+        "location": "GitHub:docs/plans/2026-10-28-merkora-ai-improvements-competition.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Garde de coût : MERKORA_AI_ENABLED désactivé par défaut; aucun fournisseur ne doit être appelé implicitement."
+      ]
+    },
+    {
+      "id": "merkora-discovery-plan",
+      "title": "Plan de fondations et découverte MerKora",
+      "description": "Contrat de découverte, classification prudente, expérience publique, règles locales préliminaires et tests.",
+      "kind": "workflow",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "digital-services"
+      ],
+      "tags": [
+        "merkora-core",
+        "discovery",
+        "testing"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-28-merkora-discovery-foundation.md",
+        "location": "GitHub:docs/plans/2026-10-28-merkora-discovery-foundation.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Plan historique; à conserver comme trace d'évolution et non comme spécification la plus récente."
+      ]
+    },
+    {
+      "id": "merkora-studio-plan",
+      "title": "Plan du Studio de maquettes conceptuelles",
+      "description": "Modèle de maquette déterministe et personnalisable, formats site/mobile/dashboard et distinction entre maquette et produit fonctionnel.",
+      "kind": "workflow",
+      "sectors": [
+        "multi-sector",
+        "software-development",
+        "design"
+      ],
+      "tags": [
+        "merkora-core",
+        "mockups",
+        "design",
+        "testing"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-29-merkora-studio-plan.md",
+        "location": "GitHub:docs/plans/2026-10-29-merkora-studio-plan.md"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Plan historique utile pour l'architecture de conception et les critères de vérité."
+      ]
+    },
+    {
+      "id": "merkora-current-discovery-code",
+      "title": "Code actuel de découverte et recommandations",
+      "description": "Règles TypeScript locales de classification des besoins, validation, questions et recommandations préliminaires.",
+      "kind": "code",
+      "sectors": [
+        "multi-sector",
+        "software-development"
+      ],
+      "tags": [
+        "existing-code",
+        "discovery",
+        "rules-engine"
+      ],
+      "language": "typescript",
+      "source": {
+        "name": "discovery.ts, solution-recommendations.ts, local-analysis.ts et leurs tests",
+        "location": "GitHub:src/lib/discovery.ts; src/lib/solution-recommendations.ts; src/lib/local-analysis.ts"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Le code actuel utilise un nombre limité de domaines codés en dur; ce n'est pas encore un catalogue universel de secteurs.",
+        "Les règles doivent être progressivement remplacées ou enrichies par des ressources structurées approuvées."
+      ]
+    },
+    {
+      "id": "merkora-ai-provider-code",
+      "title": "Code actuel du fournisseur IA",
+      "description": "Appel serveur AI Gateway et route d'analyse avec validation des entrées/sorties et activation explicitement conditionnée.",
+      "kind": "code",
+      "sectors": [
+        "multi-sector",
+        "software-development"
+      ],
+      "tags": [
+        "existing-code",
+        "ai-provider",
+        "server-only",
+        "cost-controls"
+      ],
+      "language": "typescript",
+      "source": {
+        "name": "ai-provider.ts et route d'analyse",
+        "location": "GitHub:src/lib/ai-provider.ts; app/api/ai/analyze/route.ts"
+      },
+      "version": 1,
+      "status": "discovered",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "La variable MERKORA_AI_ENABLED doit rester désactivée tant que le budget et l'autorisation ne sont pas établis."
+      ]
+    },
+    {
+      "id": "aero-service-cadrage",
+      "title": "Cadrage fonctionnel AÉRO SERVICE",
+      "description": "Formulaire de cadrage d'une plateforme d'établissement de formation, présence, retards, pénalités, personnel et agence de voyage.",
+      "kind": "template",
+      "sectors": [
+        "education",
+        "training",
+        "attendance-management",
+        "travel-agency"
+      ],
+      "tags": [
+        "project-specific-example",
+        "requirements-template",
+        "multi-sector"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Aero_Service_Formulaire_Cadrage_Plateforme_Premium.docx et .pdf",
+        "location": "ChatGPT Library:/Aero_Service_Formulaire_Cadrage_Plateforme_Premium.docx; /Aero_Service_Formulaire_Cadrage_Plateforme_Premium.pdf"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Deux formats du même formulaire sont présents; comparer avant de considérer l'un comme version canonique.",
+        "Ne pas importer coordonnées personnelles, données de contact, identifiants ou informations privées du document.",
+        "Les règles de présence et de pénalité sont propres à l'établissement et doivent rester paramétrables."
+      ]
+    },
+    {
+      "id": "aero-service-workflow-notes",
+      "title": "Notes de conception AÉRO SERVICE",
+      "description": "Exemples détaillés de contrôle des présences, gestion des rôles, retards, pénalités, justifications, notifications, rapports et séparation du module Travel.",
+      "kind": "example",
+      "sectors": [
+        "education",
+        "training",
+        "attendance-management",
+        "travel-agency"
+      ],
+      "tags": [
+        "project-specific-example",
+        "workflow",
+        "multi-sector",
+        "possible-duplicates"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Pasted markdown(2).md, Pasted markdown(3).md et Pasted markdown(4).md",
+        "location": "ChatGPT Library:/Pasted markdown(2).md; /Pasted markdown(3).md; /Pasted markdown(4).md"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Les deux premiers fichiers ont des tailles et extraits similaires; doublon probable, empreintes à comparer.",
+        "Le formulaire détaillé contient des informations de contact et des règles propres à AÉRO SERVICE; extraction générique seulement après revue et anonymisation."
+      ]
+    },
+    {
+      "id": "ginesse-recovery-md",
+      "title": "Récupération du projet Ginesse de Paris Center Work (Markdown)",
+      "description": "Architecture de gestion d'activité, caisse, ventes, dépenses, stock, personnel, clôtures, reçus, audit et assistant métier.",
+      "kind": "example",
+      "sectors": [
+        "small-business-operations",
+        "retail-services",
+        "finance",
+        "cash-management",
+        "inventory"
+      ],
+      "tags": [
+        "project-specific-example",
+        "business-operations",
+        "audit"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "GINESSE_DE_PARIS_CENTER_WORK_RECOVERY_2026-10-03.md",
+        "location": "ChatGPT Library:/GINESSE_DE_PARIS_CENTER_WORK_RECOVERY_2026-10-03.md"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "confidential",
+      "dependencies": [],
+      "notes": [
+        "Document de récupération pouvant contenir des identifiants, coordonnées et références d'infrastructure; ne pas copier ces valeurs dans les ressources communes.",
+        "Réutiliser uniquement des modèles métier génériques après anonymisation."
+      ]
+    },
+    {
+      "id": "ginesse-recovery-txt",
+      "title": "Récupération du projet Ginesse de Paris Center Work (TXT)",
+      "description": "Copie texte de notes de récupération du projet Ginesse de Paris Center Work.",
+      "kind": "example",
+      "sectors": [
+        "small-business-operations",
+        "retail-services",
+        "finance",
+        "cash-management",
+        "inventory"
+      ],
+      "tags": [
+        "project-specific-example",
+        "possible-duplicate",
+        "business-operations"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Ginesse_de_Paris_Center_Work_RECUPERATION_2026-10-03.txt",
+        "location": "ChatGPT Library:/Ginesse_de_Paris_Center_Work_RECUPERATION_2026-10-03.txt"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "confidential",
+      "dependencies": [],
+      "notes": [
+        "Version possiblement proche du fichier Markdown; comparer le contenu avant fusion.",
+        "Contient des informations d'infrastructure et de contact à exclure de toute base de connaissances partagée."
+      ]
+    },
+    {
+      "id": "finance-example-pasted-markdown",
+      "title": "Exemple de suivi financier d'une petite activité (document original)",
+      "description": "Exemple détaillé de recettes, sorties, catégories de dépenses, caisse, stock, épargne et rapports périodiques.",
+      "kind": "example",
+      "sectors": [
+        "small-business-finance",
+        "cash-flow",
+        "management-reporting"
+      ],
+      "tags": [
+        "project-specific-example",
+        "financial-example",
+        "possible-duplicate"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Pasted markdown.md",
+        "location": "ChatGPT Library:/Pasted markdown.md"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "confidential",
+      "dependencies": [],
+      "notes": [
+        "Document contenant des opérations et personnes réelles; ne pas verser les données brutes dans un référentiel commun.",
+        "Extraire uniquement une structure générique après anonymisation.",
+        "Un fichier Pasted markdown(1).md de même taille et contenu proche est inventorié séparément."
+      ]
+    },
+    {
+      "id": "finance-example-pasted-markdown-1",
+      "title": "Exemple de suivi financier d'une petite activité (copie candidate)",
+      "description": "Deuxième fichier de suivi financier contenant des données journalières, dépenses, recettes et rapports.",
+      "kind": "example",
+      "sectors": [
+        "small-business-finance",
+        "cash-flow",
+        "management-reporting"
+      ],
+      "tags": [
+        "project-specific-example",
+        "financial-example",
+        "possible-duplicate"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Pasted markdown(1).md",
+        "location": "ChatGPT Library:/Pasted markdown(1).md"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "confidential",
+      "dependencies": [],
+      "notes": [
+        "Même taille et extraits similaires à Pasted markdown.md; comparer les empreintes avant toute déduplication.",
+        "Ne pas fusionner automatiquement les sources distinctes."
+      ]
+    },
+    {
+      "id": "walltrade-assistant-design",
+      "title": "Conception IA et Causerie WALL Trade",
+      "description": "Architecture d'assistant conversationnel avec fils indépendants, contexte autorisé, séparation assistance/causerie et secrets côté serveur.",
+      "kind": "documentation",
+      "sectors": [
+        "reseller-commerce",
+        "conversational-assistants",
+        "sales-support"
+      ],
+      "tags": [
+        "project-specific-example",
+        "ai-assistant",
+        "security",
+        "architecture-pattern"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "2026-10-02-walltrade-ia-causerie-design.md",
+        "location": "ChatGPT Library:/2026-10-02-walltrade-ia-causerie-design.md"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Projet distinct de MerKora; les motifs architecturaux génériques peuvent être étudiés mais les règles métier WALL Trade ne deviennent pas des règles MerKora."
+      ]
+    },
+    {
+      "id": "walltrade-reseller-workbook",
+      "title": "Modèle Excel de gestion des revendeurs WALL Trade",
+      "description": "Classeur opérationnel associé au projet distinct WALL Trade; contenu détaillé non encore inspecté.",
+      "kind": "example",
+      "sectors": [
+        "reseller-commerce",
+        "sales",
+        "commission-management"
+      ],
+      "tags": [
+        "project-specific-example",
+        "spreadsheet",
+        "needs-content-review"
+      ],
+      "language": "fr",
+      "source": {
+        "name": "Wall_Trade_Gestion_Revendeurs.xlsx",
+        "location": "ChatGPT Library:/Wall_Trade_Gestion_Revendeurs.xlsx"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "confidential",
+      "dependencies": [],
+      "notes": [
+        "Classeur non extrait dans cette première étape.",
+        "Ne pas copier les données opérationnelles ou personnelles dans le référentiel commun."
+      ]
+    },
+    {
+      "id": "library-media-assets",
+      "title": "Collection de médias de la Library à classifier",
+      "description": "Collection agrégée de 240 images et 5 vidéos trouvées dans la Library; noms majoritairement numériques, sujet et droits d'usage non établis.",
+      "kind": "asset",
+      "sectors": [],
+      "tags": [
+        "media-assets",
+        "unclassified",
+        "needs-visual-review"
+      ],
+      "language": "und",
+      "source": {
+        "name": "Collection de médias de la Library",
+        "location": "ChatGPT Library:/ (collection inventoriée le 2026-11-12)"
+      },
+      "version": 1,
+      "status": "needs_review",
+      "sensitivity": "internal",
+      "dependencies": [],
+      "notes": [
+        "Aucun média n'a été copié ni interprété à partir du seul nom de fichier.",
+        "Classer les logos, captures, photos, maquettes et autres médias seulement après inspection individuelle pertinente."
+      ]
+    }
+  ]
+}

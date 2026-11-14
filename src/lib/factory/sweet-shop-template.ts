@@ -1,0 +1,486 @@
+export type SweetShopMode = "catalogue" | "custom-order" | "cart";
+
+export function sweetShopModeForModule(id: string): SweetShopMode | null {
+  if (id === "catalogue-de-gateau-et-de-patisserie") return "catalogue";
+  if (id === "commande-personnalisee") return "custom-order";
+  if (id === "panier-et-validation-de-commande") return "cart";
+  return null;
+}
+
+export function createSweetShopModulePage(id: string, title: string, description: string): string {
+  const mode = sweetShopModeForModule(id);
+  if (!mode) throw new Error("Module Asho Sweet non pris en charge.");
+  return `import { SweetShopWorkspace } from "@/components/sweet-shop-workspace";
+
+export default function SweetShopModulePage() {
+  return (
+    <main>
+      <p className="eyebrow">Asho Sweet · Espace de commande</p>
+      <h1>{${JSON.stringify(title)}}</h1>
+      <p className="lead">{${JSON.stringify(description)}}</p>
+      <SweetShopWorkspace mode="${mode}" />
+      <p><a href="/">← Retour à l'accueil</a></p>
+    </main>
+  );
+}
+`;
+}
+
+export const sweetShopStyles = `
+.sweet-workspace { display: grid; gap: 22px; margin-top: 28px; }
+.sweet-panel { padding: clamp(20px, 4vw, 32px); border: 1px solid #e2e8f0; border-radius: 22px; background: #fff; box-shadow: 0 12px 36px #1720330a; }
+.sweet-panel h2 { margin: 8px 0 10px; font-size: clamp(22px, 3vw, 30px); }
+.sweet-panel > p:not(.eyebrow) { color: #64748b; line-height: 1.65; }
+.sweet-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.sweet-count, .sweet-category { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; }
+.sweet-notice { display: grid; gap: 4px; padding: 14px 18px; border: 1px solid #bfdbfe; border-radius: 14px; background: #eff6ff; color: #1e40af; font-size: 13px; line-height: 1.5; }
+.sweet-products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 22px; }
+.sweet-product { display: flex; flex-direction: column; align-items: start; gap: 10px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; }
+.sweet-product h3, .sweet-history h3 { margin: 4px 0; }
+.sweet-product p { flex: 1; margin: 0; color: #64748b; line-height: 1.55; }
+.sweet-product img { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; }
+.sweet-reference-image { display: block; width: min(100%, 280px); max-height: 220px; object-fit: cover; border-radius: 12px; }
+.sweet-product > strong { font-size: 18px; }
+.sweet-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.sweet-form label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 650; }
+.sweet-form input, .sweet-form select, .sweet-form textarea, .sweet-cart-line input { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #172033; font: inherit; }
+.sweet-form textarea { min-height: 92px; resize: vertical; }
+.sweet-wide { grid-column: 1 / -1; }
+.sweet-form button, .sweet-product button, .sweet-action { width: fit-content; padding: 11px 16px; border: 0; border-radius: 10px; background: #172033; color: white; font-weight: 700; cursor: pointer; }
+.sweet-form button:disabled { opacity: .45; cursor: not-allowed; }
+.sweet-empty { padding: 22px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; }
+.sweet-cart { display: grid; gap: 12px; }
+.sweet-cart-line { display: grid; grid-template-columns: 1fr 90px auto; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #e2e8f0; }
+.sweet-cart-line div { display: grid; gap: 4px; }
+.sweet-cart-line span, .sweet-history span, .sweet-history small { color: #64748b; font-size: 13px; }
+.sweet-total { display: flex; justify-content: space-between; padding-top: 12px; font-size: 18px; }
+.sweet-history { display: grid; gap: 12px; margin-top: 24px; }
+.sweet-history article { display: grid; gap: 8px; padding: 14px; border-radius: 12px; background: #f8fafc; }
+.sweet-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sweet-inline button, .sweet-history button, .sweet-secondary { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 9px; background: white; color: #172033; font-weight: 650; cursor: pointer; }
+.sweet-feedback { padding: 12px 16px; border-radius: 12px; background: #eff6ff; color: #1e40af; }
+@media (max-width: 640px) { .sweet-form { grid-template-columns: 1fr; } .sweet-wide { grid-column: auto; } .sweet-cart-line { grid-template-columns: 1fr 72px; } .sweet-cart-line > strong { grid-column: 1 / -1; } .sweet-heading { flex-direction: column; } }
+`;
+
+export const sweetShopWorkspaceSource = String.raw`"use client";
+
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { CustomerAccountPanel } from "@/components/customer-account-panel";
+
+type Mode = "catalogue" | "custom-order" | "cart";
+type Store = { id: string; display_name: string; description: string; is_published: boolean };
+type Product = { id: string; name: string; description: string; category: string; price_xof: number; image_url: string; is_active: boolean };
+type CartLine = { productId: string; quantity: number };
+type Order = { id: string; customer_name: string; customer_phone: string; desired_date: string | null; notes: string; fulfillment_method: string; delivery_address: string; items: Array<{ name: string; quantity: number; unit_price_xof: number; line_total_xof: number }>; total_amount_xof: number; status: string; created_at: string };
+type TeamAccess = { isOwner: boolean; catalogueView: boolean; catalogueEdit: boolean; ordersView: boolean; ordersEdit: boolean; customView: boolean; customEdit: boolean };
+type CustomRequest = { id: string; customer_name: string; customer_phone: string; creation_type: string; occasion: string; desired_date: string; portions: number; flavour: string; decoration: string; notes: string; reference_image_path: string | null; reference_image_url?: string; status: string; created_at: string };
+
+const STOREFRONT_SLUG = "__STOREFRONT_SLUG__";
+const CART_KEY = "merkora-asho-sweet-cart-v1";
+const PROJECT_ID = __PROJECT_ID__;
+const EMPTY_TEAM_ACCESS: TeamAccess = { isOwner: false, catalogueView: false, catalogueEdit: false, ordersView: false, ordersEdit: false, customView: false, customEdit: false };
+const money = (value: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value) + " FCFA";
+const statuses = ["received", "confirmed", "preparing", "ready", "delivered", "cancelled"];
+const statusLabels: Record<string, string> = { received: "Reçue", confirmed: "Confirmée", preparing: "En préparation", ready: "Prête", delivered: "Livrée", cancelled: "Annulée" };
+const requestStatuses = ["received", "reviewing", "quoted", "accepted", "rejected", "completed"];
+const requestStatusLabels: Record<string, string> = { received: "Reçue", reviewing: "En étude", quoted: "Devis proposé", accepted: "Acceptée", rejected: "Refusée", completed: "Terminée" };
+
+function makeClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+export function SweetShopWorkspace({ mode }: { mode: Mode }) {
+  const supabase = useMemo(() => makeClient(), []);
+  const [store, setStore] = useState<Store | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartReady, setCartReady] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [requests, setRequests] = useState<CustomRequest[]>([]);
+  const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
+  const [teamAccess, setTeamAccess] = useState<TeamAccess>(EMPTY_TEAM_ACCESS);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [productCategory, setProductCategory] = useState("Gâteaux");
+  const [productPrice, setProductPrice] = useState("");
+  const [productImage, setProductImage] = useState("");
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImageInputKey, setProductImageInputKey] = useState(0);
+  const [customer, setCustomer] = useState("");
+  const [phone, setPhone] = useState("");
+  const [date, setDate] = useState("");
+  const [occasion, setOccasion] = useState("");
+  const [creationType, setCreationType] = useState("Gâteau");
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [portions, setPortions] = useState("8");
+  const [flavour, setFlavour] = useState("");
+  const [decoration, setDecoration] = useState("");
+  const [note, setNote] = useState("");
+  const [referenceImage, setReferenceImage] = useState<File | null>(null);
+  const [referenceImageInputKey, setReferenceImageInputKey] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const loadTeamAccess = useCallback(async (currentUserId: string) => {
+    if (!supabase || !currentUserId) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const { data: owner, error: ownerError } = await supabase.from("user_projects")
+      .select("id").eq("id", PROJECT_ID).eq("user_id", currentUserId).maybeSingle();
+    if (ownerError) { setTeamAccess(EMPTY_TEAM_ACCESS); setFeedback("Vérification des droits impossible."); return; }
+    if (owner) {
+      setTeamAccess({ isOwner: true, catalogueView: true, catalogueEdit: true, ordersView: true, ordersEdit: true, customView: true, customEdit: true });
+      return;
+    }
+    const { data: membership, error: membershipError } = await supabase.from("project_team_memberships")
+      .select("id").eq("project_id", PROJECT_ID).eq("user_id", currentUserId).eq("status", "active").maybeSingle();
+    if (membershipError || !membership) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const { data: grants, error: grantsError } = await supabase.from("project_team_module_permissions")
+      .select("module_id,can_view,can_edit").eq("project_id", PROJECT_ID).eq("membership_id", membership.id);
+    if (grantsError) { setTeamAccess(EMPTY_TEAM_ACCESS); return; }
+    const get = (moduleId: string) => grants?.find((grant) => grant.module_id === moduleId);
+    const catalogue = get("catalogue-de-gateau-et-de-patisserie");
+    const orders = get("panier-et-validation-de-commande");
+    const custom = get("commande-personnalisee");
+    setTeamAccess({
+      isOwner: false,
+      catalogueView: Boolean(catalogue?.can_view), catalogueEdit: Boolean(catalogue?.can_edit),
+      ordersView: Boolean(orders?.can_view), ordersEdit: Boolean(orders?.can_edit),
+      customView: Boolean(custom?.can_view), customEdit: Boolean(custom?.can_edit),
+    });
+  }, [supabase]);
+
+  const loadStore = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from("project_storefronts")
+      .select("id,display_name,description,is_published").eq("slug", STOREFRONT_SLUG).maybeSingle();
+    if (error) { setFeedback("Impossible de charger la boutique : " + error.message); return; }
+    setStore(data as Store | null);
+  }, [supabase]);
+
+  const loadPublicProducts = useCallback(async (storeId: string) => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from("project_store_products")
+      .select("id,name,description,category,price_xof,image_url,is_active")
+      .eq("storefront_id", storeId).eq("is_active", true).order("sort_order");
+    if (error) { setFeedback("Impossible de charger le catalogue : " + error.message); return; }
+    setProducts((data ?? []) as Product[]);
+  }, [supabase]);
+
+  const loadAdminData = useCallback(async (storeId: string) => {
+    if (!supabase) return;
+    if (teamAccess.catalogueView) {
+      const { data, error } = await supabase.from("project_store_products")
+        .select("id,name,description,category,price_xof,image_url,is_active")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false });
+      if (error) { setFeedback("Accès au catalogue refusé."); return; }
+      setProducts((data ?? []) as Product[]);
+    }
+    if (teamAccess.ordersView) {
+      const { data, error } = await supabase.from("project_store_orders")
+        .select("id,customer_name,customer_phone,desired_date,notes,fulfillment_method,delivery_address,items,total_amount_xof,status,created_at")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100);
+      if (error) { setFeedback("Accès aux commandes refusé."); return; }
+      setOrders((data ?? []) as Order[]);
+    } else setOrders([]);
+    if (teamAccess.customView) {
+      const { data, error } = await supabase.from("project_store_custom_requests")
+        .select("id,customer_name,customer_phone,creation_type,occasion,desired_date,portions,flavour,decoration,notes,reference_image_path,status,created_at")
+        .eq("storefront_id", storeId).order("created_at", { ascending: false }).limit(100);
+      if (error) { setFeedback("Accès aux demandes personnalisées refusé."); return; }
+      const requestsWithImages = await Promise.all(((data ?? []) as CustomRequest[]).map(async (request) => {
+        if (!request.reference_image_path) return request;
+        const { data: image } = await supabase.storage.from("project-store-references").createSignedUrl(request.reference_image_path, 3600);
+        return { ...request, reference_image_url: image?.signedUrl ?? "" };
+      }));
+      setRequests(requestsWithImages);
+    } else setRequests([]);
+  }, [supabase, teamAccess.catalogueView, teamAccess.ordersView, teamAccess.customView]);
+
+  useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem(CART_KEY);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCart(parsed.filter((item): item is CartLine => item && typeof item.productId === "string" && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99));
+      }
+    } catch {
+      setFeedback("Le panier temporaire ne peut pas être restauré dans ce navigateur.");
+    } finally {
+      setCartReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartReady) return;
+    try { window.sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch { setFeedback("Le panier ne peut pas être conservé pendant la navigation."); }
+  }, [cart, cartReady]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    const init = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!alive) return;
+      setUserEmail(data.user?.email ?? "");
+      setUserId(data.user?.id ?? "");
+      await loadStore();
+    };
+    void init();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? "");
+      setUserId(session?.user?.id ?? "");
+      void Promise.resolve().then(loadStore);
+    });
+    return () => { alive = false; authListener.subscription.unsubscribe(); };
+  }, [supabase, loadStore]);
+
+  useEffect(() => { if (userId) void loadTeamAccess(userId); else setTeamAccess(EMPTY_TEAM_ACCESS); }, [userId, loadTeamAccess]);
+
+  useEffect(() => {
+    if (!store || !supabase) return;
+    if (store.is_published) void loadPublicProducts(store.id);
+    else setProducts([]);
+    if (adminOpen && userId && (teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView)) void loadAdminData(store.id);
+  }, [store, userId, userEmail, adminOpen, teamAccess, supabase, loadAdminData, loadPublicProducts]);
+
+  const cartLines = useMemo(() => cart.map((line) => {
+    const product = products.find((item) => item.id === line.productId);
+    return product ? { ...product, quantity: line.quantity } : null;
+  }).filter((line): line is Product & { quantity: number } => Boolean(line)), [cart, products]);
+  const estimatedTotal = cartLines.reduce((sum, line) => sum + Number(line.price_xof) * line.quantity, 0);
+
+  async function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
+    if (error) setFeedback("Connexion impossible : " + error.message);
+    else { setPassword(""); setFeedback("Connexion effectuée. Chargement de l'espace de gestion…"); }
+  }
+
+  async function signOut() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setOrders([]); setRequests([]); setUserId(""); setTeamAccess(EMPTY_TEAM_ACCESS); setAdminOpen(false); setFeedback("Vous êtes déconnecté.");
+  }
+
+  async function addProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !store || !teamAccess.catalogueEdit) return;
+    const price = Number(productPrice);
+    if (!productName.trim() || !Number.isSafeInteger(price) || price <= 0) {
+      setFeedback("Saisissez un nom et un prix entier positif en FCFA."); return;
+    }
+    if (productImageFile && (!["image/jpeg", "image/png", "image/webp"].includes(productImageFile.type) || productImageFile.size > 5 * 1024 * 1024)) {
+      setFeedback("La photo du produit doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo."); return;
+    }
+    setBusy(true);
+    let imageUrl = productImage.trim();
+    if (productImageFile) {
+      const extension = productImageFile.type === "image/png" ? "png" : productImageFile.type === "image/webp" ? "webp" : "jpg";
+      const imagePath = store.id + "/products/" + crypto.randomUUID() + "." + extension;
+      const { error: uploadError } = await supabase.storage.from("project-store-product-images").upload(imagePath, productImageFile, {
+        cacheControl: "3600", contentType: productImageFile.type, upsert: false,
+      });
+      if (uploadError) { setBusy(false); setFeedback("Envoi de la photo impossible : " + uploadError.message); return; }
+      imageUrl = supabase.storage.from("project-store-product-images").getPublicUrl(imagePath).data.publicUrl;
+    }
+    const { error } = await supabase.from("project_store_products").insert({
+      storefront_id: store.id, name: productName.trim(), description: productDescription.trim(),
+      category: productCategory, price_xof: price, image_url: imageUrl,
+    });
+    setBusy(false);
+    if (error) { setFeedback("Ajout impossible : " + error.message); return; }
+    setProductName(""); setProductDescription(""); setProductPrice(""); setProductImage("");
+    setProductImageFile(null); setProductImageInputKey((value) => value + 1);
+    await loadAdminData(store.id); setFeedback("Produit ajouté au catalogue.");
+  }
+
+  async function updateProduct(product: Product, changes: Partial<Product>) {
+    if (!supabase || !store || !teamAccess.catalogueEdit) return;
+    const { error } = await supabase.from("project_store_products").update(changes).eq("id", product.id).eq("storefront_id", store.id);
+    if (error) { setFeedback("Modification impossible : " + error.message); return; }
+    await loadAdminData(store.id); setFeedback("Catalogue mis à jour.");
+  }
+
+  async function togglePublication() {
+    if (!supabase || !store || !teamAccess.isOwner) return;
+    const next = !store.is_published;
+    if (next && products.filter((product) => product.is_active).length === 0) { setFeedback("Ajoutez au moins un produit actif avec son prix réel avant de publier la boutique."); return; }
+    const { error } = await supabase.from("project_storefronts").update({ is_published: next }).eq("id", store.id);
+    if (error) { setFeedback("Publication impossible : " + error.message); return; }
+    setStore({ ...store, is_published: next });
+    setFeedback(next ? "Boutique publiée : le catalogue est maintenant accessible." : "Boutique masquée du public.");
+  }
+
+  async function addToCart(productId: string) {
+    setCart((current) => {
+      const existing = current.find((line) => line.productId === productId);
+      return existing ? current.map((line) => line.productId === productId ? { ...line, quantity: line.quantity + 1 } : line) : [...current, { productId, quantity: 1 }];
+    });
+    setFeedback("Produit ajouté au panier.");
+  }
+
+  function changeQuantity(productId: string, quantity: number) {
+    setCart((current) => quantity <= 0 ? current.filter((line) => line.productId !== productId) : current.map((line) => line.productId === productId ? { ...line, quantity: Math.min(quantity, 99) } : line));
+  }
+
+  async function submitOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !store || !cartLines.length || !customer.trim() || !phone.trim() || (fulfillmentMethod === "delivery" && !deliveryAddress.trim())) {
+      setFeedback("Ajoutez des produits et renseignez votre nom et votre téléphone."); return;
+    }
+    setBusy(true);
+    const { error } = await supabase.from("project_store_orders").insert({
+      storefront_id: store.id, customer_name: customer.trim(), customer_phone: phone.trim(),
+      desired_date: date || null, notes: note.trim(), fulfillment_method: fulfillmentMethod,
+      delivery_address: fulfillmentMethod === "delivery" ? deliveryAddress.trim() : "",
+      items: cartLines.map((line) => ({ product_id: line.id, quantity: line.quantity })),
+    });
+    setBusy(false);
+    if (error) { setFeedback("Commande non transmise : " + error.message); return; }
+    setCart([]); setCustomer(""); setPhone(""); setDate(""); setNote(""); setFulfillmentMethod("pickup"); setDeliveryAddress("");
+    window.dispatchEvent(new Event("merkora-store-order-submitted"));
+    setFeedback("Commande transmise à Asho Sweet. L'équipe doit encore la confirmer. Aucun paiement n'a été effectué.");
+  }
+
+  async function submitCustomRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !store || !customer.trim() || !phone.trim() || !creationType.trim() || !occasion.trim() || !date || Number(portions) < 1) {
+      setFeedback("Complétez votre nom, téléphone, occasion, date et nombre de portions."); return;
+    }
+    if (referenceImage && (!["image/jpeg", "image/png", "image/webp"].includes(referenceImage.type) || referenceImage.size > 5 * 1024 * 1024)) {
+      setFeedback("La photo doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo."); return;
+    }
+    setBusy(true);
+    let referenceImagePath: string | null = null;
+    if (referenceImage) {
+      const extension = referenceImage.type === "image/png" ? "png" : referenceImage.type === "image/webp" ? "webp" : "jpg";
+      referenceImagePath = store.id + "/custom-requests/" + crypto.randomUUID() + "." + extension;
+      const { error: uploadError } = await supabase.storage.from("project-store-references").upload(referenceImagePath, referenceImage, {
+        cacheControl: "3600", contentType: referenceImage.type, upsert: false,
+      });
+      if (uploadError) { setBusy(false); setFeedback("Envoi de la photo impossible : " + uploadError.message); return; }
+    }
+    const { error } = await supabase.from("project_store_custom_requests").insert({
+      storefront_id: store.id, customer_name: customer.trim(), customer_phone: phone.trim(),
+      creation_type: creationType.trim(), occasion: occasion.trim(), desired_date: date, portions: Number(portions),
+      flavour: flavour.trim(), decoration: decoration.trim(), notes: note.trim(), reference_image_path: referenceImagePath,
+    });
+    setBusy(false);
+    if (error) { setFeedback("Demande non transmise : " + error.message); return; }
+    setCustomer(""); setPhone(""); setDate(""); setOccasion(""); setCreationType("Gâteau"); setFlavour(""); setDecoration(""); setNote("");
+    setReferenceImage(null); setReferenceImageInputKey((value) => value + 1);
+    window.dispatchEvent(new Event("merkora-store-order-submitted"));
+    setFeedback("Votre demande personnalisée et sa photo ont été transmises à Asho Sweet.");
+  }
+
+  async function updateOrderStatus(order: Order, status: string) {
+    if (!supabase || !store || !teamAccess.ordersEdit) return;
+    const { error } = await supabase.from("project_store_orders").update({ status }).eq("id", order.id).eq("storefront_id", store.id);
+    if (error) { setFeedback("Mise à jour de commande impossible : " + error.message); return; }
+    await loadAdminData(store.id);
+  }
+
+  async function updateRequestStatus(request: CustomRequest, status: string) {
+    if (!supabase || !store || !teamAccess.customEdit) return;
+    const { error } = await supabase.from("project_store_custom_requests").update({ status }).eq("id", request.id).eq("storefront_id", store.id);
+    if (error) { setFeedback("Mise à jour de la demande impossible : " + error.message); return; }
+    await loadAdminData(store.id);
+  }
+
+  if (!supabase) return <section className="sweet-panel"><h2>Configuration requise</h2><p>La boutique doit être reliée à Supabase. Configurez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans l'environnement du projet.</p></section>;
+  if (!store) return <section className="sweet-panel"><h2>Boutique en préparation ou accès limité</h2><p>La boutique est visible publiquement après publication par sa propriétaire. Connectez-vous avec le compte propriétaire ou un compte collaborateur invité pour accéder à la gestion.</p>{!userEmail ? <form className="sweet-form" onSubmit={signIn}><label>Email<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form> : <p>Le compte {userEmail} ne dispose pas encore d'un accès à la boutique. <a href="/team">Ouvrir la gestion des invitations</a>.</p>}{feedback && <p role="status">{feedback}</p>}</section>;
+
+  return (
+    <div className="sweet-workspace">
+      {store.is_published ? null : <div className="sweet-notice"><strong>Boutique non publiée</strong><span>La propriétaire contrôle la publication. Les visiteurs ne voient pas encore les produits.</span></div>}
+      {mode === "catalogue" && (
+        <section className="sweet-panel">
+          <div className="sweet-heading"><div><p className="eyebrow">Asho Sweet · Catalogue</p><h2>{store.display_name}</h2><p>{store.description}</p></div><span className="sweet-count">{products.filter((p) => p.is_active).length} produit(s)</span></div>
+          {products.filter((p) => p.is_active).length === 0 ? <p className="sweet-empty">Le catalogue sera affiché ici dès que les produits et leurs prix réels auront été ajoutés.</p> : <div className="sweet-products">{products.filter((p) => p.is_active).map((product) => <article className="sweet-product" key={product.id}>{product.image_url ? <img src={product.image_url} alt={product.name} /> : null}<span className="sweet-category">{product.category}</span><h3>{product.name}</h3><p>{product.description}</p><strong>{money(Number(product.price_xof))}</strong><button type="button" onClick={() => addToCart(product.id)}>Ajouter au panier</button></article>)}</div>}
+          <a className="sweet-action" href="/modules/panier-et-validation-de-commande">Voir mon panier ({cart.reduce((sum, line) => sum + line.quantity, 0)})</a>
+        </section>
+      )}
+      {mode === "cart" && <section className="sweet-panel"><p className="eyebrow">Asho Sweet · Votre sélection</p><h2>Panier</h2>{cartLines.length === 0 ? <p className="sweet-empty">Votre panier est vide. Ajoutez des produits depuis le catalogue.</p> : <div className="sweet-cart">{cartLines.map((line) => <div className="sweet-cart-line" key={line.id}><div><strong>{line.name}</strong><span>{money(Number(line.price_xof))} l'unité</span></div><input aria-label={"Quantité " + line.name} type="number" min="0" max="99" value={line.quantity} onChange={(event) => changeQuantity(line.id, Number(event.target.value))} /><strong>{money(Number(line.price_xof) * line.quantity)}</strong></div>)}<div className="sweet-total"><span>Total estimatif</span><strong>{money(estimatedTotal)}</strong></div></div>}
+          <form className="sweet-form" onSubmit={submitOrder}><label>Nom complet<input required maxLength={120} value={customer} onChange={(event) => setCustomer(event.target.value)} /></label><label>Téléphone<input required type="tel" maxLength={40} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+229…" /></label><label>Date souhaitée<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Réception<select value={fulfillmentMethod} onChange={(event) => setFulfillmentMethod(event.target.value as "pickup" | "delivery")}><option value="pickup">Retrait sur place</option><option value="delivery">Livraison</option></select></label>{fulfillmentMethod === "delivery" ? <label className="sweet-wide">Adresse de livraison<input required maxLength={500} value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} /></label> : null}<label className="sweet-wide">Précisions<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button type="submit" disabled={busy || !cartLines.length}>Transmettre la commande (sans paiement)</button></form>
+        </section>}
+      {mode === "custom-order" && <section className="sweet-panel"><p className="eyebrow">Asho Sweet · Sur mesure</p><h2>Imaginons votre création</h2><p>Décrivez votre gâteau ou votre commande spéciale.</p><form className="sweet-form" onSubmit={submitCustomRequest}><label>Votre nom<input required maxLength={120} value={customer} onChange={(event) => setCustomer(event.target.value)} /></label><label>Téléphone<input required type="tel" maxLength={40} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+229…" /></label><label>Type de création<input required maxLength={160} value={creationType} onChange={(event) => setCreationType(event.target.value)} placeholder="Gâteau, pizza, pâtisserie…" /></label><label>Occasion<input required maxLength={160} value={occasion} onChange={(event) => setOccasion(event.target.value)} placeholder="Anniversaire, mariage…" /></label><label>Date souhaitée<input required type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Nombre de portions<input required type="number" min="1" max="500" value={portions} onChange={(event) => setPortions(event.target.value)} /></label><label>Saveur souhaitée<input maxLength={160} value={flavour} onChange={(event) => setFlavour(event.target.value)} /></label><label className="sweet-wide">Décoration souhaitée<input maxLength={500} value={decoration} onChange={(event) => setDecoration(event.target.value)} /></label><label className="sweet-wide">Photo d'exemple (facultative)<input key={referenceImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setReferenceImage(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label><label className="sweet-wide">Autres précisions<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button type="submit" disabled={busy}>Transmettre ma demande</button></form></section>}
+      <CustomerAccountPanel supabase={supabase} storeId={store.id} />
+      <section className="sweet-panel">
+        <div className="sweet-inline"><h2>Espace Asho Sweet</h2><button className="sweet-secondary" type="button" onClick={() => setAdminOpen((value) => !value)}>{adminOpen ? "Fermer" : "Gestion de la boutique"}</button></div>
+        {adminOpen && !userEmail && <form className="sweet-form" onSubmit={signIn}><label>Email du propriétaire<input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><button type="submit" disabled={busy}>Se connecter</button></form>}
+        {adminOpen && userEmail && <div className="sweet-history">
+          <div className="sweet-inline">
+            <span>Connecté : {userEmail}</span>
+            <button type="button" onClick={signOut}>Déconnexion</button>
+            {teamAccess.isOwner ? <button type="button" onClick={togglePublication}>{store.is_published ? "Masquer la boutique" : "Publier la boutique"}</button> : null}
+            {teamAccess.isOwner || teamAccess.catalogueView || teamAccess.ordersView || teamAccess.customView ? <a className="sweet-secondary" href="/team">{teamAccess.isOwner ? "Gérer mon équipe" : "Mon accès équipe"}</a> : null}
+          </div>
+          {teamAccess.catalogueView ? <div>
+            <h3>Catalogue et réalisations</h3>
+            {teamAccess.catalogueEdit ? <form className="sweet-form" onSubmit={addProduct}>
+              <label>Nom<input required maxLength={160} value={productName} onChange={(event) => setProductName(event.target.value)} /></label>
+              <label>Catégorie<input required maxLength={80} value={productCategory} onChange={(event) => setProductCategory(event.target.value)} /></label>
+              <label>Prix en FCFA<input required type="number" min="1" step="1" value={productPrice} onChange={(event) => setProductPrice(event.target.value)} /></label>
+              <label>Photo de votre réalisation (facultative)<input key={productImageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setProductImageFile(event.target.files?.[0] ?? null)} /><small>JPEG, PNG ou WebP · 5 Mo maximum</small></label>
+              <label>Ou URL de l'image<input type="url" value={productImage} onChange={(event) => setProductImage(event.target.value)} /></label>
+              <label className="sweet-wide">Description<textarea maxLength={2000} value={productDescription} onChange={(event) => setProductDescription(event.target.value)} /></label>
+              <button type="submit" disabled={busy}>Enregistrer le produit</button>
+            </form> : <p>Accès en consultation uniquement pour le catalogue.</p>}
+            {products.length === 0 ? <p>Aucun produit ajouté pour le moment.</p> : products.map((product) => <article key={product.id}>
+              <strong>{product.name} · {money(Number(product.price_xof))}</strong><span>{product.is_active ? "Visible" : "Masqué"}</span>
+              {teamAccess.catalogueEdit ? <div className="sweet-inline">
+                <button type="button" onClick={() => { const next = window.prompt("Nouveau prix en FCFA", String(product.price_xof)); if (next && Number.isSafeInteger(Number(next)) && Number(next) > 0) void updateProduct(product, { price_xof: Number(next) }); }}>Modifier le prix</button>
+                <button type="button" onClick={() => void updateProduct(product, { is_active: !product.is_active })}>{product.is_active ? "Masquer" : "Réactiver"}</button>
+              </div> : null}
+            </article>)}
+          </div> : null}
+          {teamAccess.ordersView ? <div>
+            <h3>Commandes reçues</h3>
+            {orders.length === 0 ? <p>Aucune commande pour le moment.</p> : orders.map((order) => <article key={order.id}>
+              <strong>{order.customer_name} · {money(Number(order.total_amount_xof))}</strong>
+              <span>{order.customer_phone} · {new Date(order.created_at).toLocaleString("fr-FR")}</span>
+              <span>{order.fulfillment_method === "delivery" ? "Livraison : " + order.delivery_address : "Retrait sur place"}</span>
+              <span>{order.items.map((item) => item.quantity + " × " + item.name).join(", ")}</span>
+              {teamAccess.ordersEdit ? <div className="sweet-inline"><select aria-label="Statut de commande" value={order.status} onChange={(event) => void updateOrderStatus(order, event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></div> : <small>Consultation uniquement · Statut : {statusLabels[order.status] ?? order.status}</small>}
+            </article>)}
+          </div> : null}
+          {teamAccess.customView ? <div>
+            <h3>Demandes personnalisées</h3>
+            {requests.length === 0 ? <p>Aucune demande personnalisée pour le moment.</p> : requests.map((request) => <article key={request.id}>
+              <strong>{request.creation_type} · {request.occasion} · {request.customer_name}</strong>
+              <span>{request.customer_phone} · {request.portions} portions · {request.desired_date}</span>
+              <span>{request.flavour} · {request.decoration}</span>
+              <small>{request.notes}</small>
+              {request.reference_image_url ? <a href={request.reference_image_url} target="_blank" rel="noreferrer"><img className="sweet-reference-image" src={request.reference_image_url} alt="Photo d'exemple envoyée par le client" /></a> : request.reference_image_path ? <small>Photo de référence indisponible.</small> : null}
+              {teamAccess.customEdit ? <select aria-label="Statut de demande personnalisée" value={request.status} onChange={(event) => void updateRequestStatus(request, event.target.value)}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select> : <small>Consultation uniquement · Statut : {requestStatusLabels[request.status] ?? request.status}</small>}
+            </article>)}
+          </div> : null}
+          {!teamAccess.isOwner && !teamAccess.catalogueView && !teamAccess.ordersView && !teamAccess.customView
+            ? <p>La propriétaire ne vous a pas encore attribué de module de gestion.</p>
+            : null}
+        </div>}
+      </section>
+      {feedback && <p className="sweet-feedback" role="status" aria-live="polite">{feedback}</p>}
+    </div>
+  );
+}
+`;
+
+export function createSweetShopWorkspaceFile(storefrontSlug: string, projectId: string) {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storefrontSlug)) throw new Error("Identifiant public de boutique invalide.");
+  return {
+    path: "src/components/sweet-shop-workspace.tsx",
+    content: sweetShopWorkspaceSource.replace("__STOREFRONT_SLUG__", storefrontSlug).replace("__PROJECT_ID__", JSON.stringify(projectId).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")),
+  };
+}

@@ -1,0 +1,2 @@
+-- Superseded by 20261030154312_add_project_ai_processing_consent.sql.
+-- No SQL is executed from this placeholder.

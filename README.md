@@ -1,18 +1,49 @@
 # MerKora GDJ
 
-Plateforme centrale destinée à transformer un besoin exprimé en langage naturel en pistes de solutions, puis en projet structuré.
+MerKora GDJ est une plateforme de découverte de besoins : elle commence par la situation réelle d’une personne ou d’une organisation, clarifie ce qui manque, puis propose des directions adaptées à examiner avant de construire une solution.
 
-## Ce que contient cette première version
+## Cette version de travail
 
-- Interface responsive en français.
-- Formulaire de description d'un besoin, avec validation.
-- Dossiers de projet enregistrés dans le stockage local du navigateur.
-- Pré-analyse par règles locales et pistes de réflexion adaptées aux mots-clés et à la catégorie.
-- Tests unitaires et workflow CI de typecheck, tests et build.
+- Page d’accueil en français, responsive, avec accès à la découverte sans création de compte.
+- Espace de travail conservé pour créer, consulter et modifier les dossiers locaux.
+- Inscription et connexion par e-mail/mot de passe via routes serveur; jetons de session conservés dans des cookies HttpOnly.
+- Synchronisation manuelle des dossiers avec la table `public.user_projects`, protégée par les politiques RLS existantes.
+- Pré-analyse contextuelle pour l’orientation scolaire et professionnelle, le commerce et la gestion d’équipe, la création/communication et certains besoins numériques.
+- Questions de clarification quand le domaine ou le résultat attendu reste ambigu.
+- Résultats étiquetés comme préliminaires, avec limites et incertitudes explicites.
+- Intégration du moteur d’analyse IA via Vercel AI Gateway, avec propositions modifiables et validation manuelle avant application au dossier.
+- Activation IA désactivée par défaut; quand elle est inactive, une pré-analyse locale gratuite reste disponible sans appel de modèle.
+- Pistes de solution modifiables, supprimables et ajoutables manuellement avant application explicite au dossier.
+- Pistes d’amélioration avec priorité, bénéfice attendu, effort indicatif et hypothèses à vérifier.
+- Analyse concurrentielle prudente : comparaison préparée à partir des sources saisies par l’utilisateur; aucune prétention de recherche web en direct.
+- Studio de maquettes conceptuelles interactif : formats site web/mobile/tableau de bord, palettes et blocs adaptatifs selon le domaine, avec préférences locales distinctes par dossier.
+- Stockage local compatible avec la clé existante `merkora-gdj-projects-v1`.
 
 ## Limites importantes
 
-Cette version est un prototype de travail. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni avec un compte utilisateur. Les suggestions sont déterministes et locales : aucun modèle d'IA n'est encore connecté. Il n'y a pas encore d'authentification, de devis contractuel, de paiement ou de création automatique de logiciel.
+Cette version est un prototype. Les dossiers restent dans le navigateur utilisé et ne sont pas synchronisés entre appareils ni rattachés à un compte. Les suggestions locales fonctionnent sans IA. Le panneau propose une pré-analyse locale gratuite lorsque le moteur réel est désactivé. Le code d’intégration IA est présent, mais le moteur reste désactivé tant que `MERKORA_AI_ENABLED=true` n’a pas été configuré explicitement côté serveur. Aucun appel de modèle n’est effectué par défaut. Les propositions IA restent à relire et modifier; elles ne constituent ni un devis officiel, ni une promesse de réalisation.
+
+La connexion au compte et la synchronisation manuelle sont désormais implémentées dans le code de la branche de travail. Leur fonctionnement dépend des variables Supabase configurées et doit être testé sur l’aperçu. Le Studio de maquettes conceptuelles est disponible dans le détail d’un dossier : il assemble localement un aperçu adaptatif (site web, mobile ou tableau de bord) à partir du domaine et des pistes, avec palettes et blocs modifiables. Les réglages restent locaux au navigateur, l’aperçu n’est pas une application fonctionnelle et aucune image IA n’est générée. Les validations client, le versionnement partagé des maquettes, les devis officiels, le suivi de réalisation et les paiements restent à développer.
+
+## Intégration IA (désactivée par défaut)
+
+L’analyse utilise l’API compatible Chat Completions de Vercel AI Gateway. La clé est lue uniquement côté serveur depuis `AI_GATEWAY_API_KEY` ou le jeton OIDC Vercel. Le modèle est configurable via `MERKORA_AI_MODEL`; valeur par défaut prévue : `deepseek/deepseek-v4.1-flash`.
+
+Avant d’activer le moteur :
+1. Vérifier le modèle et son prix actuel dans le catalogue Vercel AI Gateway.
+2. Configurer une limite de dépenses/budget dans Vercel AI Gateway.
+3. Ajouter `MERKORA_AI_ENABLED=true` dans les variables d’environnement du seul projet MerKora GDJ.
+4. Vérifier l’authentification du Gateway dans l’environnement de déploiement.
+5. Effectuer un test contrôlé et consulter l’usage/coût avant d’ouvrir l’accès aux clients.
+
+Variables côté serveur :
+- `MERKORA_AI_ENABLED`: uniquement `true` pour autoriser les appels.
+- `MERKORA_AI_MODEL`: identifiant `provider/model` vérifié dans le catalogue.
+- `AI_GATEWAY_API_KEY`: optionnelle si l’environnement Vercel fournit l’authentification OIDC; ne jamais exposer cette variable côté client.
+
+L’interface permet de relire, modifier, retirer ou ajouter des pistes et des améliorations avant toute application explicite. Une amélioration peut être ajoutée à la liste des pistes par une action distincte. L’application des pistes remplace seulement la liste des recommandations de ce dossier; aucune autre donnée n’est modifiée.
+
+L’analyse concurrentielle accepte jusqu’à cinq entrées fournies par l’utilisateur (nom, URL/source, offre observée, prix et notes). En mode local, MerKora n’effectue aucune recherche web, ne vérifie pas les prix et ne prétend pas connaître les offres actuelles. Les informations manquantes doivent être vérifiées à partir de sources publiques datées.
 
 ## Stack
 
@@ -40,11 +71,12 @@ npm run build
 ## Sécurité et déploiement
 
 - Ne jamais committer de secret ni de fichier `.env.local`.
-- Configurer Supabase uniquement après vérification du projet cible et des politiques RLS.
-- Garder les clés privées IA côté serveur.
+- Les clés privées d’un fournisseur IA doivent rester côté serveur.
 - Ne pas supprimer ni réinitialiser les données Supabase existantes.
-- Distinguer clairement prototype, prévisualisation et production.
+- Ne pas modifier les autres projets, notamment WALL Trade.
+- Développer et vérifier sur `feature/merkora-rebuild-foundation`.
+- Aucun changement ne doit être fusionné dans `main` ni promu en production sans autorisation explicite.
 
-## Vercel
+## Aperçu Vercel
 
-Le projet Vercel est configuré pour détecter Next.js et son répertoire de sortie automatiquement. Les branches de travail doivent être vérifiées en prévisualisation avant de promouvoir un changement en production.
+Vérifier l’aperçu de la branche ou de la pull request avant toute promotion. La présence d’un aperçu ne signifie pas que les fonctions reportées (IA connectée, devis officiels et paiements) sont actives. Vérifier l’inscription, la connexion, la confirmation e-mail selon les paramètres Auth, la synchronisation et les règles RLS avant toute mise en production.
