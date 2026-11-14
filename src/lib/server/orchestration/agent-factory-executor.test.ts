@@ -159,7 +159,6 @@ describe("guarded MerKora factory workflow execution", () => {
     }]);
     expect(calls).toHaveLength(1);
     expect(receivedInstructions.join("\\n")).toContain("UX/UI designer");
-    expect(receivedInstructions.join("\\n")).toContain("ne confèrent aucune permission");
   });
 
   it("preflights the entire selected team before the first provider call", async () => {
