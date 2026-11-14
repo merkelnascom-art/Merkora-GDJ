@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
-import { isTrustedGitHubWorkflowClaims } from "./identity.ts";
+import { isPlannedSpecialistWorkflowManifest, isTrustedGitHubWorkflowClaims } from "./identity.ts";
 
 const AUDIENCE = "merkora-gdj-factory";
 const ISSUER = "https://token.actions.githubusercontent.com";
@@ -119,6 +119,13 @@ Deno.serve(async (request) => {
     .select("id,project_id,status,plan_version,plan_digest,scope_digest,approval_ids,correlation_id,manifest,requested_by,authorized_by")
     .eq("id", body.jobId).eq("project_id", body.projectId).maybeSingle();
   if (jobError || !job) return json({ error: "factory_job_not_found" }, 404);
+
+  // This worker only builds the legacy scaffold. Refuse both preflight and claim
+  // for multi-agent manifests so no specialist job can silently fall back to it.
+  if ((action === "verify" || action === "claim") &&
+    isPlannedSpecialistWorkflowManifest(job.manifest)) {
+    return json({ error: "specialist_workflow_requires_multi_agent_worker" }, 409);
+  }
 
   // A claimed run can report a safe failure without leaving the job indefinitely in building.
   if (action === "fail") {
