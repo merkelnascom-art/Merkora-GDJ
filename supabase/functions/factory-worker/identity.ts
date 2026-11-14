@@ -100,13 +100,30 @@ export function readSpecialistWorkflowManifest(
       ? [step.missionId]
       : []
   );
-  const assignmentIds = ((workflow.plan as Record<string, unknown>).assignments as unknown[]).flatMap((assignment) =>
-    isRecord(assignment) && typeof assignment.missionId === "string" && assignment.missionId.trim()
-      ? [assignment.missionId]
-      : []
-  );
+  const assignments = (workflow.plan as Record<string, unknown>).assignments as unknown[];
+  const assignmentIds = assignments.flatMap((assignment) => {
+    if (!isRecord(assignment) || typeof assignment.missionId !== "string" ||
+        typeof assignment.agentId !== "string" || typeof assignment.runtimeRole !== "string" ||
+        !isRecord(assignment.mission)) {
+      return [];
+    }
+    const mission = assignment.mission;
+    if (mission.contractVersion !== 1 ||
+        mission.missionId !== assignment.missionId ||
+        mission.projectId !== expectedProjectId ||
+        mission.role !== assignment.runtimeRole ||
+        !Array.isArray(mission.instructions) || mission.instructions.length < 1 ||
+        mission.instructions.length > 20 ||
+        !Array.isArray(mission.contextReferences) ||
+        !Array.isArray(mission.constraints) ||
+        !Array.isArray(mission.approvalRequiredFor) ||
+        !isRecord(mission.expectedOutput)) {
+      return [];
+    }
+    return [assignment.missionId];
+  });
   if (normalizedMissionIds.length < 1 || normalizedMissionIds.length !== missionIds.length ||
-      assignmentIds.length !== ((workflow.plan as Record<string, unknown>).assignments as unknown[]).length ||
+      assignmentIds.length !== assignments.length ||
       normalizedMissionIds.length !== assignmentIds.length ||
       new Set(normalizedMissionIds).size !== normalizedMissionIds.length ||
       new Set(assignmentIds).size !== assignmentIds.length ||
