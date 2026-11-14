@@ -72,6 +72,7 @@ export function AgentCatalogExplorer() {
     <main className={styles.page}>
       <header className={styles.header}>
         <a className={styles.backLink} href="/admin">← Retour à l’administration</a>
+        <a className={styles.backLink} href="/admin/agents/factory">Préparer un workflow de fabrication →</a>
         <span className={styles.headerMark}>MERKORA GDJ · ARCHITECTURE DES AGENTS</span>
         <div className={styles.heading}>
           <div>
