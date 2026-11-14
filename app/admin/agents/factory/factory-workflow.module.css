@@ -89,6 +89,11 @@
 .gate { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #28354a; font-size: 12px; }
 .gate small { color: #9ba5b6; overflow-wrap: anywhere; }
 .gate strong { color: #e3c889; font-size: 11px; }
+.recommendations { margin-top: 24px; }
+.recommendations h3 { margin: 0 0 10px; font-size: 15px; }
+.recommendation { display: grid; grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid #28354a; font-size: 12px; }
+.recommendation strong { color: #e3c889; }
+.recommendation span { color: #aeb7c6; line-height: 1.5; }
 .safetyNote { margin: 22px 0 0; padding: 14px; border-radius: 10px; background: #0b1422; color: #b6c0d0; font-size: 12px; line-height: 1.6; }
 
 @media (max-width: 900px) {
