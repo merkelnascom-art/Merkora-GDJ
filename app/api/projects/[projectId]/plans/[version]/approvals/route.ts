@@ -34,10 +34,8 @@ export async function POST(request: Request, context: Context) {
   if (!projectId || projectId.length > 160 || !Number.isSafeInteger(version) || version < 1) return error("Projet ou version invalide.", 400);
 
   const cookieStore = await cookies();
-  const [user, accessToken] = await Promise.all([
-    getCurrentUser(cookieStore),
-    getAccessToken(cookieStore),
-  ]);
+  const user = await getCurrentUser(cookieStore);
+  const accessToken = await getAccessToken(cookieStore);
   if (!user || !accessToken) return error("Authentification requise.", 401);
   const admin = await getAdminAccess();
   const isAdmin = admin.ok;
@@ -55,7 +53,7 @@ export async function POST(request: Request, context: Context) {
 
   if (!isAdmin) {
     const projectResult = await callUserData<Row[]>(
-      `user_projects?${query({ select: "id", id: `eq.${projectId}`, limit: "1" })}`,
+      `user_projects?${query({ select: "id,user_id", id: `eq.${projectId}`, user_id: `eq.${user.id}`, limit: "1" })}`,
       "GET",
       accessToken,
     );
