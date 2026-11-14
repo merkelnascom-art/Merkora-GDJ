@@ -44,4 +44,13 @@ describe("MerKora GDJ V2 conversation screen", () => {
     expect(html).toContain("DÉCRIS CE QUE TU SOUHAITES IMAGINER");
     expect(html).toContain("Notre façon d'échanger");
   });
+
+  it("provides browser voice capture, transcript status, and speech playback controls", () => {
+    const html = renderToStaticMarkup(<ConversationPage />);
+    expect(html).toContain("Activer le microphone");
+    expect(html).toContain("Arrêter l'écoute");
+    expect(html).toContain("Transcription vocale");
+    expect(html).toContain("Écouter la présentation");
+    expect(html).toContain("La réponse intelligente à voix haute sera disponible après connexion du moteur IA");
+  });
 });
