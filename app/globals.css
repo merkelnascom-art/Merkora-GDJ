@@ -70,3 +70,17 @@
 .mk-start-conversation{display:flex;align-items:center;justify-content:space-between;gap:15px;width:min(100%,390px);margin-top:9px;padding:13px 16px;border:1px solid #e8ca91;border-radius:11px;background:linear-gradient(110deg,#d9b777,#f0d9a7);color:#211a32;text-decoration:none;font-size:11px;font-weight:800;box-shadow:0 8px 25px #d9b77722}
 .mk-start-conversation span{font-size:18px}
 @media(max-width:680px){.mk-start-conversation{width:100%}}
+
+/* MerKora GDJ V2 — outils vocaux natifs du navigateur */
+.mk-voice-tools{border:1px solid #a98af055;border-radius:13px;background:linear-gradient(130deg,#211d38,#19182d);padding:13px;margin:0 0 16px}
+.mk-voice-tools[hidden]{display:none}
+.mk-voice-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mk-voice-actions button{border-radius:9px;padding:10px 12px;font-size:10px;font-weight:700;cursor:pointer}
+.mk-microphone-button{border:1px solid #dfc28d;background:linear-gradient(110deg,#d9b777,#f0d9a7);color:#211a32}
+.mk-stop-voice-button{border:1px solid #d58b9a88;background:#482b3b;color:#ffe2e8}
+.mk-speak-button{border:1px solid #ad91e477;background:#302849;color:#e6d7ff}
+.mk-voice-actions button:disabled{opacity:.42;cursor:not-allowed}
+.mk-voice-status{font-size:10px;line-height:1.5;color:#d9c9ed;margin:10px 0 0}
+.mk-voice-error{font-size:10px;line-height:1.55;color:#ffd2d8;background:#4a2633;border-radius:8px;padding:9px 10px;margin:8px 0 0}
+.mk-voice-disclosure{font-size:9px;line-height:1.6;color:#aaa1bc;margin:9px 0 0}
+@media(max-width:680px){.mk-voice-actions{display:grid;grid-template-columns:1fr 1fr}.mk-voice-actions .mk-speak-button{grid-column:1/-1}}
