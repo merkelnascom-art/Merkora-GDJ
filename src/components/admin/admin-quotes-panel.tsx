@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type ClientRequest = { id: string; user_id: string; user_email: string; project_id: string; project_title: string; created_at: string };
+type ClientRequest = { id: string; user_id: string; user_email: string; project_id: string; project_title: string; created_at: string; conceptApprovalStatus?: string; conceptApprovalAt?: string | null };
 type QuoteVersion = { id: string; quote_id: string; client_user_id: string; version_number: number; snapshot: Record<string, unknown>; currency: string; total_amount: number; valid_until: string; published_at: string | null; created_at: string };
 type Decision = { id: string; quote_version_id: string; client_user_id: string; decision: string; message: string; created_at: string };
 type QuoteForm = {
@@ -93,6 +93,11 @@ export function AdminQuotesPanel() {
       </label>
       {selected && <div style={{ marginTop: 16, padding: 14, background: "#f8f7fb", borderRadius: 12, color: "#716c80", fontSize: 13 }}>
         Client : <strong>{selected.user_email}</strong> · Référence : {selected.project_id}
+        <p style={{ margin: "8px 0 0", color: selected.conceptApprovalStatus === "approved" ? "#176b45" : "#a15c00", fontWeight: 700 }}>
+          Concept : {selected.conceptApprovalStatus === "approved" ? "validation officielle reçue" : selected.conceptApprovalStatus === "changes_requested" ? "modifications demandées par le client" : selected.conceptApprovalStatus === "draft" ? "version transmise, validation en attente" : "validation officielle manquante"}
+        </p>
+        {selected.conceptApprovalAt && <p style={{ margin: "4px 0 0" }}>Dernière décision enregistrée : {new Date(selected.conceptApprovalAt).toLocaleString("fr-FR")}</p>}
+        {selected.conceptApprovalStatus !== "approved" && <p style={{ margin: "8px 0 0" }}>La préparation du devis est verrouillée jusqu’à la validation officielle de la dernière maquette par le client.</p>}
       </div>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 12, marginTop: 16 }}>
         <label style={labelStyle}>Titre du devis<input value={form.title} maxLength={160} onChange={e => update("title", e.target.value)} style={fieldStyle} /></label>
@@ -109,8 +114,8 @@ export function AdminQuotesPanel() {
       <label style={{ ...labelStyle, marginTop: 12 }}>Hypothèses (une par ligne)<textarea value={form.assumptionsText} maxLength={2000} rows={2} onChange={e => update("assumptionsText", e.target.value)} style={fieldStyle} /></label>
       <label style={{ ...labelStyle, marginTop: 12 }}>Conditions de paiement<textarea value={form.paymentTerms} maxLength={1500} rows={2} onChange={e => update("paymentTerms", e.target.value)} style={fieldStyle} /></label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
-        <button className="button button-quiet" disabled={busy || !selected} onClick={() => void submit("save_draft")}>{busy ? "Enregistrement…" : "Enregistrer un brouillon"}</button>
-        <button className="button button-primary" disabled={busy || !selected} onClick={() => {
+        <button className="button button-quiet" disabled={busy || !selected || selected.conceptApprovalStatus !== "approved"} onClick={() => void submit("save_draft")}>{busy ? "Enregistrement…" : "Enregistrer un brouillon"}</button>
+        <button className="button button-primary" disabled={busy || !selected || selected.conceptApprovalStatus !== "approved"} onClick={() => {
           if (window.confirm("Publier une nouvelle version de ce devis dans l’espace du client ?")) void submit("publish");
         }}>{busy ? "Traitement…" : "Publier au client"}</button>
         <button className="button button-quiet" disabled={busy} onClick={() => void load()}>Actualiser ↻</button>
