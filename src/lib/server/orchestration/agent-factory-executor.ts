@@ -124,7 +124,7 @@ export async function executeAgentFactoryWorkflow(input: {
       code,
     }] : [],
     completedResults: [],
-    blockedAgentIds: [],
+    blockedAgentIds: code ? workflow.assignments.map((assignment) => assignment.agentId) : [],
   });
 
   let startAuthorized = false;
