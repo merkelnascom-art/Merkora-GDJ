@@ -70,6 +70,19 @@ Deno.test("identifies specialist manifests so the legacy worker cannot silently 
 });
 
 
+const makeMission = (missionId: string, role: string) => ({
+  contractVersion: 1,
+  missionId,
+  projectId: "MK-PROJECT-001",
+  role,
+  objective: "Préparer le livrable spécialisé.",
+  instructions: ["Respecter le périmètre approuvé."],
+  contextReferences: ["project-plan-version:3"],
+  constraints: ["Aucune permission n'est accordée par ce paquet."],
+  expectedOutput: { summary: true, findings: true, artifacts: true, verification: true },
+  approvalRequiredFor: [],
+});
+
 const specialistManifest = {
   specialistWorkflow: {
     schemaVersion: 1,
@@ -88,7 +101,10 @@ const specialistManifest = {
     unsupported: [],
     plan: {
       missionPlan: { steps: [{ missionId: "mission-1" }, { missionId: "mission-2" }] },
-      assignments: [{ missionId: "mission-1" }, { missionId: "mission-2" }],
+      assignments: [
+        { missionId: "mission-1", agentId: "analyste-metier", runtimeRole: "analyst", mission: makeMission("mission-1", "analyst") },
+        { missionId: "mission-2", agentId: "developpeur-backend", runtimeRole: "implementer", mission: makeMission("mission-2", "implementer") },
+      ],
     },
   },
 };
@@ -126,7 +142,7 @@ Deno.test("rejects malformed stage sets and mission-assignment mismatches", () =
   if (read({ specialistWorkflow: { ...workflow, stages: workflow.stages.slice(1) } }, "MK-PROJECT-001", 3) !== null) {
     throw new Error("all five existing durable task stages must be present");
   }
-  if (read({ specialistWorkflow: { ...workflow, plan: { ...workflow.plan, assignments: [{ missionId: "mission-other" }] } } }, "MK-PROJECT-001", 3) !== null) {
+  if (read({ specialistWorkflow: { ...workflow, plan: { ...workflow.plan, assignments: [{ missionId: "mission-other", agentId: "analyste-metier", runtimeRole: "analyst", mission: makeMission("mission-other", "analyst") }] } } }, "MK-PROJECT-001", 3) !== null) {
     throw new Error("mission assignments must match the planned mission set");
   }
 });
