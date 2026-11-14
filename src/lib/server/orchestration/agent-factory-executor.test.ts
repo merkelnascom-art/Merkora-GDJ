@@ -222,6 +222,25 @@ describe("guarded MerKora factory workflow execution", () => {
   });
 
 
+  it("keeps reviewer independence when the reviewer is selected before the primary agent", async () => {
+    const calls: string[] = [];
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["auditeur-de-code", "analyste-metier"],
+      adapters: [adapter("openai", calls), adapter("anthropic", calls)],
+      connections: [connection("openai"), connection("anthropic")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget: async () => true,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("ready_for_human_review");
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.startsWith("openai:")).toBe(true);
+    expect(calls[1]?.startsWith("anthropic:")).toBe(true);
+  });
+
   it("does not require production-release approval when no deployment task is selected", async () => {
     const calls: string[] = [];
     const result = await executeAgentFactoryWorkflow({
