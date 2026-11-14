@@ -3,6 +3,7 @@ import { generateProjectSource } from "./project-generator";
 import { validateGeneratedProjectSource } from "./validate-generated-source";
 
 const generated = () => generateProjectSource({
+  projectId: "MK-TEST-VALIDATE-001",
   projectName: "Gestion de présence",
   projectDescription: "Suivre les arrivées.",
   modules: [{ id: "attendance", title: "Présences", description: "Pointage." }],
@@ -10,7 +11,7 @@ const generated = () => generateProjectSource({
 
 describe("validateGeneratedProjectSource", () => {
   it("accepts an intact generated source manifest", () => {
-    expect(validateGeneratedProjectSource(generated())).toEqual({ ok: true, fileCount: 8, totalBytes: expect.any(Number) });
+    expect(validateGeneratedProjectSource(generated())).toEqual({ ok: true, fileCount: 11, totalBytes: expect.any(Number) });
   });
 
   it("rejects a modified file whose digest no longer matches", () => {
