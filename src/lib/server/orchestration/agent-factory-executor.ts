@@ -140,13 +140,6 @@ export async function executeAgentFactoryWorkflow(input: {
 
   const runtime = createAgentRuntime(input.adapters);
   const adapterByProvider = new Map(input.adapters.map((adapter) => [adapter.providerId, adapter]));
-  const connectionByProvider = new Map<string, AgentRuntimeConnection[]>();
-  for (const connection of input.connections) {
-    const list = connectionByProvider.get(connection.providerId) ?? [];
-    list.push(connection);
-    connectionByProvider.set(connection.providerId, list);
-  }
-
   const primaryProviderIds = new Set<string>();
   const independentProviderByRole = new Map<"reviewer" | "cross_checker", string>();
   const independentProviderIds = new Set<string>();
