@@ -36,7 +36,7 @@ beforeEach(() => {
     ok: true, status: 200,
     data: [{ id: context.params, status: "queued", manifest: {} }],
   });
-  vi.mocked(dispatchMerkoraFactoryWorkflow).mockResolvedValue({ ok: true });
+  vi.mocked(dispatchMerkoraFactoryWorkflow).mockResolvedValue({ ok: true, runRequested: true });
 });
 afterEach(() => vi.clearAllMocks());
 
@@ -64,6 +64,6 @@ describe("POST factory job dispatch", () => {
 
     const response = await POST(makeRequest(), context);
     expect(response.status).toBe(202);
-    expect(dispatchMerkoraFactoryWorkflow).toHaveBeenCalledWith("MK-PROJECT-001", context.params.then ? expect.any(String) : expect.any(String));
+    expect(dispatchMerkoraFactoryWorkflow).toHaveBeenCalledWith("MK-PROJECT-001", "b2c3d4e5-f678-4123-8abc-1234567890ab");
   });
 });
