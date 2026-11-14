@@ -68,3 +68,63 @@ Deno.test("identifies specialist manifests so the legacy worker cannot silently 
     throw new Error("an ordinary legacy factory job must remain dispatchable");
   }
 });
+
+
+const specialistManifest = {
+  specialistWorkflow: {
+    schemaVersion: 1,
+    workflowId: "factory-specialist-01",
+    projectId: "MK-PROJECT-001",
+    status: "prepared",
+    executionEnabled: false,
+    sourceVersions: { briefVersion: 2, planVersion: 3 },
+    stages: [
+      { taskKey: "prepare_specification", missionIds: ["mission-1"], agentIds: ["analyste-metier"] },
+      { taskKey: "generate_application", missionIds: ["mission-2"], agentIds: ["developpeur-backend"] },
+      { taskKey: "run_quality_checks", missionIds: [], agentIds: [] },
+      { taskKey: "repair_and_retest", missionIds: [], agentIds: [] },
+      { taskKey: "human_delivery_review", missionIds: [], agentIds: [] },
+    ],
+    unsupported: [],
+    missionPlan: { steps: [{ missionId: "mission-1" }, { missionId: "mission-2" }] },
+    assignments: [{ missionId: "mission-1" }, { missionId: "mission-2" }],
+  },
+};
+
+Deno.test("validates the persisted specialist plan and returns bounded worker metadata", () => {
+  const read = (identity as unknown as Record<string, unknown>).readSpecialistWorkflowManifest;
+  if (typeof read !== "function") throw new Error("specialist manifest reader is not implemented");
+  const parse = read as (manifest: unknown, projectId: string, planVersion: number) => Record<string, unknown> | null;
+  const result = parse(specialistManifest, "MK-PROJECT-001", 3);
+  if (!result || result.workflowId !== "factory-specialist-01" ||
+      result.missionCount !== 2 || result.unsupportedCount !== 0 ||
+      result.status !== "prepared") {
+    throw new Error("the valid specialist workflow manifest should be accepted");
+  }
+});
+
+Deno.test("rejects specialist manifests with mismatched project, plan version or execution flag", () => {
+  const read = (identity as unknown as Record<string, unknown>).readSpecialistWorkflowManifest as
+    (manifest: unknown, projectId: string, planVersion: number) => unknown;
+  if (read({ specialistWorkflow: { ...specialistManifest.specialistWorkflow, projectId: "other-project" } }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("a manifest from another project must be rejected");
+  }
+  if (read(specialistManifest, "MK-PROJECT-001", 4) !== null) {
+    throw new Error("a manifest from an old plan version must be rejected");
+  }
+  if (read({ specialistWorkflow: { ...specialistManifest.specialistWorkflow, executionEnabled: true } }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("a planning manifest must never enable execution");
+  }
+});
+
+Deno.test("rejects malformed stage sets and mission-assignment mismatches", () => {
+  const read = (identity as unknown as Record<string, unknown>).readSpecialistWorkflowManifest as
+    (manifest: unknown, projectId: string, planVersion: number) => unknown;
+  const workflow = specialistManifest.specialistWorkflow;
+  if (read({ specialistWorkflow: { ...workflow, stages: workflow.stages.slice(1) } }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("all five existing durable task stages must be present");
+  }
+  if (read({ specialistWorkflow: { ...workflow, assignments: [{ missionId: "mission-other" }] } }, "MK-PROJECT-001", 3) !== null) {
+    throw new Error("mission assignments must match the planned mission set");
+  }
+});
