@@ -90,11 +90,6 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     const result = await response.json();
     expect(response.status).toBe(200);
     expect(result).toMatchObject({ created: true, jobId: "job-1", status: "queued", taskCount: 5, executionStarted: false });
-    expect(result.specialistWorkflow).toMatchObject({
-      status: "prepared",
-      executionEnabled: false,
-      unsupportedCount: 0,
-    });
     const calls = vi.mocked(callUserData).mock.calls;
     expect(calls[3][0]).toBe("rpc/create_factory_job_with_tasks");
     const rpcPayload = calls[3][3] as { p_job: Record<string, unknown>; p_tasks: Array<Record<string, unknown>> };
@@ -118,6 +113,12 @@ describe("POST /api/admin/projects/[projectId]/factory/jobs", () => {
     const calls = vi.mocked(callUserData).mock.calls;
     const rpcPayload = calls[3][3] as { p_job: { manifest: Record<string, unknown> }; p_tasks: Array<Record<string, unknown>> };
     expect(loadProjectFactoryContext).toHaveBeenCalledWith("MK-PROJECT-001", "token");
+    const result = await response.json();
+    expect(result.specialistWorkflow).toMatchObject({
+      status: "prepared",
+      executionEnabled: false,
+      unsupportedCount: 0,
+    });
     expect(rpcPayload.p_tasks).toHaveLength(5);
     expect(rpcPayload.p_job.manifest).toMatchObject({
       specialistWorkflow: {
