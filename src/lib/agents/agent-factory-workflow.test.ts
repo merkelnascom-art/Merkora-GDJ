@@ -21,6 +21,12 @@ describe("MerKora end-to-end multi-pole factory workflow", () => {
       "gestion_administration",
     ]);
     expect(workflow.missionPlan.steps).toHaveLength(35);
+    expect(workflow.phases.find((phase) => phase.id === "production-release")?.agentIds)
+      .toContain("gestionnaire-des-deploiements");
+    expect(workflow.phases.find((phase) => phase.id === "exploitation-preparation")?.agentIds)
+      .toContain("devops");
+    expect(workflow.phases.find((phase) => phase.id === "post-delivery-support")?.agentIds)
+      .toEqual(["support-apres-livraison"]);
     expect(new Set(workflow.missionPlan.steps.map((step) => step.agentId)).size).toBe(35);
     expect(workflow.phases.map((phase) => phase.id)).toEqual([
       "intelligence",
@@ -29,8 +35,10 @@ describe("MerKora end-to-end multi-pole factory workflow", () => {
       "fabrication",
       "controle",
       "governance-before-release",
-      "exploitation",
+      "exploitation-preparation",
+      "production-release",
       "relation-client",
+      "post-delivery-support",
     ]);
   });
 
