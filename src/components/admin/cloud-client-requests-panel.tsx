@@ -1,12 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ProjectMockupStudio } from "@/components/studio/project-mockup-studio";
+import type { Project } from "@/lib/project-types";
+import type { MockupConfig, MockupFormat, MockupPalette } from "@/lib/mockup-studio";
 
 type RequestItem = {
   id: string; user_id: string; user_email: string; project_id: string; project_title: string;
   payload: {
-    project?: { category?: string; problem?: string; desiredOutcome?: string; budget?: string; urgency?: string; recommendations?: Array<{title?:string;description?:string}> };
-    studio?: { format?: string; palette?: string; reviewStatus?: string; reviewNote?: string };
+    recordType?: string; version?: number; snapshotCreatedAt?: string; officialDecision?: { status?: string; actorUserId?: string; recordedAt?: string };
+    project?: { category?: string; problem?: string; desiredOutcome?: string; budget?: string; urgency?: string; recommendations?: Array<{title?:string;description?:string;reason?:string}> };
+    studio?: { format?: string; palette?: string; reviewStatus?: string; reviewNote?: string; enabledModules?: string[]; selectedRecommendationIds?: string[] };
     quote?: { amount?: string; days?: string; paymentTerms?: string };
     clientResponse?: { choice?: string; comment?: string };
   };
@@ -61,6 +65,8 @@ export function CloudClientRequestsPanel() {
   }
 
   const choiceLabel = (choice?: string) => choice === "accepted" ? "Le client indique accepter" : choice === "changes_requested" ? "Modifications demandées" : choice === "negotiate" ? "Souhaite négocier" : "Aucune décision enregistrée";
+  const mockupVersions = items.filter(item => item.payload?.recordType === "mockup_version");
+  const ordinaryItems = items.filter(item => item.payload?.recordType !== "mockup_version");
 
   return (
     <section style={{ maxWidth: 1100, margin: "24px auto 0", padding: 22, background: "#fff", border: "1px solid #e7e2f0", borderRadius: 20 }}>
@@ -71,8 +77,47 @@ export function CloudClientRequestsPanel() {
       {error && <p role="alert" style={{ color: "#b42318", padding: 12, background: "#fff2f0", borderRadius: 10 }}>{error}</p>}
       {message && <p role="status" style={{ color: "#176b45" }}>{message}</p>}
       {!error && items.length === 0 && <p style={{ padding: 18, color: "#716c80", background: "#f8f7fb", borderRadius: 12 }}>Aucune demande en ligne pour le moment.</p>}
+      {mockupVersions.length === 0 && <section style={{ marginTop: 24, padding: 18, border: "1px dashed #c9bfdc", borderRadius: 16, background: "#fbfaff" }}>
+        <div style={{ color: "#6e56a5", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }}>STUDIO & PROPOSITIONS</div>
+        <h3 style={{ margin: "8px 0" }}>Aucune maquette transmise pour le moment</h3>
+        <p style={{ color: "#716c80", fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>Les maquettes enregistrées uniquement dans le navigateur du client ne sont pas visibles ici. Pour alimenter cet historique, le client doit ouvrir son projet, terminer ses choix dans le Studio, puis utiliser « Valider ce concept » ou « Demander des modifications ». Chaque transmission apparaîtra ici avec son aperçu exact et sa version.</p>
+      </section>}
+      {mockupVersions.length > 0 && <section style={{ marginTop: 24, padding: 18, border: "1px solid #d8d0e8", borderRadius: 16, background: "#fbfaff" }}>
+        <div style={{ marginBottom: 16 }}><div style={{ color: "#6e56a5", fontSize: 11, fontWeight: 700, letterSpacing: 1.5 }}>CONTRÔLE AVANT LIVRAISON</div><h2 style={{ margin: "6px 0" }}>Historique des maquettes client</h2><p style={{ color: "#716c80", fontSize: 14, margin: 0 }}>Chaque envoi est conservé comme une version distincte. Ouvre les versions pour comparer exactement le format, les couleurs, les blocs et les pistes retenues.</p></div>
+        <div style={{ display: "grid", gap: 18 }}>
+          {mockupVersions.map(item => {
+            const p = item.payload.project || {};
+            const studio = item.payload.studio || {};
+            const previewProject = {
+              id: item.project_id, title: item.project_title, category: p.category,
+              problem: p.problem || "", desiredOutcome: p.desiredOutcome || "",
+              budget: p.budget || "", urgency: p.urgency || "normal",
+              recommendations: (Array.isArray(p.recommendations) ? p.recommendations : []) as Project["recommendations"],
+              createdAt: item.created_at, status: "draft" as Project["status"],
+            } as Project;
+            const config: MockupConfig = {
+              format: (studio.format || "website") as MockupFormat,
+              palette: (studio.palette || "violet") as MockupPalette,
+              enabledModules: Array.isArray(studio.enabledModules) ? studio.enabledModules : [],
+              ...(Array.isArray(studio.selectedRecommendationIds) ? { selectedRecommendationIds: studio.selectedRecommendationIds } : {}),
+            };
+            const reviewStatus = studio.reviewStatus === "approved" || studio.reviewStatus === "changes_requested" ? studio.reviewStatus : "draft";
+            return <article key={item.id} style={{ padding: 16, background: "#fff", border: "1px solid #e7e2f0", borderRadius: 14 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                <div><h3 style={{ margin: "0 0 4px" }}>{item.project_title} · Version {item.payload.version || "—"}</h3><p style={{ margin: 0, color: "#716c80", fontSize: 13 }}>{item.user_email} · {item.project_id} · {new Date(item.payload.snapshotCreatedAt || item.created_at).toLocaleString("fr-FR")}</p></div>
+                <strong style={{ color: reviewStatus === "approved" ? "#176b45" : reviewStatus === "changes_requested" ? "#a15c00" : "#6e56a5" }}>{reviewStatus === "approved" ? "Validée par le client" : reviewStatus === "changes_requested" ? "Modifications demandées" : "À examiner"}</strong>
+              </div>
+              {item.payload.officialDecision?.recordedAt && <p style={{ margin: "6px 0 10px", color: "#176b45", fontSize: 13 }}>Décision officiellement enregistrée par le serveur le {new Date(item.payload.officialDecision.recordedAt).toLocaleString("fr-FR")}. Cette trace est liée au compte client connecté.</p>}
+              {studio.reviewNote && <p style={{ padding: 12, background: "#f8f7fb", borderRadius: 10, whiteSpace: "pre-wrap" }}><strong>Commentaire du client :</strong> {studio.reviewNote}</p>}
+              <details><summary style={{ cursor: "pointer", fontWeight: 700, color: "#6e56a5" }}>Ouvrir la maquette exacte de cette version</summary>
+                <ProjectMockupStudio project={previewProject} readOnlySnapshot={{ config, reviewStatus, reviewNote: studio.reviewNote || "" }} />
+              </details>
+            </article>;
+          })}
+        </div>
+      </section>}
       <div style={{ display: "grid", gap: 14 }}>
-        {items.map(item => {
+        {ordinaryItems.map(item => {
           const payload = item.payload || {};
           const project = payload.project || {};
           const studio = payload.studio || {};
