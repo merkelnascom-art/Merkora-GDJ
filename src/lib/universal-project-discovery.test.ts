@@ -238,4 +238,31 @@ describe("selectNextDiscoveryQuestion", () => {
     }
   });
 
+
+  it("treats an 'en fait' clarification as an explicit replacement of an earlier access preference", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "En fait, seul moi peux consulter les montants.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+    expect(result.stage).not.toBe("resolve_contradiction");
+  });
+
+  it("recognizes an explicit 'je ne veux plus' reversal before evaluating access conflicts", () => {
+    const analysis = analyzeUniversalProjectIntent(
+      "Je ne veux plus que toute ma famille consulte les montants ; seul moi peux les voir.",
+    );
+    const result = selectNextDiscoveryQuestion(analysis, [
+      { role: "user", content: "Toute ma famille doit pouvoir consulter les contributions." },
+      { role: "assistant", content: "Qui doit pouvoir consulter les informations ?" },
+    ]);
+
+    expect(result.contradictions).toEqual([]);
+    expect(result.stage).not.toBe("resolve_contradiction");
+  });
+
 });
