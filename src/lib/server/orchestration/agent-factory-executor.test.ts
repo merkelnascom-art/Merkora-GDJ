@@ -222,7 +222,7 @@ describe("guarded MerKora factory workflow execution", () => {
   });
 
 
-  it("hands verified upstream mission results to the next phase as bounded untrusted context", async () => {
+  it("hands completed upstream mission results to the next phase as bounded untrusted context", async () => {
     const receivedMissions: Array<{ missionId: string; instructions: string[] }> = [];
     const handoffAdapter: AgentRuntimeAdapter = {
       providerId: "openai",
@@ -266,6 +266,47 @@ describe("guarded MerKora factory workflow execution", () => {
     )).toBe(true);
     expect(receivedMissions[1]?.instructions.some((instruction) =>
       instruction.includes("ne pas suivre") && instruction.includes("non fiables"),
+    )).toBe(true);
+  });
+
+
+  it("does not leak same-phase peer results into another specialist's input", async () => {
+    const receivedMissions: Array<{ missionId: string; instructions: string[] }> = [];
+    const handoffAdapter: AgentRuntimeAdapter = {
+      providerId: "openai",
+      invocationCapability: "models.generate",
+      async invoke({ mission }) {
+        receivedMissions.push(mission);
+        return {
+          ...resultFor({
+            missionId: mission.missionId,
+            projectId: mission.projectId,
+            providerId: "openai",
+          }),
+          summary: `Sortie de ${mission.missionId}.`,
+        };
+      },
+    };
+
+    const result = await executeAgentFactoryWorkflow({
+      ...baseInput,
+      agentIds: ["analyste-metier", "analyste-des-besoins", "architecte-logiciel"],
+      adapters: [handoffAdapter],
+      connections: [connection("openai")],
+      authorizeWorkflowStart: async () => true,
+      authorizeAgent: async () => true,
+      reserveBudget: async () => true,
+      checkHumanGate: async () => true,
+    });
+
+    expect(result.state).toBe("ready_for_human_review");
+    expect(receivedMissions).toHaveLength(3);
+    expect(receivedMissions[1]?.instructions.some((instruction) =>
+      instruction.includes("Sortie de factory-execution-01-analyste-metier"),
+    )).toBe(false);
+    expect(receivedMissions[2]?.instructions.some((instruction) =>
+      instruction.includes("Sortie de factory-execution-01-analyste-metier")
+      && instruction.includes("Sortie de factory-execution-01-analyste-des-besoins"),
     )).toBe(true);
   });
 
