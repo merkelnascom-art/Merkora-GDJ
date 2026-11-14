@@ -151,6 +151,12 @@ export default function HomePage() {
               <>Tu peux commencer sans créer de compte. Prends ton temps.</>
             )}
           </div>
+
+          {mode && (
+            <a className="mk-start-conversation" href="/conversation">
+              Commencer notre échange <span>→</span>
+            </a>
+          )}
         </div>
 
         <div className="mk-welcome-visual">
