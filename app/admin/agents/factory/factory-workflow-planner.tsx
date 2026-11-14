@@ -5,6 +5,19 @@ import { AGENT_POLES } from "@/lib/agents/agent-catalog";
 import type { AgentFactoryWorkflow } from "@/lib/agents/agent-factory-workflow";
 import styles from "./factory-workflow.module.css";
 
+type DurableJobResponse = {
+  created: true;
+  jobId: string;
+  status: "queued";
+  taskCount: number;
+  executionStarted: false;
+  specialistWorkflow?: {
+    status: "prepared" | "requires_specialized_task_runtime";
+    executionEnabled: false;
+    unsupportedCount: number;
+  };
+};
+
 type PreparedWorkflowResponse = {
   prepared: boolean;
   executionStarted: false;
@@ -21,6 +34,8 @@ export function FactoryWorkflowPlanner() {
   const [workflow, setWorkflow] = useState<PreparedWorkflowResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [durableJob, setDurableJob] = useState<DurableJobResponse | null>(null);
 
   const selectedCount = selectedAgentIds.length;
   const selectedSet = useMemo(() => new Set(selectedAgentIds), [selectedAgentIds]);
@@ -30,12 +45,14 @@ export function FactoryWorkflowPlanner() {
       ? current.filter((id) => id !== agentId)
       : [...current, agentId]);
     setWorkflow(null);
+    setDurableJob(null);
     setError("");
   }
 
   function selectAll() {
     setSelectedAgentIds(AGENT_POLES.flatMap((pole) => pole.agents.map((agent) => agent.id)));
     setWorkflow(null);
+    setDurableJob(null);
     setError("");
   }
 
@@ -48,6 +65,7 @@ export function FactoryWorkflowPlanner() {
   async function prepareWorkflow() {
     setError("");
     setWorkflow(null);
+    setDurableJob(null);
     if (projectId.trim().length < 3) {
       setError("Saisissez l'identifiant du projet.");
       return;
@@ -75,6 +93,38 @@ export function FactoryWorkflowPlanner() {
       setError(cause instanceof Error ? cause.message : "Une erreur inattendue est survenue.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function persistWorkflow() {
+    if (!workflow) return;
+    setError("");
+    setSaving(true);
+    try {
+      const response = await fetch(
+        `/api/admin/projects/${encodeURIComponent(projectId.trim())}/factory/jobs`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planVersion: workflow.sourceVersions.planVersion,
+            correlationId: crypto.randomUUID(),
+            workflow: {
+              workflowId: workflow.workflow.workflowId,
+              agentIds: workflow.workflow.assignments.map((assignment) => assignment.agentId),
+            },
+          }),
+        },
+      );
+      const payload = await response.json() as DurableJobResponse | { error?: string };
+      if (!response.ok || !("created" in payload) || payload.created !== true) {
+        throw new Error("error" in payload && payload.error ? payload.error : "Enregistrement du travail durable impossible.");
+      }
+      setDurableJob(payload);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Une erreur inattendue est survenue.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -222,6 +272,24 @@ export function FactoryWorkflowPlanner() {
               </div>
             ))}
           </div>
+
+          <div className={styles.durableHandoff}>
+            <div>
+              <h3>Enregistrer dans le travail durable</h3>
+              <p>Le manifeste des missions sera enregistré avec les cinq tâches existantes. Cela ne déclenche ni IA ni Sandbox.</p>
+            </div>
+            <button type="button" onClick={persistWorkflow} disabled={saving || Boolean(durableJob)}>
+              {saving ? "Enregistrement…" : durableJob ? "Travail enregistré" : "Enregistrer le workflow"}
+            </button>
+          </div>
+          {durableJob && (
+            <p className={styles.durableSuccess} role="status">
+              Travail {durableJob.jobId} enregistré dans la file durable · {durableJob.taskCount} tâches · aucun worker lancé.
+              {durableJob.specialistWorkflow?.status === "requires_specialized_task_runtime"
+                ? ` ${durableJob.specialistWorkflow.unsupportedCount} spécialiste(s) ou mission(s) restent à raccorder.`
+                : " Le manifeste est prêt pour la prochaine étape d'exécution contrôlée."}
+            </p>
+          )}
 
           <p className={styles.safetyNote}>
             Ce résultat est une préparation de missions. Les spécialistes sans runtime adapté restent bloqués. Aucun appel IA, budget, worker, modification de base, déploiement ou livraison n'a été déclenché.
