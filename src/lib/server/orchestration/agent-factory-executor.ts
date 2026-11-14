@@ -261,8 +261,14 @@ export async function executeAgentFactoryWorkflow(
     }
 
     if (role !== "reviewer" && role !== "cross_checker") {
-      const connection = candidates[0];
-      if (!connection) return { code: "NO_COMPATIBLE_PROVIDER" };
+      // Do not consume a provider already reserved for an independent review
+      // role that appeared earlier in the selected list.
+      const connection = candidates.find((candidate) => !independentProviderIds.has(candidate.providerId));
+      if (!connection) {
+        return { code: independentProviderIds.size > 0
+          ? "INDEPENDENT_PROVIDER_REQUIRED"
+          : "NO_COMPATIBLE_PROVIDER" };
+      }
       primaryProviderIds.add(connection.providerId);
       const modelAlias = input.modelAliases[connection.providerId]?.trim();
       if (!modelAlias) return { code: "MODEL_ALIAS_MISSING" };
@@ -346,6 +352,12 @@ export async function executeAgentFactoryWorkflow(
       blockedAgentIds: [...new Set(preflightFailures.map((item) => item.agentId))],
     };
   }
+
+  // Provider selection during preflight is a simulation. Rebuild the same
+  // deterministic reservations during actual phase execution.
+  primaryProviderIds.clear();
+  independentProviderByRole.clear();
+  independentProviderIds.clear();
 
   const phaseIndex = new Map(workflow.phases.map((phase, index) => [phase.id, index]));
   for (let index = 0; index < workflow.phases.length; index += 1) {
