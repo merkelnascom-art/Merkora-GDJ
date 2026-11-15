@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "@/lib/dossiers/local-dossiers";
+import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "../../src/lib/dossiers/local-dossiers";
 import {
   answerUnderstanding,
   beginUnderstanding,
