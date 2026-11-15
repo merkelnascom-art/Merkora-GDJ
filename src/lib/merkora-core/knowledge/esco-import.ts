@@ -124,7 +124,7 @@ export function importESCOBundle(
       }
 
       const externalMappings = (current.externalMappings ?? []).map((mapping) =>
-        mapping.system === "ESCO" && mapping.externalId === record.uri
+        mapping.system === "ESCO" && mapping.externalId === record.uri && mapping.datasetVersion !== bundle.datasetVersion
           ? { ...mapping, datasetVersion: bundle.datasetVersion, importedAt }
           : mapping,
       );
@@ -136,7 +136,7 @@ export function importESCOBundle(
         retrievedAt: importedAt,
       };
       const sources = current.sources.some((item) => item.id === source.id)
-        ? current.sources.map((item) => item.id === source.id ? source : item)
+        ? current.sources
         : [...current.sources, source];
       const classifications = domainId && !current.classifications.some((item) =>
         item.classificationType === "occupation-domain" && item.parentConceptId === domainId,

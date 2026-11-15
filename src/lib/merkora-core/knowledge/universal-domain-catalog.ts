@@ -136,4 +136,5 @@ export const UNIVERSAL_FAMILY_CONCEPTS = familyConcepts;
 export const UNIVERSAL_DOMAIN_CONCEPTS = domainConcepts;
 export const UNIVERSAL_DOMAIN_CATALOG = [...familyConcepts, ...domainConcepts];
 export const UNIVERSAL_DOMAIN_FAMILY_COUNT = familyConcepts.length;
+export const UNIVERSAL_FAMILY_COUNT = UNIVERSAL_DOMAIN_FAMILY_COUNT;
 export const UNIVERSAL_DOMAIN_COUNT = domainConcepts.length;
