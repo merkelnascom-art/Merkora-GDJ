@@ -230,7 +230,7 @@ const INTENT_QUESTION_CATALOG: Partial<Record<IntentKind, QuestionCandidate[]>> 
   ],
   create_project: [
     { id: "create-beneficiaries-v1", dimension: "actor", prompt: "Qui utilisera, fera vivre ou bénéficiera de ce projet ?", rationale: "Identifier les personnes et rôles.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.9 },
-    { id: "create-context-v1", dimension: "context", prompt: "Dans quel lieu, secteur ou environnement souhaites-tu développer ce projet ?", rationale: "Situer le projet sans l'enfermer.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
+    { id: "create-context-v1", dimension: "context", prompt: "Où et dans quel environnement souhaites-tu créer ce projet ?", rationale: "Situer le projet sans l'enfermer.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
     { id: "create-limits-v1", dimension: "constraint", prompt: "Quelles ressources, limites ou échéances faut-il prendre en compte ?", rationale: "Faire émerger les contraintes.", impact: 0.8, uncertainty: 0.75, decisionRelevance: 0.85, answerability: 0.85 },
   ],
   invention: [
@@ -533,14 +533,22 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
   }
 
   const visitorMessage = message(session.conversationId, "visitor", clean);
-  let evidence = addEvidence(
-    session.evidence,
-    session.pendingQuestion.dimension,
-    clean,
-    visitorMessage.id,
-    clean,
+  let evidence = extractExplicitEvidence(clean, visitorMessage.id, session.evidence);
+  const answerHasPendingDimension = evidence.some((item) =>
+    item.dimension === session.pendingQuestion?.dimension &&
+    item.sourceMessageId === visitorMessage.id,
   );
-  evidence = extractExplicitEvidence(clean, visitorMessage.id, evidence);
+  const isExplicitClarification = session.pendingQuestion.dimension === "business_rule" ||
+    session.pendingQuestion.dimension === "project_scope";
+  if (!answerHasPendingDimension && (evidence.length === session.evidence.length || isExplicitClarification)) {
+    evidence = addEvidence(
+      evidence,
+      session.pendingQuestion.dimension,
+      clean,
+      visitorMessage.id,
+      clean,
+    );
+  }
   const conflictTopic = session.pendingQuestion.id.startsWith("resolve-contradiction-")
     ? session.pendingQuestion.id.replace("resolve-contradiction-", "").replace("-v1", "")
     : null;
