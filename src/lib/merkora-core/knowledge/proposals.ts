@@ -100,16 +100,36 @@ export function approveKnowledgeProposal(
     const duplicate = existing.terms.some((term) =>
       term.language === review.language && normalizeKnowledgeTerm(term.value) === normalizeKnowledgeTerm(proposal.label),
     );
-    const next = duplicate ? registry : reviseKnowledgeConcept(
+    const approvedExternalMapping = proposal.externalReference
+      ? {
+          system: proposal.externalReference.system,
+          externalId: proposal.externalReference.uri,
+          uri: proposal.externalReference.uri,
+          datasetVersion: proposal.externalReference.datasetVersion,
+          language: proposal.externalReference.language,
+          matchType: "exact" as const,
+          importedAt: reviewedAt,
+        }
+      : undefined;
+    const externalMappings = [...(existing.externalMappings ?? [])];
+    if (approvedExternalMapping && !externalMappings.some((mapping) =>
+      mapping.system === approvedExternalMapping.system && mapping.externalId === approvedExternalMapping.externalId,
+    )) externalMappings.push(approvedExternalMapping);
+    const hasNewMapping = externalMappings.length !== (existing.externalMappings ?? []).length;
+    const next = duplicate && !hasNewMapping ? registry : reviseKnowledgeConcept(
       registry,
       existing.id,
       existing.lifecycle.version,
       {
-        terms: [...existing.terms, { value: proposal.label, language: review.language, kind: "local" }],
+        terms: duplicate ? existing.terms : [...existing.terms, { value: proposal.label, language: review.language, kind: "local" }],
+        externalMappings,
         sources: [...existing.sources, {
           id: `source:review:${proposal.id}`,
           sourceType: "human_review",
-          label: "Terme local validé par une revue humaine",
+          label: approvedExternalMapping
+            ? "Rapprochement ESCO validé par une revue humaine"
+            : "Terme local validé par une revue humaine",
+          ...(approvedExternalMapping ? { reference: approvedExternalMapping.uri } : {}),
         }],
       },
       reviewedAt,
@@ -135,6 +155,17 @@ export function approveKnowledgeProposal(
     classifications: [],
     attributes: [],
     relationships: [],
+    ...(proposal.externalReference ? {
+      externalMappings: [{
+        system: proposal.externalReference.system,
+        externalId: proposal.externalReference.uri,
+        uri: proposal.externalReference.uri,
+        datasetVersion: proposal.externalReference.datasetVersion,
+        language: proposal.externalReference.language,
+        matchType: "exact" as const,
+        importedAt: reviewedAt,
+      }],
+    } : {}),
     scope: { ...review.scope },
     lifecycle: { status: "validated", version: 1, createdAt: reviewedAt, updatedAt: reviewedAt },
     sources: [{
