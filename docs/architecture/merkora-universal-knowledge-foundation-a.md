@@ -81,8 +81,10 @@ La première recherche est déterministe :
 1. terme exact ;
 2. terme normalisé ;
 3. synonyme ;
-4. compatibilité de type demandée par l'appelant ;
-5. détection d'ambiguïté.
+4. filtrage optionnel par langue et région du terme ;
+5. respect de toutes les dimensions déclarées dans la portée d'un concept ;
+6. compatibilité de type demandée par l'appelant ;
+7. détection d'ambiguïté.
 
 Le résultat doit distinguer correspondance exacte, normalisée, synonyme, correspondance par type, ambiguïté et absence de correspondance. Plusieurs meilleurs candidats ne doivent jamais être départagés arbitrairement.
 
@@ -111,7 +113,7 @@ Chaque entité du graphe existant peut recevoir :
 - la méthode de correspondance et son score ;
 - le statut de correspondance.
 
-Le lien ne change ni l'identité de l'entité, ni ses preuves, ni les relations déjà établies. Une entité inconnue reste intacte et visible.
+Le lien ne change ni l'identité de l'entité, ni ses preuves, ni les relations déjà établies. Le rapprochement canonique est limité au type de l'entité afin d'éviter les homonymes inter-types. Une entité inconnue reste intacte et visible.
 
 Les sessions existantes dépourvues de métadonnées knowledge doivent rester compatibles et pouvoir être enrichies à la reconstruction. Les dossiers historiques sont normalisés avec une liste de propositions vide si ce champ n'existait pas. Les liens restent des métadonnées et ne changent ni les citations, ni les statuts de preuve, ni les relations de situation.
 
@@ -119,7 +121,7 @@ L'écran 03 expose les repères du référentiel sans les présenter comme des f
 
 ## 8. Architecture de stockage
 
-La première intégration utilise un registre TypeScript pur, en mémoire, avec snapshots défensifs et contrats compatibles avec une future persistance relationnelle. Les révisions d'un concept créent une nouvelle version et archivent le snapshot précédent ; une version attendue obligatoire évite les modifications obsolètes. Les relations déclarées sur les concepts sont indexées dans le registre et leurs extrémités sont validées. Les classifications avec parent doivent référencer un concept existant. PostgreSQL pourra ensuite stocker séparément concepts, définitions, termes, classifications, relations, attributs, sources, preuves, versions, propositions, revues, conflits et portées.
+La première intégration utilise un registre TypeScript pur, en mémoire, avec snapshots défensifs et contrats compatibles avec une future persistance relationnelle. Les révisions d'un concept créent une nouvelle version et archivent le snapshot précédent ; une version attendue obligatoire évite les modifications obsolètes. Les relations déclarées sur les concepts sont indexées dans le registre et leurs extrémités sont validées. Les relations enregistrées directement au niveau du registre restent distinctes et sont préservées lors d'une révision de concept. Les classifications avec parent doivent référencer un concept existant. PostgreSQL pourra ensuite stocker séparément concepts, définitions, termes, classifications, relations, attributs, sources, preuves, versions, propositions, revues, conflits et portées.
 
 Aucune migration, écriture ou modification Supabase n'est incluse dans cette livraison. Il ne faut pas utiliser un document JSON géant comme unique stockage du graphe.
 
@@ -169,7 +171,7 @@ La compréhension linguistique générale, la résolution robuste des pronoms, l
 
 ## 13. Résultat de vérification final
 
-GitHub Actions — Quality checks, run #1337, sur le commit `ce74eebd759a34d4abcd3f9ad764a077b50a42a8` :
+GitHub Actions — Quality checks, run #1339, sur le commit `2416500b4ffc023393309869577b735021503848` :
 
 - TypeScript : réussi.
 - Vitest : 19 fichiers de tests, 127 tests réussis.
