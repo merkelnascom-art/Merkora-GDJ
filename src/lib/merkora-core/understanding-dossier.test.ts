@@ -55,6 +55,25 @@ describe("universal understanding dossier", () => {
     expect(dimensions).toEqual(expect.arrayContaining(["audience", "emotion", "experience", "activity", "feature", "goal"]));
   });
 
+  it("recognizes a reservation and consultation workflow without requiring an industry-specific questionnaire", () => {
+    const dossier = buildUnderstandingDossier([
+      visitor("booking-1", "Je veux un service de réservation pour les consultations. Les patients choisissent un créneau, reçoivent une confirmation et peuvent annuler leur rendez-vous."),
+    ]);
+
+    const dimensions = dossier.facets.map((item) => item.dimension);
+    expect(dimensions).toEqual(expect.arrayContaining(["preference", "activity", "audience", "feature"]));
+    expect(dossier.facets.some((item) => item.content.includes("créneau"))).toBe(true);
+  });
+
+  it("recognizes a quiz and dance activity as a hybrid project rather than forcing a fixed category", () => {
+    const dossier = buildUnderstandingDossier([
+      visitor("dance-quiz-1", "Je veux une plateforme de quiz pour les danseurs. Ils peuvent créer des défis, répondre aux questions et comparer leurs résultats."),
+    ]);
+
+    const dimensions = dossier.facets.map((item) => item.dimension);
+    expect(dimensions).toEqual(expect.arrayContaining(["preference", "activity", "audience", "feature"]));
+  });
+
   it("does not mistake a simple event intention for a described software feature", () => {
     const dossier = buildUnderstandingDossier([
       visitor("event-1", "Je veux organiser une pool party pour mon anniversaire."),
