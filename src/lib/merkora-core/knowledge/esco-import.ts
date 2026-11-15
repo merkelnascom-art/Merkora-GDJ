@@ -36,6 +36,7 @@ export interface ESCOImportBundle {
 export interface ESCOImportResult {
   registry: KnowledgeRegistry;
   importedConceptIds: string[];
+  updatedConceptIds: string[];
   importedRelationshipIds: string[];
   skippedExistingUris: string[];
 }
@@ -69,6 +70,7 @@ export function importESCOBundle(
   const byUri = new Map(bundle.concepts.map((record) => [record.uri, record]));
   let registry = initialRegistry;
   const importedConceptIds: string[] = [];
+  const updatedConceptIds: string[] = [];
   const importedRelationshipIds: string[] = [];
   const skippedExistingUris: string[] = [];
   const existingUris = new Set(
@@ -79,11 +81,85 @@ export function importESCOBundle(
 
   for (const record of bundle.concepts) {
     if (!record.uri.trim() || Object.keys(record.preferredLabels).length === 0) continue;
+    const id = stableId(record.type, record.uri);
     if (existingUris.has(record.uri)) {
-      skippedExistingUris.push(record.uri);
+      const current = registry.concepts.find((concept) =>
+        concept.id === id && concept.externalMappings?.some((mapping) =>
+          mapping.system === "ESCO" && mapping.externalId === record.uri,
+        ),
+      );
+      if (!current) {
+        skippedExistingUris.push(record.uri);
+        continue;
+      }
+
+      const labels = Object.entries(record.preferredLabels).filter(([, value]) => value.trim());
+      const definitions = [...current.definitions];
+      const terms = [...current.terms];
+      for (const [language, value] of labels) {
+        const index = definitions.findIndex((item) => item.language === language);
+        const definition = {
+          language,
+          label: value,
+          definition: record.descriptions?.[language] ?? value,
+        };
+        if (index >= 0) definitions[index] = definition;
+        else definitions.push(definition);
+
+        const preferredIndex = terms.findIndex((term) => term.language === language && term.kind === "preferred");
+        const preferred = { value, language, kind: "preferred" as const };
+        if (preferredIndex >= 0) terms[preferredIndex] = preferred;
+        else terms.push(preferred);
+      }
+      for (const [language, values] of Object.entries(record.alternativeLabels ?? {})) {
+        for (const value of values.filter((item) => item.trim())) {
+          if (!terms.some((term) => term.language === language && term.value === value)) {
+            terms.push({ value, language, kind: "synonym" });
+          }
+        }
+      }
+
+      const externalMappings = (current.externalMappings ?? []).map((mapping) =>
+        mapping.system === "ESCO" && mapping.externalId === record.uri
+          ? { ...mapping, datasetVersion: bundle.datasetVersion, importedAt }
+          : mapping,
+      );
+      const source = {
+        id: `source:esco:${bundle.datasetVersion}`,
+        sourceType: "external_classification",
+        reference: record.uri,
+        label: `ESCO dataset ${bundle.datasetVersion}`,
+        retrievedAt: importedAt,
+      };
+      const sources = current.sources.some((item) => item.id === source.id)
+        ? current.sources.map((item) => item.id === source.id ? source : item)
+        : [...current.sources, source];
+      const domainId = bundle.domainMappings?.[record.uri];
+      const classifications = domainId && !current.classifications.some((item) =>
+        item.classificationType === "occupation-domain" && item.parentConceptId === domainId,
+      )
+        ? [...current.classifications, { classificationType: "occupation-domain", parentConceptId: domainId, domainId }]
+        : current.classifications;
+
+      const changed = JSON.stringify({ definitions, terms, externalMappings, sources, classifications }) !==
+        JSON.stringify({
+          definitions: current.definitions,
+          terms: current.terms,
+          externalMappings: current.externalMappings ?? [],
+          sources: current.sources,
+          classifications: current.classifications,
+        });
+      if (changed) {
+        registry = reviseKnowledgeConcept(registry, id, current.lifecycle.version, {
+          definitions, terms, externalMappings, sources, classifications,
+          reliability: { ...current.reliability, lastVerifiedAt: importedAt },
+        }, importedAt);
+        updatedConceptIds.push(id);
+      } else {
+        skippedExistingUris.push(record.uri);
+      }
       continue;
     }
-    const id = stableId(record.type, record.uri);
     const labels = Object.entries(record.preferredLabels).filter(([, value]) => value.trim());
     const terms = labels.map(([language, value]) => ({ value, language, kind: "preferred" as const }));
     for (const [language, values] of Object.entries(record.alternativeLabels ?? {})) {
@@ -181,5 +257,5 @@ export function importESCOBundle(
     importedRelationshipIds.push(id);
   }
 
-  return { registry, importedConceptIds, importedRelationshipIds, skippedExistingUris };
+  return { registry, importedConceptIds, updatedConceptIds, importedRelationshipIds, skippedExistingUris };
 }
