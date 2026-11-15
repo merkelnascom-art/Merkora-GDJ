@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { browserDossierStorage, getLatestLocalDossier, saveLocalDossier } from "@/lib/dossiers/local-dossiers";
+import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "@/lib/dossiers/local-dossiers";
 import {
   answerUnderstanding,
   beginUnderstanding,
@@ -80,6 +80,7 @@ export function ConversationPendingTurn({ message, activity }: { message: string
 }
 
 function readStoredSession(): UnderstandingSession | null {
+  if (window.sessionStorage.getItem("merkora-v2-new-journey") === "true") return null;
   let parsed: Partial<UnderstandingSession> | undefined;
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
@@ -253,6 +254,7 @@ export default function ConversationPage() {
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
       window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
+      window.sessionStorage.setItem("merkora-v2-new-journey", "true");
     } catch {
       // Le redémarrage visuel reste possible sans stockage.
     }
