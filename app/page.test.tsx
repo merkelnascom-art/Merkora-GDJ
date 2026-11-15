@@ -2,7 +2,7 @@ import React from "react";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import HomePage from "./page";
-import ConversationPage, { ConversationProcessingIndicator } from "./conversation/page";
+import ConversationPage, { ConversationPendingTurn, ConversationProcessingIndicator } from "./conversation/page";
 
 describe("MerKora GDJ V2 welcome screen", () => {
   it("introduces MerKora with the approved natural greeting", () => {
@@ -42,6 +42,11 @@ describe("MerKora GDJ V2 conversation screen", () => {
   it("does not render the thinking indicator when processing is finished", () => {
     const html = renderToStaticMarkup(<ConversationProcessingIndicator visible={false} activity="idle" />);
     expect(html).toBe("");
+  });
+  it("places the thinking animation directly after the visitor message in the dialogue", () => {
+    const html = renderToStaticMarkup(<ConversationPendingTurn message="Je veux organiser mon activité." activity="analyzing" />);
+    expect(html.indexOf("Je veux organiser mon activité.")).toBeLessThan(html.indexOf("mk-thinking-indicator"));
+    expect(html).toContain("MerKora réfléchit à ta réponse");
   });
   it("offers optional examples without forcing a project category", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
