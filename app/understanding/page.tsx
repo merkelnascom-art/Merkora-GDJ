@@ -143,6 +143,7 @@ export default function UnderstandingPage() {
 
   function changeKnowledgeLanguage(language: string) {
     setEscoLanguage(language);
+    setEscoSuggestions({});
     if (!dossier) return;
     persist({
       ...dossier,
@@ -257,7 +258,7 @@ export default function UnderstandingPage() {
                   {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
                 </select>
                 <label htmlFor="esco-type">Catalogue à consulter</label>
-                <select id="esco-type" value={escoSearchType} onChange={(event) => setEscoSearchType(event.target.value as "occupation" | "skill")}>
+                <select id="esco-type" value={escoSearchType} onChange={(event) => { setEscoSearchType(event.target.value as "occupation" | "skill"); setEscoSuggestions({}); }}>
                   <option value="occupation">Métiers et professions</option>
                   <option value="skill">Compétences et spécialisations</option>
                 </select>
