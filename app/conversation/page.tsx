@@ -125,6 +125,11 @@ export default function ConversationPage() {
     storeSession(decideUnderstandingSummary(session, "deferred"));
   }
 
+  function resumeSummary() {
+    if (!session || session.stage !== "complete") return;
+    storeSession({ ...session, stage: "summary_validation", version: session.version + 1 });
+  }
+
   function restartJourney() {
     setSession(null);
     setMessage("");
@@ -282,8 +287,12 @@ export default function ConversationPage() {
                   <strong>{session.validations.at(-1)?.decision === "confirmed" ? "Compréhension validée" : "Compréhension conservée, sans validation"}</strong>
                   <p>{session.validations.at(-1)?.decision === "confirmed"
                     ? "Tu as confirmé la synthèse. Les éléments recueillis portent maintenant le statut « validé par toi »."
-                    : "Tu pourras reprendre la vérification plus tard. MerKora ne considère aucun élément comme validé."}</p>
-                  <button type="button" className="mk-secondary-button" onClick={restartJourney}>Commencer une nouvelle compréhension</button>
+                    : "La synthèse reste conservée et non validée. Tu peux reprendre sa vérification ou recommencer."}</p>
+                  <p className="mk-summary-text">{session.summary}</p>
+                  {session.validations.at(-1)?.decision !== "confirmed" && (
+                    <button type="button" className="mk-secondary-button" onClick={resumeSummary}>Reprendre la vérification</button>
+                  )}
+                  <button type="button" className="mk-tertiary-button" onClick={restartJourney}>Commencer une nouvelle compréhension</button>
                 </section>
               )}
 
