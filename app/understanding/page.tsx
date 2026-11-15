@@ -247,7 +247,7 @@ export default function UnderstandingPage() {
               <div className="mk-understanding-section-heading">
                 <div>
                   <h2>Repères du référentiel universel</h2>
-                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les professions peuvent être recherchées dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
+                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les métiers et compétences peuvent être recherchés dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
                 </div>
                 <span>{dossier.situationGraph.entities.length}</span>
               </div>
