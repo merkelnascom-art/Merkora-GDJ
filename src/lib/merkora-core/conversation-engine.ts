@@ -301,8 +301,16 @@ const QUESTION_CATALOG: QuestionCandidate[] = [
   },
 ];
 
+function remainingDossierQuestions(session: UnderstandingSession): Array<{ dimension: NeedDimension; prompt: string }> {
+  return session.dossier.openQuestions.flatMap((prompt, index) => {
+    const dimension = session.dossier.missingDimensions[index];
+    return dimension && !session.deferredDimensions.includes(dimension) ? [{ dimension, prompt }] : [];
+  });
+}
+
 function buildSummary(session: UnderstandingSession): string {
   const dossier = session.dossier ?? buildUnderstandingDossier(session.messages);
+  const remainingQuestions = remainingDossierQuestions(session);
   const sections = dossier.facets.map((item) => "• " + item.title + " : " + item.content);
   const deferredQuestions = session.deferredDimensions.map((dimension) => {
     const candidate = QUESTION_CATALOG.find((item) => item.dimension === dimension);
@@ -319,8 +327,8 @@ function buildSummary(session: UnderstandingSession): string {
     "Éléments recueillis :",
     ...(sections.length ? sections : ["• Je conserve ton récit original sans lui attribuer de faits supplémentaires."]),
     "",
-    dossier.openQuestions.length ? "Points qui restent à éclaircir :" : "Aucune question essentielle ne ressort encore de ce premier récit.",
-    ...(dossier.openQuestions.length ? dossier.openQuestions.map((question) => "• " + question) : []),
+    remainingQuestions.length ? "Points qui restent à éclaircir :" : "Aucune question essentielle ne ressort encore de ce premier récit.",
+    ...(remainingQuestions.length ? remainingQuestions.map((item) => "• " + item.prompt) : []),
     ...(deferredQuestions.length ? ["", "Points laissés en attente :", ...deferredQuestions] : []),
     ...(deferredConflicts.length ? ["", "Indications de cohérence à revoir :", ...deferredConflicts] : []),
     "",
@@ -631,9 +639,10 @@ export function decideUnderstandingSummary(
     const confirmedSummary = session.summary
       .replace("compréhension provisoire", "compréhension validée")
       .replace("Cette synthèse n'est pas encore une décision ni une solution. Tu peux la confirmer ou me corriger.", "Cette synthèse a été confirmée par toi. Elle constitue le point de départ validé de la suite du parcours.");
-    const nextPrompt = session.dossier.openQuestions[0];
+    const nextDossierQuestion = remainingDossierQuestions(session)[0];
+    const nextPrompt = nextDossierQuestion?.prompt;
     if (nextPrompt) {
-      const dimension = session.dossier.missingDimensions[0] ?? "unknown";
+      const dimension = nextDossierQuestion.dimension;
       const question: QuestionCandidate = {
         id: "dossier-follow-up-" + dimension + "-v1",
         dimension,
