@@ -444,7 +444,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
 
   if (dossier.missingDimensions.includes("risk") &&
       !updatedSession.deferredDimensions.includes("risk") &&
-      !updatedSession.askedQuestionIds.includes("clarify-privacy-and-consent-v1")) {
+      !updatedSession.askedQuestionIds.some((id) => id.includes("risk"))) {
     return {
       ...updatedSession,
       pendingQuestion: PRIVACY_QUESTION,
@@ -527,6 +527,7 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
       pendingQuestion: question,
       askedQuestionIds: [...session.askedQuestionIds, question.id],
       stage: "clarification",
+      dossier: buildUnderstandingDossier([...session.messages, visitorMessage]),
       version: session.version + 1,
     };
   }
