@@ -85,7 +85,7 @@ export default function UnderstandingPage() {
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
           const normalized: ProjectUnderstanding = {
             ...parsed,
-            situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph),
+            situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
             knowledgeProposals: Array.isArray(parsed.knowledgeProposals) ? parsed.knowledgeProposals : [],
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
@@ -97,7 +97,11 @@ export default function UnderstandingPage() {
         }
       }
     } catch { /* Reconstruire à partir de la session source. */ }
-    const initial = createProjectUnderstanding(session);
+    const created = createProjectUnderstanding(session);
+    const initial: ProjectUnderstanding = {
+      ...created,
+      situationGraph: enrichSituationGraphWithKnowledge(created.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
+    };
     setDossier(initial);
     restoreEditDraft(initial, setEditingId, setEditValue);
     try { window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(initial)); } catch { /* Mémoire de page seulement. */ }
@@ -134,6 +138,15 @@ export default function UnderstandingPage() {
     if (!dossier) return;
     persist(rejectUnderstandingItem(dossier, itemId));
     setNotice("Interprétation écartée. Elle reste conservée dans l'historique.");
+  }
+
+  function changeKnowledgeLanguage(language: string) {
+    setEscoLanguage(language);
+    if (!dossier) return;
+    persist({
+      ...dossier,
+      situationGraph: enrichSituationGraphWithKnowledge(dossier.situationGraph, SCREEN_03_KNOWLEDGE, language),
+    });
   }
 
   async function searchESCO(entity: SituationEntity) {
@@ -239,7 +252,7 @@ export default function UnderstandingPage() {
               </div>
               <div className="mk-item-meta">
                 <label htmlFor="esco-language">Langue de recherche des professions</label>
-                <select id="esco-language" value={escoLanguage} onChange={(event) => setEscoLanguage(event.target.value)}>
+                <select id="esco-language" value={escoLanguage} onChange={(event) => changeKnowledgeLanguage(event.target.value)}>
                   {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
                 </select>
               </div>
