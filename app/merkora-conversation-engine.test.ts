@@ -46,12 +46,11 @@ describe("MerKora screen 2 guided understanding journey", () => {
       afterProcess,
       "Parce que les horaires changent et personne ne prévient.",
     );
-    expect(afterCause.stage).toBe("summary_validation");
-    expect(afterCause.pendingQuestion).toBeNull();
-    expect(afterCause.summary).toContain("centre de formation");
-    expect(afterCause.summary).toContain("Les enseignants arrivent souvent en retard.");
+    expect(afterCause.stage).toBe("clarification");
+    expect(afterCause.pendingQuestion?.dimension).toBe("preference");
 
-    const confirmed = decideUnderstandingSummary(afterCause, "confirmed");
+    const solution = answerUnderstanding(afterCause, "Je souhaite une application qui suit les présences des enseignants.");
+    const confirmed = decideUnderstandingSummary(solution, "confirmed");
     expect(confirmed.stage).toBe("clarification");
     expect(confirmed.pendingQuestion?.dimension).toBe("preference");
     expect(confirmed.evidence.every((item) => item.status === "validated")).toBe(true);
@@ -73,9 +72,9 @@ describe("MerKora screen 2 guided understanding journey", () => {
     );
     const skipped = deferUnderstandingQuestion(first);
 
-    expect(skipped.stage).toBe("summary_validation");
-    expect(skipped.summary).toContain("Points laissés en attente");
-    expect(skipped.summary).toContain("Quel besoin concret veux-tu satisfaire");
+    expect(skipped.stage).toBe("clarification");
+    expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
+    expect(skipped.askedQuestionIds).toContain(first.pendingQuestion?.id);
   });
 
   it("records an imagined solution separately and still asks what need it should solve", () => {
@@ -150,7 +149,7 @@ describe("MerKora screen 2 guided understanding journey", () => {
 
   it("records an explicit summary decision and keeps a correction traceable", () => {
     const session = beginUnderstanding(
-      "Je veux améliorer le centre de formation. Les enseignants arrivent en retard. Aujourd'hui, je note les présences dans un cahier. Parce que les horaires changent.",
+      "Je veux améliorer le centre de formation avec une application qui enregistre les présences des enseignants. Les enseignants arrivent en retard. Aujourd'hui, je note les présences dans un cahier. Parce que les horaires changent.",
     );
     const corrected = decideUnderstandingSummary(
       session,
