@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "../../src/lib/dossiers/local-dossiers";
 import {
   answerUnderstanding,
   beginUnderstanding,
   decideUnderstandingSummary,
   deferUnderstandingQuestion,
+  rebuildSituationGraph,
   type UnderstandingSession,
-} from "../../src/lib/merkora-core/conversation-engine";
+} from "../../src/lib/merkora-core/situation-intake-engine";
 
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
@@ -48,21 +50,72 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
   );
 }
 
+export function ConversationProcessingIndicator({ visible, activity }: { visible: boolean; activity: OrbActivity }) {
+  if (!visible) return null;
+
+  const label = activity === "receiving"
+    ? "Je reçois ton message…"
+    : activity === "responding"
+      ? "Je prépare la prochaine étape…"
+      : "MerKora réfléchit à ta réponse…";
+
+  return (
+    <div className="mk-thinking-indicator" role="status" aria-live="polite" aria-busy="true" data-testid="mk-thinking-indicator">
+      <span className="mk-thinking-orbit" aria-hidden="true"><i /><i /><i /></span>
+      <span className="mk-thinking-label">{label}</span>
+      <span className="mk-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+    </div>
+  );
+}
+export function ConversationPendingTurn({ message, activity }: { message: string; activity: OrbActivity }) {
+  return (
+    <>
+      <article className="mk-dialogue-message mk-dialogue-visitor">
+        <span>TOI</span>
+        <p>{message}</p>
+      </article>
+      <ConversationProcessingIndicator visible activity={activity} />
+    </>
+  );
+}
+
 function readStoredSession(): UnderstandingSession | null {
+  let forceNew = false;
+  let raw: string | null = null;
   try {
-    const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
-    if (
-      typeof parsed.originalDescription === "string" &&
-      Array.isArray(parsed.messages) &&
-      Array.isArray(parsed.evidence) &&
-      typeof parsed.stage === "string"
-    ) {
-      return parsed as UnderstandingSession;
-    }
+    forceNew = window.sessionStorage.getItem("merkora-v2-new-journey") === "true";
+    raw = window.sessionStorage.getItem(SESSION_KEY);
   } catch {
-    // Une session illisible ne doit jamais bloquer l'écran.
+    // Le stockage de session peut être désactivé par le navigateur.
+  }
+  if (forceNew) return null;
+
+  let parsed: Partial<UnderstandingSession> | undefined;
+  try {
+    if (raw) parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
+  } catch {
+    // Une ancienne session illisible ne bloque pas la récupération locale.
+  }
+  if (!parsed) {
+    try {
+      const storage = browserDossierStorage();
+      const local = storage ? getLatestLocalDossier<UnderstandingSession>(storage) : null;
+      parsed = local?.payload as Partial<UnderstandingSession> | undefined;
+    } catch {
+      // Le dossier local peut être indisponible sur un navigateur en mode privé.
+    }
+  }
+  if (
+    parsed &&
+    typeof parsed.originalDescription === "string" &&
+    Array.isArray(parsed.messages) &&
+    Array.isArray(parsed.evidence) &&
+    typeof parsed.stage === "string"
+  ) {
+    return {
+      ...parsed,
+      situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
+    } as UnderstandingSession;
   }
   return null;
 }
@@ -74,6 +127,7 @@ export default function ConversationPage() {
   const [showCorrection, setShowCorrection] = useState(false);
   const [orbActivity, setOrbActivity] = useState<OrbActivity>("idle");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
 
   useEffect(() => {
     const restored = readStoredSession();
@@ -94,7 +148,24 @@ export default function ConversationPage() {
 
   function storeSession(next: UnderstandingSession) {
     setSession(next);
+    const localStorage = browserDossierStorage();
+    if (localStorage) {
+      try {
+        const existing = readLocalDossiers<UnderstandingSession>(localStorage).find(item => item.id === next.id);
+        saveLocalDossier(localStorage, {
+          id: next.id,
+          title: next.originalDescription.slice(0, 120) || "Nouveau projet",
+          payload: next,
+          version: next.version,
+          syncedVersion: existing?.syncedVersion,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch {
+        // La session courante reste disponible même si le stockage local est plein.
+      }
+    }
     try {
+      window.sessionStorage.removeItem("merkora-v2-new-journey");
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
@@ -103,7 +174,6 @@ export default function ConversationPage() {
       // La conversation reste utilisable même sans stockage de session.
     }
   }
-
   function updateMessageDraft(value: string) {
     setMessage(value);
     try {
@@ -134,14 +204,16 @@ export default function ConversationPage() {
         window.setTimeout(() => {
           setOrbActivity("idle");
           setIsProcessing(false);
+          setPendingMessage("");
         }, 760);
-      }, 260);
-    }, 220);
+      }, 950);
+    }, 300);
   }
 
   function startJourney() {
     if (!message.trim() || isProcessing) return;
     const firstMessage = message.trim();
+    setPendingMessage(firstMessage);
     processIncomingMessage(() => {
       storeSession(beginUnderstanding(firstMessage));
       setMessage("");
@@ -154,6 +226,7 @@ export default function ConversationPage() {
     if (!session || !message.trim() || isProcessing) return;
     const answer = message;
     const currentSession = session;
+    setPendingMessage(answer.trim());
     processIncomingMessage(() => {
       storeSession(answerUnderstanding(currentSession, answer));
       setMessage("");
@@ -197,6 +270,7 @@ export default function ConversationPage() {
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
       window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
+      window.sessionStorage.setItem("merkora-v2-new-journey", "true");
     } catch {
       // Le redémarrage visuel reste possible sans stockage.
     }
@@ -253,7 +327,7 @@ export default function ConversationPage() {
                 session ? <>Continuons à éclaircir.<br /><em>Je te suis.</em></> :
                   <>Alors, raconte-moi.<br /><em>Je suis là pour comprendre.</em></>}
           </h1>
-          {!session && (
+          {!session && !isProcessing && (
             <>
               <p className="mk-conversation-intro">
                 Qu'aimerais-tu créer, améliorer, organiser ou résoudre ? Tu peux commencer par ce qui te préoccupe, même si ton idée n'est pas encore très claire.
@@ -292,13 +366,53 @@ export default function ConversationPage() {
 
           {session && (
             <>
+              <section aria-label="Dossier de compréhension en construction" style={{margin:"1.25rem 0",padding:"1rem",border:"1px solid rgba(196,164,104,.35)",borderRadius:"18px",background:"rgba(12,17,38,.72)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"1rem",marginBottom:".8rem"}}>
+                  <div><span className="mk-summary-kicker">DÉCRYPTAGE EN DIRECT</span><h2 style={{margin:".25rem 0",fontSize:"1.15rem"}}>Ce que j'ai recueilli</h2></div>
+                  <strong>{session.evidence.length} éléments</strong>
+                </div>
+                <p style={{fontSize:".88rem",opacity:.78,marginTop:0}}>Chaque élément reste relié au message qui l'a fourni. Les informations exprimées ne sont pas confondues avec des hypothèses.</p>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:".65rem"}}>
+                  {(["project_scope","problem","audience","actor","goal","preference","activity","feature","context","resource","constraint","cause"] as const).map((dimension)=> {
+                    const items=session.evidence.filter((item)=>item.dimension===dimension);
+                    if(!items.length)return null;
+                    const labels:Record<string,string>={project_scope:"Identité du projet",problem:"Situation / problème",audience:"Public concerné",actor:"Personnes et rôles",goal:"Objectifs",preference:"Solution imaginée",activity:"Activités concernées",feature:"Fonctionnement",context:"Cadre",resource:"Données / ressources",constraint:"Contraintes",cause:"Causes évoquées"};
+                    return <div key={dimension} style={{padding:".75rem",borderRadius:"12px",background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}>
+                      <strong style={{fontSize:".82rem"}}>{labels[dimension]}</strong>
+                      {items.map((item)=><div key={item.id} style={{fontSize:".82rem",lineHeight:1.5,marginTop:".4rem",overflowWrap:"anywhere"}}>{item.value}<div style={{fontSize:".68rem",opacity:.65}}>{item.status==="validated"?"Validé par toi":item.status==="hypothesis"?"Hypothèse à vérifier":item.status==="inferred"?"Déduit par le moteur":"Exprimé par toi"}</div><div style={{fontSize:".66rem",opacity:.5}}>Origine : {Math.max(1,session.messages.findIndex((message)=>message.id===item.sourceMessageId)+1)}ᵉ message de ton récit</div></div>)}
+                    </div>;
+                  })}
+                </div>
+                {session.situationGraph.relations.length > 0 && (
+                  <div style={{marginTop:".9rem",paddingTop:".8rem",borderTop:"1px solid rgba(255,255,255,.1)"}}>
+                    <strong style={{fontSize:".82rem"}}>Relations repérées entre les éléments</strong>
+                    <div style={{display:"grid",gap:".4rem",marginTop:".55rem"}}>
+                      {session.situationGraph.relations.slice(0,6).map((relation)=> {
+                        const from=session.situationGraph.entities.find((entity)=>entity.id===relation.fromEntityId);
+                        const to=session.situationGraph.entities.find((entity)=>entity.id===relation.toEntityId);
+                        const verbs:Record<string,string>={imagines:"imagine",intended_for:"s'adresse à",aims_at:"vise",experiences:"rencontre / vit"};
+                        return <div key={relation.id} style={{fontSize:".78rem",opacity:.88}}>
+                          <b>{from?.label ?? "Élément non identifié"}</b> — {verbs[relation.predicate] ?? relation.predicate} — <b>{to?.label ?? "Élément non identifié"}</b>
+                        </div>;
+                      })}
+                    </div>
+                  </div>
+                )}
+                {session.situationGraph.unresolvedRelations.length > 0 && (
+                  <p style={{marginBottom:0,fontSize:".75rem",opacity:.7}}>
+                    {session.situationGraph.unresolvedRelations.length} lien(s) restent à éclaircir ; aucun élément manquant n'est inventé.
+                  </p>
+                )}
+                {session.stage==="clarification"&&session.pendingQuestion&&<p style={{marginBottom:0,fontSize:".85rem",color:"#d9bd83"}}>Prochaine précision utile : {session.pendingQuestion.rationale}</p>}
+              </section>
               <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
-                {session.messages.map((item) => (
+                {(pendingMessage && session.messages.some((item) => item.role === "visitor" && item.content === pendingMessage) ? session.messages.slice(0, -2) : session.messages).map((item) => (
                   <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
                     <span>{item.role === "visitor" ? "TOI" : "MERKORA"}</span>
                     <p>{item.content}</p>
                   </article>
                 ))}
+                {pendingMessage && <ConversationPendingTurn message={pendingMessage} activity={orbActivity} />}
               </div>
 
               {session.stage === "clarification" && session.pendingQuestion && (
@@ -356,12 +470,18 @@ export default function ConversationPage() {
                   {session.validations.at(-1)?.decision !== "confirmed" && (
                     <button type="button" className="mk-secondary-button" onClick={resumeSummary}>Reprendre la vérification</button>
                   )}
+                  <a className="mk-continue-button mk-stage-transition" href="/understanding">Continuer vers l'écran 03 · Vérifier ma compréhension <span>→</span></a>
                   <button type="button" className="mk-tertiary-button" onClick={restartJourney}>Commencer une nouvelle compréhension</button>
                 </section>
               )}
 
               <p className="mk-privacy-note">Le moteur actuel utilise des règles explicites, des indices de langage et quelques contrôles limités de cohérence. Il ne prétend pas comprendre automatiquement tout texte ni deviner tes intentions. Rien n'est validé sans ton accord.</p>
             </>
+          )}
+          {!session && isProcessing && (
+            <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
+              <ConversationPendingTurn message={pendingMessage} activity={orbActivity} />
+            </div>
           )}
         </div>
       </section>
