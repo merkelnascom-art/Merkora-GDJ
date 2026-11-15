@@ -41,7 +41,7 @@ export function getClassificationLineage(
 }
 
 /**
- * Returns descendants in deterministic breadth-first order. The starting
+ * Returns descendants in deterministic depth-first tree order. The starting
  * concept is excluded and each concept is returned at most once.
  */
 export function getClassificationDescendants(
@@ -53,17 +53,16 @@ export function getClassificationDescendants(
 
   const descendants: KnowledgeConcept[] = [];
   const visited = new Set<string>([conceptId]);
-  const queue = [conceptId];
 
-  while (queue.length > 0) {
-    const parentId = queue.shift()!;
+  const visit = (parentId: string) => {
     for (const candidate of registry.concepts) {
       if (classificationParent(candidate, classificationType) !== parentId || visited.has(candidate.id)) continue;
       visited.add(candidate.id);
       descendants.push(candidate);
-      queue.push(candidate.id);
+      visit(candidate.id);
     }
-  }
+  };
 
+  visit(conceptId);
   return descendants;
 }
