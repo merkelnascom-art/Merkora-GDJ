@@ -42,7 +42,7 @@ const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|frustr|se frustr|stress|col
 const AUDIENCE_PATTERN = /jeunes|adolescents?|étudiants?|etudiants?|élèves?|eleves?|apprenants?|adultes?|enfants?/i;
 const EMOTION_PATTERN = /frustr\w*|stress\w*|col[eè]re|énerv\w*|enerv\w*|tension\w*/i;
 const EXPERIENCE_PATTERN = /distraire|détendre|detendre|relâcher|relacher|évacuer|evacuer|se défouler|se defouler|se divertir|s'amuser/i;
-const NO_CONTEXT_PATTERN = /(?:pas de cadre|aucun cadre|pas vraiment de contexte|aucun contexte|rien de particulier comme contexte)/i;
+const NO_CONTEXT_PATTERN = /(?:pas de cadre|aucun cadre|pas vraiment de contexte|aucun contexte|rien de particulier comme contexte|n'y a pas de cadre|pas vraiment dans un cadre|pas de contexte)/i;
 const GAME_FEATURE_PATTERNS: Array<{ pattern: RegExp; value: string }> = [
   { pattern: /chois\w*[^.!?\n]{0,100}(?:énerve|enerve|embête|embete|agace|dérange|derange)/i, value: "Choix libre de ce qui énerve ou dérange le joueur" },
   { pattern: /emoji|émotic[oô]ne|emotic[oô]ne/i, value: "Association d'un symbole ou emoji à l'élément choisi" },
