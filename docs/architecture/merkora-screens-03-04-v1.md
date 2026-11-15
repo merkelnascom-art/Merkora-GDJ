@@ -66,7 +66,8 @@ Ces sections sont des angles de lecture transversaux, pas des obligations. Une s
 - L'utilisateur peut indiquer qu'il ne sait pas, que la question ne s'applique pas ou la différer.
 - Une validation ajoute la réponse au dossier puis recalcule la prochaine question.
 - L'historique permet de revoir et corriger une réponse sans supprimer sa version antérieure.
-- La session et le dossier sont sauvegardés dans le stockage de session du navigateur après chaque validation.
+- Les réponses et le dossier sont sauvegardés dans le stockage de session du navigateur après chaque validation ; les brouillons de saisie sont également conservés pendant l'édition.
+- Les questions différées peuvent être remises dans le parcours sans perdre les réponses déjà données.
 
 ### 4.2. Dimensions explorées
 
