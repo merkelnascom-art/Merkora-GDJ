@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
+  attachKnowledgeProposalToUnderstanding,
   createProjectUnderstanding,
   getActiveUnderstandingItems,
   reviseUnderstandingItem,
@@ -132,14 +133,6 @@ export default function UnderstandingPage() {
     const source = entity.evidence[0];
     if (!source) return;
 
-    const proposals = dossier.knowledgeProposals ?? [];
-    if (proposals.some((proposal) =>
-      proposal.label === entity.label && proposal.sourceMessageId === source.messageId,
-    )) {
-      setNotice("Ce terme a déjà été proposé pour ce projet.");
-      return;
-    }
-
     const proposal = createProjectKnowledgeProposal({
       projectId: dossier.projectId,
       label: entity.label,
@@ -147,12 +140,12 @@ export default function UnderstandingPage() {
       sourceMessageId: source.messageId,
       sourceQuote: source.quote,
     });
-    persist({
-      ...dossier,
-      version: dossier.version + 1,
-      knowledgeProposals: [...proposals, proposal],
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      persist(attachKnowledgeProposalToUnderstanding(dossier, proposal));
+    } catch {
+      setNotice("Ce terme a déjà été proposé pour ce projet.");
+      return;
+    }
     setNotice("Proposition privée enregistrée dans ce projet. Elle n'est pas encore ajoutée au référentiel commun.");
   }
 
