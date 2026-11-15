@@ -62,6 +62,19 @@ describe("official ESCO CSV language-pack parser", () => {
     }]);
   });
 
+  it("keeps ESCO occupation groups distinct from concrete occupations", () => {
+    const bundle = parseESCOCsvLanguageFiles({
+      datasetVersion: "1.2.1",
+      files: [{
+        language: "en",
+        type: "occupation",
+        content: 'Concept type,Concept URI,Concept PT,Parent Concept URI\nOG,urn:isco:group,Education professionals,\nOC,urn:esco:teacher,Teacher,urn:isco:group\n',
+      }],
+    });
+    expect(bundle.concepts.map((item) => item.type)).toEqual(["occupation_group", "occupation"]);
+    expect(bundle.concepts[1].broaderUri).toBe("urn:isco:group");
+  });
+
   it("supports quoted commas, escaped quotes and rejects conflicting labels for one URI/language", () => {
     const bundle = parseESCOCsvLanguageFiles({
       datasetVersion: "1.2.1",
