@@ -102,6 +102,29 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(clarified.pendingQuestion?.dimension).not.toBe("business_rule");
   });
 
+  it("clarifies whether multiple activity groups belong to one project or separate projects", () => {
+    const first = beginUnderstanding(
+      "Je veux suivre les revenus de ma famille et noter les heures de visite de mes amis.",
+    );
+    expect(first.pendingQuestion?.dimension).toBe("project_scope");
+
+    const ambiguous = answerUnderstanding(first, "Oui");
+    expect(ambiguous.pendingQuestion?.id).toBe("clarify-project-scope-choice-v1");
+    expect(ambiguous.evidence.some((item) => item.dimension === "project_scope")).toBe(false);
+
+    const explicit = answerUnderstanding(ambiguous, "Un seul projet commun.");
+    expect(explicit.evidence.some((item) => item.dimension === "project_scope")).toBe(true);
+    expect(explicit.pendingQuestion?.dimension).not.toBe("project_scope");
+  });
+
+  it("asks about information and access when other people are involved", () => {
+    const session = beginUnderstanding(
+      "Je veux mieux suivre les contributions de ma famille. Aujourd'hui, je note les contributions dans un cahier. Le problème est que je perds les montants. Parce que les notes sont dispersées. Mon objectif est de retrouver les montants rapidement.",
+    );
+    expect(session.pendingQuestion?.dimension).toBe("risk");
+    expect(session.pendingQuestion?.prompt).toMatch(/informées|informations/i);
+  });
+
   it("does not force a domain when the initial idea is vague or hybrid", () => {
     const session = beginUnderstanding("Je veux mieux organiser certaines choses.");
     expect(session.intentClues).toEqual([]);
