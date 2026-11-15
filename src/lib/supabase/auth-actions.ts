@@ -34,7 +34,7 @@ export async function signUpWithPassword(form: { email: string; password: string
   return { ok: true, message: "Compte créé. Consulte ta boîte e-mail pour confirmer ton adresse avant de te connecter." };
 }
 
-export async function signOut(): Promise<AuthActionResult> {
+export async function signOut(_formData?: FormData): Promise<AuthActionResult> {
   const supabase = await getSupabaseServerClient();
   if (!supabase) return { ok: false, error: "La connexion sécurisée n'est pas configurée." };
   const { error } = await supabase.auth.signOut();
