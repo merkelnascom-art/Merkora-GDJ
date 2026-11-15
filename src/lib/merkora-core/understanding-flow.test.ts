@@ -29,6 +29,12 @@ describe("whole-message understanding flow", () => {
     expect(next.pendingQuestion?.prompt).not.toMatch(/quel besoin concret|qui est concerné|quel résultat souhaites-tu/i);
   });
 
+  it("does not confuse an organization setting with a proposed solution", () => {
+    const first = beginUnderstanding("Je veux améliorer la gestion de mon centre de formation.");
+    expect(first.dossier.facets.map((item) => item.dimension)).not.toContain("preference");
+    expect(first.evidence.map((item) => item.dimension)).not.toContain("preference");
+  });
+
   it("repairs understanding by showing what was already captured instead of asking for the whole story again", () => {
     const first = beginUnderstanding("J'ai une idée à développer");
     const detailed = answerUnderstanding(first, studentVision);
