@@ -80,10 +80,18 @@ export function ConversationPendingTurn({ message, activity }: { message: string
 }
 
 function readStoredSession(): UnderstandingSession | null {
-  if (window.sessionStorage.getItem("merkora-v2-new-journey") === "true") return null;
+  let forceNew = false;
+  let raw: string | null = null;
+  try {
+    forceNew = window.sessionStorage.getItem("merkora-v2-new-journey") === "true";
+    raw = window.sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    // Le stockage de session peut être désactivé par le navigateur.
+  }
+  if (forceNew) return null;
+
   let parsed: Partial<UnderstandingSession> | undefined;
   try {
-    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (raw) parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
   } catch {
     // Une ancienne session illisible ne bloque pas la récupération locale.
@@ -143,12 +151,21 @@ export default function ConversationPage() {
     const localStorage = browserDossierStorage();
     if (localStorage) {
       try {
-        saveLocalDossier(localStorage, { id: next.id, title: next.originalDescription.slice(0, 120) || "Nouveau projet", payload: next, version: next.version, updatedAt: new Date().toISOString() });
+        const existing = readLocalDossiers<UnderstandingSession>(localStorage).find(item => item.id === next.id);
+        saveLocalDossier(localStorage, {
+          id: next.id,
+          title: next.originalDescription.slice(0, 120) || "Nouveau projet",
+          payload: next,
+          version: next.version,
+          syncedVersion: existing?.syncedVersion,
+          updatedAt: new Date().toISOString(),
+        });
       } catch {
         // La session courante reste disponible même si le stockage local est plein.
       }
     }
     try {
+      window.sessionStorage.removeItem("merkora-v2-new-journey");
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
@@ -157,7 +174,6 @@ export default function ConversationPage() {
       // La conversation reste utilisable même sans stockage de session.
     }
   }
-
   function updateMessageDraft(value: string) {
     setMessage(value);
     try {
