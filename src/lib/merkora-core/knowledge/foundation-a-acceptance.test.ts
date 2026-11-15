@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createKnowledgeRegistry } from "./registry";
+import { createKnowledgeRegistry, reviseKnowledgeConcept } from "./registry";
 import { matchKnowledgeConcept } from "./matching";
 import type { KnowledgeConcept, KnowledgeRelationship } from "./types";
 
@@ -94,10 +94,56 @@ describe("Fondation A — intégrité du référentiel", () => {
     });
     const registry = createKnowledgeRegistry([french, english]);
 
-    const result = matchKnowledgeConcept("banc", registry, { language: "fr" } as never);
+    const result = matchKnowledgeConcept("banc", registry, { language: "fr" });
 
     expect(result.status).toBe("matched");
     if (result.status !== "matched") throw new Error("Expected a language-scoped match.");
     expect(result.concept.id).toBe("language:fr");
+  });
+
+  it("archives the previous concept version and rejects stale concurrent revisions", () => {
+    const original = makeConcept("concept:career", "career", "Métier");
+    const registry = createKnowledgeRegistry([original]);
+    const revised = reviseKnowledgeConcept(
+      registry,
+      "concept:career",
+      1,
+      {
+        definitions: [{ language: "fr", label: "Profession", definition: "Activité professionnelle exercée." }],
+      },
+      "2026-11-15T12:00:00.000Z",
+    );
+
+    expect(revised.concepts[0].lifecycle.version).toBe(2);
+    expect(revised.concepts[0].definitions[0].label).toBe("Profession");
+    expect(revised.conceptHistory).toHaveLength(1);
+    expect(revised.conceptHistory[0].lifecycle.version).toBe(1);
+    expect(revised.conceptHistory[0].definitions[0].label).toBe("Métier");
+    expect(() => reviseKnowledgeConcept(revised, "concept:career", 1, {})).toThrow(/version conflict/i);
+  });
+
+  it("rejects classifications that point to concepts outside the registry", () => {
+    const classified = makeConcept("concept:child", "child", "Sous-concept", {
+      classifications: [{ classificationType: "broader", parentConceptId: "missing:parent" }],
+    });
+
+    expect(() => createKnowledgeRegistry([classified])).toThrow(/unknown parent concept/i);
+  });
+
+  it("rejects relationship confidence values outside the probability interval", () => {
+    const actor = makeConcept("concept:actor", "actor", "Acteur");
+    const activity = makeConcept("concept:activity", "activity", "Activité");
+    const invalidRelation: KnowledgeRelationship = {
+      id: "relation:invalid-confidence",
+      sourceConceptId: actor.id,
+      targetConceptId: activity.id,
+      predicate: "performs",
+      status: "validated",
+      confidence: 1.4,
+      sourceIds: [],
+      version: 1,
+    };
+
+    expect(() => createKnowledgeRegistry([actor, activity], [invalidRelation])).toThrow(/confidence/i);
   });
 });
