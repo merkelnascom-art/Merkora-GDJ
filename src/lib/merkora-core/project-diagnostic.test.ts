@@ -72,6 +72,25 @@ describe("adaptive universal diagnostic", () => {
 
 
 
+
+  it("asks for the concrete difficulty after the user chooses a problem-solving motivation", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux explorer une nouvelle activité."));
+    const dossier = {
+      ...base,
+      items: [
+        ...base.items,
+        { id: "activity-known", dimension: "activity" as const, originalDimension: "activity", value: "Une nouvelle activité", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Une nouvelle activité", createdAt: "2026-11-15T00:00:00.000Z" },
+        { id: "situation-known", dimension: "current_situation" as const, originalDimension: "current_situation", value: "Elle existe déjà", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Elle existe déjà", createdAt: "2026-11-15T00:00:00.000Z" },
+      ],
+    };
+    const diagnostic = createDiagnosticSession(dossier);
+    const motivation = getNextDiagnosticQuestion(dossier, diagnostic);
+    expect(motivation?.id).toBe("project-motivation");
+    if (!motivation) throw new Error("Expected a motivation question.");
+    const result = recordDiagnosticAnswer(dossier, diagnostic, motivation, { value: "Résoudre une difficulté" });
+    expect(getNextDiagnosticQuestion(result.understanding, result.diagnostic)?.id).toBe("problem-description");
+  });
+
   it("carries apparent contradictions into the diagnostic and records an explicit resolution", () => {
     const base = beginUnderstanding("Je prépare un projet avec deux règles à clarifier.");
     const session = {
