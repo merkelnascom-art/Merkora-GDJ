@@ -48,4 +48,18 @@ describe("situation graph knowledge linking", () => {
     expect(second.relations).toEqual(graph.relations);
     expect(second.unresolvedRelations).toEqual(graph.unresolvedRelations);
   });
+
+  it("does not attach a canonical concept from a different semantic type", () => {
+    const mismatchedGraph: SituationGraph = {
+      ...graph,
+      entities: [
+        { id: "entity:actor-homonym", key: "actor-homonym", kind: "actor", label: "Activité", evidence: [] },
+      ],
+    };
+    const linked = enrichSituationGraphWithKnowledge(mismatchedGraph, createCoreKnowledgeRegistry());
+
+    expect(linked.entities[0].knowledge?.typeConceptId).toBe("core:actor");
+    expect(linked.entities[0].knowledge?.conceptId).toBeUndefined();
+    expect(linked.entities[0].knowledge?.matchStatus).toBe("unmatched");
+  });
 });
