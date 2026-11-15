@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "../../src/lib/dossiers/local-dossiers";
 import {
   answerUnderstanding,
   beginUnderstanding,
@@ -79,23 +80,42 @@ export function ConversationPendingTurn({ message, activity }: { message: string
 }
 
 function readStoredSession(): UnderstandingSession | null {
+  let forceNew = false;
+  let raw: string | null = null;
   try {
-    const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
-    if (
-      typeof parsed.originalDescription === "string" &&
-      Array.isArray(parsed.messages) &&
-      Array.isArray(parsed.evidence) &&
-      typeof parsed.stage === "string"
-    ) {
-      return {
-        ...parsed,
-        situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
-      } as UnderstandingSession;
-    }
+    forceNew = window.sessionStorage.getItem("merkora-v2-new-journey") === "true";
+    raw = window.sessionStorage.getItem(SESSION_KEY);
   } catch {
-    // Une session illisible ne doit jamais bloquer l'écran.
+    // Le stockage de session peut être désactivé par le navigateur.
+  }
+  if (forceNew) return null;
+
+  let parsed: Partial<UnderstandingSession> | undefined;
+  try {
+    if (raw) parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
+  } catch {
+    // Une ancienne session illisible ne bloque pas la récupération locale.
+  }
+  if (!parsed) {
+    try {
+      const storage = browserDossierStorage();
+      const local = storage ? getLatestLocalDossier<UnderstandingSession>(storage) : null;
+      parsed = local?.payload as Partial<UnderstandingSession> | undefined;
+    } catch {
+      // Le dossier local peut être indisponible sur un navigateur en mode privé.
+    }
+  }
+  if (
+    parsed &&
+    typeof parsed.originalDescription === "string" &&
+    Array.isArray(parsed.messages) &&
+    Array.isArray(parsed.evidence) &&
+    typeof parsed.stage === "string"
+  ) {
+    return {
+      ...parsed,
+      situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
+    } as UnderstandingSession;
   }
   return null;
 }
@@ -128,7 +148,24 @@ export default function ConversationPage() {
 
   function storeSession(next: UnderstandingSession) {
     setSession(next);
+    const localStorage = browserDossierStorage();
+    if (localStorage) {
+      try {
+        const existing = readLocalDossiers<UnderstandingSession>(localStorage).find(item => item.id === next.id);
+        saveLocalDossier(localStorage, {
+          id: next.id,
+          title: next.originalDescription.slice(0, 120) || "Nouveau projet",
+          payload: next,
+          version: next.version,
+          syncedVersion: existing?.syncedVersion,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch {
+        // La session courante reste disponible même si le stockage local est plein.
+      }
+    }
     try {
+      window.sessionStorage.removeItem("merkora-v2-new-journey");
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
@@ -137,7 +174,6 @@ export default function ConversationPage() {
       // La conversation reste utilisable même sans stockage de session.
     }
   }
-
   function updateMessageDraft(value: string) {
     setMessage(value);
     try {
@@ -234,6 +270,7 @@ export default function ConversationPage() {
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
       window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
+      window.sessionStorage.setItem("merkora-v2-new-journey", "true");
     } catch {
       // Le redémarrage visuel reste possible sans stockage.
     }

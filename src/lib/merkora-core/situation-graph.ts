@@ -57,6 +57,7 @@ export interface SituationKnowledgeLink {
   matchMethod?: "exact" | "normalized" | "synonym";
   confidence?: number;
   candidateConceptIds?: string[];
+  classificationPath?: Array<{ id: string; label: string }>;
 }
 
 export interface SituationEntity {
