@@ -126,8 +126,10 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
       const token = mention[0];
       const isFeminine = /^(?:elle|elles|cette|celles)/i.test(token);
       const candidates = known.filter((item) => item.gender === (isFeminine ? "f" : "m"));
+      const explicitNoun = token.match(/plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|médecin|medecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription/i)?.[0];
+      const nounCandidates = explicitNoun ? candidates.filter((item) => item.label.toLocaleLowerCase("fr") === explicitNoun.toLocaleLowerCase("fr")) : [];
       const primaryCandidates = candidates.filter((item) => item.primary);
-      const target = (primaryCandidates.length ? primaryCandidates : candidates).at(-1);
+      const target = (nounCandidates.length ? nounCandidates : primaryCandidates.length ? primaryCandidates : candidates).at(-1);
       results.push({
         messageId: message.id,
         mention: token,
