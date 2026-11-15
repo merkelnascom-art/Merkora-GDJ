@@ -146,4 +146,47 @@ describe("Fondation A — intégrité du référentiel", () => {
 
     expect(() => createKnowledgeRegistry([actor, activity], [invalidRelation])).toThrow(/confidence/i);
   });
+
+  it("keeps registry snapshots independent from mutable input objects", () => {
+    const source = makeConcept("concept:mutable", "mutable", "Terme d'origine", {
+      terms: [{ value: "Terme d'origine", language: "fr", kind: "preferred" }],
+      scope: { global: false, countries: ["BJ"] },
+    });
+    const registry = createKnowledgeRegistry([source]);
+
+    source.terms[0].value = "Terme modifié";
+    source.scope.countries?.push("TG");
+
+    expect(registry.concepts[0].terms[0].value).toBe("Terme d'origine");
+    expect(registry.concepts[0].scope.countries).toEqual(["BJ"]);
+  });
+
+  it("replaces a concept's outgoing relation only through a new version", () => {
+    const originalRelation: KnowledgeRelationship = {
+      id: "relation:actor-performs-activity",
+      sourceConceptId: "concept:actor",
+      targetConceptId: "concept:activity",
+      predicate: "performs",
+      status: "validated",
+      sourceIds: [],
+      version: 1,
+    };
+    const actor = makeConcept("concept:actor", "actor", "Acteur", {
+      relationships: [originalRelation],
+    });
+    const activity = makeConcept("concept:activity", "activity", "Activité");
+    const registry = createKnowledgeRegistry([actor, activity]);
+    const revisedRelation = { ...originalRelation, predicate: "coordinates" };
+
+    const revised = reviseKnowledgeConcept(
+      registry,
+      actor.id,
+      1,
+      { relationships: [revisedRelation] },
+    );
+
+    expect(revised.relationships).toHaveLength(1);
+    expect(revised.relationships[0].predicate).toBe("coordinates");
+    expect(revised.conceptHistory[0].relationships[0].predicate).toBe("performs");
+  });
 });
