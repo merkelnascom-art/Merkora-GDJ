@@ -49,7 +49,7 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(afterCause.stage).toBe("clarification");
     expect(afterCause.pendingQuestion?.dimension).toBe("preference");
 
-    const solution = answerUnderstanding(afterCause, "Je souhaite une application qui suit les présences des enseignants.");
+    const solution = answerUnderstanding(afterCause, "Je souhaite une application dans laquelle les enseignants consultent leurs présences.");
     const confirmed = decideUnderstandingSummary(solution, "confirmed");
     expect(confirmed.stage).toBe("clarification");
     expect(confirmed.pendingQuestion?.dimension).toBe("preference");
