@@ -174,9 +174,8 @@ export default function ConversationPage() {
           </p>
           {session && (
             <div className="mk-understanding-progress">
-              <span>Éléments recueillis</span>
+              <span>Éléments explicitement repérés</span>
               <strong>{session.evidence.length}</strong>
-              <span>· Version {session.version}</span>
             </div>
           )}
         </div>
@@ -296,7 +295,7 @@ export default function ConversationPage() {
                 </section>
               )}
 
-              <p className="mk-privacy-note">Le moteur actuel utilise des règles explicites et des indices de langage. Il ne prétend pas comprendre automatiquement tout texte ni deviner tes intentions.</p>
+              <p className="mk-privacy-note">Le moteur actuel utilise des règles explicites, des indices de langage et quelques contrôles limités de cohérence. Il ne prétend pas comprendre automatiquement tout texte ni deviner tes intentions. Rien n'est validé sans ton accord.</p>
             </>
           )}
         </div>
