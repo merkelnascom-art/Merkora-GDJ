@@ -70,6 +70,37 @@ describe("adaptive universal diagnostic", () => {
 
 
 
+
+  it("asks for local jurisdiction and languages only when the project signals those needs", () => {
+    const base = createProjectUnderstanding(beginUnderstanding(
+      "Je conçois un service soumis aux règles sur les données personnelles dans plusieurs pays et disponible en plusieurs langues."
+    ));
+    const dimensions = ["activity", "current_situation", "motivation", "expected_outcome", "actors", "operations", "constraints", "resources", "success_criteria"] as const;
+    const dossier = {
+      ...base,
+      items: [
+        ...base.items,
+        ...dimensions.map((dimension, index) => ({
+          id: "known-" + index,
+          dimension,
+          originalDimension: dimension,
+          value: "Information déjà précisée",
+          status: "user_stated" as const,
+          source: "conversation" as const,
+          sourceQuote: "Information déjà précisée",
+          createdAt: "2026-11-15T00:00:00.000Z",
+        })),
+      ],
+    };
+    const diagnostic = createDiagnosticSession(dossier);
+    const jurisdiction = getNextDiagnosticQuestion(dossier, diagnostic);
+    expect(jurisdiction?.id).toBe("jurisdiction-context");
+    if (!jurisdiction) throw new Error("Expected a jurisdiction question.");
+    const withJurisdiction = recordDiagnosticAnswer(dossier, diagnostic, jurisdiction, { value: "Bénin et France, selon les opérations." });
+    const languages = getNextDiagnosticQuestion(withJurisdiction.understanding, withJurisdiction.diagnostic);
+    expect(languages?.id).toBe("language-context");
+  });
+
   it("lets the user resume questions that were deferred earlier", () => {
     const dossier = createProjectUnderstanding(beginUnderstanding("Je développe un procédé expérimental."));
     const diagnostic = createDiagnosticSession(dossier);
