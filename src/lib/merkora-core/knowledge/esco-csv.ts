@@ -10,6 +10,8 @@ export interface ParseESCOCsvLanguageFilesInput {
   datasetVersion: string;
   importedAt?: string;
   files: ESCOCsvLanguageFile[];
+  occupationSkillRelationsCsv?: string;
+  broaderRelationFiles?: Array<{ type: "occupation" | "skill"; content: string }>;
 }
 
 function countOutsideQuotes(line: string, delimiter: string): number {
@@ -67,8 +69,13 @@ function parseRows(content: string): string[][] {
   return rows;
 }
 
+function normalizeHeader(value: string): string {
+  return value.trim().toLocaleLowerCase("en").replace(/[^a-z0-9]/g, "");
+}
+
 function columnIndex(headers: string[], ...names: string[]): number {
-  return headers.findIndex((header) => names.includes(header.trim().toLocaleLowerCase("en")));
+  const accepted = new Set(names.map(normalizeHeader));
+  return headers.findIndex((header) => accepted.has(normalizeHeader(header)));
 }
 
 function cell(row: string[], index: number): string {
@@ -98,11 +105,11 @@ export function parseESCOCsvLanguageFiles(
     if (rows.length < 2) continue;
 
     const headers = rows[0].map((header, index) => (index === 0 ? header.replace(/^\uFEFF/, "") : header).trim().toLowerCase());
-    const uriIndex = columnIndex(headers, "concepturi", "concept_uri", "uri");
-    const labelIndex = columnIndex(headers, "preferredlabel", "preferred_label", "label");
-    const altIndex = columnIndex(headers, "altlabels", "alternative_labels", "alt_labels");
-    const descriptionIndex = columnIndex(headers, "description", "definition", "scopenote");
-    const broaderIndex = columnIndex(headers, "broaderuri", "broader_uri", "broader");
+    const uriIndex = columnIndex(headers, "conceptUri", "Concept URI", "uri");
+    const labelIndex = columnIndex(headers, "preferredLabel", "Concept PT", "preferred term", "label");
+    const altIndex = columnIndex(headers, "altLabels", "alternative labels", "non-preferred terms");
+    const descriptionIndex = columnIndex(headers, "description", "definition", "scope note");
+    const broaderIndex = columnIndex(headers, "broaderUri", "broader", "parentConceptUri", "parent URI");
     if (uriIndex < 0 || labelIndex < 0) {
       throw new Error("ESCO CSV must contain conceptUri and preferredLabel columns.");
     }
@@ -143,9 +150,55 @@ export function parseESCOCsvLanguageFiles(
     }
   }
 
+  for (const relationFile of input.broaderRelationFiles ?? []) {
+    const rows = parseRows(relationFile.content);
+    if (rows.length < 2) continue;
+    const headers = rows[0].map((header) => header.trim());
+    const uriIndex = columnIndex(headers, "conceptUri", "Concept URI", "uri");
+    const parentIndex = columnIndex(headers, "broaderUri", "broader", "parentConceptUri", "parent URI");
+    if (uriIndex < 0 || parentIndex < 0) {
+      throw new Error("ESCO broader-relations CSV must contain concept URI and parent concept URI columns.");
+    }
+    for (const row of rows.slice(1)) {
+      const uri = cell(row, uriIndex);
+      const broaderUri = cell(row, parentIndex);
+      const concept = concepts.get(`${relationFile.type}::${uri}`);
+      if (concept && broaderUri) concept.broaderUri = broaderUri;
+    }
+  }
+
+  const occupationSkillRelations = (input.occupationSkillRelationsCsv
+    ? (() => {
+        const rows = parseRows(input.occupationSkillRelationsCsv);
+        if (rows.length < 2) return [];
+        const headers = rows[0].map((header) => header.trim());
+        const occupationIndex = columnIndex(headers, "occupationUri", "occupation URI", "occupationConceptUri");
+        const skillIndex = columnIndex(headers, "skillUri", "skill URI", "skillConceptUri");
+        const relationIndex = columnIndex(headers, "relation", "relationType", "relationshipType", "type");
+        if (occupationIndex < 0 || skillIndex < 0 || relationIndex < 0) {
+          throw new Error("ESCO occupation-skill relations CSV must contain occupation URI, skill URI and relation type columns.");
+        }
+        return rows.slice(1).flatMap((row) => {
+          const occupationUri = cell(row, occupationIndex);
+          const skillUri = cell(row, skillIndex);
+          const relationValue = cell(row, relationIndex).toLocaleLowerCase("en");
+          if (!occupationUri || !skillUri || !relationValue) return [];
+          if (!relationValue.includes("essential") && !relationValue.includes("optional")) {
+            throw new Error(`Unknown ESCO occupation-skill relation type: ${relationValue}`);
+          }
+          return [{
+            occupationUri,
+            skillUri,
+            relation: relationValue.includes("essential") ? "essential" as const : "optional" as const,
+          }];
+        });
+      })()
+    : []);
+
   return {
     datasetVersion: input.datasetVersion,
     ...(input.importedAt ? { importedAt: input.importedAt } : {}),
     concepts: [...concepts.values()],
+    ...(occupationSkillRelations.length ? { occupationSkillRelations } : {}),
   };
 }
