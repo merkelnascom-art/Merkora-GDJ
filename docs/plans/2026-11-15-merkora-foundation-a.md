@@ -1,6 +1,6 @@
 # MerKora GDJ — Fondation A : référentiel universel des connaissances — Implementation Plan
 
-> **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Intégrer au cœur MerKora un référentiel de connaissances universel, extensible, multilingue et traçable, relié au graphe de situation existant et capable de conserver les concepts inconnus comme propositions propres au projet.
 
@@ -40,33 +40,33 @@
 - Consumes: aucune dépendance métier ; uniquement des valeurs TypeScript.
 - Produces: `KnowledgeConcept`, `KnowledgeTerm`, `KnowledgeDefinition`, `KnowledgeRelationship`, `KnowledgeSource`, `KnowledgeReliability`, `KnowledgeRegistry`, `createKnowledgeRegistry`, `createCoreKnowledgeRegistry`, `normalizeKnowledgeTerm`.
 
-- [ ] **Step 1: Add the focused failing test**
+- [x] **Step 1: Add the focused failing test**
 
 Tester la normalisation Unicode (accents, casse, espaces, apostrophes typographiques), la récupération par identifiant stable, les concepts avec plusieurs définitions/langues et le refus de deux concepts partageant le même identifiant ou canonicalKey.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/registry.test.ts`
 
 Expected: échec d'import ou assertions indiquant que le registre et ses interfaces n'existent pas encore.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Créer un registre immuable à l'échelle d'une instance. Les types de concept et les prédicats de relation restent des chaînes extensibles ; les états de validation et de fiabilité sont explicitement typés. Ajouter un noyau de concepts abstraits universels (acteur, activité, processus, opération, événement, objet, ressource, objectif, problème, résultat, contrainte, lieu, temps, information, règle, solution, service, produit, projet), sans présenter ce noyau comme un catalogue exhaustif de métiers ou de secteurs. Fournir définitions françaises et anglaises pour les concepts de base.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/registry.test.ts`
 
 Expected: tous les tests du registre passent ; les concepts restent extensibles et les clés canoniques sont uniques.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck`
 
 Expected: TypeScript strict valide les nouveaux contrats sans modifier les types existants.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 `feat: add universal knowledge registry foundation`
 
@@ -82,33 +82,33 @@ Expected: TypeScript strict valide les nouveaux contrats sans modifier les types
 - Consumes: `KnowledgeRegistry`, `KnowledgeConcept`, `KnowledgeRelationship`, `KnowledgeSource` de Task 1.
 - Produces: `matchKnowledgeConcept`, `KnowledgeMatchResult`, `createProjectKnowledgeProposal`, `approveKnowledgeProposal`, `rejectKnowledgeProposal`.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Vérifier une correspondance exacte, une correspondance après normalisation, un synonyme multilingue, une ambiguïté entre deux concepts, l'absence de correspondance, le filtrage par type lorsque demandé et l'absence de correspondance forcée. Vérifier qu'une proposition inconnue reste limitée à son projectId, qu'elle conserve la citation et le message source, qu'elle ne modifie pas le registre partagé, puis qu'une approbation explicite crée un concept versionné et qu'un rejet ne le publie pas.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/matching.test.ts src/lib/merkora-core/knowledge/proposals.test.ts`
 
 Expected: échec car les fonctions de correspondance et de proposition ne sont pas encore présentes.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 La recherche initiale est volontairement lexicale et déterministe : correspondance exacte, terme normalisé, synonyme, compatibilité de type et ambiguïté. Elle ne doit pas prétendre fournir une proximité sémantique par embeddings. Si plusieurs concepts ont le même meilleur résultat, retourner un résultat ambigu sans choisir arbitrairement. Créer les propositions dans un espace projet séparé ; la promotion vers le registre partagé exige une action explicite et un enregistrement de revue.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/matching.test.ts src/lib/merkora-core/knowledge/proposals.test.ts`
 
 Expected: tous les cas passent ; aucune proposition n'est publiée implicitement.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck`
 
 Expected: contrats et résultats discriminés correctement typés.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 `feat: add cautious knowledge matching and project proposals`
 
@@ -128,33 +128,33 @@ Expected: contrats et résultats discriminés correctement typés.
 - Consumes: `SituationGraph`, `SituationEntity`, `KnowledgeRegistry`, `matchKnowledgeConcept`.
 - Produces: liens de type universel sur les entités du graphe et `enrichSituationGraphWithKnowledge`.
 
-- [ ] **Step 1: Add the focused failing test**
+- [x] **Step 1: Add the focused failing test**
 
 Vérifier que les entités du graphe reçoivent un concept de type universel correspondant à leur kind, qu'une correspondance exacte/synonyme non ambiguë reçoit un concept canonique, qu'une entité inconnue reste intacte sans concept inventé, et que les graphes historiques sans métadonnées knowledge restent lisibles et enrichissables.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/situation-linker.test.ts src/lib/merkora-core/situation-intake-engine.test.ts`
 
 Expected: échec car le linker et les champs de liaison knowledge n'existent pas encore.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Ajouter des métadonnées knowledge optionnelles à `SituationEntity`, sans changer l'identité des nœuds ni leurs preuves. Enrichir le graphe dans `rebuildSituationGraph` et lors de la reconstruction d'un dossier écran 03 ancien. L'interface affichera les types universels associés, les correspondances canoniques confirmées par le matcher et le nombre d'éléments qui restent sans correspondance. Ne pas créer automatiquement de propositions partagées depuis les observations.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run: `npm test -- src/lib/merkora-core/knowledge/situation-linker.test.ts src/lib/merkora-core/situation-intake-engine.test.ts`
 
 Expected: les nouveaux tests et les tests existants du graphe/intake passent ; les citations et relations existantes restent inchangées.
 
-- [ ] **Step 5: Run the affected integration check**
+- [x] **Step 5: Run the affected integration check**
 
 Run: `npm run typecheck && npm test`
 
 Expected: TypeScript valide et aucune régression sur le parcours conversation → compréhension → diagnostic.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
 
 `feat: connect universal knowledge to situation understanding`
 
@@ -169,21 +169,21 @@ Expected: TypeScript valide et aucune régression sur le parcours conversation �
 - Consumes: implémentation et tests des Tasks 1 à 3.
 - Produces: documentation de l'architecture, limites réelles, contrat de compatibilité et critères de validation de la Fondation A.
 
-- [ ] **Step 1: Document the implemented contract**
+- [x] **Step 1: Document the implemented contract**
 
 Documenter le modèle, les statuts, les identifiants, les relations, la recherche lexicale, les propositions privées, le raccordement au graphe, la compatibilité des sessions historiques et les limites de la première version.
 
-- [ ] **Step 2: Verify the full repository**
+- [x] **Step 2: Verify the full repository**
 
 Run: `npm run typecheck && npm test && npm run build`
 
 Expected: TypeScript réussi, tous les tests Vitest réussis et build Next.js de production réussi.
 
-- [ ] **Step 3: Review the diff and boundaries**
+- [x] **Step 3: Review the diff and boundaries**
 
 Confirmer qu'aucun fichier de migration Supabase, aucune clé API, aucun service payant, aucune configuration de production et aucune donnée existante n'ont été modifiés.
 
-- [ ] **Step 4: Commit the verified documentation**
+- [x] **Step 4: Commit the verified documentation**
 
 `docs: specify universal knowledge foundation A`
 
@@ -192,3 +192,20 @@ Confirmer qu'aucun fichier de migration Supabase, aucune clé API, aucun service
 - Le stockage partagé permanent du référentiel (Supabase/PostgreSQL ou autre) est reporté à une tranche dédiée après validation du modèle ; aucune table ne sera créée dans cette livraison.
 - Les validations de propositions partagées seront initialement explicites et pilotées par le code/appelant ; le futur rôle administrateur et le workflow de revue seront spécifiés séparément.
 - La recherche sémantique multilingue avancée, les embeddings et l'intégration d'un modèle linguistique appartiennent à la Fondation B ou à une décision ultérieure ; la Fondation A ne simulera pas ces capacités.
+
+
+## Delivery update — 15 November 2026
+
+The planned integration has been completed in the isolated branch. The implemented scope now also includes the final acceptance hardening:
+
+- Index concept-declared relationships into the registry and validate endpoints, version and confidence.
+- Validate parent-concept references in classifications.
+- Apply all declared scope dimensions conjunctively.
+- Filter lexical matching by language and region when supplied.
+- Preserve immutable concept snapshots and reject stale revisions through an expected-version check.
+- Expose an explicit Screen 03 action to propose an unknown term; persist the proposal in the current project dossier without publishing it to shared knowledge.
+- Keep historical dossiers compatible when the proposal field is absent.
+
+**Verification discipline:** a red CI run was observed for the four missing acceptance behaviors (relationship indexing/endpoint validation, strict scope matching, and language-aware homonym resolution). The implementation was then added and the following CI run passed: 19 test files, 123 tests, TypeScript and Next.js production build. Further snapshot isolation, versioned relation revision and project-private proposal UI changes were added after that run; they require a fresh CI run before this plan can be considered fully verified.
+
+**Boundaries:** no Supabase migration or write, no external paid AI service, no production deployment and no merge. The shared registry remains a code-seeded in-memory registry; project proposals remain in the current browser session dossier. Server synchronization and a secure global review console remain future infrastructure, not silently simulated here.
