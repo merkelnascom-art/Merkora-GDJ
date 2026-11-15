@@ -50,6 +50,7 @@ function classifyIntent(raw: string): IntentKind {
   if (/inviter|invitation|convier|faire-part/i.test(text)) return "invitation";
   if (/organiser|organisation/i.test(text) && /anniversaire|fête|pool party|soirée|mariage|cérémonie|conférence|événement|rencontre/i.test(text)) return "organize_event";
   if (/demande|solliciter|réclamer|requête/i.test(text)) return "request";
+  if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text) && SOLUTION_PATTERN.test(text)) return "solve";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text)) return "create_project";
   if (/inventer|invention|imaginer|nouvelle idée/i.test(text)) return "invention";
   if (/améliorer|optimiser|moderniser|développer/i.test(text)) return "improve";
@@ -60,7 +61,9 @@ function classifyIntent(raw: string): IntentKind {
 
 function intentFirstQuestion(session: UnderstandingSession): QuestionCandidate {
   const prompts: Record<IntentKind, { dimension: NeedDimension; id: string; prompt: string }> = {
-    organize_event: { dimension: "context", id: "event-date-v1", prompt: "As-tu déjà une date ou une période prévue pour cet événement ?" },
+    organize_event: /pool party|fête|soirée|mariage|cérémonie|conférence|événement|anniversaire avec/i.test(session.originalDescription)
+      ? { dimension: "context", id: "event-date-v1", prompt: "As-tu déjà une date ou une période prévue pour cet événement ?" }
+      : { dimension: "goal", id: "event-type-v1", prompt: "Quel type d'événement souhaites-tu organiser pour ton anniversaire ou cette occasion ?" },
     reservation: /samedi|dimanche|demain|aujourd'hui|lundi|mardi|mercredi|jeudi|vendredi|\d{1,2}[/-]\d{1,2}/i.test(session.originalDescription)
       ? { dimension: "actor", id: "reservation-party-v1", prompt: "Pour combien de personnes ou de bénéficiaires souhaites-tu faire cette réservation ?" }
       : { dimension: "context", id: "reservation-when-v1", prompt: "Qu'est-ce que tu souhaites réserver, et pour quelle date ou période ?" },
@@ -71,7 +74,7 @@ function intentFirstQuestion(session: UnderstandingSession): QuestionCandidate {
     improve: { dimension: "problem", id: "improve-priority-v1", prompt: "Quel aspect souhaites-tu améliorer en priorité, et quel changement aimerais-tu obtenir ?" },
     solve: { dimension: "problem", id: "solve-priority-v1", prompt: "Qu'est-ce qui se passe exactement, et quel effet cela a-t-il pour toi ?" },
     explore: { dimension: "goal", id: "explore-purpose-v1", prompt: "Raconte-moi ce que tu imagines, même si ton idée n'est pas encore bien formulée." },
-    unknown: { dimension: "goal", id: "open-purpose-v1", prompt: "Qu'aimerais-tu faire concrètement ? Tu peux me l'expliquer librement, même si ton idée est encore floue." },
+    unknown: { dimension: "problem", id: "open-purpose-v1", prompt: "Qu'aimerais-tu mieux organiser, changer ou faire concrètement ? Tu peux me l'expliquer librement." },
   };
   const item = prompts[session.intentKind];
   return { ...item, rationale: "Première question adaptée à l'intention exprimée.", impact: 1, uncertainty: 0.95, decisionRelevance: 1, answerability: 0.9 };
