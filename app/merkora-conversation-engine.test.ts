@@ -15,7 +15,7 @@ describe("MerKora screen 2 guided understanding journey", () => {
       "Je veux améliorer la gestion de mon centre de formation.",
     );
     expect(session.pendingQuestion?.dimension).toBe("problem");
-    expect(session.messages.filter((message) => message.role === "assistant")).toHaveLength(1);
+    expect(session.messages.filter((message) => message.role === "merkora")).toHaveLength(1);
     expect(session.evidence.some((item) => item.status === "validated")).toBe(false);
   });
 
