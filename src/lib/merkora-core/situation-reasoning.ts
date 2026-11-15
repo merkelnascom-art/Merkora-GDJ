@@ -117,7 +117,7 @@ const REFERENCE = /\b(elle|il|elles|ils|cette plateforme|cette application|ce si
 
 function resolveReferences(messages: ConversationMessage[]): ResolvedReference[] {
   const visitorMessages = messages.filter((message) => message.role === "visitor");
-  const known: Array<{ label: string; gender: "f" | "m"; messageId: string }> = [];
+  const known: Array<{ label: string; gender: "f" | "m"; messageId: string; primary: boolean }> = [];
   const results: ResolvedReference[] = [];
 
   for (const message of visitorMessages) {
@@ -126,7 +126,8 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
       const token = mention[0];
       const isFeminine = /^(elle|elles|cette)/i.test(token);
       const candidates = known.filter((item) => item.gender === (isFeminine ? "f" : "m"));
-      const target = candidates.at(-1);
+      const primaryCandidates = candidates.filter((item) => item.primary);
+      const target = (primaryCandidates.length ? primaryCandidates : candidates).at(-1);
       results.push({
         messageId: message.id,
         mention: token,
