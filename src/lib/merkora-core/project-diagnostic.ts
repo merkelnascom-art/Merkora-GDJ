@@ -362,9 +362,9 @@ export function getNextDiagnosticQuestion(
   const hasSuccess = hasDimension(dossier, ["success_criteria"]);
   const hasJurisdiction = hasDimension(dossier, ["jurisdiction"]);
   const hasLanguages = hasDimension(dossier, ["languages"]);
-  const activeText = [dossier.originalDescription, ...getActiveUnderstandingItems(dossier).map((item) => item.value)].join("\\n");
-  const regulatorySignals = /\\b(réglement\\w*|juridiction\\w*|loi\\w*|norme\\w*|autorisation\\w*|licence\\w*|données personnelles|confidentialité|fiscal\\w*|douane\\w*|conformité|certification)\\b/i.test(activeText);
-  const multilingualSignals = /\\b(multilingue|plusieurs langues|traduction|langues? différentes)\\b/i.test(activeText);
+  const activeText = [dossier.originalDescription, ...getActiveUnderstandingItems(dossier).map((item) => item.value)].join("\n");
+  const regulatorySignals = /\b(réglement\w*|juridiction\w*|loi\w*|norme\w*|autorisation\w*|licence\w*|données personnelles|confidentialité|fiscal\w*|douane\w*|conformité|certification)\b/i.test(activeText);
+  const multilingualSignals = /\b(multilingue|plusieurs langues|traduction|langues? différentes)\b/i.test(activeText);
 
   const unresolvedContradiction = dossier.contradictions.find((item) => {
     const questionId = `resolve-contradiction-${item.id}`;
