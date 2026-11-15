@@ -109,6 +109,7 @@ export interface KnowledgeConcept {
 export interface KnowledgeRegistry {
   version: number;
   concepts: KnowledgeConcept[];
+  relationships: KnowledgeRelationship[];
 }
 
 export interface KnowledgeProposal {
