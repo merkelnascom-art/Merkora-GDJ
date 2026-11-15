@@ -9,12 +9,12 @@ describe("MerKora GDJ V2 welcome screen", () => {
     const html = renderToStaticMarkup(<HomePage />);
     expect(html).toContain("Salut !");
     expect(html).toContain("MerKora.");
-    expect(html).toContain("Alors, qu'est-ce qu'on imagine");
+    expect(html).toContain("Alors, qu&#x27;est-ce qu&#x27;on imagine");
   });
 
   it("offers written communication only while voice is paused", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("Par écrit");
+    expect(html).toContain("ON COMMENCE PAR ÉCRIT");
     expect(html).not.toContain("Par la voix");
     expect(html).not.toContain("Choisir la conversation par la voix");
   });
@@ -36,7 +36,7 @@ describe("MerKora GDJ V2 conversation screen", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
     expect(html).toContain("Améliorer la gestion de mon établissement");
     expect(html).toContain("Mieux suivre les ventes de mon activité");
-    expect(html).toContain("J'ai une idée à développer");
+    expect(html).toContain("J&#x27;ai une idée à développer");
     expect(html).toContain("Tu peux aussi raconter ton besoin librement");
   });
 
