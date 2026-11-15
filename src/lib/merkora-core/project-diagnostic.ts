@@ -350,6 +350,8 @@ export function getNextDiagnosticQuestion(
   const hasActivity = hasDimension(dossier, ["activity"]);
   const hasSituation = hasDimension(dossier, ["context", "current_situation", "operations"]);
   const hasMotivation = hasDimension(dossier, ["problem", "objectives", "motivation"]);
+  const motivationText = getActiveUnderstandingItems(dossier).filter((item) => item.dimension === "motivation").map((item) => item.value).join(" ");
+  const motivationRequiresProblemDetail = /résoudre une difficulté|résoudre un problème/i.test(motivationText);
   const hasPeople = hasDimension(dossier, ["actors"]);
   const hasOperations = hasDimension(dossier, ["operations"]);
   const hasProblem = hasDimension(dossier, ["problem"]);
@@ -402,6 +404,12 @@ export function getNextDiagnosticQuestion(
       "Comprendre le déclencheur avant de supposer qu'il s'agit nécessairement d'un problème.",
       "single_choice",
       ["Résoudre une difficulté", "Atteindre un objectif", "Créer quelque chose de nouveau", "Améliorer une situation existante", "Explorer ou étudier une possibilité", "Anticiper un besoin", "Autre"],
+    ),
+    question(
+      "problem-description",
+      "problem",
+      "Quelle difficulté précise souhaites-tu résoudre ? Décris ce qui se passe et qui est concerné.",
+      "Tu as indiqué que le projet vise à résoudre une difficulté ; il faut comprendre cette difficulté avant d'en étudier les causes.",
     ),
     question(
       "expected-outcome",
@@ -473,6 +481,7 @@ export function getNextDiagnosticQuestion(
       case "activity-context": return !hasActivity;
       case "current-situation": return !hasSituation;
       case "project-motivation": return !hasMotivation;
+      case "problem-description": return motivationRequiresProblemDetail && !hasProblem;
       case "expected-outcome": return !hasObjectives;
       case "people-and-roles": return !hasPeople;
       case "operations-and-flow": return !hasOperations;
@@ -501,7 +510,9 @@ export function recordDiagnosticAnswer(
   const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
   if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
 
-  const answerStatus = input.status ?? "answered";
+  const requestedStatus = input.status ?? "answered";
+  const isUnknown = requestedStatus === "unknown" || (normalizedValues.length === 1 && /^je ne sais pas encore$/i.test(normalizedValues[0]));
+  const answerStatus = isUnknown ? "unknown" : requestedStatus;
   const answer: DiagnosticAnswer = {
     id: makeId("diagnostic-answer"),
     questionId: currentQuestion.id,
@@ -528,7 +539,6 @@ export function recordDiagnosticAnswer(
     createdAt: answer.createdAt,
     ...(answer.supersedesId ? { supersedesId: answer.supersedesId } : {}),
   };
-  const isUnknown = answerStatus === "unknown";
   const contradictions = currentQuestion.resolvesContradictionId
     ? dossier.contradictions.map((item) => item.id === currentQuestion.resolvesContradictionId
       ? { ...item, status: isUnknown ? "deferred" as const : "resolved" as const, answerId: answer.id }
@@ -572,7 +582,9 @@ export function reviseDiagnosticAnswer(
   const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
   if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
 
-  const answerStatus = input.status ?? "answered";
+  const requestedStatus = input.status ?? "answered";
+  const isUnknown = requestedStatus === "unknown" || (normalizedValues.length === 1 && /^je ne sais pas encore$/i.test(normalizedValues[0]));
+  const answerStatus = isUnknown ? "unknown" : requestedStatus;
   const answerIdNext = makeId("diagnostic-answer-revision");
   const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
