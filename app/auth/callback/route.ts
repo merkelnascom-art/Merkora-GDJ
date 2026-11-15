@@ -7,7 +7,11 @@ export async function GET(request: NextRequest) {
     const supabase = await getSupabaseServerClient();
     if (supabase) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) return NextResponse.redirect(new URL("/account", request.url));
+      if (!error) {
+        const next = request.nextUrl.searchParams.get("next");
+        const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+        return NextResponse.redirect(new URL(destination, request.url));
+      }
     }
   }
   return NextResponse.redirect(new URL("/auth?status=confirmation-error", request.url));
