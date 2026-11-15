@@ -6,6 +6,7 @@ import {
   beginUnderstanding,
   decideUnderstandingSummary,
   deferUnderstandingQuestion,
+  rebuildSituationGraph,
   type UnderstandingSession,
 } from "../../src/lib/merkora-core/situation-intake-engine";
 
@@ -59,7 +60,10 @@ function readStoredSession(): UnderstandingSession | null {
       Array.isArray(parsed.evidence) &&
       typeof parsed.stage === "string"
     ) {
-      return parsed as UnderstandingSession;
+      return {
+        ...parsed,
+        situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
+      } as UnderstandingSession;
     }
   } catch {
     // Une session illisible ne doit jamais bloquer l'écran.
@@ -309,6 +313,26 @@ export default function ConversationPage() {
                     </div>;
                   })}
                 </div>
+                {session.situationGraph.relations.length > 0 && (
+                  <div style={{marginTop:".9rem",paddingTop:".8rem",borderTop:"1px solid rgba(255,255,255,.1)"}}>
+                    <strong style={{fontSize:".82rem"}}>Relations repérées entre les éléments</strong>
+                    <div style={{display:"grid",gap:".4rem",marginTop:".55rem"}}>
+                      {session.situationGraph.relations.slice(0,6).map((relation)=> {
+                        const from=session.situationGraph.entities.find((entity)=>entity.id===relation.fromEntityId);
+                        const to=session.situationGraph.entities.find((entity)=>entity.id===relation.toEntityId);
+                        const verbs:Record<string,string>={imagines:"imagine",intended_for:"s'adresse à",aims_at:"vise",experiences:"rencontre / vit"};
+                        return <div key={relation.id} style={{fontSize:".78rem",opacity:.88}}>
+                          <b>{from?.label ?? "Élément non identifié"}</b> — {verbs[relation.predicate] ?? relation.predicate} — <b>{to?.label ?? "Élément non identifié"}</b>
+                        </div>;
+                      })}
+                    </div>
+                  </div>
+                )}
+                {session.situationGraph.unresolvedRelations.length > 0 && (
+                  <p style={{marginBottom:0,fontSize:".75rem",opacity:.7}}>
+                    {session.situationGraph.unresolvedRelations.length} lien(s) restent à éclaircir ; aucun élément manquant n'est inventé.
+                  </p>
+                )}
                 {session.stage==="clarification"&&session.pendingQuestion&&<p style={{marginBottom:0,fontSize:".85rem",color:"#d9bd83"}}>Prochaine précision utile : {session.pendingQuestion.rationale}</p>}
               </section>
               <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
