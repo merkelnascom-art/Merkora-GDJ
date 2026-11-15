@@ -164,6 +164,45 @@ describe("MerKora screen 2 guided understanding journey", () => {
     );
     expect(corrected.messages.at(-1)?.content).toContain("centre de santé");
   });
+  it("analyzes a complete Student Vision brief before asking anything already answered", () => {
+    const session = beginUnderstanding(
+      "Student Vision : les élèves après le BAC se perdent et choisissent des filières au hasard car ils ne savent pas quel métier faire. Je veux une application sans connexion obligatoire au départ. L'élève choisit son domaine scientifique ou littéraire, indique son BAC et sa mention, puis joint ses relevés de notes. Le système analyse les notes, les points forts et faibles, puis propose une orientation professionnelle. Ensuite il propose des tests mentaux, physiques, d'analyse, de réflexion, des devinettes et des jeux, synchronise les résultats et propose des catégories de métiers.",
+    );
+
+    expect(session.stage).toBe("summary_validation");
+    expect(session.pendingQuestion).toBeNull();
+    expect(session.dossier.title).toBe("Student Vision");
+    expect(session.dossier.facets.map((item) => item.dimension)).toEqual(expect.arrayContaining([
+      "problem", "audience", "goal", "preference", "feature", "constraint",
+    ]));
+    expect(session.summary).toContain("joint ses relevés de notes");
+    expect(session.summary).not.toContain("Quel besoin concret veux-tu satisfaire");
+  });
+
+  it("asks one relevant missing question only after the person confirms the full brief", () => {
+    const session = beginUnderstanding(
+      "Student Vision : les élèves après le BAC se perdent car ils ne savent pas quel métier faire. Je veux une application qui analyse leurs relevés de notes et leurs aptitudes pour proposer des métiers.",
+    );
+    const confirmed = decideUnderstandingSummary(session, "confirmed");
+
+    expect(confirmed.stage).toBe("clarification");
+    expect(confirmed.pendingQuestion?.dimension).toBe("risk");
+    expect(confirmed.messages.at(-1)?.content).toContain("Qui pourra consulter les relevés");
+    expect(confirmed.messages.at(-1)?.content).not.toMatch(/et qui|seront-elles informées/);
+  });
+
+  it("does not classify a complaint that MerKora failed to understand as the project problem", () => {
+    const session = beginUnderstanding("J'ai une idée à développer");
+    const repaired = answerUnderstanding(
+      session,
+      "Avec tout ce que j'ai dit là tu n'as pas encore compris tout ça hein ?",
+    );
+
+    expect(repaired.messages.at(-1)?.content).toMatch(/reprends|réexpliquer|corriger/i);
+    expect(repaired.evidence.some((item) => item.dimension === "problem" && /pas encore compris/i.test(item.value))).toBe(false);
+    expect(repaired.dossier.repairRequested).toBe(true);
+  });
+
 });
 
 
