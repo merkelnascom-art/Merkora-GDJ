@@ -49,7 +49,7 @@ function detectContradictions(rawIntent: string): DiscoveryContradiction[] {
   }> = [
     {
       topic: "access",
-      broad: /tout le monde|tous les membres|toute la famille|toute l'équipe|tout le personnel|chacun peut consulter|accès à tous/i,
+      broad: /tout le monde|tous les membres|toute (?:ma |la )?famille|toute l'équipe|tout le personnel|chacun peut consulter|accès à tous/i,
       restrictive: /seul(?:e)? moi|uniquement moi|personne d'autre|seul le responsable|accès privé|moi uniquement/i,
       question: "Qui doit réellement pouvoir consulter ces informations : tout le groupe, certaines personnes précises ou uniquement vous ?",
     },
@@ -114,7 +114,11 @@ export function selectNextDiscoveryQuestion(
     });
   }
 
-  if (analysis.intentGroups.length > 1 && !scopeAlreadyAnswered) {
+  const scopeNeedsClarification = analysis.intentGroups.length > 1 &&
+    (analysis.actors.length > 1 || hasAny(analysis.rawIntent, [
+      /et aussi|en parallèle|par ailleurs|d'un autre côté|à côté de/i,
+    ]));
+  if (scopeNeedsClarification && !scopeAlreadyAnswered) {
     gaps.push({
       stage: "project_scope",
       question: "Les différents besoins que vous avez cités font-ils partie d'un même projet ou souhaitez-vous les traiter séparément ?",
