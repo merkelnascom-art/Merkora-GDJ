@@ -255,3 +255,8 @@
 .mk-contradiction-item p{margin:8px 0;color:#e8dfef;font-size:10px;line-height:1.65;overflow-wrap:anywhere}
 .mk-contradiction-item small{display:block;margin-top:8px;color:#e6c991;font-size:9px;line-height:1.6}
 .mk-unresolved-list{margin:10px 0 0;padding-left:18px;color:#c9c0d6;font-size:10px;line-height:1.8}
+
+.mk-relation-list{display:grid;gap:8px;margin-top:12px}
+.mk-relation-list p{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:9px 10px;border-radius:9px;background:#ffffff08;color:#e8dfef;font-size:10px;line-height:1.5}
+.mk-relation-list p span{color:#c6a9e8;font-size:9px}
+.mk-unresolved-count{display:block;margin-top:9px;color:#d7bd8d;font-size:9px}
