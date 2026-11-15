@@ -64,6 +64,23 @@ describe("situation graph knowledge linking", () => {
     });
   });
 
+
+  it("links a cross-cutting legal specialization to its parent domain", () => {
+    const specializationGraph: SituationGraph = {
+      entities: [{ id: "entity:law", key: "law", kind: "activity", label: "Droit et services juridiques", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(specializationGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "specialization:law-legal-services",
+      classificationPath: [
+        { id: "domain:public-administration", label: "Administration publique" },
+        { id: "specialization:law-legal-services", label: "Droit et services juridiques" },
+      ],
+    });
+  });
+
   it("does not attach a canonical concept from a different semantic type", () => {
     const mismatchedGraph: SituationGraph = {
       ...graph,
