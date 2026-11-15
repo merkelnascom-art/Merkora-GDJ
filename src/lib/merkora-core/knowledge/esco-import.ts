@@ -1,4 +1,4 @@
-import { addKnowledgeConcept, addKnowledgeRelationship, reviseKnowledgeConcept } from "./registry";
+import { addKnowledgeConcept, addKnowledgeRelationship, reviseKnowledgeConcept, reviseKnowledgeRelationship } from "./registry";
 import type {
   KnowledgeConcept,
   KnowledgeExternalMapping,
@@ -38,6 +38,7 @@ export interface ESCOImportResult {
   importedConceptIds: string[];
   updatedConceptIds: string[];
   importedRelationshipIds: string[];
+  updatedRelationshipIds: string[];
   skippedExistingUris: string[];
 }
 
@@ -72,7 +73,42 @@ export function importESCOBundle(
   const importedConceptIds: string[] = [];
   const updatedConceptIds: string[] = [];
   const importedRelationshipIds: string[] = [];
+  const updatedRelationshipIds: string[] = [];
   const skippedExistingUris: string[] = [];
+
+  const upsertRelationship = (relationship: KnowledgeRelationship) => {
+    const current = registry.relationships.find((item) => item.id === relationship.id);
+    if (!current) {
+      registry = addKnowledgeRelationship(registry, relationship);
+      importedRelationshipIds.push(relationship.id);
+      return;
+    }
+    const currentShape = {
+      targetConceptId: current.targetConceptId,
+      predicate: current.predicate,
+      status: current.status,
+      confidence: current.confidence,
+      conditions: current.conditions,
+      sourceIds: current.sourceIds,
+    };
+    const nextShape = {
+      targetConceptId: relationship.targetConceptId,
+      predicate: relationship.predicate,
+      status: relationship.status,
+      confidence: relationship.confidence,
+      conditions: relationship.conditions,
+      sourceIds: relationship.sourceIds,
+    };
+    if (JSON.stringify(currentShape) === JSON.stringify(nextShape)) return;
+    registry = reviseKnowledgeRelationship(
+      registry,
+      current.id,
+      current.version,
+      nextShape,
+      importedAt,
+    );
+    updatedRelationshipIds.push(relationship.id);
+  };
   const existingUris = new Set(
     registry.concepts.flatMap((concept) => (concept.externalMappings ?? [])
       .filter((mapping) => mapping.system === "ESCO")
@@ -230,10 +266,7 @@ export function importESCOBundle(
       sourceIds: [`source:esco:${bundle.datasetVersion}`],
       version: 1,
     };
-    if (!registry.relationships.some((item) => item.id === relationship.id)) {
-      registry = addKnowledgeRelationship(registry, relationship);
-      importedRelationshipIds.push(relationship.id);
-    }
+    upsertRelationship(relationship);
   }
 
   for (const item of bundle.occupationSkillRelations ?? []) {
@@ -241,9 +274,8 @@ export function importESCOBundle(
     const skillId = stableId("skill", item.skillUri);
     if (!registry.concepts.some((concept) => concept.id === occupationId) ||
         !registry.concepts.some((concept) => concept.id === skillId)) continue;
-    const id = `rel:esco:${item.relation}:${encodeURIComponent(item.occupationUri)}:${encodeURIComponent(item.skillUri)}`;
-    if (registry.relationships.some((relationship) => relationship.id === id)) continue;
-    registry = addKnowledgeRelationship(registry, {
+    const id = `rel:esco:occupation-skill:${encodeURIComponent(item.occupationUri)}:${encodeURIComponent(item.skillUri)}`;
+    upsertRelationship({
       id,
       sourceConceptId: occupationId,
       targetConceptId: skillId,
@@ -253,8 +285,7 @@ export function importESCOBundle(
       sourceIds: [`source:esco:${bundle.datasetVersion}`],
       version: 1,
     });
-    importedRelationshipIds.push(id);
   }
 
-  return { registry, importedConceptIds, updatedConceptIds, importedRelationshipIds, skippedExistingUris };
+  return { registry, importedConceptIds, updatedConceptIds, importedRelationshipIds, updatedRelationshipIds, skippedExistingUris };
 }
