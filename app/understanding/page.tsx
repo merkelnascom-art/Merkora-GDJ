@@ -165,6 +165,33 @@ export default function UnderstandingPage() {
               <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
               <p>{dossier.originalDescription}</p>
             </section>
+            {dossier.situationGraph.entities.length > 0 && <section className="mk-understanding-section mk-knowledge-section">
+              <div className="mk-understanding-section-heading">
+                <div>
+                  <h2>Repères du référentiel universel</h2>
+                  <p>MerKora relie les éléments du récit aux concepts généraux connus. Un terme non reconnu reste conservé librement : il n'est ni supprimé ni forcé dans une catégorie.</p>
+                </div>
+                <span>{dossier.situationGraph.entities.length}</span>
+              </div>
+              <div className="mk-understanding-items">
+                {dossier.situationGraph.entities.slice(0, 16).map((entity) => (
+                  <article className="mk-understanding-item" key={"knowledge-" + entity.id}>
+                    <p><strong>{entity.label}</strong></p>
+                    <div className="mk-item-meta">
+                      {entity.knowledge?.typeConceptLabel
+                        ? <span>Type universel : {entity.knowledge.typeConceptLabel}</span>
+                        : <span>Type ouvert : {entity.kind}</span>}
+                      {entity.knowledge?.matchStatus === "matched" && entity.knowledge.conceptLabel
+                        ? <span>Concept rapproché : {entity.knowledge.conceptLabel}</span>
+                        : entity.knowledge?.matchStatus === "ambiguous"
+                          ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
+                          : <span>Terme conservé sans correspondance forcée.</span>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <small>Ces repères organisent les connaissances ; ils ne constituent pas de nouvelles déclarations de ta part.</small>
+            </section>}
             {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
               <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
               <div className="mk-relation-list">{dossier.situationGraph.relations.slice(0, 8).map((relation) => {
