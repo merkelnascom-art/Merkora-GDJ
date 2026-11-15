@@ -7,7 +7,7 @@ import {
   decideUnderstandingSummary,
   deferUnderstandingQuestion,
   type UnderstandingSession,
-} from "../../src/lib/merkora-core/conversation-engine";
+} from "../../src/lib/merkora-core/situation-intake-engine";
 
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
@@ -135,8 +135,8 @@ export default function ConversationPage() {
           setOrbActivity("idle");
           setIsProcessing(false);
         }, 760);
-      }, 260);
-    }, 220);
+      }, 950);
+    }, 300);
   }
 
   function startJourney() {
@@ -292,6 +292,25 @@ export default function ConversationPage() {
 
           {session && (
             <>
+              <section aria-label="Dossier de compréhension en construction" style={{margin:"1.25rem 0",padding:"1rem",border:"1px solid rgba(196,164,104,.35)",borderRadius:"18px",background:"rgba(12,17,38,.72)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"1rem",marginBottom:".8rem"}}>
+                  <div><span className="mk-summary-kicker">DÉCRYPTAGE EN DIRECT</span><h2 style={{margin:".25rem 0",fontSize:"1.15rem"}}>Ce que j'ai recueilli</h2></div>
+                  <strong>{session.evidence.length} éléments</strong>
+                </div>
+                <p style={{fontSize:".88rem",opacity:.78,marginTop:0}}>Chaque élément reste relié au message qui l'a fourni. Les informations exprimées ne sont pas confondues avec des hypothèses.</p>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:".65rem"}}>
+                  {(["project_scope","problem","audience","actor","goal","preference","feature","context","resource","constraint","cause"] as const).map((dimension)=> {
+                    const items=session.evidence.filter((item)=>item.dimension===dimension);
+                    if(!items.length)return null;
+                    const labels:Record<string,string>={project_scope:"Identité du projet",problem:"Situation / problème",audience:"Public concerné",actor:"Personnes et rôles",goal:"Objectifs",preference:"Solution imaginée",feature:"Fonctionnement",context:"Cadre",resource:"Données / ressources",constraint:"Contraintes",cause:"Causes évoquées"};
+                    return <div key={dimension} style={{padding:".75rem",borderRadius:"12px",background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}>
+                      <strong style={{fontSize:".82rem"}}>{labels[dimension]}</strong>
+                      {items.map((item)=><div key={item.id} style={{fontSize:".82rem",lineHeight:1.5,marginTop:".4rem",overflowWrap:"anywhere"}}>{item.value}<div style={{fontSize:".68rem",opacity:.65}}>{item.status==="validated"?"Validé par toi":"Exprimé par toi"}</div></div>)}
+                    </div>;
+                  })}
+                </div>
+                {session.stage==="clarification"&&session.pendingQuestion&&<p style={{marginBottom:0,fontSize:".85rem",color:"#d9bd83"}}>Prochaine précision utile : {session.pendingQuestion.rationale}</p>}
+              </section>
               <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
                 {session.messages.map((item) => (
                   <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
