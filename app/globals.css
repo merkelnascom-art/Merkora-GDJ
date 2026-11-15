@@ -264,3 +264,11 @@
 .mk-answer-versions{margin-top:7px;color:#a99fba;font-size:9px}
 .mk-answer-versions summary{cursor:pointer;color:#c4b0e2}
 .mk-answer-versions p{padding:7px 9px;margin:6px 0;border-left:2px solid #8f76bd;background:#ffffff07}
+
+
+/* Fondation A — project-private knowledge proposals */
+.mk-knowledge-proposals{display:grid;gap:9px;margin-top:15px;padding-top:14px;border-top:1px solid #ffffff18}
+.mk-knowledge-proposals h3{margin:0;color:#e8d9f6;font-size:12px}
+.mk-knowledge-proposals>small{color:#8f88a2;font-size:9px;line-height:1.6}
+.mk-knowledge-proposals article>small{display:block;margin-top:8px;color:#aaa2bd;font-size:9px;line-height:1.6;overflow-wrap:anywhere}
+.mk-knowledge-section .mk-small-action{margin-top:10px}
