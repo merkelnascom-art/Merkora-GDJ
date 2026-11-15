@@ -139,7 +139,7 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
       if (tokenItem.type === "antecedent") {
         const noun = tokenItem.match[1].toLocaleLowerCase("fr");
         const feminine = ["plateforme", "application", "solution", "clinique", "école", "ecole", "directrice", "secrétaire", "enseignante", "formatrice", "employée", "patiente", "étudiante", "cliente", "invitée", "inscription", "commande"].includes(noun);
-        const masculine = ["site", "logiciel", "système", "systeme", "outil", "projet", "service", "directeur", "médecin", "medecin", "enseignant", "formateur", "agent", "responsable"].includes(noun);
+        const masculine = ["site", "logiciel", "système", "systeme", "outil", "projet", "service", "directeur", "médecin", "medecin", "enseignant", "formateur", "agent", "document", "dossier", "paiement", "cours", "événement", "evenement", "rendez-vous"].includes(noun);
         const gender = feminine ? "f" : masculine ? "m" : "any";
         const label = tokenItem.match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
         const plural = /^(?:les|des|ces)\b/i.test(tokenItem.match[0]);
