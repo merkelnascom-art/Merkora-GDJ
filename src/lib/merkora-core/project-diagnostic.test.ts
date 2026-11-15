@@ -83,7 +83,8 @@ describe("adaptive universal diagnostic", () => {
     expect(revised.diagnostic.answers[0].value).toBe("Une nouvelle activité expérimentale.");
     expect(revised.understanding.items.at(-1)?.value).toContain("recherche expérimentale");
   });
-\n  it("supports a choice plus optional explanation and retains the explanation", () => {
+
+  it("supports a choice plus optional explanation and retains the explanation", () => {
     const base = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
     const dossier = {
       ...base,
