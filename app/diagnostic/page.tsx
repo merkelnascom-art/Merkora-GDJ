@@ -186,7 +186,7 @@ export default function DiagnosticPage() {
           <div className="mk-stage-steps"><span className="done">01 · Entrée</span><span className="done">02 · Conversation</span><span className="done">03 · Compréhension</span><span className="active">04 · Diagnostic</span></div>
           <span className="mk-eyebrow"><span /> ÉTAPE 04 · EXPLORATION ADAPTATIVE</span>
           <h1>Approfondissons.<br /><em>Une question à la fois.</em></h1>
-          <p>Je choisis la prochaine précision selon ton projet et tes réponses. Tu peux expliquer librement, choisir des propositions, répondre « Je ne sais pas encore » ou revenir sur une réponse.</p>
+          <p>Je choisis la prochaine précision selon ton projet et tes réponses. Tu peux expliquer librement, choisir des propositions, répondre « Je ne sais pas encore » ou revenir sur une réponse. Tes réponses précédentes restent accessibles dans l'historique « Réponses déjà données ».</p>
         </div>
 
         {!loaded && <section className="mk-stage-empty"><p>Chargement de ton dossier…</p></section>}
