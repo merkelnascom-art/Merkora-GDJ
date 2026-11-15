@@ -6,6 +6,7 @@ import {
   getNextDiagnosticQuestion,
   recordDiagnosticAnswer,
   reviseUnderstandingItem,
+  reviseDiagnosticAnswer,
   validateProjectUnderstanding,
 } from "./project-diagnostic";
 
@@ -21,7 +22,7 @@ describe("universal project understanding", () => {
   });
 
   it("keeps a corrected statement as a new version instead of deleting its source", () => {
-    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux créer un dispositif expérimental."));
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux créer une application expérimentale."));
     const original = dossier.items[0];
     const revised = reviseUnderstandingItem(dossier, original.id, "Je veux concevoir un instrument expérimental.");
 
@@ -65,7 +66,24 @@ describe("adaptive universal diagnostic", () => {
     expect(next?.id).not.toBe(first.id);
   });
 
-  it("supports a choice plus optional explanation and retains the explanation", () => {
+
+  it("revises a previous answer without deleting its earlier version", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
+    const diagnostic = createDiagnosticSession(dossier);
+    const first = getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!first) throw new Error("Expected a first diagnostic question.");
+    const initial = recordDiagnosticAnswer(dossier, diagnostic, first, { value: "Une nouvelle activité expérimentale." });
+    const revised = reviseDiagnosticAnswer(initial.understanding, initial.diagnostic, initial.diagnostic.answers[0].id, {
+      value: "Une activité de recherche expérimentale.",
+      detail: "La démarche est encore exploratoire.",
+    });
+
+    expect(revised.diagnostic.answers).toHaveLength(2);
+    expect(revised.diagnostic.answers[1].supersedesId).toBe(initial.diagnostic.answers[0].id);
+    expect(revised.diagnostic.answers[0].value).toBe("Une nouvelle activité expérimentale.");
+    expect(revised.understanding.items.at(-1)?.value).toContain("recherche expérimentale");
+  });
+\n  it("supports a choice plus optional explanation and retains the explanation", () => {
     const dossier = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
     const diagnostic = createDiagnosticSession(dossier);
     const first = getNextDiagnosticQuestion(dossier, diagnostic);
