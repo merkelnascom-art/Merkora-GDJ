@@ -17,6 +17,7 @@ import {
 
 const DOSSIER_KEY = "merkora-v2-project-understanding";
 const DIAGNOSTIC_KEY = "merkora-v2-diagnostic-session";
+const DIAGNOSTIC_DRAFT_KEY = "merkora-v2-diagnostic-answer-draft";
 
 function readDossier(): ProjectUnderstanding | null {
   try {
@@ -26,6 +27,22 @@ function readDossier(): ProjectUnderstanding | null {
     if (typeof parsed.originalDescription === "string" && Array.isArray(parsed.items)) return parsed;
   } catch { /* Le parcours reste accessible si le stockage est indisponible. */ }
   return null;
+}
+
+function restoreDiagnosticDraft(dossier: ProjectUnderstanding, diagnostic: DiagnosticSession, setText: (value: string) => void, setSingle: (value: string) => void, setMultiple: (value: string[]) => void, setDetail: (value: string) => void, setEditing: (answer: DiagnosticAnswer | null) => void) {
+  try {
+    const raw = window.sessionStorage.getItem(DIAGNOSTIC_DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw) as { questionId?: string; editingAnswerId?: string; textAnswer?: string; singleChoice?: string; multipleChoices?: string[]; detail?: string };
+    const editing = draft.editingAnswerId ? getActiveDiagnosticAnswers(diagnostic).find((answer) => answer.id === draft.editingAnswerId) ?? null : null;
+    const expectedQuestion = editing?.question ?? getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!expectedQuestion || draft.questionId !== expectedQuestion.id) return;
+    setEditing(editing);
+    setText(draft.textAnswer ?? "");
+    setSingle(draft.singleChoice ?? "");
+    setMultiple(Array.isArray(draft.multipleChoices) ? draft.multipleChoices : []);
+    setDetail(draft.detail ?? "");
+  } catch { /* Une saisie illisible ne bloque pas le diagnostic. */ }
 }
 
 export default function DiagnosticPage() {
@@ -49,14 +66,36 @@ export default function DiagnosticPage() {
         const saved = JSON.parse(raw) as DiagnosticSession;
         if (saved.understandingId === savedDossier.id && Array.isArray(saved.answers)) {
           setDiagnostic(saved);
+          restoreDiagnosticDraft(savedDossier, saved, setTextAnswer, setSingleChoice, setMultipleChoices, setDetail, setEditingAnswer);
           setLoaded(true);
           return;
         }
       }
     } catch { /* Créer une session de diagnostic neuve à partir du dossier. */ }
-    setDiagnostic(createDiagnosticSession(savedDossier));
+    const initialDiagnostic = createDiagnosticSession(savedDossier);
+    setDiagnostic(initialDiagnostic);
+    restoreDiagnosticDraft(savedDossier, initialDiagnostic, setTextAnswer, setSingleChoice, setMultipleChoices, setDetail, setEditingAnswer);
     setLoaded(true);
   }, []);
+
+  function persistDraft(patch: Partial<{ textAnswer: string; singleChoice: string; multipleChoices: string[]; detail: string }>) {
+    if (!currentQuestion) return;
+    try {
+      window.sessionStorage.setItem(DIAGNOSTIC_DRAFT_KEY, JSON.stringify({
+        questionId: currentQuestion.id,
+        editingAnswerId: editingAnswer?.id,
+        textAnswer,
+        singleChoice,
+        multipleChoices,
+        detail,
+        ...patch,
+      }));
+    } catch { /* La réponse reste disponible dans le champ courant. */ }
+  }
+
+  function clearDraft() {
+    try { window.sessionStorage.removeItem(DIAGNOSTIC_DRAFT_KEY); } catch { /* Rien à nettoyer. */ }
+  }
 
   function persist(nextDossier: ProjectUnderstanding, nextDiagnostic: DiagnosticSession) {
     setDossier(nextDossier);
@@ -109,6 +148,7 @@ export default function DiagnosticPage() {
       ? reviseDiagnosticAnswer(dossier, diagnostic, editingAnswer.id, input)
       : recordDiagnosticAnswer(dossier, diagnostic, currentQuestion, input);
     persist(result.understanding, result.diagnostic);
+    clearDraft();
     setEditingAnswer(null);
     resetAnswerFields();
     setNotice("Réponse enregistrée. La prochaine question est adaptée à ce que tu viens d'expliquer.");
@@ -117,6 +157,7 @@ export default function DiagnosticPage() {
   function skipQuestion() {
     if (!diagnostic || !currentQuestion || editingAnswer) { setEditingAnswer(null); resetAnswerFields(); return; }
     const next = deferDiagnosticQuestion(diagnostic, currentQuestion);
+    clearDraft();
     setDiagnostic(next);
     try { window.sessionStorage.setItem(DIAGNOSTIC_KEY, JSON.stringify(next)); } catch { setNotice("Garde cet onglet ouvert pour préserver la progression."); }
     setNotice("Question mise en attente. Elle n'est pas traitée comme une réponse.");
@@ -125,6 +166,7 @@ export default function DiagnosticPage() {
   function editPrevious(answer: DiagnosticAnswer) {
     setEditingAnswer(answer);
     resetAnswerFields(answer);
+    try { window.sessionStorage.setItem(DIAGNOSTIC_DRAFT_KEY, JSON.stringify({ questionId: answer.question.id, editingAnswerId: answer.id, textAnswer: typeof answer.value === "string" ? answer.value : "", singleChoice: typeof answer.value === "string" ? answer.value : "", multipleChoices: Array.isArray(answer.value) ? answer.value : [], detail: answer.detail ?? "" })); } catch { /* Le champ reste éditable. */ }
     setNotice("Tu modifies une réponse précédente. La version initiale restera dans l'historique.");
   }
 
@@ -172,19 +214,19 @@ export default function DiagnosticPage() {
 
               {currentQuestion.answerType === "multi_choice" && (
                 <div className="mk-diagnostic-options" aria-label="Choisir une ou plusieurs réponses">
-                  {(currentQuestion.options ?? []).map((option) => <label className={"mk-diagnostic-option" + (multipleChoices.includes(option) ? " selected" : "")} key={option}><input type="checkbox" checked={multipleChoices.includes(option)} onChange={(event) => setMultipleChoices((current) => event.target.checked ? [...current, option] : current.filter((item) => item !== option))} /><span>{option}</span></label>)}
+                  {(currentQuestion.options ?? []).map((option) => <label className={"mk-diagnostic-option" + (multipleChoices.includes(option) ? " selected" : "")} key={option}><input type="checkbox" checked={multipleChoices.includes(option)} onChange={(event) => { const next = event.target.checked ? [...multipleChoices, option] : multipleChoices.filter((item) => item !== option); setMultipleChoices(next); persistDraft({ multipleChoices: next }); }} /><span>{option}</span></label>)}
                 </div>
               )}
 
               {currentQuestion.answerType === "text" && (
                 <label className="mk-diagnostic-answer-label" htmlFor="mk-diagnostic-answer">TA RÉPONSE
-                  <textarea id="mk-diagnostic-answer" value={textAnswer} onChange={(event) => setTextAnswer(event.target.value)} rows={5} placeholder="Explique avec tes propres mots. Tu n'as pas besoin de vocabulaire technique." />
+                  <textarea id="mk-diagnostic-answer" value={textAnswer} onChange={(event) => { setTextAnswer(event.target.value); persistDraft({ textAnswer: event.target.value }); }} rows={5} placeholder="Explique avec tes propres mots. Tu n'as pas besoin de vocabulaire technique." />
                 </label>
               )}
 
               {currentQuestion.allowDetail && (
                 <label className="mk-diagnostic-answer-label mk-diagnostic-detail" htmlFor="mk-diagnostic-detail">UNE PRÉCISION COMPLÉMENTAIRE (FACULTATIF)
-                  <textarea id="mk-diagnostic-detail" value={detail} onChange={(event) => setDetail(event.target.value)} rows={2} placeholder="Tu peux ajouter un exemple ou une explication…" />
+                  <textarea id="mk-diagnostic-detail" value={detail} onChange={(event) => { setDetail(event.target.value); persistDraft({ detail: event.target.value }); }} rows={2} placeholder="Tu peux ajouter un exemple ou une explication…" />
                 </label>
               )}
 
