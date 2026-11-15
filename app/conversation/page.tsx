@@ -49,6 +49,24 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
   );
 }
 
+export function ConversationProcessingIndicator({ visible, activity }: { visible: boolean; activity: OrbActivity }) {
+  if (!visible) return null;
+
+  const label = activity === "receiving"
+    ? "Je reçois ton message…"
+    : activity === "responding"
+      ? "Je prépare la prochaine étape…"
+      : "MerKora réfléchit à ta réponse…";
+
+  return (
+    <div className="mk-thinking-indicator" role="status" aria-live="polite" aria-busy="true" data-testid="mk-thinking-indicator">
+      <span className="mk-thinking-orbit" aria-hidden="true"><i /><i /><i /></span>
+      <span className="mk-thinking-label">{label}</span>
+      <span className="mk-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+    </div>
+  );
+}
+
 function readStoredSession(): UnderstandingSession | null {
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
@@ -406,6 +424,7 @@ export default function ConversationPage() {
               <p className="mk-privacy-note">Le moteur actuel utilise des règles explicites, des indices de langage et quelques contrôles limités de cohérence. Il ne prétend pas comprendre automatiquement tout texte ni deviner tes intentions. Rien n'est validé sans ton accord.</p>
             </>
           )}
+          <ConversationProcessingIndicator visible={isProcessing} activity={orbActivity} />
         </div>
       </section>
       <footer className="mk-footer">
