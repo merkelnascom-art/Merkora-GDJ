@@ -9,6 +9,7 @@ import {
   reviseDiagnosticAnswer,
   deferDiagnosticQuestion,
   markDiagnosticReady,
+  resumeDeferredDiagnosticQuestions,
   type DiagnosticAnswer,
   type DiagnosticQuestion,
   type DiagnosticSession,
@@ -163,6 +164,14 @@ export default function DiagnosticPage() {
     setNotice("Question mise en attente. Elle n'est pas traitée comme une réponse.");
   }
 
+  function resumeDeferred() {
+    if (!diagnostic) return;
+    const next = resumeDeferredDiagnosticQuestions(diagnostic);
+    setDiagnostic(next);
+    try { window.sessionStorage.setItem(DIAGNOSTIC_KEY, JSON.stringify(next)); } catch { setNotice("Garde cet onglet ouvert pour préserver la progression."); }
+    setNotice("Les questions mises en attente sont de nouveau disponibles.");
+  }
+
   function editPrevious(answer: DiagnosticAnswer) {
     setEditingAnswer(answer);
     resetAnswerFields(answer);
@@ -201,6 +210,7 @@ export default function DiagnosticPage() {
               <div><strong>{diagnostic.deferredQuestionIds.length}</strong><span>questions mises en attente</span></div>
               <div><strong>{diagnostic.version}</strong><span>version du diagnostic</span></div>
             </div>
+            {diagnostic.deferredQuestionIds.length > 0 && <button type="button" className="mk-secondary-button mk-resume-deferred" onClick={resumeDeferred}>Reprendre les {diagnostic.deferredQuestionIds.length} question(s) mises en attente</button>}
             <section className="mk-diagnostic-card" aria-live="polite">
               <div className="mk-diagnostic-card-top"><span className="mk-summary-kicker">{editingAnswer ? "CORRECTION D'UNE RÉPONSE" : "QUESTION SUIVANTE · ADAPTÉE À TON PROJET"}</span><span className="mk-question-number">Précision {answeredCount + (editingAnswer ? 0 : 1)}</span></div>
               <h2>{currentQuestion.prompt}</h2>
@@ -254,6 +264,7 @@ export default function DiagnosticPage() {
             <h2>Nous avons assez d'éléments pour consolider ce diagnostic.</h2>
             <p>Les réponses, les éléments confirmés et les points encore inconnus sont conservés. Cela ne signifie pas que toutes les causes sont prouvées ni que la solution est déjà choisie.</p>
             <div className="mk-diagnostic-complete-stats"><strong>{history.length} réponses conservées</strong><strong>{diagnostic.deferredQuestionIds.length} questions différées</strong></div>
+            {diagnostic.deferredQuestionIds.length > 0 && <button type="button" className="mk-secondary-button" onClick={resumeDeferred}>Reprendre les questions mises en attente</button>}
             <a className="mk-secondary-button" href="/understanding">Revoir ma compréhension</a>
           </section>
         )}
