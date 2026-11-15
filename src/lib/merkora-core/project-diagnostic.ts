@@ -231,6 +231,31 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
   };
 }
 
+export function attachKnowledgeProposalToUnderstanding(
+  dossier: ProjectUnderstanding,
+  proposal: KnowledgeProposal,
+): ProjectUnderstanding {
+  if (proposal.projectId !== dossier.projectId) {
+    throw new Error("A knowledge proposal can only be attached to its own project.");
+  }
+  const proposals = dossier.knowledgeProposals ?? [];
+  if (proposals.some((item) => item.id === proposal.id)) {
+    throw new Error("This knowledge proposal is already attached to the project.");
+  }
+  if (proposals.some((item) =>
+    item.label === proposal.label && item.sourceMessageId === proposal.sourceMessageId,
+  )) {
+    throw new Error("This term has already been proposed from this source message.");
+  }
+
+  return {
+    ...dossier,
+    version: dossier.version + 1,
+    knowledgeProposals: [...proposals, proposal],
+    updatedAt: now(),
+  };
+}
+
 export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
   const superseded = new Set(dossier.items.flatMap((item) => item.supersedesId ? [item.supersedesId] : []));
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
