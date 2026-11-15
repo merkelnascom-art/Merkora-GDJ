@@ -45,6 +45,24 @@ describe("universal understanding dossier", () => {
     expect(dossier.repairRequested).toBe(true);
   });
 
+  it("understands an entertainment game through its audience, emotion, intended experience and mechanics", () => {
+    const dossier = buildUnderstandingDossier([
+      visitor("game-1", "Dare You Catch Me : je veux créer un jeu pour les jeunes qui sont stressés et frustrés par les études. Ils veulent se divertir et se défouler. Le joueur choisit une cible avec un emoji, la cible défile, disparaît et réapparaît, puis le joueur doit la toucher. Après un échec la cible grandit et le jeu devient plus difficile."),
+    ]);
+
+    const dimensions = dossier.facets.map((item) => item.dimension);
+    expect(dossier.title).toBe("Dare You Catch Me");
+    expect(dimensions).toEqual(expect.arrayContaining(["audience", "emotion", "experience", "activity", "feature", "goal"]));
+  });
+
+  it("does not mistake a simple event intention for a described software feature", () => {
+    const dossier = buildUnderstandingDossier([
+      visitor("event-1", "Je veux organiser une pool party pour mon anniversaire."),
+    ]);
+
+    expect(dossier.facets.some((item) => item.dimension === "feature")).toBe(false);
+  });
+
   it("preserves the complete original visitor text and does not invent a missing fact", () => {
     const source = "Je veux une plateforme de quiz pour les danseurs. Ils peuvent créer des défis, répondre et comparer leurs résultats. Je n'ai pas encore décidé du mode de classement.";
     const dossier = buildUnderstandingDossier([visitor("m1", source)]);
