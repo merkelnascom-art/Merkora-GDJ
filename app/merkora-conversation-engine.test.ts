@@ -74,7 +74,7 @@ describe("MerKora screen 2 guided understanding journey", () => {
 
   it("pauses the ordinary flow when access statements conflict and asks the person to clarify", () => {
     const session = beginUnderstanding(
-      "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
+      "Toute ma famille doit pouvoir consulter les contributions.\nFinalement, seul moi peux voir les montants.",
     );
 
     expect(session.pendingQuestion?.dimension).toBe("business_rule");
