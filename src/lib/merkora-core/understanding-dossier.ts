@@ -92,7 +92,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
       if (/bac|relevé|notes scolaires|données personnelles|informations personnelles|dossier médical|santé|mineur/i.test(sentence)) {
         addFacet(facets, "risk", "Données ou précautions à examiner", sentence, visitor.id);
       }
-      if (/dans une école|au lycée|à l'université|en entreprise|dans mon agence|à domicile|sur téléphone|sur mobile|en ligne/i.test(sentence)) {
+      if (/centre de formation|centre de santé|centre de sante|école|ecole|lycée|lycee|université|universite|dans une école|au lycée|à l'université|en entreprise|dans mon agence|à domicile|sur téléphone|sur mobile|en ligne/i.test(sentence)) {
         addFacet(facets, "context", "Cadre ou environnement", sentence, visitor.id);
       }
     }
@@ -100,7 +100,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
 
   const dimensions = new Set([...facets.values()].map((item) => item.dimension));
   const privacyAnswerPresent = /informé|informés|accord|consent|seul(?:e)?s? l['’]?(?:élève|eleve)|uniquement|accès|acces|consulter|consultation|confidentiel|parent|conseiller/i.test(allText);
-  const sensitiveDataMentioned = /relevés?|releves?|notes scolaires|bulletins?|dossiers médicaux|dossiers medicaux|données personnelles|donnees personnelles|résultats scolaires|resultats scolaires/i.test(allText);
+  const sensitiveDataMentioned = /relev|notes?|bulletin|dossier médical|dossier medical|données personnelles|donnees personnelles|résultats scolaires|resultats scolaires/i.test(allText);
   const missingDimensions: NeedDimension[] = [];
   if (!dimensions.has("problem")) missingDimensions.push("problem");
   if (!dimensions.has("audience")) missingDimensions.push("audience");
