@@ -43,6 +43,18 @@ function statusLabel(status: ProjectUnderstandingItem["status"]): string {
   return labels[status];
 }
 
+function restoreEditDraft(dossier: ProjectUnderstanding, setEditingId: (id: string | null) => void, setEditValue: (value: string) => void) {
+  try {
+    const raw = window.sessionStorage.getItem(EDIT_DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw) as { itemId?: string; value?: string };
+    if (draft.itemId && typeof draft.value === "string" && getActiveUnderstandingItems(dossier).some((item) => item.id === draft.itemId)) {
+      setEditingId(draft.itemId);
+      setEditValue(draft.value);
+    }
+  } catch { /* Le dossier reste disponible même si le brouillon est illisible. */ }
+}
+
 export default function UnderstandingPage() {
   const [dossier, setDossier] = useState<ProjectUnderstanding | null>(null);
   const [sourceAvailable, setSourceAvailable] = useState(false);
@@ -60,12 +72,14 @@ export default function UnderstandingPage() {
         const parsed = JSON.parse(saved) as ProjectUnderstanding;
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
           setDossier(parsed);
+          restoreEditDraft(parsed, setEditingId, setEditValue);
           return;
         }
       }
     } catch { /* Reconstruire à partir de la session source. */ }
     const initial = createProjectUnderstanding(session);
     setDossier(initial);
+    restoreEditDraft(initial, setEditingId, setEditValue);
     try { window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(initial)); } catch { /* Mémoire de page seulement. */ }
   }, []);
 
