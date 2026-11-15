@@ -535,6 +535,18 @@ export function deferDiagnosticQuestion(
   };
 }
 
+
+export function resumeDeferredDiagnosticQuestions(session: DiagnosticSession): DiagnosticSession {
+  if (session.deferredQuestionIds.length === 0) return session;
+  return {
+    ...session,
+    deferredQuestionIds: [],
+    status: "in_progress",
+    version: session.version + 1,
+    updatedAt: now(),
+  };
+}
+
 export function markDiagnosticReady(session: DiagnosticSession): DiagnosticSession {
   return { ...session, status: "ready_for_review", version: session.version + 1, updatedAt: now() };
 }
