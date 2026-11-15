@@ -396,7 +396,8 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   }
 
   const coreDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
-  const hasCompleteOpeningBrief = ["problem", "audience", "goal", "preference", "feature"].every((dimension) => coreDimensions.has(dimension));
+  const requiredOpeningDimensions: NeedDimension[] = ["problem", "audience", "goal", "preference", "feature"];
+  const hasCompleteOpeningBrief = requiredOpeningDimensions.every((dimension) => coreDimensions.has(dimension));
   if (updatedSession.askedQuestionIds.length === 0 && hasCompleteOpeningBrief) {
     const summary = buildSummary(updatedSession);
     return {
@@ -424,7 +425,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     ...dossier.facets.map((item) => item.dimension),
   ])];
   const dossierDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
-  const hasRichDescription = ["problem", "audience", "goal", "preference", "feature"].every((dimension) => dossierDimensions.has(dimension));
+  const hasRichDescription = requiredOpeningDimensions.every((dimension) => dossierDimensions.has(dimension));
   const plan = selectNextQuestion({
     candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
     answeredDimensions,
