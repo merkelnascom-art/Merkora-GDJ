@@ -164,6 +164,15 @@ export default function UnderstandingPage() {
               <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
               <p>{dossier.originalDescription}</p>
             </section>
+            {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
+              <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
+              <div className="mk-relation-list">{dossier.situationGraph.relations.slice(0, 8).map((relation) => {
+                const from = dossier.situationGraph.entities.find((entity) => entity.id === relation.fromEntityId);
+                const to = dossier.situationGraph.entities.find((entity) => entity.id === relation.toEntityId);
+                return <p key={relation.id}><strong>{from?.label ?? "Élément non identifié"}</strong><span>{relation.predicate.replaceAll("_", " ")}</span><strong>{to?.label ?? "Élément non identifié"}</strong></p>;
+              })}</div>
+              {dossier.situationGraph.unresolvedRelations.length > 0 && <small className="mk-unresolved-count">{dossier.situationGraph.unresolvedRelations.length} relation(s) restent à préciser.</small>}
+            </section>}
             {dossier.contradictions.length > 0 && <section className="mk-understanding-section mk-contradictions">
               <div className="mk-understanding-section-heading"><div><h2>Points à clarifier</h2><p>Des indications semblent différentes ou incompatibles. Aucune n'est écartée automatiquement.</p></div><span>{dossier.contradictions.filter((item) => item.status !== "resolved").length}</span></div>
               {dossier.contradictions.map((item) => <article className="mk-contradiction-item" key={item.id}>
