@@ -428,7 +428,7 @@ export function recordDiagnosticAnswer(
     dimension: currentQuestion.dimension,
     originalDimension: currentQuestion.dimension,
     value: evidenceValue,
-    status: answerStatus === "unknown" ? "unknown" : "user_stated",
+    status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
     source: "diagnostic_answer",
     sourceMessageId: answer.id,
     sourceQuote: evidenceValue,
