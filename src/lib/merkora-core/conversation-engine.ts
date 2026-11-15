@@ -419,6 +419,10 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   }
 
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
+  const hasRichDescription = updatedSession.evidence.some((item) => item.dimension === "feature") &&
+    updatedSession.evidence.some((item) => item.dimension === "problem") &&
+    (updatedSession.evidence.some((item) => item.dimension === "goal") ||
+      updatedSession.evidence.some((item) => item.dimension === "experience"));
   const plan = selectNextQuestion({
     candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
     answeredDimensions,
@@ -440,10 +444,6 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  const hasRichDescription = updatedSession.evidence.some((item) => item.dimension === "feature") &&
-    updatedSession.evidence.some((item) => item.dimension === "problem") &&
-    (updatedSession.evidence.some((item) => item.dimension === "goal") ||
-      updatedSession.evidence.some((item) => item.dimension === "experience"));
   const hasPrivacyEvidence = updatedSession.evidence.some((item) => item.dimension === "risk");
   if (updatedSession.privacyConsiderations.length > 0 && !hasPrivacyEvidence &&
       !updatedSession.deferredDimensions.includes("risk")) {
