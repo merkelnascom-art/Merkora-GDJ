@@ -1,5 +1,6 @@
 import { CORE_KNOWLEDGE_CONCEPTS } from "./core-catalog";
-import type { KnowledgeConcept, KnowledgeRegistry, KnowledgeRelationship } from "./types";
+import { UNIVERSAL_DOMAIN_CATALOG } from "./universal-domain-catalog";
+import type { KnowledgeConcept, KnowledgeRegistry, KnowledgeRelationship, KnowledgeRelationshipVersion } from "./types";
 
 function cloneRelationship(relationship: KnowledgeRelationship): KnowledgeRelationship {
   return {
@@ -17,6 +18,7 @@ function cloneConcept(concept: KnowledgeConcept): KnowledgeConcept {
     classifications: concept.classifications.map((classification) => ({ ...classification })),
     attributes: concept.attributes.map((attribute) => ({ ...attribute })),
     relationships: concept.relationships.map(cloneRelationship),
+    ...(concept.externalMappings ? { externalMappings: concept.externalMappings.map((mapping) => ({ ...mapping })) } : {}),
     scope: {
       ...concept.scope,
       ...(concept.scope.countries ? { countries: [...concept.scope.countries] } : {}),
@@ -37,6 +39,7 @@ export function createKnowledgeRegistry(
   concepts: KnowledgeConcept[] = [],
   relationships: KnowledgeRelationship[] = [],
   conceptHistory: KnowledgeConcept[] = [],
+  relationshipHistory: KnowledgeRelationshipVersion[] = [],
 ): KnowledgeRegistry {
   const ids = new Set<string>();
   const canonicalKeys = new Set<string>();
@@ -138,11 +141,16 @@ export function createKnowledgeRegistry(
     concepts: concepts.map(cloneConcept),
     relationships: [...allRelationships.values()].map(cloneRelationship),
     conceptHistory: conceptHistory.map(cloneConcept),
+    relationshipHistory: relationshipHistory.map((entry) => ({ ...entry, snapshot: cloneRelationship(entry.snapshot) })),
   };
 }
 
 export function createCoreKnowledgeRegistry(): KnowledgeRegistry {
   return createKnowledgeRegistry(CORE_KNOWLEDGE_CONCEPTS);
+}
+
+export function createUniversalKnowledgeRegistry(): KnowledgeRegistry {
+  return createKnowledgeRegistry([...CORE_KNOWLEDGE_CONCEPTS, ...UNIVERSAL_DOMAIN_CATALOG]);
 }
 
 export function getKnowledgeConcept(
@@ -160,6 +168,7 @@ export function addKnowledgeConcept(
     [...registry.concepts, concept],
     registry.relationships,
     registry.conceptHistory,
+    registry.relationshipHistory ?? [],
   );
   return { ...next, version: registry.version + 1 };
 }
@@ -172,6 +181,7 @@ export function addKnowledgeRelationship(
     registry.concepts,
     [...registry.relationships, relationship],
     registry.conceptHistory,
+    registry.relationshipHistory ?? [],
   );
   return { ...next, version: registry.version + 1 };
 }
@@ -214,6 +224,46 @@ export function reviseKnowledgeConcept(
     registry.concepts.map((concept) => concept.id === conceptId ? revised : concept),
     registryLevelRelationships,
     [...registry.conceptHistory, current],
+    registry.relationshipHistory ?? [],
+  );
+  return { ...next, version: registry.version + 1 };
+}
+
+/** Version a relationship independently, preserving every superseded snapshot. */
+export function reviseKnowledgeRelationship(
+  registry: KnowledgeRegistry,
+  relationshipId: string,
+  expectedVersion: number,
+  changes: Partial<Omit<KnowledgeRelationship, "id" | "sourceConceptId" | "version">>,
+  updatedAt = new Date().toISOString(),
+): KnowledgeRegistry {
+  const current = registry.relationships.find((item) => item.id === relationshipId);
+  if (!current) throw new Error(`Knowledge relationship not found: ${relationshipId}`);
+  if (current.version !== expectedVersion) {
+    throw new Error(`Knowledge relationship version conflict: expected ${expectedVersion}, found ${current.version}.`);
+  }
+  const revised: KnowledgeRelationship = {
+    ...current,
+    ...changes,
+    id: current.id,
+    sourceConceptId: current.sourceConceptId,
+    version: current.version + 1,
+  };
+  const next = createKnowledgeRegistry(
+    registry.concepts.map((concept) => ({
+      ...concept,
+      relationships: concept.relationships.map((item) => item.id === relationshipId ? revised : item),
+    })),
+    registry.relationships.some((item) => item.id === relationshipId)
+      ? registry.relationships.map((item) => item.id === relationshipId ? revised : item)
+      : [...registry.relationships, revised],
+    registry.conceptHistory,
+    [...(registry.relationshipHistory ?? []), {
+      relationshipId,
+      version: current.version,
+      snapshot: cloneRelationship(current),
+      archivedAt: updatedAt,
+    }],
   );
   return { ...next, version: registry.version + 1 };
 }

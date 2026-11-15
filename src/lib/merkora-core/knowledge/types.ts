@@ -86,6 +86,23 @@ export interface KnowledgeReliability {
   verificationNotes?: string[];
 }
 
+export interface KnowledgeExternalMapping {
+  system: string;
+  externalId: string;
+  uri?: string;
+  datasetVersion: string;
+  language?: string;
+  matchType: "exact" | "close" | "broader" | "narrower" | "related";
+  importedAt: string;
+}
+
+export interface KnowledgeRelationshipVersion {
+  relationshipId: string;
+  version: number;
+  snapshot: KnowledgeRelationship;
+  archivedAt: string;
+}
+
 export interface KnowledgeConcept {
   id: string;
   canonicalKey: string;
@@ -95,6 +112,7 @@ export interface KnowledgeConcept {
   classifications: KnowledgeClassification[];
   attributes: KnowledgeAttributeDefinition[];
   relationships: KnowledgeRelationship[];
+  externalMappings?: KnowledgeExternalMapping[];
   scope: KnowledgeScope;
   lifecycle: {
     status: KnowledgeLifecycleStatus;
@@ -113,6 +131,7 @@ export interface KnowledgeRegistry {
   relationships: KnowledgeRelationship[];
   /** Immutable snapshots of superseded concept versions. */
   conceptHistory: KnowledgeConcept[];
+  relationshipHistory?: KnowledgeRelationshipVersion[];
 }
 
 export interface KnowledgeProposal {
@@ -124,7 +143,8 @@ export interface KnowledgeProposal {
   sourceMessageId: string;
   sourceQuote: string;
   createdAt: string;
-  status: "proposed" | "approved" | "rejected";
+  status: "proposed" | "under_review" | "approved" | "rejected";
+  possibleDuplicateConceptIds?: string[];
   reviewedAt?: string;
   review?: {
     reviewerId: string;
