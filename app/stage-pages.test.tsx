@@ -9,7 +9,7 @@ describe("MerKora screen 03 — project understanding", () => {
     const html = renderToStaticMarkup(<UnderstandingPage />);
     expect(html).toContain("Vérifions-le ensemble");
     expect(html).toContain("Activité, idée ou phénomène");
-    expect(html).toContain("Les informations inconnues ne seront pas inventées");
+    expect(html).toContain("Ce qui reste inconnu ne sera pas inventé");
     expect(html).not.toContain("Choisis ton secteur");
   });
 });
