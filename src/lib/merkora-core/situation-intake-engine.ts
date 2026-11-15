@@ -2,6 +2,8 @@ import type { ConversationMessage, NeedDimension, NeedEvidence, QuestionCandidat
 import { buildSituationGraph, type SituationGraph } from "./situation-graph";
 import { extractSituationObservations } from "./situation-extractor";
 import { analyzeConversation, type ConversationReasoning } from "./situation-reasoning";
+import { createCoreKnowledgeRegistry } from "./knowledge/registry";
+import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 
 export type IntentKind =
   | "organize_event" | "reservation" | "invitation" | "request"
@@ -156,7 +158,8 @@ export function rebuildSituationGraph(messages: ConversationMessage[]): Situatio
   const projectMessages = messages.filter(
     (message) => message.role === "visitor" && !REPAIR.test(message.content),
   );
-  return buildSituationGraph(extractSituationObservations(projectMessages));
+  const graph = buildSituationGraph(extractSituationObservations(projectMessages));
+  return enrichSituationGraphWithKnowledge(graph, createCoreKnowledgeRegistry());
 }
 
 function makeSummary(session: UnderstandingSession): string {
