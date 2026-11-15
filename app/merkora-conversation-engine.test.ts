@@ -49,6 +49,10 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(afterCause.pendingQuestion).toBeNull();
     expect(afterCause.summary).toContain("centre de formation");
     expect(afterCause.summary).toContain("Les enseignants arrivent souvent en retard.");
+
+    const confirmed = decideUnderstandingSummary(afterCause, "confirmed");
+    expect(confirmed.stage).toBe("complete");
+    expect(confirmed.evidence.every((item) => item.status === "validated")).toBe(true);
   });
 
   it("does not ask a second question when an answer is blank", () => {
@@ -60,7 +64,9 @@ describe("MerKora screen 2 guided understanding journey", () => {
   });
 
   it("records an explicit summary decision and keeps a correction traceable", () => {
-    const session = beginUnderstanding("Je veux améliorer mon centre.");
+    const session = beginUnderstanding(
+      "Je veux améliorer le centre de formation. Les enseignants arrivent en retard. Aujourd'hui, je note les présences dans un cahier. Parce que les horaires changent.",
+    );
     const corrected = decideUnderstandingSummary(
       session,
       "corrected",
