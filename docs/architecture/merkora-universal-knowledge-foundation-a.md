@@ -2,7 +2,7 @@
 
 **Version :** 1.0  
 **Date :** 15 novembre 2026  
-**Statut :** Intégration réalisée dans une branche isolée ; vérification CI en cours sur la dernière révision  
+**Statut :** Intégration réalisée et vérifiée en CI dans une branche isolée — run #1337  
 **Périmètre :** noyau TypeScript, registre de concepts, correspondance contrôlée, propositions privées et raccordement au graphe de situation.
 
 ## 1. Finalité
@@ -165,3 +165,13 @@ Aucune migration, écriture ou modification Supabase n'est incluse dans cette li
 ## 12. Hors périmètre
 
 La compréhension linguistique générale, la résolution robuste des pronoms, les embeddings, les déductions logiques, le raisonnement causal, le moteur probabiliste, le questionnaire adaptatif avancé et les intégrations IA appartiennent aux fondations suivantes. La Fondation A ne prétend pas les remplacer.
+
+
+## 13. Résultat de vérification final
+
+GitHub Actions — Quality checks, run #1337, sur le commit `ce74eebd759a34d4abcd3f9ad764a077b50a42a8` :
+
+- TypeScript : réussi.
+- Vitest : 19 fichiers de tests, 127 tests réussis.
+- Build Next.js de production : réussi.
+- Le job complet est terminé avec succès.
