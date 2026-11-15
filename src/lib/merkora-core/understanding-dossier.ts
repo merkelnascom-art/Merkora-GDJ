@@ -26,7 +26,7 @@ const CURRENT_ACTIVITY = /aujourd'hui|actuellement|pour le moment|en ce moment|j
 const RESOURCE = /relevé|releve|notes scolaires|bulletin|document|dossier|fichier|photo|image|donnée|donnee|information|formulaire|justificatif|stock|produit|paiement|commande/i;
 const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service de réservation|jeu interactif|système|système|interface|agent|agence|quiz|consultation/i;
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
-const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|crée|partage|consulte|joue|tape|défile|disparaît|réapparaît|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
+const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
 const CONSTRAINT = /sans connexion|sans compte|sans se connecter|hors ligne|offline|uniquement|seulement|obligatoire|facultatif|gratuit|budget|fcfa|délai|téléphone|ordinateur/i;
 
 function visitorMessages(messages: ConversationMessage[]) {
@@ -83,7 +83,8 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
       if (RESOURCE.test(sentence)) addFacet(facets, "resource", "Informations et ressources utilisées", sentence, visitor.id);
       if (SOLUTION.test(sentence)) addFacet(facets, "preference", "Solution ou idée envisagée", sentence, visitor.id);
       if (GOAL.test(sentence)) addFacet(facets, "goal", "Objectif ou résultat recherché", sentence, visitor.id);
-      if (FEATURE.test(sentence)) addFacet(facets, "feature", "Fonctionnement ou actions imaginées", sentence, visitor.id);
+      const featureNotDecided = /pas encore décidé|pas encore defini|pas encore défini|n'ai pas décidé|ne sais pas encore|reste à définir/i.test(sentence);
+      if (FEATURE.test(sentence) && !featureNotDecided) addFacet(facets, "feature", "Fonctionnement ou actions imaginées", sentence, visitor.id);
       if (CONSTRAINT.test(sentence)) addFacet(facets, "constraint", "Contraintes et conditions", sentence, visitor.id);
       if (/parce que|car |à cause de|puisque|en raison de/i.test(sentence)) {
         addFacet(facets, "cause", "Cause évoquée", sentence, visitor.id);
@@ -99,7 +100,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
 
   const dimensions = new Set([...facets.values()].map((item) => item.dimension));
   const privacyAnswerPresent = /informé|informés|accord|consent|seul(?:e)?s? l['’]?(?:élève|eleve)|uniquement|accès|acces|consulter|consultation|confidentiel|parent|conseiller/i.test(allText);
-  const sensitiveDataMentioned = /relevé|releve|notes scolaires|bulletin|dossier médical|dossier medical|données personnelles|donnees personnelles|résultats scolaires|resultats scolaires/i.test(allText);
+  const sensitiveDataMentioned = /relevés?|releves?|notes scolaires|bulletins?|dossiers médicaux|dossiers medicaux|données personnelles|donnees personnelles|résultats scolaires|resultats scolaires/i.test(allText);
   const missingDimensions: NeedDimension[] = [];
   if (!dimensions.has("problem")) missingDimensions.push("problem");
   if (!dimensions.has("audience")) missingDimensions.push("audience");
