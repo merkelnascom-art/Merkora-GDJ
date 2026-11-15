@@ -19,7 +19,7 @@ export interface UnderstandingDossier {
 }
 
 const REPAIR = /tu ne me suis pas|tu ne me comprends pas|tu n'as pas compris|tu n'as pas encore compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire|avec tout ce que j'ai dit.{0,50}(?:pas compris|ne comprends)/i;
-const PROBLEM = /probl[eè]me|difficult[ée]|stress|frustr|se perdent|ne savent pas|au hasard|désorganis|retard|perte de temps|n'arrivw* pas|ne parviennent pas|bloqu/i;
+const PROBLEM = /probl[eè]me|difficult[ée]|stress|frustr|se perdent|ne savent pas|au hasard|désorganis|retard|perte de temps|n'arriv\\w* pas|ne parviennent pas|bloqu/i;
 const AUDIENCE = /élèves?|étudiants?|apprenants?|jeunes|clients?|patients?|joueurs?|danseurs?|invités?|employés?|personnel|enseignants?|famille|utilisateurs?/i;
 const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service de réservation|jeu interactif|système|système|interface|agent|agence|quiz|consultation/i;
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
