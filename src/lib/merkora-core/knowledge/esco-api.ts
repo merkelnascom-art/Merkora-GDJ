@@ -4,6 +4,7 @@ export interface ESCOSuggestion {
   description?: string;
   alternativeLabels: string[];
   language: string;
+  conceptType: "occupation" | "skill";
   source: "ESCO";
 }
 
@@ -37,7 +38,11 @@ function asTextList(value: unknown): string[] {
  * accepts the documented HAL collection and common export shapes while
  * requiring a stable occupation URI and a real preferred label.
  */
-export function normalizeESCOApiSuggestions(payload: unknown, language: string): ESCOSuggestion[] {
+export function normalizeESCOApiSuggestions(
+  payload: unknown,
+  language: string,
+  conceptType: "occupation" | "skill" = "occupation",
+): ESCOSuggestion[] {
   const root = asRecord(payload);
   if (!root) return [];
 
@@ -57,7 +62,7 @@ export function normalizeESCOApiSuggestions(payload: unknown, language: string):
       if (!item) continue;
       const uri = asText(item.uri) ?? asText(item.conceptUri) ?? asText(item.conceptURI);
       const label = asText(item.preferredLabel) ?? asText(item.title) ?? asText(item.label);
-      if (!uri || !label || !uri.includes("/occupation/") || seen.has(uri)) continue;
+      if (!uri || !label || !uri.includes(`/${conceptType}/`) || seen.has(uri)) continue;
       seen.add(uri);
       const description = asText(item.description) ?? asText(item.definition);
       output.push({
@@ -66,6 +71,7 @@ export function normalizeESCOApiSuggestions(payload: unknown, language: string):
         ...(description ? { description } : {}),
         alternativeLabels: asTextList(item.altLabels ?? item.alternativeLabels),
         language,
+        conceptType,
         source: "ESCO",
       });
     }

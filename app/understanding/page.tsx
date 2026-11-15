@@ -71,6 +71,7 @@ export default function UnderstandingPage() {
   const [editValue, setEditValue] = useState("");
   const [notice, setNotice] = useState("");
   const [escoLanguage, setEscoLanguage] = useState("fr");
+  const [escoSearchType, setEscoSearchType] = useState<"occupation" | "skill">("occupation");
   const [escoSuggestions, setEscoSuggestions] = useState<Record<string, ESCOSuggestion[]>>({});
   const [escoLoadingId, setEscoLoadingId] = useState<string | null>(null);
 
@@ -154,7 +155,7 @@ export default function UnderstandingPage() {
     setNotice("");
     try {
       const searchTerm = entity.kind === "actor" && entity.role ? entity.role : entity.label;
-      const params = new URLSearchParams({ text: searchTerm, language: escoLanguage });
+      const params = new URLSearchParams({ text: searchTerm, language: escoLanguage, type: escoSearchType });
       const response = await fetch(`/api/knowledge/esco?${params.toString()}`);
       const payload = await response.json() as { results?: ESCOSuggestion[]; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Recherche ESCO indisponible.");
@@ -182,7 +183,7 @@ export default function UnderstandingPage() {
       ...(externalReference ? {
         externalReference: {
           system: "ESCO" as const,
-          conceptType: "occupation" as const,
+          conceptType: externalReference.conceptType,
           uri: externalReference.uri,
           label: externalReference.label,
           language: externalReference.language,
@@ -251,9 +252,14 @@ export default function UnderstandingPage() {
                 <span>{dossier.situationGraph.entities.length}</span>
               </div>
               <div className="mk-item-meta">
-                <label htmlFor="esco-language">Langue de recherche des professions</label>
+                <label htmlFor="esco-language">Langue de recherche ESCO</label>
                 <select id="esco-language" value={escoLanguage} onChange={(event) => changeKnowledgeLanguage(event.target.value)}>
                   {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
+                </select>
+                <label htmlFor="esco-type">Catalogue à consulter</label>
+                <select id="esco-type" value={escoSearchType} onChange={(event) => setEscoSearchType(event.target.value as "occupation" | "skill")}>
+                  <option value="occupation">Métiers et professions</option>
+                  <option value="skill">Compétences et spécialisations</option>
                 </select>
               </div>
               <div className="mk-understanding-items">
@@ -291,7 +297,7 @@ export default function UnderstandingPage() {
                           </button>
                           {(entity.kind === "activity" || entity.kind === "actor") && (
                             <button className="mk-small-action" type="button" onClick={() => searchESCO(entity)} disabled={escoLoadingId === entity.id}>
-                              {escoLoadingId === entity.id ? "Recherche…" : "Chercher une profession dans ESCO"}
+                              {escoLoadingId === entity.id ? "Recherche…" : escoSearchType === "occupation" ? "Chercher un métier dans ESCO" : "Chercher une compétence dans ESCO"}
                             </button>
                           )}
                         </div>
