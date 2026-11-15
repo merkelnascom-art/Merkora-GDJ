@@ -304,7 +304,8 @@ const QUESTION_CATALOG: QuestionCandidate[] = [
 function remainingDossierQuestions(session: UnderstandingSession): Array<{ dimension: NeedDimension; prompt: string }> {
   return session.dossier.openQuestions.flatMap((prompt, index) => {
     const dimension = session.dossier.missingDimensions[index];
-    return dimension && !session.deferredDimensions.includes(dimension) ? [{ dimension, prompt }] : [];
+    const alreadyCaptured = dimension && session.evidence.some((item) => item.dimension === dimension);
+    return dimension && !alreadyCaptured && !session.deferredDimensions.includes(dimension) ? [{ dimension, prompt }] : [];
   });
 }
 
@@ -440,6 +441,23 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     deferredDimensions: updatedSession.deferredDimensions,
     askedQuestionIds: updatedSession.askedQuestionIds,
   });
+  const nextDossierGap = remainingDossierQuestions(updatedSession)[0];
+  const dossierDrivenIntent = ["improve", "solve", "explore", "create_project", "invention"].includes(updatedSession.intentKind);
+  const shouldAskDossierGap = Boolean(nextDossierGap && dossierDrivenIntent &&
+    (plan.kind === "complete" || (plan.kind === "question" && !["problem", "actor"].includes(plan.question.dimension))));
+  if (shouldAskDossierGap && nextDossierGap) {
+    const question: QuestionCandidate = {
+      id: "dossier-follow-up-" + nextDossierGap.dimension + "-v1",
+      dimension: nextDossierGap.dimension,
+      prompt: nextDossierGap.prompt,
+      rationale: "Cette information manque dans le dossier et peut modifier la conception.",
+      impact: 0.9, uncertainty: 0.9, decisionRelevance: 0.9, answerability: 0.85,
+    };
+    const next = { ...updatedSession, pendingQuestion: question,
+      askedQuestionIds: [...updatedSession.askedQuestionIds, question.id],
+      stage: "clarification" as const, version: updatedSession.version + 1 };
+    return { ...next, messages: [...next.messages, message(next.conversationId, "merkora", question.prompt)] };
+  }
 
   if (plan.kind === "question" && !hasRichDescription) {
     const next = {
