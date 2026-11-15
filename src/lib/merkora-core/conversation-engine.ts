@@ -411,7 +411,8 @@ function advance(session: UnderstandingSession): UnderstandingSession {
 
   if (updatedSession.askedQuestionIds.length === 0 && !hasCompleteOpeningBrief) {
     const question = intentFirstQuestion(updatedSession);
-    const alreadyCovered = updatedSession.evidence.some((item) => item.dimension === question.dimension);
+    const alreadyCovered = updatedSession.evidence.some((item) => item.dimension === question.dimension) ||
+      dossier.facets.some((item) => item.dimension === question.dimension);
     if (!alreadyCovered) {
       const next = { ...updatedSession, pendingQuestion: question, askedQuestionIds: [question.id], stage: "clarification" as const, version: updatedSession.version + 1 };
       return { ...next, messages: [...next.messages, message(next.conversationId, "merkora", question.prompt)] };
@@ -447,7 +448,8 @@ function advance(session: UnderstandingSession): UnderstandingSession {
 
   if (dossier.missingDimensions.includes("risk") &&
       !updatedSession.deferredDimensions.includes("risk") &&
-      !updatedSession.askedQuestionIds.some((id) => id.includes("risk"))) {
+      !updatedSession.askedQuestionIds.some((id) => id.includes("risk")) &&
+      !updatedSession.askedQuestionIds.includes(PRIVACY_QUESTION.id)) {
     return {
       ...updatedSession,
       pendingQuestion: PRIVACY_QUESTION,
