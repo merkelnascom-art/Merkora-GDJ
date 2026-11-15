@@ -1,6 +1,7 @@
 import type { UnderstandingSession } from "./situation-intake-engine";
 import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
+import type { KnowledgeProposal } from "./knowledge/types";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -69,6 +70,8 @@ export interface ProjectUnderstanding {
   contradictions: ProjectContradiction[];
   unresolvedQuestions: string[];
   privacyConsiderations: string[];
+  /** Project-private proposals; older stored dossiers may not contain this field. */
+  knowledgeProposals?: KnowledgeProposal[];
   activityVocabulary: "open";
   validationStatus: "in_progress" | "validated";
   sourceSessionVersion: number;
@@ -219,6 +222,7 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       ...(session.reasoning?.references.filter((reference) => !reference.resolved).map((reference) => `Préciser la référence « ${reference.mention} ».`) ?? []),
     ],
     privacyConsiderations: [...session.privacyConsiderations],
+    knowledgeProposals: [],
     activityVocabulary: "open",
     validationStatus: "in_progress",
     sourceSessionVersion: session.version,
