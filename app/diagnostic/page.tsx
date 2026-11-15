@@ -262,7 +262,7 @@ export default function DiagnosticPage() {
               <div className="mk-history-heading"><div><span className="mk-summary-kicker">MÉMOIRE DU DIAGNOSTIC</span><h2>Réponses déjà données</h2></div><span>{history.length}</span></div>
               {history.length === 0 ? <p>Les réponses apparaîtront ici au fur et à mesure, sans remplacer tes mots d'origine.</p> : history.map((answer) => (
                 <article className="mk-history-item" key={answer.id}>
-                  <div><strong>{answer.question.prompt}</strong><p>{Array.isArray(answer.value) ? answer.value.join(" · ") : answer.value}{answer.detail ? " — " + answer.detail : ""}</p></div>
+                  <div><strong>{answer.question.prompt}</strong><p>{Array.isArray(answer.value) ? answer.value.join(" · ") : answer.value}{answer.detail ? " — " + answer.detail : ""}</p>{diagnostic.answers.some((previous) => previous.id !== answer.id && previous.questionId === answer.questionId) && <details className="mk-answer-versions"><summary>Voir les versions précédentes</summary>{diagnostic.answers.filter((previous) => previous.id !== answer.id && previous.questionId === answer.questionId).map((previous) => <p key={previous.id}>{Array.isArray(previous.value) ? previous.value.join(" · ") : previous.value}{previous.detail ? " — " + previous.detail : ""}</p>)}</details>}</div>
                   <button type="button" className="mk-small-action" onClick={() => editPrevious(answer)}>Modifier</button>
                 </article>
               ))}
