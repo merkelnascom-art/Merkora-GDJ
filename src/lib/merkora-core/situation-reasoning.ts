@@ -74,7 +74,7 @@ function extractConstraintClaims(message: ConversationMessage): ConstraintClaim[
 
   const internet = content.match(/[^.!?\n]*(?:sans connexion(?: internet)?|hors ligne|offline)[^.!?\n]*/i);
   if (internet) add("internet_access", "not_required", internet[0], "La solution doit-elle fonctionner sans connexion Internet, ou une connexion est-elle obligatoire ?");
-  const internetRequired = content.match(/[^.!?\n]*(?:connexion internet obligatoire|obligatoirement connecté(?:e)?s? à internet|toujours connecté(?:e)?s? à internet|connexion requise|en ligne uniquement)[^.!?\n]*/i);
+  const internetRequired = content.match(/[^.!?\n]*(?:connexion internet obligatoire|obligatoirement connecté(?:e)?s? à internet|toujours (?:être\s+)?connecté(?:e)?s? à internet|connexion requise|en ligne uniquement)[^.!?\n]*/i);
   if (internetRequired) add("internet_access", "required", internetRequired[0], "La solution doit-elle fonctionner sans connexion Internet, ou une connexion est-elle obligatoire ?");
 
   const account = content.match(/[^.!?\n]*(?:sans compte|sans inscription|sans créer de compte|sans création de compte)[^.!?\n]*/i);
