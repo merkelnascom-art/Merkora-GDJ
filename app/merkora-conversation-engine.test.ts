@@ -165,3 +165,45 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(corrected.messages.at(-1)?.content).toContain("centre de santé");
   });
 });
+
+
+describe("MerKora intent-first understanding and conversational repair", () => {
+  it("recognizes an event to organize instead of treating it as an existing problem", () => {
+    const session = beginUnderstanding(
+      "Je veux organiser une pool party pour mon anniversaire et inviter mes amis.",
+    );
+
+    expect(session.intentKind).toBe("organize_event");
+    expect(session.pendingQuestion?.prompt).toMatch(/date|période|prévu/i);
+    expect(session.pendingQuestion?.dimension).not.toBe("problem");
+    expect(session.pendingQuestion?.dimension).not.toBe("activity");
+  });
+
+  it("recognizes a reservation request and asks for reservation-specific information", () => {
+    const session = beginUnderstanding("Je veux réserver une table pour samedi soir.");
+
+    expect(session.intentKind).toBe("reservation");
+    expect(session.pendingQuestion?.prompt).toMatch(/réserver|date|heure|personnes/i);
+    expect(session.pendingQuestion?.dimension).not.toBe("problem");
+  });
+
+  it("recognizes a creation project such as opening a school without assuming an existing process", () => {
+    const session = beginUnderstanding("Je veux créer une école pour former des jeunes.");
+
+    expect(session.intentKind).toBe("create_project");
+    expect(session.pendingQuestion?.prompt).toMatch(/créer|école|personnes|public/i);
+    expect(session.pendingQuestion?.dimension).not.toBe("activity");
+  });
+
+  it("treats a user saying MerKora did not understand as a conversational repair, not as a cause", () => {
+    const first = beginUnderstanding("Je veux organiser une pool party pour mon anniversaire.");
+    const repaired = answerUnderstanding(
+      first,
+      "Non mais tu ne me suis pas, est-ce que tu me comprends ?",
+    );
+
+    expect(repaired.messages.at(-1)?.content).toMatch(/raison|reprenons|comprendre/i);
+    expect(repaired.pendingQuestion?.prompt).toMatch(/concrètement|expliquer|reformuler/i);
+    expect(repaired.evidence.some((item) => item.dimension === "cause")).toBe(false);
+  });
+});
