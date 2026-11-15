@@ -112,8 +112,8 @@ function detectContradictions(messages: ConversationMessage[]): ReasoningContrad
   return result;
 }
 
-const ANTECEDENT = /\b(?:une?|la|le|cette?|ce|cet)\s+(plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole)\b/gi;
-const REFERENCE = /\b(elle|il|elles|ils|cette plateforme|cette application|ce site|ce logiciel|ce système|ce systeme|cette solution|cet outil|ce projet|ce service)\b/gi;
+const ANTECEDENT = /\b(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+(plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|medecin|médecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription)\b/gi;
+const REFERENCE = /\b(elle|il|elles|ils|ceux-ci|celles-ci|ce dernier|cette dernière|cette plateforme|cette application|ce site|ce logiciel|ce système|ce systeme|cette solution|cet outil|ce projet|ce service|cet événement|ce rendez-vous|ce document|ce dossier)\b/gi;
 
 function resolveReferences(messages: ConversationMessage[]): ResolvedReference[] {
   const visitorMessages = messages.filter((message) => message.role === "visitor");
@@ -138,12 +138,13 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
         confidence: target ? 0.82 : 0.2,
       });
     }
-    for (const match of message.content.matchAll(ANTECEDENT)) {
+    const antecedents = [...message.content.matchAll(ANTECEDENT)];
+    antecedents.forEach((match, index) => {
       const noun = match[1].toLocaleLowerCase("fr");
       const gender = ["plateforme", "application", "solution", "clinique", "école", "ecole", "directrice", "secrétaire", "enseignante", "formatrice", "employée", "patiente", "élève", "eleve", "étudiante", "cliente", "invitée", "inscription", "commande"].includes(noun) ? "f" : "m";
-      const label = match[0].replace(/^(?:un|une|la|le|ce|cet|cette)\s+/i, "").trim();
-      known.push({ label, gender, messageId: message.id });
-    }
+      const label = match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
+      known.push({ label, gender, messageId: message.id, primary: index === 0 });
+    });
   }
   return results;
 }
