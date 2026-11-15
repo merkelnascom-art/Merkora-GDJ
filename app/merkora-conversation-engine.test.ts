@@ -3,6 +3,7 @@ import {
   answerUnderstanding,
   beginUnderstanding,
   decideUnderstandingSummary,
+  deferUnderstandingQuestion,
 } from "../src/lib/merkora-core/conversation-engine";
 
 describe("MerKora screen 2 guided understanding journey", () => {
