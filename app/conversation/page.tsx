@@ -299,13 +299,13 @@ export default function ConversationPage() {
                 </div>
                 <p style={{fontSize:".88rem",opacity:.78,marginTop:0}}>Chaque élément reste relié au message qui l'a fourni. Les informations exprimées ne sont pas confondues avec des hypothèses.</p>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:".65rem"}}>
-                  {(["project_scope","problem","audience","actor","goal","preference","feature","context","resource","constraint","cause"] as const).map((dimension)=> {
+                  {(["project_scope","problem","audience","actor","goal","preference","activity","feature","context","resource","constraint","cause"] as const).map((dimension)=> {
                     const items=session.evidence.filter((item)=>item.dimension===dimension);
                     if(!items.length)return null;
-                    const labels:Record<string,string>={project_scope:"Identité du projet",problem:"Situation / problème",audience:"Public concerné",actor:"Personnes et rôles",goal:"Objectifs",preference:"Solution imaginée",feature:"Fonctionnement",context:"Cadre",resource:"Données / ressources",constraint:"Contraintes",cause:"Causes évoquées"};
+                    const labels:Record<string,string>={project_scope:"Identité du projet",problem:"Situation / problème",audience:"Public concerné",actor:"Personnes et rôles",goal:"Objectifs",preference:"Solution imaginée",activity:"Activités concernées",feature:"Fonctionnement",context:"Cadre",resource:"Données / ressources",constraint:"Contraintes",cause:"Causes évoquées"};
                     return <div key={dimension} style={{padding:".75rem",borderRadius:"12px",background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}>
                       <strong style={{fontSize:".82rem"}}>{labels[dimension]}</strong>
-                      {items.map((item)=><div key={item.id} style={{fontSize:".82rem",lineHeight:1.5,marginTop:".4rem",overflowWrap:"anywhere"}}>{item.value}<div style={{fontSize:".68rem",opacity:.65}}>{item.status==="validated"?"Validé par toi":"Exprimé par toi"}</div></div>)}
+                      {items.map((item)=><div key={item.id} style={{fontSize:".82rem",lineHeight:1.5,marginTop:".4rem",overflowWrap:"anywhere"}}>{item.value}<div style={{fontSize:".68rem",opacity:.65}}>{item.status==="validated"?"Validé par toi":item.status==="hypothesis"?"Hypothèse à vérifier":item.status==="inferred"?"Déduit par le moteur":"Exprimé par toi"}</div><div style={{fontSize:".66rem",opacity:.5}}>Origine : {Math.max(1,session.messages.findIndex((message)=>message.id===item.sourceMessageId)+1)}ᵉ message de ton récit</div></div>)}
                     </div>;
                   })}
                 </div>
