@@ -61,16 +61,16 @@ function classifyIntent(raw: string): IntentKind {
 
 function intentFirstQuestion(session: UnderstandingSession): QuestionCandidate {
   const prompts: Record<IntentKind, { dimension: NeedDimension; id: string; prompt: string }> = {
-    organize_event: /pool party|fête|soirée|mariage|cérémonie|conférence|événement|anniversaire avec/i.test(session.originalDescription)
+    organize_event: /pool party|fête|soirée|mariage|cérémonie|conférence|événement/i.test(session.originalDescription)
       ? { dimension: "context", id: "event-date-v1", prompt: "As-tu déjà une date ou une période prévue pour cet événement ?" }
-      : { dimension: "goal", id: "event-type-v1", prompt: "Quel type d'événement souhaites-tu organiser pour ton anniversaire ou cette occasion ?" },
+      : { dimension: "activity", id: "event-type-v1", prompt: "Quel type d'événement souhaites-tu organiser pour ton anniversaire ou cette occasion ?" },
     reservation: /samedi|dimanche|demain|aujourd'hui|lundi|mardi|mercredi|jeudi|vendredi|\d{1,2}[/-]\d{1,2}/i.test(session.originalDescription)
       ? { dimension: "actor", id: "reservation-party-v1", prompt: "Pour combien de personnes ou de bénéficiaires souhaites-tu faire cette réservation ?" }
       : { dimension: "context", id: "reservation-when-v1", prompt: "Qu'est-ce que tu souhaites réserver, et pour quelle date ou période ?" },
     invitation: { dimension: "context", id: "invitation-occasion-v1", prompt: "À quelle occasion et à quelle date souhaites-tu envoyer cette invitation ?" },
     request: { dimension: "actor", id: "request-recipient-v1", prompt: "À qui cette demande s'adresse-t-elle ?" },
-    create_project: { dimension: "goal", id: "create-purpose-v1", prompt: "Qu'aimerais-tu créer exactement, à qui cela doit-il servir et dans quel but ?" },
-    invention: { dimension: "goal", id: "invention-purpose-v1", prompt: "Quelle est ton idée, même incomplète, et qu'aimerais-tu qu'elle rende possible ?" },
+    create_project: { dimension: "actor", id: "create-purpose-v1", prompt: "À qui cette école, cette structure ou ce projet doit-il servir, et quels besoins doit-il couvrir ?" },
+    invention: { dimension: "unknown", id: "invention-purpose-v1", prompt: "Quelle est ton idée, même incomplète ? Décris-la avec tes propres mots." },
     improve: { dimension: "problem", id: "improve-priority-v1", prompt: "Quel aspect souhaites-tu améliorer en priorité, et quel changement aimerais-tu obtenir ?" },
     solve: { dimension: "problem", id: "solve-priority-v1", prompt: "Qu'est-ce qui se passe exactement, et quel effet cela a-t-il pour toi ?" },
     explore: { dimension: "goal", id: "explore-purpose-v1", prompt: "Raconte-moi ce que tu imagines, même si ton idée n'est pas encore bien formulée." },
@@ -376,8 +376,11 @@ function advance(session: UnderstandingSession): UnderstandingSession {
 
   if (updatedSession.askedQuestionIds.length === 0) {
     const question = intentFirstQuestion(updatedSession);
-    const next = { ...updatedSession, pendingQuestion: question, askedQuestionIds: [question.id], stage: "clarification" as const, version: updatedSession.version + 1 };
-    return { ...next, messages: [...next.messages, message(next.conversationId, "merkora", question.prompt)] };
+    const alreadyCovered = updatedSession.evidence.some((item) => item.dimension === question.dimension);
+    if (!alreadyCovered) {
+      const next = { ...updatedSession, pendingQuestion: question, askedQuestionIds: [question.id], stage: "clarification" as const, version: updatedSession.version + 1 };
+      return { ...next, messages: [...next.messages, message(next.conversationId, "merkora", question.prompt)] };
+    }
   }
 
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
