@@ -181,11 +181,20 @@ function buildSummary(session: UnderstandingSession): string {
   const sections = [...grouped.entries()]
     .filter(([dimension]) => Boolean(labels[dimension]))
     .map(([dimension, values]) => `• ${labels[dimension]} : ${values.join(" ; ")}`);
+  const deferredQuestions = session.deferredDimensions.map((dimension) => {
+    const candidate = QUESTION_CATALOG.find((item) => item.dimension === dimension);
+    return `• ${candidate?.prompt ?? dimension}`;
+  });
+  const deferredConflicts = session.contradictions
+    .filter((item) => session.deferredContradictionKeys.includes(contradictionKey(item)))
+    .map((item) => `• ${item.statementA} / ${item.statementB}`);
   return [
     "Voici ma compréhension provisoire, construite à partir de tes propres réponses :",
     "",
     `Description initiale : « ${session.originalDescription} »`,
     ...(sections.length ? ["", ...sections] : []),
+    ...(deferredQuestions.length ? ["", "Points laissés en attente :", ...deferredQuestions] : []),
+    ...(deferredConflicts.length ? ["", "Indications de cohérence à revoir :", ...deferredConflicts] : []),
     "",
     "Cette synthèse n'est pas encore une décision ni une solution. Tu peux la confirmer ou me corriger.",
   ].join("\n");
