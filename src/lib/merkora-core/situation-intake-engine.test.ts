@@ -25,6 +25,27 @@ describe("whole-message situation intake", () => {
     expect(session.evidence.every((item) => item.sourceMessageId && item.sourceQuote)).toBe(true);
   });
 
+  it("builds source-backed relationships between the idea, its audience, goal and lived problem", () => {
+    const session = beginUnderstanding(
+      "Je veux créer un jeu interactif pour distraire les jeunes. Les jeunes sont stressés par les études et n'arrivent plus à se détendre."
+    );
+    const graph = session.situationGraph;
+    const kinds = graph.entities.map((entity) => entity.kind);
+    expect(kinds).toEqual(expect.arrayContaining(["actor", "activity", "goal", "problem"]));
+    expect(graph.relations.map((relation) => relation.predicate)).toEqual(
+      expect.arrayContaining(["imagines", "intended_for", "aims_at", "experiences"])
+    );
+    expect(graph.relations.every((relation) => relation.evidence.length > 0)).toBe(true);
+    expect(graph.unresolvedRelations).toEqual([]);
+  });
+
+  it("does not let a conversational repair become a graph actor or project fact", () => {
+    const first = beginUnderstanding("Je veux créer une application pour les élèves.");
+    const repaired = answerUnderstanding(first, "Avec tout ce que j'ai dit, tu n'as pas encore compris.");
+    expect(repaired.situationGraph.entities.some((entity) => /Porteur du besoin/.test(entity.label))).toBe(true);
+    expect(repaired.situationGraph.entities.some((entity) => /pas encore compris/i.test(entity.label))).toBe(false);
+  });
+
   it("does not classify a bare idea-to-develop as a request to improve something", () => {
     const session = beginUnderstanding("J'ai une idée à développer");
     expect(session.intentKind).toBe("explore");
