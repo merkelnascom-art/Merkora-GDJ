@@ -44,7 +44,7 @@ const extractors: Array<[NeedDimension, RegExp]> = [
   ["feature", /(?:par des questions|tests?|questionnaire|quiz|relevés|notes|analyse|analys\w*|propose\w*|réservation|réserver|notification|paiement|chois\w*|sélectionn\w*|défile\w*|disparaît|réapparaît|envoient|envoie|vérifi\w*|confirm\w*|synchronis\w*|joignent|indiquent|estime\w*|calcule\w*|affiche\w*|enregistr\w*|suiv\w*|gère\w*|organis\w*)/i],
   ["context", /(?:après le bac|après leur bac|à l'école|dans les écoles|en ligne|sur place|à domicile|sans connexion|sans compte|dans une clinique|dans un établissement|au sein de)/i],
   ["resource", /(?:relevés|bulletins|documents|photos|fichiers|notes|données|téléphone|ordinateur|internet|disponibilités|calendrier|agenda)/i],
-  ["constraint", /(?:sans connexion|sans compte|obligatoire|budget|délai|gratuit|limite|confidentiel|autorisation|consentement|ne faut pas|ne doit pas|pas de paiement|sans paiement|aucun paiement|pas.*paiement en ligne)/i],
+  ["constraint", /(?:sans connexion|sans compte|pas besoin de se connecter|pas besoin de compte|ne demand\\w* pas de connexion|obligatoire|budget|délai|gratuit|limite|confidentiel|autorisation|consentement|ne faut pas|ne doit pas|pas de paiement|sans paiement|aucun paiement|pas.*paiement en ligne)/i],
   ["cause", /(?:parce que|car|à cause de|puisque|en raison de|cela vient de|la cause)/i],
   ["activity", /(?:réserver|réservation|former|enseigner|vendre|acheter|livrer|soigner|consulter|orienter|évaluer|jouer|s'inscrire|inscription|organiser|accueillir)/i],
 ];
