@@ -97,12 +97,20 @@ function intentFirstQuestion(session: UnderstandingSession): QuestionCandidate {
 }
 
 function repairQuestion(session: UnderstandingSession): QuestionCandidate {
-  const prior = session.messages.filter((item) => item.role === "visitor").map((item) => item.content).slice(-3).join(" — ");
-  const excerpt = prior.length > 240 ? prior.slice(0, 237) + "…" : prior;
+  const dossier = buildUnderstandingDossier(session.messages);
+  const extracted = dossier.facets.map((item) => "• " + item.title + " : " + item.content);
+  const captured = extracted.length
+    ? extracted.join("\\n")
+    : dossier.rawVisitorMessages.join("\\n");
   return {
     id: "repair-understanding-v1", dimension: "unknown",
-    prompt: `Tu as raison, je suis parti dans une mauvaise direction. Je reprends à partir de tes propres mots : « ${excerpt} ». Peux-tu me réexpliquer ce que tu veux faire concrètement, ou corriger ma reformulation ?`,
-    rationale: "Réparer un décalage conversationnel avant de poursuivre.",
+    prompt: [
+      "Tu as raison : j'aurais dû exploiter l'ensemble de ce que tu m'as déjà expliqué avant de te poser une autre question.",
+      "Je reprends ton dossier à partir de tes messages, sans te demander de répéter les informations déjà données :",
+      captured,
+      "Qu'est-ce que j'ai mal compris ou quel élément important ai-je oublié ? Tu peux corriger uniquement ce point.",
+    ].join("\\n\\n"),
+    rationale: "Reconstruire la compréhension à partir de l'ensemble des messages avant de poursuivre.",
     impact: 1, uncertainty: 1, decisionRelevance: 1, answerability: 0.9,
   };
 }
@@ -392,8 +400,12 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
+  const coreDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
+  const requiredOpeningDimensions: NeedDimension[] = ["problem", "audience", "goal", "preference", "feature"];
+  const hasCompleteOpeningBrief = requiredOpeningDimensions.every((dimension) => coreDimensions.has(dimension));
+
   const hasProjectScope = updatedSession.evidence.some((item) => item.dimension === "project_scope");
-  if (discovery.stage === "project_scope" && !hasProjectScope &&
+  if (!hasCompleteOpeningBrief && discovery.stage === "project_scope" && !hasProjectScope &&
       !updatedSession.deferredDimensions.includes("project_scope")) {
     return {
       ...updatedSession,
@@ -405,9 +417,6 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  const coreDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
-  const requiredOpeningDimensions: NeedDimension[] = ["problem", "audience", "goal", "preference", "feature"];
-  const hasCompleteOpeningBrief = requiredOpeningDimensions.every((dimension) => coreDimensions.has(dimension));
   if (updatedSession.askedQuestionIds.length === 0 && hasCompleteOpeningBrief) {
     const summary = buildSummary(updatedSession);
     return {
