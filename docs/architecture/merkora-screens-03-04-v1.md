@@ -27,7 +27,7 @@ Ces écrans ne constituent pas un générateur de formulaires par secteur. Ils d
 - Session de compréhension écran 02 : `merkora-v2-understanding-session`.
 - Dossier écran 03 : `merkora-v2-project-understanding`.
 
-Le dossier est construit depuis les preuves existantes et conserve la description initiale, les citations sources, les identifiants de messages et les statuts.
+Le dossier est construit depuis les preuves existantes et conserve la description initiale, les citations sources, les identifiants de messages et les statuts. Il transporte également le graphe de situation, les contradictions apparentes, les références non résolues et les précautions de confidentialité déjà repérées.
 
 ### 3.2. Sections génériques
 
