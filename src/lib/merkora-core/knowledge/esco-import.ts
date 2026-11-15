@@ -1,4 +1,4 @@
-import { addKnowledgeConcept, addKnowledgeRelationship } from "./registry";
+import { addKnowledgeConcept, addKnowledgeRelationship, reviseKnowledgeConcept } from "./registry";
 import type {
   KnowledgeConcept,
   KnowledgeExternalMapping,
@@ -82,6 +82,10 @@ export function importESCOBundle(
   for (const record of bundle.concepts) {
     if (!record.uri.trim() || Object.keys(record.preferredLabels).length === 0) continue;
     const id = stableId(record.type, record.uri);
+    const domainId = bundle.domainMappings?.[record.uri];
+    if (domainId && !registry.concepts.some((concept) => concept.id === domainId)) {
+      throw new Error(`ESCO domain mapping references an unknown MerKora domain: ${domainId}`);
+    }
     if (existingUris.has(record.uri)) {
       const current = registry.concepts.find((concept) =>
         concept.id === id && concept.externalMappings?.some((mapping) =>
@@ -134,7 +138,6 @@ export function importESCOBundle(
       const sources = current.sources.some((item) => item.id === source.id)
         ? current.sources.map((item) => item.id === source.id ? source : item)
         : [...current.sources, source];
-      const domainId = bundle.domainMappings?.[record.uri];
       const classifications = domainId && !current.classifications.some((item) =>
         item.classificationType === "occupation-domain" && item.parentConceptId === domainId,
       )
@@ -164,10 +167,6 @@ export function importESCOBundle(
     const terms = labels.map(([language, value]) => ({ value, language, kind: "preferred" as const }));
     for (const [language, values] of Object.entries(record.alternativeLabels ?? {})) {
       for (const value of values.filter((item) => item.trim())) terms.push({ value, language, kind: "synonym" as const });
-    }
-    const domainId = bundle.domainMappings?.[record.uri];
-    if (domainId && !registry.concepts.some((concept) => concept.id === domainId)) {
-      throw new Error(`ESCO domain mapping references an unknown MerKora domain: ${domainId}`);
     }
     const classifications = record.type === "occupation" && domainId
       ? [{ classificationType: "occupation-domain", parentConceptId: domainId, domainId }]
