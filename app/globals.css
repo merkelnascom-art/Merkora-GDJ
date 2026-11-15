@@ -70,3 +70,38 @@
 .mk-start-conversation{display:flex;align-items:center;justify-content:space-between;gap:15px;width:min(100%,390px);margin-top:9px;padding:13px 16px;border:1px solid #e8ca91;border-radius:11px;background:linear-gradient(110deg,#d9b777,#f0d9a7);color:#211a32;text-decoration:none;font-size:11px;font-weight:800;box-shadow:0 8px 25px #d9b77722}
 .mk-start-conversation span{font-size:18px}
 @media(max-width:680px){.mk-start-conversation{width:100%}}
+
+
+/* MerKora GDJ V2 — parcours de compréhension de l'écran 02 */
+.mk-understanding-progress{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px auto 0;color:#aaa2bf;font-size:9px;letter-spacing:.3px}
+.mk-understanding-progress strong{display:grid;place-items:center;min-width:23px;height:23px;border-radius:50%;background:#2a2344;border:1px solid #b997eb66;color:#f0d6a0;font-size:10px}
+.mk-orb-state-clarification .mk-orb-wave{animation-duration:3.1s}
+.mk-orb-state-summary_validation .mk-orb-wave{animation-duration:5.2s;border-color:#e7c98f99}
+.mk-orb-state-complete .mk-orb-wave{animation:none;opacity:.18;transform:scale(1.08)}
+.mk-dialogue{display:grid;gap:11px;max-height:390px;overflow:auto;padding:3px 5px 12px 0;margin:0 0 17px;scrollbar-color:#69558d transparent;scrollbar-width:thin}
+.mk-dialogue-message{max-width:94%;padding:12px 14px;border:1px solid #ffffff1c;border-radius:13px;background:#17182dcc}
+.mk-dialogue-message>span{display:block;margin-bottom:6px;color:#d9bd88;font-size:8px;font-weight:800;letter-spacing:1.2px}
+.mk-dialogue-message p{margin:0;color:#e5deef;font-size:11px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.mk-dialogue-visitor{justify-self:end;background:linear-gradient(130deg,#2b2444,#211e38);border-color:#b99ce744}
+.mk-dialogue-visitor>span{text-align:right;color:#c6a8f4}
+.mk-dialogue-merkora{justify-self:start}
+.mk-answer-panel{padding:15px;border:1px solid #a98af044;border-radius:14px;background:#17172bd9}
+.mk-answer-actions,.mk-summary-actions{display:grid;gap:9px;margin-top:12px}
+.mk-secondary-button,.mk-tertiary-button{width:100%;border:1px solid #b99ce755;border-radius:10px;background:#211e38;color:#e9e1f4;padding:12px 14px;font-size:11px;font-weight:700;cursor:pointer}
+.mk-secondary-button:hover{border-color:#d7bb8a;background:#2b2444}
+.mk-tertiary-button{border-color:#ffffff20;background:transparent;color:#aaa2bf;font-weight:500}
+.mk-summary-card,.mk-completion-card{margin:14px 0;padding:19px;border:1px solid #d7bb8a66;border-radius:16px;background:linear-gradient(145deg,#211e39,#17182c);box-shadow:0 16px 40px #0002}
+.mk-summary-kicker{color:#e7c98f;font-size:8px;font-weight:800;letter-spacing:1.4px}
+.mk-summary-card h2{margin:9px 0 13px;color:#f6f0ff;font-size:20px;letter-spacing:-.4px}
+.mk-summary-text{margin:0;color:#e0d9eb;font-size:11px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere}
+.mk-correction-panel{display:grid;gap:10px;margin-top:16px}
+.mk-completion-card strong{display:block;color:#f1d59d;font-size:14px}
+.mk-completion-card p{color:#c9c1d8;font-size:11px;line-height:1.7;margin:8px 0 14px}
+.mk-privacy-note{max-width:590px}
+.mk-dialogue-message:focus-within,.mk-summary-card:focus-within{outline:2px solid #b99ce766;outline-offset:2px}
+@media(max-width:680px){
+  .mk-dialogue{max-height:420px}
+  .mk-dialogue-message{max-width:100%;padding:11px 12px}
+  .mk-summary-card,.mk-completion-card{padding:15px}
+  .mk-summary-card h2{font-size:18px}
+}
