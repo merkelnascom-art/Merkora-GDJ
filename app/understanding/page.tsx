@@ -169,6 +169,7 @@ export default function UnderstandingPage() {
       ...(externalReference ? {
         externalReference: {
           system: "ESCO" as const,
+          conceptType: "occupation" as const,
           uri: externalReference.uri,
           label: externalReference.label,
           language: externalReference.language,

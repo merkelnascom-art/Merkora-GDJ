@@ -94,6 +94,9 @@ export function approveKnowledgeProposal(
   if (review.mergeIntoConceptId) {
     const existing = registry.concepts.find((concept) => concept.id === review.mergeIntoConceptId);
     if (!existing) throw new Error("The target concept for this proposal merge does not exist.");
+    if (proposal.externalReference && existing.conceptType !== proposal.externalReference.conceptType) {
+      throw new Error("The external reference concept type does not match the target concept type.");
+    }
     if (existing.lifecycle.version !== review.expectedConceptVersion) {
       throw new Error("The target concept version changed; refresh the review before merging.");
     }
@@ -146,6 +149,9 @@ export function approveKnowledgeProposal(
     };
   }
 
+  if (proposal.externalReference && review.conceptType !== proposal.externalReference.conceptType) {
+    throw new Error("The reviewed concept type does not match the external reference concept type.");
+  }
   const concept: KnowledgeConcept = {
     id: review.conceptId,
     canonicalKey: review.canonicalKey,

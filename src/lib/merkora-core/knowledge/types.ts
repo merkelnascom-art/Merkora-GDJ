@@ -154,6 +154,7 @@ export interface KnowledgeProposal {
   /** A project-private external candidate; never published without human review. */
   externalReference?: {
     system: "ESCO";
+    conceptType: "occupation";
     uri: string;
     label: string;
     language: string;
