@@ -251,7 +251,7 @@ const INTENT_QUESTION_CATALOG: Partial<Record<IntentKind, QuestionCandidate[]>> 
 const PRIVACY_QUESTION: QuestionCandidate = {
   id: "clarify-privacy-and-consent-v1",
   dimension: "risk",
-  prompt: "Les personnes concernées seront-elles informées de l'utilisation de leurs informations, et qui pourra les consulter ?",
+  prompt: "Qui pourra consulter les relevés, résultats ou informations des personnes concernées ?",
   rationale: "Vérifier les attentes de confidentialité et de transparence lorsque d'autres personnes sont concernées.",
   impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.95, answerability: 0.85,
 };
@@ -418,7 +418,10 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     }
   }
 
-  const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
+  const answeredDimensions = [...new Set([
+    ...updatedSession.evidence.map((item) => item.dimension),
+    ...dossier.facets.map((item) => item.dimension),
+  ])];
   const dossierDimensions = new Set(dossier.facets.map((item) => item.dimension));
   const hasRichDescription = ["problem", "audience", "goal", "preference"].every((dimension) => dossierDimensions.has(dimension));
   const plan = selectNextQuestion({
