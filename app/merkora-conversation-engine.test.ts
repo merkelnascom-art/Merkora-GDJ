@@ -55,6 +55,16 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(confirmed.evidence.every((item) => item.status === "validated")).toBe(true);
   });
 
+
+  it("lets the person defer a question without inventing an answer or repeating it", () => {
+    const first = beginUnderstanding("Je veux améliorer mon centre de formation.");
+    const skipped = deferUnderstandingQuestion(first);
+
+    expect(skipped.deferredDimensions).toContain("problem");
+    expect(skipped.evidence.some((item) => item.dimension === "problem")).toBe(false);
+    expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
+  });
+
   it("does not ask a second question when an answer is blank", () => {
     const first = beginUnderstanding("Je veux mieux organiser mon activité.");
     const afterBlank = answerUnderstanding(first, "   ");
