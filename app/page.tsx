@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 function MerKoraMascot() {
   return (
@@ -82,7 +83,7 @@ export default function HomePage() {
           <span className="mk-brand-mark">M</span>
           <span><strong>MerKora</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
         </a>
-        <span className="mk-online"><i /> Votre compagnon est disponible</span>
+        <div style={{display:"flex",alignItems:"center",gap:16}}><Link className="mk-back-link" href="/auth">Se connecter</Link><span className="mk-online"><i /> Votre compagnon est disponible</span></div>
       </header>
 
       <section className="mk-welcome" aria-labelledby="mk-title">
