@@ -1,5 +1,6 @@
 import { analyzeUniversalProjectIntent } from "../universal-project-understanding";
 import { selectNextQuestion } from "./question-planner";
+import { selectNextDiscoveryQuestion, type DiscoveryContradiction } from "../universal-project-discovery";
 import type {
   ConversationMessage,
   NeedDimension,
@@ -25,6 +26,9 @@ export interface UnderstandingSession {
   version: number;
   intentClues: string[];
   privacyConsiderations: string[];
+  contradictions: DiscoveryContradiction[];
+  resolvedContradictionKeys: string[];
+  deferredContradictionKeys: string[];
 }
 
 let sequence = 0;
@@ -160,6 +164,7 @@ function buildSummary(session: UnderstandingSession): string {
     actor: "Personnes concernées",
     constraint: "Contraintes mentionnées",
     unknown: "Correction à prendre en compte",
+    business_rule: "Règle ou clarification",
   };
   const grouped = new Map<NeedDimension, string[]>();
   for (const item of session.evidence) {
@@ -180,22 +185,73 @@ function buildSummary(session: UnderstandingSession): string {
   ].join("\n");
 }
 
+function contradictionKey(item: DiscoveryContradiction): string {
+  return `${item.topic}::${item.statementA}::${item.statementB}`;
+}
+
 function advance(session: UnderstandingSession): UnderstandingSession {
-  const answeredDimensions = [...new Set(session.evidence.map((item) => item.dimension))];
+  const visitorText = session.messages
+    .filter((item) => item.role === "visitor")
+    .map((item) => item.content)
+    .join("\\n");
+  const analysis = analyzeUniversalProjectIntent(visitorText);
+  const history = session.messages.map((item) => ({
+    role: item.role === "visitor" ? "user" as const : item.role === "merkora" ? "assistant" as const : "system" as const,
+    content: item.content,
+  }));
+  const discovery = selectNextDiscoveryQuestion(analysis, history);
+  const updatedSession: UnderstandingSession = {
+    ...session,
+    contradictions: discovery.contradictions,
+    intentClues: analysis.intentGroups,
+    privacyConsiderations: analysis.privacyConsiderations,
+  };
+  const unresolved = discovery.contradictions.filter((item) => {
+    const key = contradictionKey(item);
+    return !updatedSession.resolvedContradictionKeys.includes(key) &&
+      !updatedSession.deferredContradictionKeys.includes(key);
+  });
+
+  if (unresolved.length > 0) {
+    const conflict = unresolved[0];
+    const question: QuestionCandidate = {
+      id: `resolve-contradiction-${conflict.topic}-v1`,
+      dimension: "business_rule",
+      prompt: conflict.question,
+      rationale: "Deux indications semblent incompatibles. MerKora demande une clarification et ne choisit pas à la place de la personne.",
+      impact: 1,
+      uncertainty: 1,
+      decisionRelevance: 1,
+      answerability: 0.8,
+    };
+    const next = {
+      ...updatedSession,
+      pendingQuestion: question,
+      askedQuestionIds: [...updatedSession.askedQuestionIds, question.id],
+      stage: "clarification" as const,
+      version: updatedSession.version + 1,
+    };
+    return {
+      ...next,
+      messages: [...next.messages, message(next.conversationId, "merkora", `J'ai repéré deux indications qui semblent incompatibles. Je ne vais pas choisir à ta place. ${question.prompt}`)],
+    };
+  }
+
+  const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
   const plan = selectNextQuestion({
     candidates: QUESTION_CATALOG,
     answeredDimensions,
-    deferredDimensions: session.deferredDimensions,
-    askedQuestionIds: session.askedQuestionIds,
+    deferredDimensions: updatedSession.deferredDimensions,
+    askedQuestionIds: updatedSession.askedQuestionIds,
   });
 
   if (plan.kind === "question") {
     const next = {
-      ...session,
+      ...updatedSession,
       pendingQuestion: plan.question,
-      askedQuestionIds: [...session.askedQuestionIds, plan.question.id],
+      askedQuestionIds: [...updatedSession.askedQuestionIds, plan.question.id],
       stage: "clarification" as const,
-      version: session.version + 1,
+      version: updatedSession.version + 1,
     };
     return {
       ...next,
@@ -203,14 +259,14 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  const summary = buildSummary(session);
+  const summary = buildSummary(updatedSession);
   return {
-    ...session,
+    ...updatedSession,
     pendingQuestion: null,
     stage: "summary_validation",
     summary,
-    version: session.version + 1,
-    messages: [...session.messages, message(session.conversationId, "merkora", summary)],
+    version: updatedSession.version + 1,
+    messages: [...updatedSession.messages, message(updatedSession.conversationId, "merkora", summary)],
   };
 }
 
@@ -236,6 +292,9 @@ export function beginUnderstanding(rawIntent: string): UnderstandingSession {
     version: 1,
     intentClues: analysis.intentGroups,
     privacyConsiderations: analysis.privacyConsiderations,
+    contradictions: [],
+    resolvedContradictionKeys: [],
+    deferredContradictionKeys: [],
   };
   return advance(initial);
 }
@@ -253,11 +312,20 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
     clean,
   );
   evidence = extractExplicitEvidence(clean, visitorMessage.id, evidence);
+  const conflictTopic = session.pendingQuestion.id.startsWith("resolve-contradiction-")
+    ? session.pendingQuestion.id.replace("resolve-contradiction-", "").replace("-v1", "")
+    : null;
+  const clarifiedConflict = conflictTopic
+    ? session.contradictions.find((item) => item.topic === conflictTopic)
+    : undefined;
   const updated: UnderstandingSession = {
     ...session,
     messages: [...session.messages, visitorMessage],
     evidence,
     pendingQuestion: null,
+    resolvedContradictionKeys: clarifiedConflict
+      ? [...new Set([...session.resolvedContradictionKeys, contradictionKey(clarifiedConflict)])]
+      : session.resolvedContradictionKeys,
     version: session.version + 1,
   };
   return advance(updated);
@@ -266,9 +334,18 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
 export function deferUnderstandingQuestion(session: UnderstandingSession): UnderstandingSession {
   if (session.stage !== "clarification" || !session.pendingQuestion) return session;
   const dimension = session.pendingQuestion.dimension;
+  const conflictTopic = session.pendingQuestion.id.startsWith("resolve-contradiction-")
+    ? session.pendingQuestion.id.replace("resolve-contradiction-", "").replace("-v1", "")
+    : null;
+  const deferredConflict = conflictTopic
+    ? session.contradictions.find((item) => item.topic === conflictTopic)
+    : undefined;
   const updated: UnderstandingSession = {
     ...session,
     deferredDimensions: [...new Set([...session.deferredDimensions, dimension])],
+    deferredContradictionKeys: deferredConflict
+      ? [...new Set([...session.deferredContradictionKeys, contradictionKey(deferredConflict)])]
+      : session.deferredContradictionKeys,
     pendingQuestion: null,
     messages: [...session.messages, message(session.conversationId, "merkora", "D'accord, nous laissons ce point de côté pour le moment. On continue avec un autre élément utile.")],
     version: session.version + 1,
