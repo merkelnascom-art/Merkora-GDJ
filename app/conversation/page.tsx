@@ -433,6 +433,7 @@ export default function ConversationPage() {
                   {session.validations.at(-1)?.decision !== "confirmed" && (
                     <button type="button" className="mk-secondary-button" onClick={resumeSummary}>Reprendre la vérification</button>
                   )}
+                  <a className="mk-continue-button mk-stage-transition" href="/understanding">Continuer vers l'écran 03 · Vérifier ma compréhension <span>→</span></a>
                   <button type="button" className="mk-tertiary-button" onClick={restartJourney}>Commencer une nouvelle compréhension</button>
                 </section>
               )}
