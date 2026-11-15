@@ -21,6 +21,9 @@ export interface UnderstandingDossier {
 const REPAIR = /tu ne me suis pas|tu ne me comprends pas|tu n'as pas compris|tu n'as pas encore compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire|avec tout ce que j'ai dit.{0,50}(?:pas compris|ne comprends)/i;
 const PROBLEM = /probl[eè]me|difficult[ée]|stress|frustr|se perdent|ne savent pas|au hasard|désorganis|retard|perte de temps|n'arriv\w* pas|ne parviennent pas|bloqu/i;
 const AUDIENCE = /élèves?|étudiants?|apprenants?|jeunes|clients?|patients?|joueurs?|danseurs?|invités?|employés?|personnel|enseignants?|famille|utilisateurs?/i;
+const ACTOR_ROLE = /l['’]élève|les élèves|le système|les parents|un conseiller|un administrateur|administrateur|agent|organisateur|vendeur|client|joueur|enseignant|responsable|secrétaire|prestataire/i;
+const CURRENT_ACTIVITY = /aujourd'hui|actuellement|pour le moment|en ce moment|je note|on note|nous notons|je gère|on gère|nous gérons|j'utilise|nous utilisons|à la main|manuellement/i;
+const RESOURCE = /relevé|releve|notes scolaires|bulletin|document|dossier|fichier|photo|image|donnée|donnee|information|formulaire|justificatif|stock|produit|paiement|commande/i;
 const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service de réservation|jeu interactif|système|système|interface|agent|agence|quiz|consultation/i;
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
 const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|crée|partage|consulte|joue|tape|défile|disparaît|réapparaît|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
@@ -75,6 +78,9 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
       if (REPAIR.test(sentence)) continue;
       if (PROBLEM.test(sentence)) addFacet(facets, "problem", "Problème ou difficulté", sentence, visitor.id);
       if (AUDIENCE.test(sentence)) addFacet(facets, "audience", "Public concerné", sentence, visitor.id);
+      if (ACTOR_ROLE.test(sentence)) addFacet(facets, "actor", "Personnes, rôles et systèmes", sentence, visitor.id);
+      if (CURRENT_ACTIVITY.test(sentence)) addFacet(facets, "activity", "Fonctionnement actuel", sentence, visitor.id);
+      if (RESOURCE.test(sentence)) addFacet(facets, "resource", "Informations et ressources utilisées", sentence, visitor.id);
       if (SOLUTION.test(sentence)) addFacet(facets, "preference", "Solution ou idée envisagée", sentence, visitor.id);
       if (GOAL.test(sentence)) addFacet(facets, "goal", "Objectif ou résultat recherché", sentence, visitor.id);
       if (FEATURE.test(sentence)) addFacet(facets, "feature", "Fonctionnement ou actions imaginées", sentence, visitor.id);
