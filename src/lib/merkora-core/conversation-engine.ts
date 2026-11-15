@@ -47,6 +47,7 @@ const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "patients", pattern: /patients?/i },
   { label: "visiteurs", pattern: /visiteurs?|invités?/i },
   { label: "famille", pattern: /famille|parents|enfants|proches/i },
+  { label: "amis", pattern: /amis|amies/i },
   { label: "équipe", pattern: /équipe|equipe|membres/i },
 ];
 
@@ -114,6 +115,26 @@ function extractExplicitEvidence(raw: string, sourceMessageId: string, current: 
   return evidence;
 }
 
+const PROJECT_SCOPE_QUESTION: QuestionCandidate = {
+  id: "clarify-project-scope-v1",
+  dimension: "project_scope",
+  prompt: "Tu as évoqué plusieurs besoins. Veux-tu les réunir dans un seul projet commun, ou préfères-tu les traiter comme des projets distincts ?",
+  rationale: "Clarifier le périmètre avant de mélanger des activités qui pourraient être indépendantes.",
+  impact: 1, uncertainty: 0.95, decisionRelevance: 1, answerability: 0.9,
+};
+const PROJECT_SCOPE_CHOICE_QUESTION: QuestionCandidate = {
+  ...PROJECT_SCOPE_QUESTION,
+  id: "clarify-project-scope-choice-v1",
+  prompt: "Pour éviter un malentendu, précise simplement : un seul projet commun, ou plusieurs projets distincts ?",
+};
+const PRIVACY_QUESTION: QuestionCandidate = {
+  id: "clarify-privacy-and-consent-v1",
+  dimension: "risk",
+  prompt: "Les personnes concernées seront-elles informées de l'utilisation de leurs informations, et qui pourra les consulter ?",
+  rationale: "Vérifier les attentes de confidentialité et de transparence lorsque d'autres personnes sont concernées.",
+  impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.95, answerability: 0.85,
+};
+
 const QUESTION_CATALOG: QuestionCandidate[] = [
   {
     id: "clarify-problem-v1",
@@ -171,6 +192,8 @@ function buildSummary(session: UnderstandingSession): string {
     unknown: "Correction à prendre en compte",
     business_rule: "Règle ou clarification",
     preference: "Solution ou approche envisagée par toi",
+    project_scope: "Périmètre du projet",
+    risk: "Confidentialité et information des personnes",
   };
   const grouped = new Map<NeedDimension, string[]>();
   for (const item of session.evidence) {
@@ -183,7 +206,10 @@ function buildSummary(session: UnderstandingSession): string {
     .map(([dimension, values]) => `• ${labels[dimension]} : ${values.join(" ; ")}`);
   const deferredQuestions = session.deferredDimensions.map((dimension) => {
     const candidate = QUESTION_CATALOG.find((item) => item.dimension === dimension);
-    return `• ${candidate?.prompt ?? dimension}`;
+    const prompt = candidate?.prompt ??
+      (dimension === "project_scope" ? PROJECT_SCOPE_QUESTION.prompt :
+        dimension === "risk" ? PRIVACY_QUESTION.prompt : dimension);
+    return `• ${prompt}`;
   });
   const deferredConflicts = session.contradictions
     .filter((item) => session.deferredContradictionKeys.includes(contradictionKey(item)))
@@ -252,6 +278,19 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
+  const hasProjectScope = updatedSession.evidence.some((item) => item.dimension === "project_scope");
+  if (discovery.stage === "project_scope" && !hasProjectScope &&
+      !updatedSession.deferredDimensions.includes("project_scope")) {
+    return {
+      ...updatedSession,
+      pendingQuestion: PROJECT_SCOPE_QUESTION,
+      askedQuestionIds: [...updatedSession.askedQuestionIds, PROJECT_SCOPE_QUESTION.id],
+      stage: "clarification",
+      version: updatedSession.version + 1,
+      messages: [...updatedSession.messages, message(updatedSession.conversationId, "merkora", PROJECT_SCOPE_QUESTION.prompt)],
+    };
+  }
+
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
   const plan = selectNextQuestion({
     candidates: QUESTION_CATALOG,
@@ -271,6 +310,19 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     return {
       ...next,
       messages: [...next.messages, message(next.conversationId, "merkora", plan.question.prompt)],
+    };
+  }
+
+  const hasPrivacyEvidence = updatedSession.evidence.some((item) => item.dimension === "risk");
+  if (updatedSession.privacyConsiderations.length > 0 && !hasPrivacyEvidence &&
+      !updatedSession.deferredDimensions.includes("risk")) {
+    return {
+      ...updatedSession,
+      pendingQuestion: PRIVACY_QUESTION,
+      askedQuestionIds: [...updatedSession.askedQuestionIds, PRIVACY_QUESTION.id],
+      stage: "clarification",
+      version: updatedSession.version + 1,
+      messages: [...updatedSession.messages, message(updatedSession.conversationId, "merkora", PRIVACY_QUESTION.prompt)],
     };
   }
 
@@ -317,6 +369,23 @@ export function beginUnderstanding(rawIntent: string): UnderstandingSession {
 export function answerUnderstanding(session: UnderstandingSession, answer: string): UnderstandingSession {
   const clean = answer.trim();
   if (!clean || session.stage !== "clarification" || !session.pendingQuestion) return session;
+
+  if (session.pendingQuestion.dimension === "project_scope" &&
+      /^(oui|non|exactement|d'accord|tout à fait)[.!? ]*$/i.test(clean) &&
+      !/un seul projet|même projet|projets distincts|séparément/i.test(clean)) {
+    const visitorMessage = message(session.conversationId, "visitor", clean);
+    return {
+      ...session,
+      messages: [
+        ...session.messages,
+        visitorMessage,
+        message(session.conversationId, "merkora", PROJECT_SCOPE_CHOICE_QUESTION.prompt),
+      ],
+      pendingQuestion: PROJECT_SCOPE_CHOICE_QUESTION,
+      askedQuestionIds: [...session.askedQuestionIds, PROJECT_SCOPE_CHOICE_QUESTION.id],
+      version: session.version + 1,
+    };
+  }
 
   const visitorMessage = message(session.conversationId, "visitor", clean);
   let evidence = addEvidence(
