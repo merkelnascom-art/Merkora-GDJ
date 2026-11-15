@@ -52,7 +52,7 @@ function classify(text:string):IntentKind{
 }
 function newMessage(cid:string,role:ConversationMessage["role"],content:string):ConversationMessage{return{id:makeId("message"),conversationId:cid,role,content,createdAt:now()};}
 function makeQuestion(d:NeedDimension,prompt:string,why:string):QuestionCandidate{return{id:"missing-"+d+"-v2",dimension:d,prompt,rationale:why,impact:.9,uncertainty:.8,decisionRelevance:.9,answerability:.9};}
-const REPAIR=/(tu n'as pas compris|tu n’as pas compris|tu ne comprends pas|tu ne me comprends pas|tu ne me suis pas|tu m'écoutes pas|tu m’écoutes pas|tu es à côté)/i;
+const REPAIR=/(tu n'as pas (?:encore )?compris|tu n’as pas (?:encore )?compris|tu ne comprends pas|tu ne me comprends pas|tu ne me suis pas|tu m'écoutes pas|tu m’écoutes pas|tu es à côté)/i;
 function makeSummary(s:UnderstandingSession):string{
  const labels:Partial<Record<NeedDimension,string>>={project_scope:"Nom du projet",problem:"Situation et problème",goal:"Objectif",preference:"Solution envisagée",audience:"Public concerné",actor:"Personnes et rôles",feature:"Fonctionnement et fonctionnalités",context:"Cadre",resource:"Données et ressources",constraint:"Contraintes",cause:"Causes"};
  const order:NeedDimension[]=["project_scope","problem","audience","goal","preference","feature","context","resource","constraint","cause","actor"];
@@ -68,6 +68,10 @@ function advance(s:UnderstandingSession):UnderstandingSession{
  const has=(d:NeedDimension)=>s.evidence.some(e=>e.dimension===d);
  const rich=(has("problem")||has("goal"))&&(has("preference")||has("feature"))&&(has("audience")||has("context")||has("resource"));
  if(rich){const text=makeSummary(s);return{...s,pendingQuestion:null,stage:"summary_validation",summary:text,version:s.version+1,messages:[...s.messages,newMessage(s.conversationId,"merkora",text)]};}
+ if(s.intentKind==="explore"&&!has("problem")&&!has("goal")&&!has("preference")&&!has("feature")){
+  const q=makeQuestion("unknown","Raconte-moi ton idée avec tes propres mots. Tu peux tout expliquer librement : ce que tu imagines, pourquoi, pour qui et comment tu voudrais que cela fonctionne.","Tu as annoncé une idée, mais tu ne l'as pas encore décrite. Je t'invite à l'exposer librement avant toute question de détail.");
+  return {...s,pendingQuestion:q,stage:"clarification",askedQuestionIds:[...s.askedQuestionIds,q.id],version:s.version+1,messages:[...s.messages,newMessage(s.conversationId,"merkora",q.prompt)]};
+ }
  const missing:Array<[NeedDimension,string,string]>=[
  ["problem","Quelle situation précise veux-tu changer ou quel problème veux-tu résoudre ?","Le problème central n'est pas encore explicite."],
  ["goal","Quel résultat concret aimerais-tu obtenir ?","Le résultat attendu reste à préciser."],
