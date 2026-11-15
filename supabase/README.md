@@ -20,7 +20,7 @@ Configure this application only against the dedicated MerKora GDJ Supabase proje
 2. The correct Project URL and publishable key are configured in Vercel for production, preview, and development.
 3. NEXT_PUBLIC_SITE_URL is configured as https://merkoragdj.vercel.app for production, preview, and development.
 4. In Supabase Auth → URL Configuration, set the Site URL to https://merkoragdj.vercel.app and add /auth/callback to allowed redirect URLs. This dashboard setting still needs verification.
-5. Migration 202611150001_foundation_b_profiles_and_dossiers has been applied to the verified MerKora GDJ project (tvwkickjtqjqwoiidmxj). Both new tables have RLS enabled; existing tables and data were retained.
+5. Migration 20261115192400_foundation_b_profiles_and_dossiers has been applied to the verified MerKora GDJ project (tvwkickjtqjqwoiidmxj). Both new tables have RLS enabled; existing tables and data were retained.
 6. Create a test account, confirm its email, and verify sign-in/sign-out.
 7. Test with two separate accounts: neither may read or update the other account dossiers.
 8. Test local-first behavior with cloud unavailable, then test manual sync and conflict handling.
