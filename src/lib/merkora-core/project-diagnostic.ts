@@ -78,6 +78,8 @@ export interface DiagnosticAnswer {
   status: "answered" | "unknown" | "not_applicable" | "deferred";
   createdAt: string;
   version: number;
+  question: DiagnosticQuestion;
+  supersedesId?: string;
 }
 
 export interface DiagnosticSession {
@@ -417,6 +419,7 @@ export function recordDiagnosticAnswer(
     status: answerStatus,
     createdAt: now(),
     version: session.version + 1,
+    question: currentQuestion,
   };
   const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
@@ -446,6 +449,59 @@ export function recordDiagnosticAnswer(
       askedQuestionIds: [...session.askedQuestionIds, currentQuestion.id],
       updatedAt: now(),
     },
+  };
+}
+
+
+export function getActiveDiagnosticAnswers(session: DiagnosticSession): DiagnosticAnswer[] {
+  const superseded = new Set(session.answers.flatMap((answer) => answer.supersedesId ? [answer.supersedesId] : []));
+  return session.answers.filter((answer) => !superseded.has(answer.id));
+}
+
+export function reviseDiagnosticAnswer(
+  dossier: ProjectUnderstanding,
+  session: DiagnosticSession,
+  answerId: string,
+  input: DiagnosticAnswerInput,
+): { understanding: ProjectUnderstanding; diagnostic: DiagnosticSession } {
+  const original = getActiveDiagnosticAnswers(session).find((answer) => answer.id === answerId);
+  if (!original) throw new Error("The diagnostic answer does not exist or has already been revised.");
+  const values = Array.isArray(input.value) ? input.value : [input.value];
+  const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
+  if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
+
+  const answerStatus = input.status ?? "answered";
+  const answerIdNext = makeId("diagnostic-answer-revision");
+  const valueText = normalizedValues.join(" · ");
+  const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
+  const answer: DiagnosticAnswer = {
+    id: answerIdNext,
+    questionId: original.questionId,
+    dimension: original.dimension,
+    value: Array.isArray(input.value) ? normalizedValues : normalizedValues[0],
+    ...(input.detail?.trim() ? { detail: input.detail.trim() } : {}),
+    status: answerStatus,
+    createdAt: now(),
+    version: session.version + 1,
+    question: original.question,
+    supersedesId: original.id,
+  };
+  const evidence: ProjectUnderstandingItem = {
+    id: answerIdNext,
+    dimension: original.dimension,
+    originalDimension: original.dimension,
+    value: evidenceValue,
+    status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
+    source: "diagnostic_answer",
+    sourceMessageId: answerIdNext,
+    sourceQuote: evidenceValue,
+    createdAt: answer.createdAt,
+    supersedesId: original.id,
+  };
+
+  return {
+    understanding: { ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], updatedAt: now() },
+    diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], updatedAt: now() },
   };
 }
 
