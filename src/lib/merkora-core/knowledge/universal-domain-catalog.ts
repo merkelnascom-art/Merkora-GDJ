@@ -71,9 +71,6 @@ const FAMILIES: FamilySeed[] = [
   { id: "digital-technology", fr: "Numérique et technologies", en: "Digital and technology", domains: [
     ["software-development", "Développement logiciel", "Software development"], ["it-infrastructure", "Infrastructures informatiques", "IT infrastructure"], ["cybersecurity", "Cybersécurité", "Cybersecurity"], ["data-ai", "Données et intelligence artificielle", "Data and artificial intelligence"], ["digital-services", "Services numériques", "Digital services"],
   ]},
-  { id: "law-security-personal-services", fr: "Droit, sécurité et services personnels", en: "Law, security and personal services", domains: [
-    ["law-legal-services", "Droit et services juridiques", "Law and legal services"], ["justice-courts", "Justice et juridictions", "Justice and courts"], ["public-safety", "Sécurité publique", "Public safety"], ["private-security", "Sécurité privée", "Private security"], ["personal-household-services", "Services personnels et domestiques", "Personal and household services"],
-  ]},
 ];
 
 const familyConcepts: KnowledgeConcept[] = FAMILIES.map((family) => ({
@@ -132,9 +129,40 @@ const domainConcepts: KnowledgeConcept[] = FAMILIES.flatMap((family) =>
   })),
 );
 
+const SPECIALIZATION_SEEDS: Array<[string, string, string, string]> = [
+  ["law-legal-services", "Droit et services juridiques", "Law and legal services", "domain:public-administration"],
+  ["justice-courts", "Justice et juridictions", "Justice and courts", "domain:public-administration"],
+  ["public-safety", "Sécurité publique", "Public safety", "domain:public-administration"],
+  ["private-security", "Sécurité privée", "Private security", "domain:quality-risk-compliance"],
+  ["personal-household-services", "Services personnels et domestiques", "Personal and household services", "domain:social-work"],
+];
+
+const specializationConcepts: KnowledgeConcept[] = SPECIALIZATION_SEEDS.map(([slug, fr, en, parentId]) => ({
+  id: `specialization:${slug}`,
+  canonicalKey: `merkora.specialization.${slug}`,
+  conceptType: "specialization",
+  definitions: [
+    { language: "fr", label: fr, definition: `Spécialisation rattachée à un domaine parent : ${fr.toLocaleLowerCase("fr")}.` },
+    { language: "en", label: en, definition: `Specialization within its parent field: ${en.toLocaleLowerCase("en")}.` },
+  ],
+  terms: [
+    { value: fr, language: "fr", kind: "preferred" as const },
+    { value: en, language: "en", kind: "preferred" as const },
+  ],
+  classifications: [{ classificationType: "universal-specialization", parentConceptId: parentId }],
+  attributes: [],
+  relationships: [],
+  scope: { global: true },
+  lifecycle: { status: "validated", version: 1, createdAt: CREATED_AT, updatedAt: CREATED_AT },
+  sources: [{ id: "source:merkora-domain-map-v1", sourceType: "curated_taxonomy", label: "Cartographie initiale MerKora GDJ — spécialisation" }],
+  reliability: { evidenceLevel: "documented", reviewStatus: "not_reviewed", verificationNotes: ["Spécialisation ouverte ; son rattachement est une structure de navigation, pas une équivalence réglementaire."] },
+}));
+
 export const UNIVERSAL_FAMILY_CONCEPTS = familyConcepts;
 export const UNIVERSAL_DOMAIN_CONCEPTS = domainConcepts;
-export const UNIVERSAL_DOMAIN_CATALOG = [...familyConcepts, ...domainConcepts];
+export const UNIVERSAL_SPECIALIZATION_CONCEPTS = specializationConcepts;
+export const UNIVERSAL_DOMAIN_CATALOG = [...familyConcepts, ...domainConcepts, ...specializationConcepts];
 export const UNIVERSAL_DOMAIN_FAMILY_COUNT = familyConcepts.length;
 export const UNIVERSAL_FAMILY_COUNT = UNIVERSAL_DOMAIN_FAMILY_COUNT;
 export const UNIVERSAL_DOMAIN_COUNT = domainConcepts.length;
+export const UNIVERSAL_SPECIALIZATION_COUNT = specializationConcepts.length;
