@@ -7,7 +7,7 @@ import {
   decideUnderstandingSummary,
   deferUnderstandingQuestion,
   type UnderstandingSession,
-} from "@/lib/merkora-core/conversation-engine";
+} from "../../src/lib/merkora-core/conversation-engine";
 
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
