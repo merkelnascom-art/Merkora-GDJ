@@ -123,3 +123,19 @@
 @media(prefers-reduced-motion:reduce){
   .mk-orb-activity-receiving .mk-orb-wave,.mk-orb-activity-analyzing .mk-orb-wave,.mk-orb-activity-receiving .mk-orb-core,.mk-orb-activity-responding .mk-orb-core,.mk-orb-activity-receiving .mk-orb-status i,.mk-orb-activity-analyzing .mk-orb-status i{animation:none!important}
 }
+
+/* Indicateur de réflexion visible en bas de l'écran 02 */
+.mk-thinking-indicator{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;min-height:54px;margin:18px 0 4px;padding:10px 16px;overflow:hidden;border:1px solid #a98af044;border-radius:14px;background:linear-gradient(100deg,#17172bdc,#211b38e8,#17172bdc);box-shadow:0 8px 28px #0002,inset 0 0 24px #9d73e00c;color:#d9c9ef}
+.mk-thinking-indicator:before{position:absolute;inset:0;content:"";background:linear-gradient(100deg,transparent 10%,#b996f018 48%,transparent 88%);transform:translateX(-100%);animation:mk-thinking-scan 2.1s ease-in-out infinite}
+.mk-thinking-orbit{position:relative;display:flex;align-items:center;justify-content:center;width:25px;height:25px;flex:0 0 25px;border:1px solid #a98af066;border-radius:50%;box-shadow:0 0 15px #a98af033;animation:mk-thinking-orbit 3s linear infinite}
+.mk-thinking-orbit i{position:absolute;width:5px;height:5px;border-radius:50%;background:#c9a8ff;box-shadow:0 0 9px #c9a8ff}
+.mk-thinking-orbit i:nth-child(1){transform:translateY(-10px)}.mk-thinking-orbit i:nth-child(2){transform:translateX(9px) translateY(5px);background:#e7c98f;box-shadow:0 0 9px #e7c98f}.mk-thinking-orbit i:nth-child(3){transform:translateX(-9px) translateY(5px)}
+.mk-thinking-label{position:relative;font-size:10px;letter-spacing:.35px;color:#e3d7f2}
+.mk-thinking-dots{position:relative;display:flex;align-items:center;gap:4px;margin-left:auto}
+.mk-thinking-dots i{width:4px;height:4px;border-radius:50%;background:#c3a2f5;box-shadow:0 0 8px #b18af5;animation:mk-thinking-dot 1s ease-in-out infinite}
+.mk-thinking-dots i:nth-child(2){animation-delay:.16s;background:#e7c98f}.mk-thinking-dots i:nth-child(3){animation-delay:.32s}
+@keyframes mk-thinking-dot{0%,70%,100%{opacity:.3;transform:translateY(2px) scale(.75)}35%{opacity:1;transform:translateY(-3px) scale(1.25)}}
+@keyframes mk-thinking-orbit{to{transform:rotate(360deg)}}
+@keyframes mk-thinking-scan{0%{transform:translateX(-100%)}65%,100%{transform:translateX(100%)}}
+@media(max-width:680px){.mk-thinking-indicator{min-height:49px;margin-top:15px;padding:9px 12px}.mk-thinking-label{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.mk-thinking-indicator:before,.mk-thinking-orbit,.mk-thinking-dots i{animation:none!important}.mk-thinking-dots i{opacity:.8}}
