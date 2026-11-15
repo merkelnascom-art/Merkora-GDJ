@@ -214,7 +214,7 @@ export default function UnderstandingPage() {
                               <>
                                 <p>{item.value}</p>
                                 <div className="mk-item-meta"><span className={"mk-status mk-status-" + item.status}>{statusLabel(item.status)}</span><span>Source : {item.source === "conversation" ? "ton récit" : item.source === "user_correction" ? "ta correction" : "ta réponse au diagnostic"}</span></div>
-                                <details><summary>Voir l'origine de cette information</summary><p>{item.sourceQuote}</p><small>Référence : {item.sourceMessageId ?? item.sourceReferenceId ?? "source conservée"}</small></details>
+                                <details><summary>Voir l'origine et l'historique</summary><p>{item.sourceQuote}</p><small>Référence : {item.sourceMessageId ?? item.sourceReferenceId ?? "source conservée"}</small>{item.supersedesId && <p><strong>Version précédente :</strong> {dossier.items.find((previous) => previous.id === item.supersedesId)?.value ?? "Version antérieure conservée."}</p>}</details>
                                 <div className="mk-inline-actions">
                                   <button type="button" className="mk-small-action" onClick={() => startEdit(item)}>Modifier</button>
                                   {item.status !== "validated" && <button type="button" className="mk-small-action mk-small-action-gold" onClick={() => validateItem(item.id)}>Confirmer cet élément</button>}
