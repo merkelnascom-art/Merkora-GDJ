@@ -2,7 +2,6 @@ import type { ConversationMessage, NeedDimension, NeedEvidence, QuestionCandidat
 import { buildSituationGraph, type SituationGraph } from "./situation-graph";
 import { extractSituationObservations } from "./situation-extractor";
 import { analyzeConversation, type ConversationReasoning } from "./situation-reasoning";
-import { createCoreKnowledgeRegistry } from "./knowledge/registry";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 
 export type IntentKind =
@@ -159,7 +158,7 @@ export function rebuildSituationGraph(messages: ConversationMessage[]): Situatio
     (message) => message.role === "visitor" && !REPAIR.test(message.content),
   );
   const graph = buildSituationGraph(extractSituationObservations(projectMessages));
-  return enrichSituationGraphWithKnowledge(graph, createCoreKnowledgeRegistry());
+  return enrichSituationGraphWithKnowledge(graph);
 }
 
 function makeSummary(session: UnderstandingSession): string {
