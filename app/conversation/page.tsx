@@ -216,7 +216,7 @@ export default function ConversationPage() {
   const statusText = orbActivity === "receiving"
     ? "Je reçois ton message"
     : orbActivity === "analyzing"
-      ? "Je relie les éléments de ton récit"
+      ? "Je relis tous tes messages et relie les informations déjà données"
       : orbActivity === "responding"
         ? "Je prépare ma réponse"
         : session?.stage === "clarification"
@@ -250,7 +250,7 @@ export default function ConversationPage() {
           {session && (
             <div className="mk-understanding-progress">
               <span>Éléments explicitement repérés</span>
-              <strong>{session.evidence.length}</strong>
+              <strong>{session.dossier.facets.length}</strong>
             </div>
           )}
         </div>
