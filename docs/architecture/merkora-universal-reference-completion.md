@@ -1,40 +1,82 @@
-# Référentiel universel MerKora GDJ — cartographie et import multilingue
+# MerKora GDJ — référentiel universel et raccordement à l'écran 03
 
-## Cartographie de départ
+Version de conception : 1.1  
+Date : 15 novembre 2026  
+Branche : `feature/merkora-universal-reference-complete`
 
-Le catalogue MerKora contient une cartographie initiale de **20 familles et 100 domaines**. Les identifiants canoniques sont indépendants de la langue. Chaque domaine est relié à sa famille par une classification hiérarchique et une relation typée.
+## 1. Cartographie MerKora
 
-Cette carte est un point de départ extensible, non une liste fermée ni une nomenclature officielle de tous les pays. Les libellés initiaux français/anglais sont marqués comme cartographie à revoir ; les traductions et termes locaux supplémentaires sont ajoutés comme termes séparés et versionnés.
+Le socle de navigation contient exactement :
 
-## Métiers, professions et compétences
+- 20 familles de domaines ;
+- 100 domaines d'activité ;
+- 5 spécialisations transversales initiales rattachées à un domaine parent.
 
-Le modèle distingue les concepts `occupation`, `skill` et `domain`. Le module `esco-import.ts` importe des paquets ESCO normalisés : URI stables, libellés préférés par langue, synonymes par langue, descriptions, relations hiérarchiques et relations métier-compétence. Il préserve la version de la source et les URI externes. Aucun rattachement à un domaine MerKora n'est deviné : il faut fournir une correspondance de domaine explicitement revue.
+Les cinq spécialisations juridiques, judiciaires, de sécurité publique, de sécurité privée et de services personnels ne sont pas comptées comme cinq domaines supplémentaires. Elles sont conservées comme spécialisations afin de préserver le total de 100 domaines sans effacer ces réalités.
 
-La source de référence ciblée est ESCO v1.2.1. Le catalogue officiel est librement téléchargeable dans 28 langues, mais le paquet de données complet n'est pas embarqué dans ce dépôt à cette étape. L'importateur est prêt à ingérer les fichiers après leur normalisation ; tant que le paquet n'est pas fourni/importé, le dépôt ne prétend pas contenir les milliers de professions ESCO.
+Les identifiants canoniques ne dépendent pas des libellés traduits. Les termes français et anglais actuellement présents sont des libellés initiaux, pas une traduction exhaustive de tous les domaines du monde.
 
-Source officielle : https://esco.ec.europa.eu/en/use-esco/download
-Modèle et usages : https://esco.ec.europa.eu/en/use-esco
+## 2. Corpus professionnel externe
 
-## Gouvernance des termes inconnus
+ESCO est utilisé comme source professionnelle externe et interrogeable. La Commission européenne indique 3 039 professions, 13 939 compétences et 28 langues pour ESCO. La version publiée actuellement sur son portail de téléchargement est v1.2.1.
 
-Un terme inconnu demeure une proposition privée au projet, avec son extrait source et le message d'origine. Les doublons lexicaux de même langue sont signalés avant publication. La revue peut :
-- créer un nouveau concept canonique ;
-- rattacher le terme à un concept existant comme terme local après contrôle ;
-- rejeter la proposition avec un motif.
+- Portail officiel : https://esco.ec.europa.eu/fr/use-esco
+- Téléchargement officiel : https://esco.ec.europa.eu/fr/use-esco/download
+- API de suggestions documentée : https://ec.europa.eu/esco/api/doc/esco_api_doc.html
 
-L'extrait privé n'est jamais copié dans le référentiel partagé. La revue partagée nécessite une identité de réviseur et une validation côté serveur avant d'être exposée comme action d'administration.
+Le raccordement écran 03 interroge l'API ESCO à la demande dans une langue choisie parmi les 28 codes supportés. Les résultats sont des suggestions externes, pas des décisions automatiques. La version utilisée par le service API est indiquée comme version par défaut du service et n'est pas artificiellement assimilée à v1.2.1.
 
-## Historique
+**Limite explicite :** les 3 039 professions et 13 939 compétences ne sont pas encore copiées dans un miroir local ou une base persistante MerKora. Elles sont accessibles par recherche à la demande via ESCO. Le module d'import normalisé permet d'intégrer un paquet complet dès qu'un paquet officiel ou un export API complet est disponible.
 
-Les concepts sont révisés par version optimiste : l'ancienne version est archivée et les écritures concurrentes obsolètes sont rejetées. Les relations ont désormais leur propre numéro de version et un historique indépendant. Les URI externes et versions des jeux de données sont conservées pour la traçabilité.
+## 3. Import, langues et identités stables
 
-## Écran 03
+`importESCOBundle` accepte les concepts profession/compétence avec :
 
-Le moteur de compréhension charge le registre universel. Les activités peuvent être rapprochées d'un domaine ou d'une profession ; les rôles d'acteurs peuvent être rapprochés d'une profession. Les ambiguïtés restent visibles avec leurs candidats. Les correspondances hiérarchiques affichent le chemin de classification. Les inconnus restent ouverts et peuvent être proposés sans publication automatique.
+- URI externe stable ;
+- libellés préférés par langue ;
+- synonymes/variantes par langue ;
+- définitions par langue ;
+- relation hiérarchique éventuelle ;
+- relations profession-compétence essentielles ou optionnelles ;
+- version de dataset et horodatage ;
+- correspondance MerKora explicite, lorsqu'elle a été validée.
 
-## Limites d'intégration à ce stade
+Les paquets de langues successifs portant la même URI sont fusionnés dans le même concept canonique. Une nouvelle langue ou une correction réellement différente crée une nouvelle version et archive le snapshot précédent. Réimporter un paquet identique de la même version est idempotent.
 
-- Le catalogue local fournit 100 domaines et 20 familles, mais pas encore une liste locale exhaustive de plusieurs milliers de professions.
-- L'importateur ESCO est implémenté, mais le paquet officiel multilingue n'est pas encore importé dans ce dépôt.
-- Le registre et les propositions restent en mémoire/session navigateur ; aucune synchronisation serveur ni console d'administration sécurisée n'est raccordée.
-- Aucune migration Supabase, aucun déploiement et aucune fusion en production.
+Les domaines MerKora ne sont pas attribués automatiquement aux professions ESCO. `domainMappings` exige une correspondance explicite vers un domaine existant ; l'absence de correspondance laisse la profession non classée localement.
+
+## 4. Écran 03 — moteur de compréhension
+
+L'écran 03 :
+
+- utilise les 100 domaines et les spécialisations dans le moteur de rapprochement ;
+- expose les chemins famille → domaine et domaine → spécialisation ;
+- affiche toutes les entités du graphe, sans tronquer la liste à 16 ;
+- conserve les ambiguïtés sans choisir arbitrairement ;
+- permet de rechercher les professions ESCO dans la langue choisie ;
+- affiche les libellés alternatifs et les fiches ESCO ;
+- permet de proposer un rapprochement externe ou un nouveau concept.
+
+La recherche ESCO ne valide pas automatiquement une profession. Le rapprochement reste une proposition privée du projet jusqu'à la revue humaine.
+
+## 5. Gouvernance des inconnus et des correspondances externes
+
+Une proposition de concept demeure attachée au projet avec son extrait source. Une référence ESCO choisie par l'utilisateur reste une candidate privée.
+
+L'approbation humaine peut :
+- créer un concept canonique MerKora ;
+- fusionner le terme dans un concept existant ;
+- publier la correspondance externe approuvée ;
+- conserver l'identité URI ESCO et sa langue/version.
+
+Un refus n'ajoute rien au registre partagé. Une proposition n'est jamais promue automatiquement parce que l'API ESCO a retourné un résultat.
+
+## 6. Versionnage
+
+Les concepts ont une version, un historique de snapshots et un contrôle de version attendue pour éviter les écrasements concurrents. Les relations ont un versionnage séparé et un historique de snapshots. Les imports ESCO multilingues utilisent le versionnage de concept lors d'une modification réelle.
+
+## 7. Persistance et limites opérationnelles
+
+Dans cette tranche, le registre partagé est construit depuis le code et conservé en mémoire côté application. Les propositions de l'écran 03 restent dans le dossier projet du navigateur/session. Aucun schéma Supabase ni aucune écriture de base n'a été ajouté.
+
+Pour une gouvernance multi-administrateurs et une synchronisation multi-appareils, il faudra ultérieurement un stockage serveur avec authentification, permissions, audit et transactions. Ce raccordement n'est pas prétendu achevé ici.
