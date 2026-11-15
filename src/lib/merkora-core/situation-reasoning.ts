@@ -156,7 +156,8 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
         ? candidates.filter((item) => item.label.toLocaleLowerCase("fr") === explicitNoun.toLocaleLowerCase("fr"))
         : [];
       const primaryCandidates = candidates.filter((item) => item.primary);
-      const target = (nounCandidates.length ? nounCandidates : primaryCandidates.length ? primaryCandidates : candidates).at(-1);
+      const preferredCandidates = isFeminine && primaryCandidates.length ? primaryCandidates : candidates;
+      const target = (nounCandidates.length ? nounCandidates : preferredCandidates).at(-1);
       results.push({
         messageId: message.id,
         mention,
