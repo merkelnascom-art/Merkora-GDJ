@@ -109,6 +109,30 @@ export function createKnowledgeRegistry(
     historyVersions.add(key);
   }
 
+  // Classification parent chains must be acyclic within each classification system.
+  for (const concept of concepts) {
+    const seenTypes = new Set<string>();
+    for (const classification of concept.classifications) {
+      if (seenTypes.has(classification.classificationType)) {
+        throw new Error(`Knowledge concept ${concept.id} has duplicate classification type ${classification.classificationType}.`);
+      }
+      seenTypes.add(classification.classificationType);
+
+      const visited = new Set<string>([concept.id]);
+      let parentId = classification.parentConceptId;
+      while (parentId) {
+        if (visited.has(parentId)) {
+          throw new Error(`Knowledge classification cycle detected for ${concept.id} in ${classification.classificationType}.`);
+        }
+        visited.add(parentId);
+        const parent = concepts.find((candidate) => candidate.id === parentId);
+        parentId = parent?.classifications.find(
+          (candidate) => candidate.classificationType === classification.classificationType,
+        )?.parentConceptId;
+      }
+    }
+  }
+
   return {
     version: 1,
     concepts: concepts.map(cloneConcept),

@@ -5,3 +5,4 @@ export * from "./registry";
 export * from "./matching";
 export * from "./proposals";
 export * from "./situation-linker";
+export * from "./classification-graph";
