@@ -124,7 +124,7 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
     const mentions = [...message.content.matchAll(REFERENCE)];
     for (const mention of mentions) {
       const token = mention[0];
-      const isFeminine = /^(elle|elles|cette)/i.test(token);
+      const isFeminine = /^(?:elle|elles|cette|celles)/i.test(token);
       const candidates = known.filter((item) => item.gender === (isFeminine ? "f" : "m"));
       const primaryCandidates = candidates.filter((item) => item.primary);
       const target = (primaryCandidates.length ? primaryCandidates : candidates).at(-1);
@@ -138,7 +138,7 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
     }
     for (const match of message.content.matchAll(ANTECEDENT)) {
       const noun = match[1].toLocaleLowerCase("fr");
-      const gender = ["plateforme", "application", "solution", "clinique", "école", "ecole"].includes(noun) ? "f" : "m";
+      const gender = ["plateforme", "application", "solution", "clinique", "école", "ecole", "directrice", "secrétaire", "enseignante", "formatrice", "employée", "patiente", "élève", "eleve", "étudiante", "cliente", "invitée", "inscription", "commande"].includes(noun) ? "f" : "m";
       const label = match[0].replace(/^(?:un|une|la|le|ce|cet|cette)\s+/i, "").trim();
       known.push({ label, gender, messageId: message.id });
     }
