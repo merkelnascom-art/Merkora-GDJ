@@ -1,6 +1,7 @@
 import type { ConversationMessage, NeedDimension, NeedEvidence, QuestionCandidate, ValidationDecision } from "./types";
 import { buildSituationGraph, type SituationGraph } from "./situation-graph";
 import { extractSituationObservations } from "./situation-extractor";
+import { analyzeConversation, type ConversationReasoning } from "./situation-reasoning";
 
 export type IntentKind =
   | "organize_event" | "reservation" | "invitation" | "request"
@@ -15,6 +16,7 @@ export interface UnderstandingSession {
   messages: ConversationMessage[];
   evidence: NeedEvidence[];
   situationGraph: SituationGraph;
+  reasoning?: ConversationReasoning;
   validations: ValidationDecision[];
   askedQuestionIds: string[];
   deferredDimensions: NeedDimension[];
@@ -67,7 +69,10 @@ function addEvidence(
     id: makeId("evidence"),
     dimension,
     value,
-    status: "user_stated",
+    status: (() => {
+      const assertion = analyzeConversation([message]).assertions.find((item) => item.quote === sourceQuote);
+      return assertion?.status === "hypothesis" ? "hypothesis" : assertion?.status === "deduction" ? "inferred" : "user_stated";
+    })(),
     sourceMessageId: message.id,
     sourceQuote,
     confidence: 0.86,
@@ -212,6 +217,57 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
+  const reasoning = analyzeConversation(session.messages);
+  const detectedContradictions = reasoning.contradictions.map((item) => ({
+    topic: item.topic,
+    statementA: item.statementA,
+    statementB: item.statementB,
+    question: item.question,
+    confirmationRequired: true,
+  }));
+  session = { ...session, reasoning, contradictions: detectedContradictions };
+  const unresolvedContradiction = reasoning.contradictions.find((item) => {
+    const key = `${item.topic}::${item.statementA}::${item.statementB}`;
+    return !session.resolvedContradictionKeys.includes(key) && !session.deferredContradictionKeys.includes(key);
+  });
+  if (unresolvedContradiction) {
+    const key = `${unresolvedContradiction.topic}::${unresolvedContradiction.statementA}::${unresolvedContradiction.statementB}`;
+    const question = makeQuestion(
+      "business_rule",
+      unresolvedContradiction.question,
+      "Deux messages contiennent des indications incompatibles sur une même règle. MerKora doit clarifier avant de poursuivre.",
+    );
+    question.id = `resolve-contradiction-${unresolvedContradiction.topic}-v2`;
+    return {
+      ...session,
+      pendingQuestion: question,
+      stage: "clarification",
+      version: session.version + 1,
+      messages: [...session.messages, newMessage(
+        session.conversationId,
+        "merkora",
+        `J'ai repéré deux indications qui semblent incompatibles : « ${unresolvedContradiction.statementA} » et « ${unresolvedContradiction.statementB} ». Je ne vais pas choisir à ta place. ${question.prompt}`,
+      )],
+    };
+  }
+
+  const unresolvedReference = reasoning.references.find((item) => !item.resolved);
+  if (unresolvedReference) {
+    const question = makeQuestion(
+      "unknown",
+      `Quand tu dis « ${unresolvedReference.mention} », à quel élément de ton récit fais-tu référence ?`,
+      "Un pronom ou une référence ne possède pas encore d'antécédent suffisamment clair.",
+    );
+    question.id = `clarify-reference-${unresolvedReference.messageId}-${unresolvedReference.mention.toLocaleLowerCase("fr")}`;
+    return {
+      ...session,
+      pendingQuestion: question,
+      stage: "clarification",
+      version: session.version + 1,
+      messages: [...session.messages, newMessage(session.conversationId, "merkora", question.prompt)],
+    };
+  }
+
   const has = (dimension: NeedDimension) => session.evidence.some((item) => item.dimension === dimension);
   const rich = (has("problem") || has("goal"))
     && (has("preference") || has("feature"))
@@ -329,12 +385,23 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
   const completeEvidence = hasPendingEvidence
     ? evidence
     : addEvidence(evidence, session.pendingQuestion.dimension, text, visitorMessage, text);
+  const resolvingTopic = session.pendingQuestion.id.startsWith("resolve-contradiction-")
+    ? session.pendingQuestion.id.replace("resolve-contradiction-", "").replace("-v2", "")
+    : null;
+  const resolvedConflict = resolvingTopic
+    ? session.reasoning?.contradictions.find((item) => item.topic === resolvingTopic)
+    : undefined;
+  const isUncertainAnswer = /je ne sais pas|je ne sais|à vérifier|a verifier|les deux|aucun des deux|je ne peux pas dire/i.test(text);
+  const resolvedContradictionKeys = resolvedConflict && !isUncertainAnswer && text.length > 2
+    ? [...new Set([...session.resolvedContradictionKeys, `${resolvedConflict.topic}::${resolvedConflict.statementA}::${resolvedConflict.statementB}`])]
+    : session.resolvedContradictionKeys;
 
   return advance({
     ...session,
     messages: [...session.messages, visitorMessage],
     evidence: completeEvidence,
     situationGraph: rebuildSituationGraph([...session.messages, visitorMessage]),
+    resolvedContradictionKeys,
     pendingQuestion: null,
     version: session.version + 1,
   });
