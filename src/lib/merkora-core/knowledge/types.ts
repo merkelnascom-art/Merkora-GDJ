@@ -60,6 +60,7 @@ export interface KnowledgeScope {
   countries?: string[];
   jurisdictions?: string[];
   regions?: string[];
+  projectIds?: string[];
 }
 
 export interface KnowledgeSource {
