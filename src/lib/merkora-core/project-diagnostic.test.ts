@@ -7,6 +7,8 @@ import {
   recordDiagnosticAnswer,
   reviseUnderstandingItem,
   reviseDiagnosticAnswer,
+  deferDiagnosticQuestion,
+  resumeDeferredDiagnosticQuestions,
   validateProjectUnderstanding,
 } from "./project-diagnostic";
 
@@ -66,6 +68,21 @@ describe("adaptive universal diagnostic", () => {
     expect(next?.id).not.toBe(first.id);
   });
 
+
+
+  it("lets the user resume questions that were deferred earlier", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je développe un procédé expérimental."));
+    const diagnostic = createDiagnosticSession(dossier);
+    const first = getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!first) throw new Error("Expected a first diagnostic question.");
+    const deferred = deferDiagnosticQuestion(diagnostic, first);
+
+    expect(getNextDiagnosticQuestion(dossier, deferred)?.id).not.toBe(first.id);
+    const resumed = resumeDeferredDiagnosticQuestions(deferred);
+
+    expect(resumed.deferredQuestionIds).toEqual([]);
+    expect(getNextDiagnosticQuestion(dossier, resumed)?.id).toBe(first.id);
+  });
 
   it("revises a previous answer without deleting its earlier version", () => {
     const dossier = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
