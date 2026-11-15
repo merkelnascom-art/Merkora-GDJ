@@ -36,12 +36,7 @@ interface Candidate {
 export interface KnowledgeMatchOptions {
   expectedType?: string;
   allowTypeFallback?: boolean;
-}
-
-function methodRank(method: KnowledgeMatchMethod): number {
-  if (method === "exact") return 3;
-  if (method === "normalized") return 2;
-  return 1;
+  includeNonValidated?: boolean;
 }
 
 /**
@@ -60,6 +55,7 @@ export function matchKnowledgeConcept(
   const candidates: Candidate[] = [];
 
   for (const concept of registry.concepts) {
+    if (!options.includeNonValidated && concept.lifecycle.status !== "validated") continue;
     if (options.expectedType && concept.conceptType !== options.expectedType) continue;
 
     const terms = [
@@ -72,14 +68,14 @@ export function matchKnowledgeConcept(
       if (term.value === original) {
         candidates.push({
           concept,
-          rank: term.kind === "synonym" ? 1 : 3,
-          method: term.kind === "synonym" ? "synonym" : "exact",
+          rank: term.kind === "preferred" ? 3 : 1,
+          method: term.kind === "preferred" ? "exact" : "synonym",
         });
       } else if (normalizedTerm === normalizedQuery) {
         candidates.push({
           concept,
-          rank: term.kind === "synonym" ? 1 : 2,
-          method: term.kind === "synonym" ? "synonym" : "normalized",
+          rank: term.kind === "preferred" ? 2 : 1,
+          method: term.kind === "preferred" ? "normalized" : "synonym",
         });
       }
     }
@@ -109,7 +105,10 @@ export function matchKnowledgeConcept(
   }
 
   if (options.allowTypeFallback && options.expectedType) {
-    const typed = registry.concepts.filter((concept) => concept.conceptType === options.expectedType);
+    const typed = registry.concepts.filter((concept) =>
+      concept.conceptType === options.expectedType &&
+      (options.includeNonValidated || concept.lifecycle.status === "validated"),
+    );
     if (typed.length === 1) {
       return { status: "type_only", query, concept: typed[0], confidence: 0.75 };
     }
