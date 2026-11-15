@@ -124,6 +124,8 @@ export default function UnderstandingPage() {
   }
 
   const activeItems = dossier ? getActiveUnderstandingItems(dossier) : [];
+  const populatedSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => activeItems.some((item) => item.dimension === section.id)) : [];
+  const missingSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => !activeItems.some((item) => item.dimension === section.id)) : [];
 
   return (
     <main className="mk-v2-page mk-stage-page">
@@ -163,7 +165,8 @@ export default function UnderstandingPage() {
             </div>
 
             <div className="mk-understanding-sections">
-              {UNDERSTANDING_SECTIONS.map((section) => {
+              {populatedSections.length === 0 && <p className="mk-section-empty">Aucun élément structuré n'a encore été extrait. Ton récit initial reste conservé intégralement ; le diagnostic pourra commencer par clarifier l'activité ou l'idée.</p>}
+              {populatedSections.map((section) => {
                 const items = activeItems.filter((item) => item.dimension === section.id);
                 return (
                   <section className="mk-understanding-section" key={section.id}>
@@ -171,11 +174,8 @@ export default function UnderstandingPage() {
                       <div><h2>{section.title}</h2><p>{section.description}</p></div>
                       <span>{items.length}</span>
                     </div>
-                    {items.length === 0 ? (
-                      <p className="mk-section-empty">Pas encore identifié dans ton récit. Ce n'est pas une erreur : nous pourrons l'éclaircir si cela devient utile.</p>
-                    ) : (
-                      <div className="mk-understanding-items">
-                        {items.map((item) => (
+                    <div className="mk-understanding-items">
+                      {items.map((item) => (
                           <article className="mk-understanding-item" key={item.id}>
                             {editingId === item.id ? (
                               <div className="mk-edit-item">
@@ -197,12 +197,12 @@ export default function UnderstandingPage() {
                             )}
                           </article>
                         ))}
-                      </div>
-                    )}
+                    </div>
                   </section>
                 );
               })}
             </div>
+            {missingSections.length > 0 && <details className="mk-missing-sections"><summary>Voir les {missingSections.length} dimensions non encore identifiées</summary><ul>{missingSections.map((section) => <li key={section.id}><strong>{section.title}</strong><span>{section.description}</span></li>)}</ul><p>Ces dimensions ne sont pas des champs obligatoires. MerKora les explorera seulement si elles deviennent utiles au projet.</p></details>}
 
             <section className="mk-stage-next">
               <div><span className="mk-summary-kicker">PROCHAINE ÉTAPE</span><h2>Approfondir ce qui doit encore être compris</h2><p>La validation confirme les informations que tu as exprimées. Les hypothèses restent des hypothèses. Le diagnostic pourra préciser les éléments manquants, un par un.</p></div>
