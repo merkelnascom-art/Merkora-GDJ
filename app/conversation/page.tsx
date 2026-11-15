@@ -301,6 +301,39 @@ export default function ConversationPage() {
                 ))}
               </div>
 
+              <section className="mk-dossier-panel" aria-labelledby="mk-dossier-title" aria-live="polite">
+                <div className="mk-dossier-heading">
+                  <div>
+                    <span className="mk-summary-kicker">DÉCRYPTAGE CONTINU</span>
+                    <h2 id="mk-dossier-title">{session.dossier.title || "Dossier de compréhension"}</h2>
+                  </div>
+                  <span className="mk-dossier-count">{session.dossier.facets.length} éléments</span>
+                </div>
+                <p className="mk-dossier-intro">Je relie ici les informations de tous tes messages. Une information déjà donnée ne doit pas t'être redemandée.</p>
+                {session.dossier.facets.length > 0 ? (
+                  <div className="mk-dossier-facets">
+                    {session.dossier.facets.map((facet, index) => (
+                      <article className="mk-dossier-facet" key={facet.dimension + "-" + facet.sourceMessageIds.join("-") + "-" + index}>
+                        <div className="mk-dossier-facet-heading">
+                          <strong>{facet.title}</strong>
+                          <span>EXPRIMÉ PAR TOI</span>
+                        </div>
+                        <p>{facet.content}</p>
+                        <small>Source : {facet.sourceMessageIds.length} message(s) · non validé</small>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mk-dossier-empty">Je conserve ton récit complet. Je cherche encore les premiers éléments suffisamment explicites pour les classer.</p>
+                )}
+                {session.dossier.openQuestions.length > 0 && (
+                  <div className="mk-dossier-open">
+                    <strong>À éclaircir uniquement si cela devient utile</strong>
+                    <ul>{session.dossier.openQuestions.map((question) => <li key={question}>{question}</li>)}</ul>
+                  </div>
+                )}
+              </section>
+
               {session.stage === "clarification" && session.pendingQuestion && (
                 <div className="mk-answer-panel">
                   <label className="mk-input-label" htmlFor="mk-follow-up-answer">TA RÉPONSE</label>
