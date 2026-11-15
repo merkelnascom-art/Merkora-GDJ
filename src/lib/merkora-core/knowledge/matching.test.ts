@@ -93,4 +93,20 @@ describe("knowledge concept matching", () => {
     if (result.status !== "type_only") throw new Error("Expected a type-only result.");
     expect(result.concept.id).toBe("energy:solar");
   });
+  it("does not use proposed, rejected or deprecated concepts for ordinary matching", () => {
+    const notValidated = createKnowledgeRegistry([
+      concept({
+        id: "draft:term",
+        canonicalKey: "draft.term",
+        conceptType: "experimental",
+        definitions: [{ language: "fr", label: "Terme expérimental", definition: "Non validé." }],
+        terms: [{ value: "terme expérimental", language: "fr", kind: "preferred" }],
+        lifecycle: { status: "proposed", version: 1, createdAt: "2026-11-15T00:00:00.000Z", updatedAt: "2026-11-15T00:00:00.000Z" },
+      }),
+    ]);
+
+    expect(matchKnowledgeConcept("Terme expérimental", notValidated).status).toBe("unmatched");
+    expect(matchKnowledgeConcept("Terme expérimental", notValidated, { includeNonValidated: true }).status).toBe("matched");
+  });
+
 });
