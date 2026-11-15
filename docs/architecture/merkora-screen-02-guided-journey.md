@@ -11,11 +11,12 @@ Le parcours suit la séquence :
 
 1. expression libre, sans catégorie obligatoire ;
 2. extraction prudente des indices explicitement formulés ;
-3. choix d'une seule question utile ;
-4. clarification du besoin, du fonctionnement actuel, des causes, du résultat, du contexte et des acteurs ;
-5. synthèse construite à partir des propos conservés ;
-6. confirmation, correction ou report par la personne ;
-7. clôture de cette première compréhension.
+3. clarification du périmètre lorsque plusieurs groupes d'activités semblent coexister ;
+4. choix d'une seule question utile ;
+5. clarification du besoin, du fonctionnement actuel, des causes, du résultat, du contexte, des acteurs et, lorsque nécessaire, des précautions de confidentialité ;
+6. synthèse construite à partir des propos conservés ;
+7. confirmation, correction ou report par la personne ;
+8. clôture de cette première compréhension.
 
 ## 2. Règles de vérité
 
@@ -40,6 +41,8 @@ Le parcours suit la séquence :
 | context | cadre ou lieu explicitement mentionné |
 | actor | personnes ou groupes explicitement nommés |
 | constraint | contrainte explicitement détectée |
+| project_scope | périmètre lorsque plusieurs groupes d'activités apparaissent |
+| risk | confidentialité, information et accord des personnes concernées |
 | unknown | correction non encore classée avec certitude |
 
 Les indices de domaines/métiers issus du lexique sont stockés comme `intentClues`, jamais comme une classification métier validée.
@@ -69,7 +72,7 @@ Chaque valeur est actuellement une appréciation de conception comprise entre 0 
 - `summary_validation` : le moteur n'a plus de question candidate admissible et présente la synthèse ;
 - `complete` : la personne a confirmé la synthèse ou a choisi de reporter sa validation.
 
-La personne peut passer une question. Le moteur enregistre alors la dimension reportée et n'invente aucune réponse.
+Lorsque plusieurs groupes d'activités sont détectés, le moteur demande s'ils relèvent d'un seul projet ou de projets distincts. Une réponse « oui/non » isolée est jugée ambiguë et déclenche une reformulation explicite. Lorsque des tiers sont concernés et qu'aucune information de confidentialité/accord n'a été fournie, une question de précaution est ajoutée. La personne peut passer une question : le moteur conserve alors le point reporté dans la synthèse et n'invente aucune réponse.
 
 ## 6. Conservation et sécurité
 
