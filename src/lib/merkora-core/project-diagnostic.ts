@@ -215,7 +215,6 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       };
     }),
     unresolvedQuestions: [
-      ...(session.pendingQuestion ? [session.pendingQuestion.prompt] : []),
       ...(session.reasoning?.references.filter((reference) => !reference.resolved).map((reference) => `Préciser la référence « ${reference.mention} ».`) ?? []),
     ],
     privacyConsiderations: [...session.privacyConsiderations],
