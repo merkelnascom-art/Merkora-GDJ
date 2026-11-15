@@ -123,3 +123,22 @@
 @media(prefers-reduced-motion:reduce){
   .mk-orb-activity-receiving .mk-orb-wave,.mk-orb-activity-analyzing .mk-orb-wave,.mk-orb-activity-receiving .mk-orb-core,.mk-orb-activity-responding .mk-orb-core,.mk-orb-activity-receiving .mk-orb-status i,.mk-orb-activity-analyzing .mk-orb-status i{animation:none!important}
 }
+
+
+/* Dossier de compréhension vivant — écran 02 */
+.mk-dossier-panel{margin:22px 0;padding:20px;border:1px solid rgba(185,156,231,.22);border-radius:20px;background:linear-gradient(145deg,rgba(25,24,48,.88),rgba(14,20,39,.94));box-shadow:0 18px 50px rgba(0,0,0,.16)}
+.mk-dossier-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mk-dossier-heading h2{margin:6px 0 0;color:#f5f0ff;font-size:22px;letter-spacing:-.025em}
+.mk-dossier-count{flex:none;padding:7px 10px;border:1px solid rgba(197,164,93,.35);border-radius:999px;color:#e6cf9e;font-size:11px;white-space:nowrap}
+.mk-dossier-intro,.mk-dossier-empty{margin:12px 0 16px;color:#b7b4c9;font-size:13px;line-height:1.65}
+.mk-dossier-facets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mk-dossier-facet{min-width:0;padding:13px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(255,255,255,.035)}
+.mk-dossier-facet-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mk-dossier-facet-heading strong{color:#e9e3f6;font-size:13px}
+.mk-dossier-facet-heading span{color:#c9ad71;font-size:9px;letter-spacing:.08em;white-space:nowrap}
+.mk-dossier-facet p{margin:9px 0;color:#d0ccdc;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.mk-dossier-facet small{color:#9692a8;font-size:10px}
+.mk-dossier-open{margin-top:14px;padding:13px 15px;border-left:2px solid #b99ce7;border-radius:0 12px 12px 0;background:rgba(185,156,231,.07)}
+.mk-dossier-open strong{color:#dfd0f5;font-size:12px}
+.mk-dossier-open ul{margin:8px 0 0;padding-left:18px;color:#bdb7cd;font-size:12px;line-height:1.8}
+@media(max-width:680px){.mk-dossier-panel{padding:15px;margin:16px 0}.mk-dossier-facets{grid-template-columns:1fr}.mk-dossier-heading h2{font-size:19px}}
