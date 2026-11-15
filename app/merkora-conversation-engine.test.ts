@@ -125,6 +125,14 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(session.pendingQuestion?.prompt).toMatch(/informées|informations/i);
   });
 
+  it("preserves an explicit privacy or consent statement instead of asking it again", () => {
+    const session = beginUnderstanding(
+      "Je veux mieux suivre les contributions de ma famille. Aujourd'hui, je note les contributions dans un cahier. Le problème est que je perds les montants. Parce que les notes sont dispersées. Mon objectif est de retrouver les montants rapidement. Les membres sont informés et ont donné leur accord.",
+    );
+    expect(session.evidence.some((item) => item.dimension === "risk" && item.status === "user_stated")).toBe(true);
+    expect(session.pendingQuestion?.dimension).not.toBe("risk");
+  });
+
   it("does not force a domain when the initial idea is vague or hybrid", () => {
     const session = beginUnderstanding("Je veux mieux organiser certaines choses.");
     expect(session.intentClues).toEqual([]);
