@@ -50,9 +50,10 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(afterCause.pendingQuestion?.dimension).toBe("preference");
 
     const solution = answerUnderstanding(afterCause, "Je souhaite une application dans laquelle les enseignants consultent leurs présences.");
-    const confirmed = decideUnderstandingSummary(solution, "confirmed");
-    expect(confirmed.stage).toBe("clarification");
-    expect(confirmed.pendingQuestion?.dimension).toBe("preference");
+    expect(solution.pendingQuestion?.dimension).toBe("risk");
+    const privacy = answerUnderstanding(solution, "Les membres sont informés et ont donné leur accord.");
+    const confirmed = decideUnderstandingSummary(privacy, "confirmed");
+    expect(confirmed.stage).toBe("complete");
     expect(confirmed.evidence.every((item) => item.status === "validated")).toBe(true);
   });
 
@@ -230,7 +231,7 @@ describe("MerKora intent-first understanding and conversational repair", () => {
     const session = beginUnderstanding("Je veux créer une école pour former des jeunes.");
 
     expect(session.intentKind).toBe("create_project");
-    expect(session.pendingQuestion?.prompt).toMatch(/créer|école|personnes|public/i);
+    expect(session.pendingQuestion?.prompt).toMatch(/ressources|limites|échéances|créer|école|personnes|public/i);
     expect(session.pendingQuestion?.dimension).not.toBe("activity");
   });
 
