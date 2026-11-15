@@ -6,3 +6,5 @@ export * from "./matching";
 export * from "./proposals";
 export * from "./situation-linker";
 export * from "./classification-graph";
+export * from "./universal-domain-catalog";
+export * from "./esco-import";

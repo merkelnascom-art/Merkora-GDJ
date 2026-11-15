@@ -16,6 +16,9 @@ import {
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
+import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
+
+const SCREEN_03_KNOWLEDGE = createUniversalKnowledgeRegistry();
 import type { SituationEntity } from "../../src/lib/merkora-core/situation-graph";
 
 const SOURCE_SESSION_KEY = "merkora-v2-understanding-session";
@@ -139,7 +142,7 @@ export default function UnderstandingPage() {
       language: "und",
       sourceMessageId: source.messageId,
       sourceQuote: source.quote,
-    });
+    }, SCREEN_03_KNOWLEDGE);
     try {
       persist(attachKnowledgeProposalToUnderstanding(dossier, proposal));
     } catch {
@@ -212,6 +215,19 @@ export default function UnderstandingPage() {
                           ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
                           : <span>Terme conservé sans correspondance forcée.</span>}
                     </div>
+                    {entity.knowledge?.classificationPath && entity.knowledge.classificationPath.length > 0 && (
+                      <small>Classement : {entity.knowledge.classificationPath.map((item) => item.label).join(" → ")}</small>
+                    )}
+                    {entity.knowledge?.matchStatus === "ambiguous" && entity.knowledge.candidateConceptIds && (
+                      <div className="mk-item-meta">
+                        <span>Correspondances à départager :</span>
+                        {entity.knowledge.candidateConceptIds.map((id) => {
+                          const candidate = getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id);
+                          const label = candidate?.definitions.find((item) => item.language === "fr")?.label ?? candidate?.definitions[0]?.label ?? id;
+                          return <span key={id}>{label}</span>;
+                        })}
+                      </div>
+                    )}
                     {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
                       <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
                         Proposer ce terme au référentiel
@@ -228,10 +244,11 @@ export default function UnderstandingPage() {
                     <article className="mk-understanding-item" key={proposal.id}>
                       <p><strong>{proposal.label}</strong></p>
                       <div className="mk-item-meta">
-                        <span>{proposal.status === "proposed" ? "En attente de revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
+                        <span>{proposal.status === "proposed" ? "Proposition privée" : proposal.status === "under_review" ? "En revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
                         <span>Langue non déterminée</span>
                       </div>
                       <small>{proposal.sourceQuote}</small>
+                      {(proposal.possibleDuplicateConceptIds ?? []).length > 0 && <small>Concept(s) proche(s) déjà présent(s) : {(proposal.possibleDuplicateConceptIds ?? []).map((id) => getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id)?.definitions.find((item) => item.language === "fr")?.label ?? id).join(", ")}. Une revue doit décider s’il s’agit d’un synonyme ou d’un concept distinct.</small>}
                     </article>
                   ))}
                   <small>Ces propositions restent attachées à ce projet. Elles ne modifient pas le référentiel commun sans revue explicite.</small>

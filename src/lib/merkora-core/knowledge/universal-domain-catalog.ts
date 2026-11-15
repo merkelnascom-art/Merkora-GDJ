@@ -88,7 +88,7 @@ const familyConcepts: KnowledgeConcept[] = FAMILIES.map((family) => ({
     { value: family.fr, language: "fr", kind: "preferred" },
     { value: family.en, language: "en", kind: "preferred" },
   ],
-  classifications: [{ classificationType: "universal-domain-family" }],
+  classifications: [{ classificationType: "universal-domain" }, { classificationType: "universal-domain-family" }],
   attributes: [],
   relationships: [],
   scope: { global: true },
