@@ -5,6 +5,7 @@ import type {
   KnowledgeRegistry,
   KnowledgeRelationship,
   KnowledgeScope,
+  KnowledgeTerm,
 } from "./types";
 
 export interface ESCOConceptRecord {
@@ -89,6 +90,9 @@ export function importESCOBundle(
       for (const value of values.filter((item) => item.trim())) terms.push({ value, language, kind: "synonym" as const });
     }
     const domainId = bundle.domainMappings?.[record.uri];
+    if (domainId && !registry.concepts.some((concept) => concept.id === domainId)) {
+      throw new Error(`ESCO domain mapping references an unknown MerKora domain: ${domainId}`);
+    }
     const classifications = record.type === "occupation" && domainId
       ? [{ classificationType: "occupation-domain", parentConceptId: domainId, domainId }]
       : [];
