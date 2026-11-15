@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
-import { signInWithPassword, signUpWithPassword } from "@/lib/supabase/auth-actions";
+import { requestPasswordReset, signInWithPassword, signUpWithPassword } from "@/lib/supabase/auth-actions";
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -43,6 +43,7 @@ export default function AuthPage() {
           <label style={{ display: "grid", gap: 6 }}>Mot de passe<input required type="password" minLength={8} autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>
           <button className="mk-continue-button" type="submit" disabled={isPending}>{isPending ? "Patiente un instant…" : mode === "signin" ? "Me connecter" : "Créer mon compte"} <span>→</span></button>
         </form>
+        {mode === "signin" && <button type="button" className="mk-tertiary-button" onClick={() => startTransition(async () => { const result = await requestPasswordReset(email); setMessage(result.ok ? (result.message ?? "Consulte ta boîte e-mail.") : result.error); })} disabled={isPending}>Mot de passe oublié ?</button>}
         {message && <p role="status" aria-live="polite" style={{ marginTop: 18, padding: 12, borderRadius: 12, background: "rgba(255,255,255,.06)" }}>{message}</p>}
         <p style={{ fontSize: ".8rem", opacity: .65, marginTop: 20 }}>Si le service de compte n'est pas configuré, MerKora conserve le mode local. Aucun mot de passe n'est stocké dans le navigateur par MerKora.</p>
       </section>
