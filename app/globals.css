@@ -110,8 +110,10 @@
 .mk-orb-activity-receiving .mk-orb-wave{animation-duration:1.15s;opacity:.55;border-width:2px}
 .mk-orb-activity-receiving .mk-orb-core{animation:mk-core-receive .72s ease-in-out infinite}
 .mk-orb-activity-receiving .mk-orb-ring{animation-duration:2.6s}
-.mk-orb-activity-analyzing .mk-orb-wave{animation-duration:1.8s;opacity:.45}
-.mk-orb-activity-analyzing .mk-orb-ring{animation-duration:1.9s}
+.mk-orb-activity-analyzing .mk-orb-wave{animation-duration:1.35s;animation-delay:0s;opacity:.55}
+.mk-orb-activity-analyzing .mk-orb-wave-b{animation-delay:.38s}
+.mk-orb-activity-analyzing .mk-orb-wave-c{animation-delay:.76s}
+.mk-orb-activity-analyzing .mk-orb-ring{animation-duration:1.55s}
 .mk-orb-activity-analyzing .mk-orb-ring-b{animation-duration:2.4s}
 .mk-orb-activity-analyzing .mk-orb-halo{animation-duration:1.2s}
 .mk-orb-activity-responding .mk-orb-wave{animation-duration:3.8s;opacity:.3}
