@@ -189,4 +189,27 @@ describe("Fondation A — intégrité du référentiel", () => {
     expect(revised.relationships[0].predicate).toBe("coordinates");
     expect(revised.conceptHistory[0].relationships[0].predicate).toBe("performs");
   });
+
+  it("preserves registry-level relations when revising a concept that owns no embedded relations", () => {
+    const actor = makeConcept("concept:actor", "actor", "Acteur");
+    const activity = makeConcept("concept:activity", "activity", "Activité");
+    const registry = createKnowledgeRegistry([actor, activity], [{
+      id: "relation:registry-level",
+      sourceConceptId: actor.id,
+      targetConceptId: activity.id,
+      predicate: "performs",
+      status: "validated",
+      sourceIds: [],
+      version: 1,
+    }]);
+
+    const revised = reviseKnowledgeConcept(
+      registry,
+      actor.id,
+      1,
+      { definitions: [{ language: "fr", label: "Acteur humain", definition: "Personne qui agit." }] },
+    );
+
+    expect(revised.relationships.map((relation) => relation.id)).toEqual(["relation:registry-level"]);
+  });
 });
