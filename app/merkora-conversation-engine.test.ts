@@ -66,6 +66,25 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
   });
 
+  it("pauses the ordinary flow when access statements conflict and asks the person to clarify", () => {
+    const session = beginUnderstanding(
+      "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
+    );
+
+    expect(session.pendingQuestion?.dimension).toBe("business_rule");
+    expect(session.contradictions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ topic: "access", confirmationRequired: true }),
+    ]));
+    expect(session.evidence.some((item) => item.status === "validated")).toBe(false);
+
+    const clarified = answerUnderstanding(
+      session,
+      "La famille peut consulter les totaux, mais seuls les montants détaillés me sont réservés.",
+    );
+    expect(clarified.resolvedContradictionKeys).toHaveLength(1);
+    expect(clarified.pendingQuestion?.dimension).not.toBe("business_rule");
+  });
+
   it("does not force a domain when the initial idea is vague or hybrid", () => {
     const session = beginUnderstanding("Je veux mieux organiser certaines choses.");
     expect(session.intentClues).toEqual([]);
