@@ -31,7 +31,7 @@ export function enrichSituationGraphWithKnowledge(
     entities: graph.entities.map((entity) => {
       const typeConceptId = TYPE_CONCEPT_IDS[entity.kind];
       const typeConcept = typeConceptId ? getKnowledgeConcept(registry, typeConceptId) : undefined;
-      const match = matchKnowledgeConcept(entity.label, registry);
+      const match = matchKnowledgeConcept(entity.label, registry, { expectedType: entity.kind });
 
       return {
         ...entity,
