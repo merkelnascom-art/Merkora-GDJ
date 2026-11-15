@@ -1,4 +1,5 @@
 import { analyzeUniversalProjectIntent } from "../universal-project-understanding";
+import { buildUnderstandingDossier, type UnderstandingDossier } from "./understanding-dossier";
 import { selectNextQuestion } from "./question-planner";
 import { selectNextDiscoveryQuestion, type DiscoveryContradiction } from "../universal-project-discovery";
 import type {
@@ -31,6 +32,7 @@ export interface UnderstandingSession {
   contradictions: DiscoveryContradiction[];
   resolvedContradictionKeys: string[];
   deferredContradictionKeys: string[];
+  dossier: UnderstandingDossier;
 }
 
 let sequence = 0;
@@ -54,7 +56,7 @@ const GAME_FEATURE_PATTERNS: Array<{ pattern: RegExp; value: string }> = [
 const PRIVACY_PATTERN = /accord|consentement|informé(?:e)?s?|autorisé(?:e)?s?|confidentiel|privé|personne d'autre|seulement moi|uniquement moi/i;
 const CAUSE_PATTERN = /(?:parce que|car|à cause de|puisque|en raison de|du fait que)[^.!?\n]*/i;
 
-const REPAIR_PATTERN = /tu ne me suis pas|tu ne me comprends pas|est[- ]ce que tu me comprends|tu n'as pas compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire/i;
+const REPAIR_PATTERN = /tu ne me suis pas|tu ne me comprends pas|est[- ]ce que tu me comprends|tu n'as pas compris|tu n'as pas encore compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire|avec tout ce que j'ai dit.{0,50}(?:pas compris|ne comprends)/i;
 
 function classifyIntent(raw: string): IntentKind {
   const text = raw.toLocaleLowerCase("fr");
@@ -66,9 +68,10 @@ function classifyIntent(raw: string): IntentKind {
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text) && SOLUTION_PATTERN.test(text)) return "solve";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text)) return "create_project";
   if (/inventer|invention|imaginer|nouvelle idée/i.test(text)) return "invention";
-  if (/améliorer|optimiser|moderniser|développer/i.test(text)) return "improve";
+  if (/^\s*(?:j['’]ai|nous avons)\s+(?:une\s+)?idée(?:\s+à\s+développer)?\s*$/i.test(text) || /idée à développer|idée à developper|nouvelle idée|j'imagine|je rêve|explorer|réfléchir/i.test(text)) return "explore";
+  if (/améliorer|optimiser|moderniser/i.test(text)) return "improve";
   if (PROBLEM_PATTERN.test(text) || /résoudre|régler ce problème/i.test(text)) return "solve";
-  if (/idée|j'imagine|je rêve|explorer|réfléchir/i.test(text)) return "explore";
+  if (/développer|developper/i.test(text)) return "explore";
   return "unknown";
 }
 
@@ -299,52 +302,29 @@ const QUESTION_CATALOG: QuestionCandidate[] = [
 ];
 
 function buildSummary(session: UnderstandingSession): string {
-  const labels: Partial<Record<NeedDimension, string>> = {
-    problem: "Besoin ou difficulté",
-    activity: session.intentKind === "organize_event" ? "Événement ou activité envisagée" : "Fonctionnement actuel",
-    cause: "Cause évoquée",
-    goal: "Résultat souhaité",
-    context: "Contexte",
-    actor: "Personnes concernées",
-    constraint: "Contraintes mentionnées",
-    unknown: "Correction à prendre en compte",
-    business_rule: "Règle ou clarification",
-    preference: "Solution ou approche envisagée par toi",
-    project_scope: "Périmètre du projet",
-    risk: "Confidentialité et information des personnes",
-    audience: "Public concerné",
-    emotion: "État émotionnel ou ressenti évoqué",
-    experience: "Expérience recherchée",
-    feature: "Fonctionnalités ou mécaniques imaginées",
-  };
-  const grouped = new Map<NeedDimension, string[]>();
-  for (const item of session.evidence) {
-    const values = grouped.get(item.dimension) ?? [];
-    values.push(item.value);
-    grouped.set(item.dimension, values);
-  }
-  const sections = [...grouped.entries()]
-    .filter(([dimension]) => Boolean(labels[dimension]))
-    .map(([dimension, values]) => `• ${labels[dimension]} : ${values.join(" ; ")}`);
+  const dossier = session.dossier ?? buildUnderstandingDossier(session.messages);
+  const sections = dossier.facets.map((item) => "• " + item.title + " : " + item.content);
   const deferredQuestions = session.deferredDimensions.map((dimension) => {
     const candidate = QUESTION_CATALOG.find((item) => item.dimension === dimension);
-    const prompt = candidate?.prompt ??
-      (dimension === "project_scope" ? PROJECT_SCOPE_QUESTION.prompt :
-        dimension === "risk" ? PRIVACY_QUESTION.prompt : dimension);
-    return `• ${prompt}`;
+    return "• " + (candidate?.prompt ?? dimension);
   });
   const deferredConflicts = session.contradictions
     .filter((item) => session.deferredContradictionKeys.includes(contradictionKey(item)))
-    .map((item) => `• ${item.statementA} / ${item.statementB}`);
+    .map((item) => "• " + item.statementA + " / " + item.statementB);
   return [
-    "Voici ma compréhension provisoire, construite à partir de tes propres réponses :",
+    "Voici le dossier de compréhension construit à partir de l'ensemble de tes messages :",
     "",
-    `Description initiale : « ${session.originalDescription} »`,
-    ...(sections.length ? ["", ...sections] : []),
+    dossier.title ? "Projet : « " + dossier.title + " »" : "Description initiale : « " + session.originalDescription + " »",
+    "",
+    "Éléments recueillis :",
+    ...(sections.length ? sections : ["• Je conserve ton récit original sans lui attribuer de faits supplémentaires."]),
+    "",
+    dossier.openQuestions.length ? "Points qui restent à éclaircir :" : "Aucune question essentielle ne ressort encore de ce premier récit.",
+    ...(dossier.openQuestions.length ? dossier.openQuestions.map((question) => "• " + question) : []),
     ...(deferredQuestions.length ? ["", "Points laissés en attente :", ...deferredQuestions] : []),
     ...(deferredConflicts.length ? ["", "Indications de cohérence à revoir :", ...deferredConflicts] : []),
     "",
-    "Cette synthèse n'est pas encore une décision ni une solution. Tu peux la confirmer ou me corriger.",
+    "Les éléments ci-dessus restent des déclarations issues de tes messages. Rien n'est validé tant que tu ne l'as pas confirmé.",
   ].join("\n");
 }
 
@@ -353,6 +333,8 @@ function contradictionKey(item: DiscoveryContradiction): string {
 }
 
 function advance(session: UnderstandingSession): UnderstandingSession {
+  const dossier = buildUnderstandingDossier(session.messages);
+  session = { ...session, dossier };
   const visitorText = session.messages
     .filter((item) => item.role === "visitor")
     .map((item) => item.content)
@@ -413,7 +395,9 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  if (updatedSession.askedQuestionIds.length === 0) {
+  const coreDimensions = new Set(dossier.facets.map((item) => item.dimension));
+  const hasCompleteOpeningBrief = ["problem", "audience", "goal", "preference"].every((dimension) => coreDimensions.has(dimension));
+  if (updatedSession.askedQuestionIds.length === 0 && !hasCompleteOpeningBrief) {
     const question = intentFirstQuestion(updatedSession);
     const alreadyCovered = updatedSession.evidence.some((item) => item.dimension === question.dimension);
     if (!alreadyCovered) {
@@ -498,6 +482,7 @@ export function beginUnderstanding(rawIntent: string): UnderstandingSession {
     contradictions: [],
     resolvedContradictionKeys: [],
     deferredContradictionKeys: [],
+    dossier: buildUnderstandingDossier([firstMessage]),
   };
   return advance(initial);
 }
