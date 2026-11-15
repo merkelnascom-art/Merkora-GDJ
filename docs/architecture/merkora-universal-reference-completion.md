@@ -24,7 +24,7 @@ ESCO est utilisé comme source professionnelle externe et interrogeable. La Comm
 - Téléchargement officiel : https://esco.ec.europa.eu/fr/use-esco/download
 - API de suggestions documentée : https://ec.europa.eu/esco/api/doc/esco_api_doc.html
 
-Le raccordement écran 03 interroge l'API ESCO à la demande dans une langue choisie parmi les 28 codes supportés. Les résultats sont des suggestions externes, pas des décisions automatiques. La version utilisée par le service API est indiquée comme version par défaut du service et n'est pas artificiellement assimilée à v1.2.1.
+Le raccordement écran 03 interroge l'API ESCO à la demande pour les métiers/professions et les compétences/spécialisations, dans une langue choisie parmi les 28 codes supportés. Les résultats sont des suggestions externes, pas des décisions automatiques. La version utilisée par le service API est indiquée comme version par défaut du service et n'est pas artificiellement assimilée à v1.2.1.
 
 **Limite explicite :** les 3 039 professions et 13 939 compétences ne sont pas encore copiées dans un miroir local ou une base persistante MerKora. Elles sont accessibles par recherche à la demande via ESCO. Le module d'import normalisé permet d'intégrer un paquet complet dès qu'un paquet officiel ou un export API complet est disponible.
 
