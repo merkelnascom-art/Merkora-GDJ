@@ -63,7 +63,7 @@ export function enrichSituationGraphWithKnowledge(
           ...(selected ? {
             conceptId: selected.id,
             conceptLabel: label(selected, language),
-            ...(match.status === "matched" ? { matchMethod: match.method, confidence: match.confidence } : { confidence: match.confidence }),
+            ...(match.status === "matched" ? { matchMethod: match.method, confidence: match.confidence } : match.status === "type_only" ? { confidence: match.confidence } : {}),
             ...(lineage.length ? { classificationPath: lineage.map((item) => ({ id: item.id, label: label(item, language) })) } : {}),
           } : {}),
           ...(match.status === "ambiguous" ? { candidateConceptIds: [...new Set(match.candidates.map((candidate) => candidate.id))] } : {}),
