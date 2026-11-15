@@ -27,23 +27,36 @@ const messages: ConversationMessage[] = [
 ];
 
 describe("MerKora situation model", () => {
-  it("connects actors, event and process steps across separate messages", () => {
+  it("connects actors, event, objects and explicit process steps across separate messages", () => {
     const model = buildSituationModel(messages);
 
     const organizer = model.nodes.find((node) => node.kind === "actor" && node.role === "organizer");
     const invitees = model.nodes.find((node) => node.kind === "actor" && node.role === "invitees");
     const event = model.nodes.find((node) => node.kind === "event" && /pool party/i.test(node.label));
     const qrCode = model.nodes.find((node) => node.kind === "object" && /qr code/i.test(node.label));
+    const invitationProcess = model.nodes.find((node) => node.kind === "process" && /invitations/i.test(node.label));
+    const confirmationProcess = model.nodes.find((node) => node.kind === "process" && /confirmation/i.test(node.label));
+    const accessProcess = model.nodes.find((node) => node.kind === "process" && /accès/i.test(node.label));
 
     expect(organizer).toBeDefined();
     expect(invitees).toBeDefined();
     expect(event).toBeDefined();
     expect(qrCode).toBeDefined();
+    expect(invitationProcess).toBeDefined();
+    expect(confirmationProcess).toBeDefined();
+    expect(accessProcess).toBeDefined();
+    expect(model.processOrder).toEqual([invitationProcess?.id, confirmationProcess?.id, accessProcess?.id]);
     expect(model.relations).toEqual(expect.arrayContaining([
       expect.objectContaining({ fromNodeId: organizer?.id, predicate: "organizes", toNodeId: event?.id }),
       expect.objectContaining({ fromNodeId: organizer?.id, predicate: "invites", toNodeId: invitees?.id }),
       expect.objectContaining({ fromNodeId: invitees?.id, predicate: "confirms_attendance", toNodeId: event?.id }),
       expect.objectContaining({ fromNodeId: organizer?.id, predicate: "checks_access_with", toNodeId: qrCode?.id }),
+      expect.objectContaining({ fromNodeId: organizer?.id, predicate: "performs", toNodeId: invitationProcess?.id }),
+      expect.objectContaining({ fromNodeId: invitees?.id, predicate: "performs", toNodeId: confirmationProcess?.id }),
+      expect.objectContaining({ fromNodeId: organizer?.id, predicate: "performs", toNodeId: accessProcess?.id }),
+      expect.objectContaining({ fromNodeId: invitationProcess?.id, predicate: "part_of", toNodeId: event?.id }),
+      expect.objectContaining({ fromNodeId: confirmationProcess?.id, predicate: "part_of", toNodeId: event?.id }),
+      expect.objectContaining({ fromNodeId: accessProcess?.id, predicate: "part_of", toNodeId: event?.id }),
     ]));
   });
 
