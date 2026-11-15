@@ -445,7 +445,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   const nextDossierGap = remainingDossierQuestions(updatedSession)[0];
   const dossierDrivenIntent = ["improve", "solve", "explore", "create_project", "invention"].includes(updatedSession.intentKind);
   const shouldAskDossierGap = Boolean(nextDossierGap && dossierDrivenIntent &&
-    (plan.kind === "complete" || (plan.kind === "question" && !["problem", "actor"].includes(plan.question.dimension))));
+    (plan.kind === "complete" || (plan.kind === "question" && plan.question.dimension === "constraint")));
   if (shouldAskDossierGap && nextDossierGap) {
     const question: QuestionCandidate = {
       id: "dossier-follow-up-" + nextDossierGap.dimension + "-v1",
