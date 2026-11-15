@@ -21,6 +21,7 @@ describe("whole-message situation intake", () => {
     expect(session.evidence.some((item) => item.dimension === "feature")).toBe(true);
     expect(session.evidence.filter((item) => item.dimension === "feature").length).toBeGreaterThan(1);
     expect(session.evidence.some((item) => item.dimension === "resource" && /relevés/i.test(item.value))).toBe(true);
+    expect(session.evidence.some((item) => item.dimension === "constraint" && /connecter/i.test(item.value))).toBe(true);
     expect(session.evidence.every((item) => item.sourceMessageId && item.sourceQuote)).toBe(true);
   });
 
