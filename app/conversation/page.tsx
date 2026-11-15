@@ -333,7 +333,7 @@ export default function ConversationPage() {
                   {session.dossier.openQuestions.length > 1 && <small>Les autres points seront examinés un par un, seulement s'ils sont utiles.</small>}
                 </div>
               </section>
-<div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
+              <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
                 {session.messages.map((item) => (
                   <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
                     <span>{item.role === "visitor" ? "TOI" : "MERKORA"}</span>
