@@ -139,7 +139,7 @@ export default function ConversationPage() {
           setOrbActivity("idle");
           setIsProcessing(false);
         }, 760);
-      }, 260);
+      }, 1250);
     }, 220);
   }
 
