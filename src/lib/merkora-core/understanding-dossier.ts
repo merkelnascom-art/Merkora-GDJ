@@ -19,14 +19,17 @@ export interface UnderstandingDossier {
 }
 
 const REPAIR = /tu ne me suis pas|tu ne me comprends pas|tu n'as pas compris|tu n'as pas encore compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire|avec tout ce que j'ai dit.{0,50}(?:pas compris|ne comprends)/i;
-const PROBLEM = /probl[eè]me|difficult[ée]|stress|frustr|se perdent|ne savent pas|au hasard|désorganis|retard|perte de temps|n'arriv\w* pas|ne parviennent pas|bloqu/i;
+const PROBLEM = /probl[eè]me|difficult[ée]|stress|frustr|se perdent|ne savent pas|au hasard|désorganis|désordre|retard|perte de temps|n'arriv\w* pas|ne parviennent pas|bloqu|n'importe quoi/i;
 const AUDIENCE = /élèves?|étudiants?|apprenants?|jeunes|clients?|patients?|joueurs?|danseurs?|invités?|employés?|personnel|enseignants?|famille|utilisateurs?/i;
 const ACTOR_ROLE = /l['’]élève|les élèves|le système|les parents|un conseiller|un administrateur|administrateur|agent|organisateur|vendeur|client|joueur|enseignant|responsable|secrétaire|prestataire/i;
 const CURRENT_ACTIVITY = /aujourd'hui|actuellement|pour le moment|en ce moment|je note|on note|nous notons|je gère|on gère|nous gérons|j'utilise|nous utilisons|à la main|manuellement/i;
 const RESOURCE = /relevé|releve|notes scolaires|bulletin|document|dossier|fichier|photo|image|donnée|donnee|information|formulaire|justificatif|stock|produit|paiement|commande/i;
-const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service de réservation|jeu interactif|système|système|interface|agent|agence|quiz|consultation/i;
+const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service|réservation|rendez-vous|jeu(?: vidéo| mobile| de société| interactif)?|expérience ludique|système|interface|agent|agence|quiz|consultation|concours|tournoi|activité|formation|orientation|danse|sport|transport|location|livraison|assistance|coaching|vente|événement/i;
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
-const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|enregistre|enregistrement|suivre|suit|gère|gere|organise|organiser|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
+const EMOTION = /stress|frustr|col[eè]re|énerv|enerv|agac|angoiss|peur|fatigu|décourag|decourag|pression|s'ennuie|ennui|tristesse/i;
+const EXPERIENCE = /se détendre|se detendre|se divertir|s'amuser|s'amus|se défouler|se defouler|évacuer|evacuer|décompresser|decompresser|se relaxer|rire|se changer les idées|oublier les soucis/i;
+const ACTIVITY = /jeu|quiz|concours|tournoi|danse|formation|orientation|consultation|réservation|rendez-vous|agence|service|événement|vente|livraison|réparation|maintenance|voyage|transport|location|assistance|coaching|suivi|gestion|cours|apprentissage|évaluation|test|spectacle|prestation|mission/i;
+const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|enregistre|enregistrement|suivre|suit|gère|gere|test(?:s|er)?|questionnaire|devinette|classement|résultat|défi|défis|déroulement|progression/i;
 const CONSTRAINT = /sans connexion|sans compte|sans se connecter|hors ligne|offline|uniquement|seulement|obligatoire|facultatif|gratuit|budget|fcfa|délai|téléphone|ordinateur/i;
 
 function visitorMessages(messages: ConversationMessage[]) {
@@ -79,7 +82,10 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
       if (PROBLEM.test(sentence)) addFacet(facets, "problem", "Problème ou difficulté", sentence, visitor.id);
       if (AUDIENCE.test(sentence)) addFacet(facets, "audience", "Public concerné", sentence, visitor.id);
       if (ACTOR_ROLE.test(sentence)) addFacet(facets, "actor", "Personnes, rôles et systèmes", sentence, visitor.id);
+      if (ACTIVITY.test(sentence)) addFacet(facets, "activity", "Activité ou service concerné", sentence, visitor.id);
       if (CURRENT_ACTIVITY.test(sentence)) addFacet(facets, "activity", "Fonctionnement actuel", sentence, visitor.id);
+      if (EMOTION.test(sentence)) addFacet(facets, "emotion", "Émotions ou ressenti exprimé", sentence, visitor.id);
+      if (EXPERIENCE.test(sentence)) addFacet(facets, "experience", "Expérience recherchée", sentence, visitor.id);
       if (RESOURCE.test(sentence)) addFacet(facets, "resource", "Informations et ressources utilisées", sentence, visitor.id);
       if (SOLUTION.test(sentence)) addFacet(facets, "preference", "Solution ou idée envisagée", sentence, visitor.id);
       if (GOAL.test(sentence)) addFacet(facets, "goal", "Objectif ou résultat recherché", sentence, visitor.id);
