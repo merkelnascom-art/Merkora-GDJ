@@ -40,7 +40,7 @@ const now = () => new Date().toISOString();
 const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|interface|jeu interactif|système|systeme|outil numérique|outil digital|robot|automatiser|automatisation/i;
 const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|frustr|se frustr|stress|col[eè]re|m'énerve|m'enerve|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
 const AUDIENCE_PATTERN = /jeunes|adolescents?|étudiants?|etudiants?|élèves?|eleves?|apprenants?|adultes?|enfants?/i;
-const EMOTION_PATTERN = /frustr\w*|stress\w*|col[eè]re|énerv\w*|enerv\w*|tension\w*/i;
+const EMOTION_PATTERN = /frustr\w*|stress\w*|col[eè]re|tension\w*|(?:est|sont|se sent|se sentent)\s+(?:énervé|énervée|énervés|énervées|enervé|enervée|enervés|enervées)/i;
 const EXPERIENCE_PATTERN = /distraire|détendre|detendre|relâcher|relacher|évacuer|evacuer|se défouler|se defouler|se divertir|s'amuser/i;
 const NO_CONTEXT_PATTERN = /(?:pas de cadre|aucun cadre|pas vraiment de contexte|aucun contexte|rien de particulier comme contexte|n'y a pas de cadre|pas vraiment dans un cadre|pas de contexte)/i;
 const GAME_FEATURE_PATTERNS: Array<{ pattern: RegExp; value: string }> = [
@@ -180,12 +180,16 @@ function extractExplicitEvidence(raw: string, sourceMessageId: string, current: 
   const cause = raw.match(CAUSE_PATTERN)?.[0]?.trim();
   if (cause) evidence = addEvidence(evidence, "cause", cause, sourceMessageId, cause);
 
-  const audience = sentenceContaining(raw, AUDIENCE_PATTERN);
-  if (audience) evidence = addEvidence(evidence, "audience", audience, sourceMessageId, audience);
+  const audienceMatch = raw.match(AUDIENCE_PATTERN)?.[0];
+  if (audienceMatch) {
+    const audienceQuote = sentenceContaining(raw, AUDIENCE_PATTERN) ?? audienceMatch;
+    evidence = addEvidence(evidence, "audience", audienceMatch, sourceMessageId, audienceQuote);
+  }
   const emotion = sentenceContaining(raw, EMOTION_PATTERN);
   if (emotion) evidence = addEvidence(evidence, "emotion", emotion, sourceMessageId, emotion);
   const experience = sentenceContaining(raw, EXPERIENCE_PATTERN);
-  if (experience) {
+  const describesAnObstacle = experience && /n['’]arriv\w* plus|n['’]arriv\w* pas|ne parv\w* pas|ne peuvent pas|difficulté à|difficulte a/i.test(experience);
+  if (experience && !describesAnObstacle) {
     evidence = addEvidence(evidence, "experience", experience, sourceMessageId, experience);
     evidence = addEvidence(evidence, "goal", experience, sourceMessageId, experience);
   }
