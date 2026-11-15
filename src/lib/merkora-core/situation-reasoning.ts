@@ -142,7 +142,7 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
         const masculine = ["site", "logiciel", "système", "systeme", "outil", "projet", "service", "directeur", "médecin", "medecin", "enseignant", "formateur", "agent", "responsable"].includes(noun);
         const gender = feminine ? "f" : masculine ? "m" : "any";
         const label = tokenItem.match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
-        const plural = /^(?:les|des|ces)\\b/i.test(tokenItem.match[0]) || /s$/i.test(tokenItem.match[0]);
+        const plural = /^(?:les|des|ces)\b/i.test(tokenItem.match[0]);
         known.push({ label, gender, messageId: message.id, primary: antecedentIndex === 0, plural });
         antecedentIndex += 1;
         continue;
