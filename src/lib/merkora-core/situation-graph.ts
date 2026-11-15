@@ -48,6 +48,17 @@ export interface SituationObservationBatch {
   relations: SituationRelationObservation[];
 }
 
+export interface SituationKnowledgeLink {
+  typeConceptId?: string;
+  typeConceptLabel?: string;
+  conceptId?: string;
+  conceptLabel?: string;
+  matchStatus: "matched" | "type_only" | "ambiguous" | "unmatched";
+  matchMethod?: "exact" | "normalized" | "synonym";
+  confidence?: number;
+  candidateConceptIds?: string[];
+}
+
 export interface SituationEntity {
   id: string;
   key: string;
@@ -55,6 +66,7 @@ export interface SituationEntity {
   label: string;
   role?: string;
   evidence: SituationEvidence[];
+  knowledge?: SituationKnowledgeLink;
 }
 
 export interface SituationRelation {
