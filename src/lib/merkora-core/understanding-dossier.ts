@@ -108,7 +108,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
     preference: "Quelle solution ou expérience imagines-tu ?",
     context: "Dans quel environnement le projet sera-t-il utilisé ?",
     constraint: "Y a-t-il une limite importante à respecter dès le départ ?",
-    risk: "Qui pourra consulter les relevés et les résultats des élèves ?";
+    risk: "Qui pourra consulter les relevés et les résultats des élèves ?",
   };
   const openQuestions = missingDimensions.map((dimension) => prompts[dimension]).filter((item): item is string => Boolean(item));
 
