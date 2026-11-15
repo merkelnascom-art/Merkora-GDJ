@@ -105,6 +105,7 @@ export function parseESCOCsvLanguageFiles(
     if (rows.length < 2) continue;
 
     const headers = rows[0].map((header, index) => (index === 0 ? header.replace(/^\uFEFF/, "") : header).trim().toLowerCase());
+    const conceptTypeIndex = columnIndex(headers, "conceptType", "Concept type", "type");
     const uriIndex = columnIndex(headers, "conceptUri", "Concept URI", "uri");
     const labelIndex = columnIndex(headers, "preferredLabel", "Concept PT", "preferred term", "label");
     const altIndex = columnIndex(headers, "altLabels", "alternative labels", "non-preferred terms");
@@ -118,12 +119,16 @@ export function parseESCOCsvLanguageFiles(
       const uri = cell(row, uriIndex);
       const preferredLabel = cell(row, labelIndex);
       if (!uri || !preferredLabel) continue;
-      const key = `${file.type}::${uri}`;
+      const rawConceptType = cell(row, conceptTypeIndex).toUpperCase();
+      const recordType = file.type === "occupation"
+        ? rawConceptType === "OG" ? "occupation_group" : "occupation"
+        : rawConceptType === "SG" ? "skill_group" : "skill";
+      const key = `${recordType}::${uri}`;
       let concept = concepts.get(key);
       if (!concept) {
         concept = {
           uri,
-          type: file.type,
+          type: recordType,
           preferredLabels: {},
           alternativeLabels: {},
           descriptions: {},
@@ -162,7 +167,8 @@ export function parseESCOCsvLanguageFiles(
     for (const row of rows.slice(1)) {
       const uri = cell(row, uriIndex);
       const broaderUri = cell(row, parentIndex);
-      const concept = concepts.get(`${relationFile.type}::${uri}`);
+      const concept = concepts.get(`${relationFile.type}::${uri}`)
+        ?? concepts.get(`${relationFile.type}_group::${uri}`);
       if (concept && broaderUri) concept.broaderUri = broaderUri;
     }
   }

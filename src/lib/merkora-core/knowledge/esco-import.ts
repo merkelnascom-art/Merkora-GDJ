@@ -10,7 +10,7 @@ import type {
 
 export interface ESCOConceptRecord {
   uri: string;
-  type: "occupation" | "skill";
+  type: "occupation" | "skill" | "occupation_group" | "skill_group";
   preferredLabels: Record<string, string>;
   alternativeLabels?: Record<string, string[]>;
   descriptions?: Record<string, string>;
