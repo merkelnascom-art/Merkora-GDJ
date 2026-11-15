@@ -14,6 +14,8 @@ import {
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
+import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
+import type { SituationEntity } from "../../src/lib/merkora-core/situation-graph";
 
 const SOURCE_SESSION_KEY = "merkora-v2-understanding-session";
 const DOSSIER_KEY = "merkora-v2-project-understanding";
@@ -75,6 +77,7 @@ export default function UnderstandingPage() {
           const normalized: ProjectUnderstanding = {
             ...parsed,
             situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph),
+            knowledgeProposals: Array.isArray(parsed.knowledgeProposals) ? parsed.knowledgeProposals : [],
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
@@ -122,6 +125,35 @@ export default function UnderstandingPage() {
     if (!dossier) return;
     persist(rejectUnderstandingItem(dossier, itemId));
     setNotice("Interprétation écartée. Elle reste conservée dans l'historique.");
+  }
+
+  function proposeUnknownConcept(entity: SituationEntity) {
+    if (!dossier || entity.knowledge?.matchStatus !== "unmatched") return;
+    const source = entity.evidence[0];
+    if (!source) return;
+
+    const proposals = dossier.knowledgeProposals ?? [];
+    if (proposals.some((proposal) =>
+      proposal.label === entity.label && proposal.sourceMessageId === source.messageId,
+    )) {
+      setNotice("Ce terme a déjà été proposé pour ce projet.");
+      return;
+    }
+
+    const proposal = createProjectKnowledgeProposal({
+      projectId: dossier.projectId,
+      label: entity.label,
+      language: "und",
+      sourceMessageId: source.messageId,
+      sourceQuote: source.quote,
+    });
+    persist({
+      ...dossier,
+      version: dossier.version + 1,
+      knowledgeProposals: [...proposals, proposal],
+      updatedAt: new Date().toISOString(),
+    });
+    setNotice("Proposition privée enregistrée dans ce projet. Elle n'est pas encore ajoutée au référentiel commun.");
   }
 
   function continueToDiagnostic() {
@@ -187,10 +219,31 @@ export default function UnderstandingPage() {
                           ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
                           : <span>Terme conservé sans correspondance forcée.</span>}
                     </div>
+                    {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
+                      <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
+                        Proposer ce terme au référentiel
+                      </button>
+                    )}
                   </article>
                 ))}
               </div>
               <small>Ces repères organisent les connaissances ; ils ne constituent pas de nouvelles déclarations de ta part.</small>
+              {(dossier.knowledgeProposals ?? []).length > 0 && (
+                <div className="mk-knowledge-proposals">
+                  <h3>Propositions privées de ce projet</h3>
+                  {(dossier.knowledgeProposals ?? []).map((proposal) => (
+                    <article className="mk-understanding-item" key={proposal.id}>
+                      <p><strong>{proposal.label}</strong></p>
+                      <div className="mk-item-meta">
+                        <span>{proposal.status === "proposed" ? "En attente de revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
+                        <span>Langue non déterminée</span>
+                      </div>
+                      <small>{proposal.sourceQuote}</small>
+                    </article>
+                  ))}
+                  <small>Ces propositions restent attachées à ce projet. Elles ne modifient pas le référentiel commun sans revue explicite.</small>
+                </div>
+              )}
             </section>}
             {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
               <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
