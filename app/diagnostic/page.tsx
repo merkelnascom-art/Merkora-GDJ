@@ -25,7 +25,13 @@ function readDossier(): ProjectUnderstanding | null {
     const raw = window.sessionStorage.getItem(DOSSIER_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ProjectUnderstanding;
-    if (typeof parsed.originalDescription === "string" && Array.isArray(parsed.items)) return parsed;
+    if (typeof parsed.originalDescription === "string" && Array.isArray(parsed.items)) return {
+      ...parsed,
+      situationGraph: parsed.situationGraph ?? { entities: [], relations: [], unresolvedRelations: [] },
+      contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
+      unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
+      privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
+    };
   } catch { /* Le parcours reste accessible si le stockage est indisponible. */ }
   return null;
 }
