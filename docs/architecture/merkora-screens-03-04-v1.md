@@ -70,7 +70,7 @@ Ces sections sont des angles de lecture transversaux, pas des obligations. Une s
 
 ### 4.2. Dimensions explorées
 
-Le moteur peut explorer l'activité, la situation actuelle, la motivation, les résultats attendus, les acteurs, les opérations, les impacts, les causes possibles, les contraintes, les ressources et les critères de réussite.
+Le moteur peut explorer l'activité, la situation actuelle, la motivation, les résultats attendus, les acteurs, les opérations, les impacts, les causes possibles, les contraintes, les ressources et les critères de réussite. Lorsque le récit signale des obligations, des lois, des normes ou des données personnelles, il peut demander les pays, territoires et juridictions concernés. Lorsque le projet signale un besoin multilingue, il peut demander les langues à prendre en charge.
 
 Chaque dimension est conditionnelle. Par exemple, les questions sur les conséquences et les causes ne sont proposées que lorsqu'un problème est identifié. Une cause recueillie est une hypothèse déclarée, pas une conclusion vérifiée.
 
@@ -112,7 +112,7 @@ Aucun fournisseur IA externe, aucune API payante et aucun traitement serveur de 
 - L'écran 03 conserve et organise les preuves déjà produites ; il ne prétend pas corriger automatiquement les limites de l'extracteur.
 - L'écran 04 sélectionne des questions génériques à partir des dimensions absentes ; les réponses ne sont pas encore évaluées par un modèle IA.
 - La persistance est limitée à la session du navigateur.
-- Les règles réglementaires internationales ne sont pas encore reliées à une source juridique versionnée.
+- Les questions de juridiction et de langue sont conditionnelles ; les règles réglementaires internationales ne sont pas encore reliées à une source juridique versionnée.
 
 Ces limites doivent rester visibles dans les décisions techniques et les prochaines étapes.
 
