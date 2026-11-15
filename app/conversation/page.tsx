@@ -80,25 +80,33 @@ export function ConversationPendingTurn({ message, activity }: { message: string
 }
 
 function readStoredSession(): UnderstandingSession | null {
+  let parsed: Partial<UnderstandingSession> | undefined;
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
-    const localStorage = browserDossierStorage();
-    const local = localStorage ? getLatestLocalDossier<UnderstandingSession>(localStorage) : null;
-    const parsed = (raw ? JSON.parse(raw) : local?.payload) as Partial<UnderstandingSession> | undefined;
-    if (!parsed) return null;
-    if (
-      typeof parsed.originalDescription === "string" &&
-      Array.isArray(parsed.messages) &&
-      Array.isArray(parsed.evidence) &&
-      typeof parsed.stage === "string"
-    ) {
-      return {
-        ...parsed,
-        situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
-      } as UnderstandingSession;
-    }
+    if (raw) parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
   } catch {
-    // Une session illisible ne doit jamais bloquer l'écran.
+    // Une ancienne session illisible ne bloque pas la récupération locale.
+  }
+  if (!parsed) {
+    try {
+      const storage = browserDossierStorage();
+      const local = storage ? getLatestLocalDossier<UnderstandingSession>(storage) : null;
+      parsed = local?.payload as Partial<UnderstandingSession> | undefined;
+    } catch {
+      // Le dossier local peut être indisponible sur un navigateur en mode privé.
+    }
+  }
+  if (
+    parsed &&
+    typeof parsed.originalDescription === "string" &&
+    Array.isArray(parsed.messages) &&
+    Array.isArray(parsed.evidence) &&
+    typeof parsed.stage === "string"
+  ) {
+    return {
+      ...parsed,
+      situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
+    } as UnderstandingSession;
   }
   return null;
 }
@@ -131,10 +139,16 @@ export default function ConversationPage() {
 
   function storeSession(next: UnderstandingSession) {
     setSession(next);
+    const localStorage = browserDossierStorage();
+    if (localStorage) {
+      try {
+        saveLocalDossier(localStorage, { id: next.id, title: next.originalDescription.slice(0, 120) || "Nouveau projet", payload: next, version: next.version, updatedAt: new Date().toISOString() });
+      } catch {
+        // La session courante reste disponible même si le stockage local est plein.
+      }
+    }
     try {
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
-      const localStorage = browserDossierStorage();
-      if (localStorage) saveLocalDossier(localStorage, { id: next.id, title: next.originalDescription.slice(0, 120) || "Nouveau projet", payload: next, version: next.version, updatedAt: new Date().toISOString() });
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
       window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
