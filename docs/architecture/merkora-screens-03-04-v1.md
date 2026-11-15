@@ -135,3 +135,32 @@ Ces limites doivent rester visibles dans les décisions techniques et les procha
 ## 9. Suite
 
 Après vérification de cette livraison, la prochaine couche à concevoir sera la consolidation du diagnostic : analyse causale avec preuves, relations entre problèmes et causes, critères de réussite mesurables, règles de préparation par étape et génération du dossier unifié qui alimentera la définition et la composition de la solution.
+
+
+## 10. Fondation A — référentiel universel des connaissances
+
+La Fondation A est intégrée dans `src/lib/merkora-core/knowledge/` et reliée au graphe de situation.
+
+### 10.1. Capacités livrées dans cette tranche
+
+- Contrats extensibles pour concepts, définitions multilingues, termes, classifications, attributs, relations, sources, portée, versions et fiabilité.
+- Noyau de primitives universelles : acteur, organisation, activité, processus, opération, événement, objet, ressource, objectif, problème, résultat, contrainte, lieu, temps, information, règle, solution, service, produit, projet et concept.
+- Identifiants canoniques indépendants de la langue.
+- Registre en mémoire, immuable par opération, avec contrôle des identifiants et des extrémités de relations.
+- Recherche lexicale explicite : exact, normalisé, synonyme, ambigu ou sans correspondance.
+- Exclusion par défaut des concepts non validés et respect des portées globales, géographiques ou projet.
+- Propositions de concepts inconnus conservées dans le périmètre du projet ; la promotion dans le registre partagé exige une revue explicite.
+- Les sources privées du projet ne sont pas copiées dans le concept partagé lors de l'approbation.
+- Chaque entité du graphe de situation reçoit un type universel lorsqu'il existe ; un concept canonique n'est attaché que si le rapprochement lexical est non ambigu.
+- L'écran 03 présente ces repères en les distinguant des déclarations de l'utilisateur.
+
+### 10.2. Limites explicites
+
+- Le noyau initial est une ontologie de représentation, pas un catalogue exhaustif des métiers, secteurs ou activités.
+- La recherche actuelle est lexicale et déterministe ; elle ne constitue pas une recherche sémantique générale et n'utilise pas d'embeddings.
+- Le registre partagé est chargé en mémoire depuis le noyau de code. La persistance durable des connaissances enrichies, la revue administrative et la synchronisation entre appareils restent à concevoir.
+- Les propositions de concepts sont des objets de domaine disponibles pour le moteur ; leur interface de revue et leur stockage durable ne sont pas encore activés.
+- Aucune migration ni écriture Supabase n'est effectuée.
+- Les connaissances locales ne sont rapprochées que lorsque le contexte de pays, de juridiction, de région ou de projet est fourni au moteur de correspondance.
+
+La Fondation A fournit ainsi un premier socle réellement utilisé par le graphe et l'écran 03. Elle ne prétend pas remplacer la compréhension linguistique et le raisonnement qui seront conçus dans les fondations suivantes.
