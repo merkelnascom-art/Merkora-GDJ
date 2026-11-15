@@ -1,6 +1,38 @@
 import { CORE_KNOWLEDGE_CONCEPTS } from "./core-catalog";
 import type { KnowledgeConcept, KnowledgeRegistry, KnowledgeRelationship } from "./types";
 
+function cloneRelationship(relationship: KnowledgeRelationship): KnowledgeRelationship {
+  return {
+    ...relationship,
+    sourceIds: [...relationship.sourceIds],
+    ...(relationship.conditions ? { conditions: JSON.parse(JSON.stringify(relationship.conditions)) as Record<string, unknown> } : {}),
+  };
+}
+
+function cloneConcept(concept: KnowledgeConcept): KnowledgeConcept {
+  return {
+    ...concept,
+    definitions: concept.definitions.map((definition) => ({ ...definition })),
+    terms: concept.terms.map((term) => ({ ...term })),
+    classifications: concept.classifications.map((classification) => ({ ...classification })),
+    attributes: concept.attributes.map((attribute) => ({ ...attribute })),
+    relationships: concept.relationships.map(cloneRelationship),
+    scope: {
+      ...concept.scope,
+      ...(concept.scope.countries ? { countries: [...concept.scope.countries] } : {}),
+      ...(concept.scope.jurisdictions ? { jurisdictions: [...concept.scope.jurisdictions] } : {}),
+      ...(concept.scope.regions ? { regions: [...concept.scope.regions] } : {}),
+      ...(concept.scope.projectIds ? { projectIds: [...concept.scope.projectIds] } : {}),
+    },
+    lifecycle: { ...concept.lifecycle },
+    sources: concept.sources.map((source) => ({ ...source })),
+    reliability: {
+      ...concept.reliability,
+      ...(concept.reliability.verificationNotes ? { verificationNotes: [...concept.reliability.verificationNotes] } : {}),
+    },
+  };
+}
+
 export function createKnowledgeRegistry(
   concepts: KnowledgeConcept[] = [],
   relationships: KnowledgeRelationship[] = [],
@@ -79,29 +111,9 @@ export function createKnowledgeRegistry(
 
   return {
     version: 1,
-    concepts: concepts.map((concept) => ({
-      ...concept,
-      definitions: [...concept.definitions],
-      terms: [...concept.terms],
-      classifications: [...concept.classifications],
-      attributes: [...concept.attributes],
-      relationships: [...concept.relationships],
-      scope: { ...concept.scope },
-      sources: [...concept.sources],
-      reliability: { ...concept.reliability, verificationNotes: concept.reliability.verificationNotes ? [...concept.reliability.verificationNotes] : undefined },
-    })),
-    relationships: [...allRelationships.values()].map((relationship) => ({ ...relationship })),
-    conceptHistory: conceptHistory.map((concept) => ({
-      ...concept,
-      definitions: [...concept.definitions],
-      terms: [...concept.terms],
-      classifications: [...concept.classifications],
-      attributes: [...concept.attributes],
-      relationships: [...concept.relationships],
-      scope: { ...concept.scope },
-      sources: [...concept.sources],
-      reliability: { ...concept.reliability, verificationNotes: concept.reliability.verificationNotes ? [...concept.reliability.verificationNotes] : undefined },
-    })),
+    concepts: concepts.map(cloneConcept),
+    relationships: [...allRelationships.values()].map(cloneRelationship),
+    conceptHistory: conceptHistory.map(cloneConcept),
   };
 }
 
@@ -172,7 +184,7 @@ export function reviseKnowledgeConcept(
 
   const next = createKnowledgeRegistry(
     registry.concepts.map((concept) => concept.id === conceptId ? revised : concept),
-    registry.relationships,
+    registry.relationships.filter((relationship) => relationship.sourceConceptId !== conceptId),
     [...registry.conceptHistory, current],
   );
   return { ...next, version: registry.version + 1 };
