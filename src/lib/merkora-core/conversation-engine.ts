@@ -47,8 +47,8 @@ const REPAIR_PATTERN = /tu ne me suis pas|tu ne me comprends pas|est[- ]ce que t
 function classifyIntent(raw: string): IntentKind {
   const text = raw.toLocaleLowerCase("fr");
   if (/réserv|reserver|réserver|prendre un rendez-vous|booking/i.test(text)) return "reservation";
-  if (/inviter|invitation|convier|faire-part/i.test(text)) return "invitation";
   if (/organiser|organisation/i.test(text) && /anniversaire|fête|pool party|soirée|mariage|cérémonie|conférence|événement|rencontre/i.test(text)) return "organize_event";
+  if (/inviter|invitation|convier|faire-part/i.test(text)) return "invitation";
   if (/demande|solliciter|réclamer|requête/i.test(text)) return "request";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text) && SOLUTION_PATTERN.test(text)) return "solve";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text)) return "create_project";
@@ -85,7 +85,7 @@ function repairQuestion(session: UnderstandingSession): QuestionCandidate {
   const excerpt = prior.length > 240 ? prior.slice(0, 237) + "…" : prior;
   return {
     id: "repair-understanding-v1", dimension: "unknown",
-    prompt: `Tu as raison, je suis parti dans une mauvaise direction. Je reprends à partir de tes propres mots : « ${excerpt} ». Qu'est-ce que tu veux que je comprenne précisément, ou que dois-je corriger ?`,
+    prompt: `Tu as raison, je suis parti dans une mauvaise direction. Je reprends à partir de tes propres mots : « ${excerpt} ». Peux-tu me réexpliquer ce que tu veux faire concrètement, ou corriger ma reformulation ?`,
     rationale: "Réparer un décalage conversationnel avant de poursuivre.",
     impact: 1, uncertainty: 1, decisionRelevance: 1, answerability: 0.9,
   };
