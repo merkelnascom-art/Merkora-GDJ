@@ -41,6 +41,7 @@ export interface KnowledgeMatchOptions {
   country?: string;
   jurisdiction?: string;
   region?: string;
+  language?: string;
 }
 
 function isWithinRequestedScope(
@@ -48,11 +49,17 @@ function isWithinRequestedScope(
   options: KnowledgeMatchOptions,
 ): boolean {
   if (concept.scope.global) return true;
-  if (options.projectId && concept.scope.projectIds?.includes(options.projectId)) return true;
-  if (options.country && concept.scope.countries?.includes(options.country)) return true;
-  if (options.jurisdiction && concept.scope.jurisdictions?.includes(options.jurisdiction)) return true;
-  if (options.region && concept.scope.regions?.includes(options.region)) return true;
-  return false;
+
+  const requirements: [string[] | undefined, string | undefined][] = [
+    [concept.scope.projectIds, options.projectId],
+    [concept.scope.countries, options.country],
+    [concept.scope.jurisdictions, options.jurisdiction],
+    [concept.scope.regions, options.region],
+  ];
+  const declared = requirements.filter(([allowed]) => Boolean(allowed?.length));
+  return declared.length > 0 && declared.every(([allowed, actual]) =>
+    Boolean(actual && allowed?.includes(actual)),
+  );
 }
 
 /**
@@ -76,8 +83,15 @@ export function matchKnowledgeConcept(
     if (options.expectedType && concept.conceptType !== options.expectedType) continue;
 
     const terms = [
-      ...concept.terms.map((term) => ({ value: term.value, kind: term.kind })),
-      ...concept.definitions.map((definition) => ({ value: definition.label, kind: "preferred" as const })),
+      ...concept.terms
+        .filter((term) =>
+          (!options.language || term.language === options.language) &&
+          (!term.region || term.region === options.region),
+        )
+        .map((term) => ({ value: term.value, kind: term.kind })),
+      ...concept.definitions
+        .filter((definition) => !options.language || definition.language === options.language)
+        .map((definition) => ({ value: definition.label, kind: "preferred" as const })),
     ];
 
     for (const term of terms) {
