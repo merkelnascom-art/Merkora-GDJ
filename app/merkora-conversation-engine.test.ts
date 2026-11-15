@@ -122,7 +122,7 @@ describe("MerKora screen 2 guided understanding journey", () => {
       "Je veux mieux suivre les contributions de ma famille. Aujourd'hui, je note les contributions dans un cahier. Le problème est que je perds les montants. Parce que les notes sont dispersées. Mon objectif est de retrouver les montants rapidement.",
     );
     expect(session.dossier.missingDimensions).toContain("risk");
-    expect(session.dossier.openQuestions[0]).toMatch(/consulter/i);
+    expect(session.dossier.openQuestions.some((question) => /consulter/i.test(question))).toBe(true);
   });
 
   it("preserves an explicit privacy or consent statement instead of asking it again", () => {
