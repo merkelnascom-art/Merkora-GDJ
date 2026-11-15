@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase/auth-actions";
 
@@ -12,7 +12,7 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     startTransition(async () => {
