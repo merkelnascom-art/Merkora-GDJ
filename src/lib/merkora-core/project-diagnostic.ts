@@ -130,19 +130,24 @@ export const UNDERSTANDING_SECTIONS: Array<{
   title: string;
   description: string;
 }> = [
+  { id: "project_identity", title: "Identité et périmètre du projet", description: "Le nom ou le périmètre lorsqu'il a été communiqué." },
   { id: "activity", title: "Activité, idée ou phénomène", description: "Ce qui est au cœur du projet, sans catégorie imposée." },
+  { id: "motivation", title: "Motivation du projet", description: "Ce qui déclenche la démarche ou justifie son existence." },
   { id: "context", title: "Contexte et environnement", description: "Le cadre dans lequel la situation existe ou devra exister." },
   { id: "current_situation", title: "Situation actuelle", description: "Ce qui se passe aujourd'hui, ou ce qui n'existe pas encore." },
   { id: "problem", title: "Difficultés et besoins", description: "Les problèmes, besoins ou occasions d'amélioration exprimés." },
   { id: "causes", title: "Causes évoquées", description: "Les explications proposées, qui restent à vérifier." },
   { id: "impact", title: "Conséquences", description: "Les effets observés ou redoutés." },
   { id: "objectives", title: "Objectifs et résultats", description: "Les changements et résultats recherchés." },
+  { id: "expected_outcome", title: "Résultats attendus", description: "Les effets concrets que l'utilisateur souhaite obtenir." },
   { id: "actors", title: "Personnes et organisations", description: "Les personnes concernées, leurs rôles et leurs responsabilités." },
   { id: "operations", title: "Fonctionnement et opérations", description: "Les actions, étapes et interactions décrites." },
   { id: "resources", title: "Ressources disponibles", description: "Les moyens humains, matériels, financiers ou informationnels." },
   { id: "constraints", title: "Contraintes et règles", description: "Les limites, obligations, règles et précautions." },
   { id: "imagined_solution", title: "Solution imaginée", description: "Les pistes proposées par l'utilisateur, sans les considérer comme déjà décidées." },
   { id: "success_criteria", title: "Conditions de réussite", description: "Les signes qui permettront de vérifier le résultat." },
+  { id: "information", title: "Informations et connaissances", description: "Les données, documents et connaissances déjà mentionnés." },
+  { id: "other", title: "Autres éléments", description: "Les éléments importants qui ne correspondent pas encore à une dimension connue." },
 ];
 
 function normalizeDimension(dimension: NeedDimension): ProjectUnderstandingDimension {
@@ -227,6 +232,18 @@ export function validateUnderstandingItem(dossier: ProjectUnderstanding, itemId:
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "validated" } : item),
+    updatedAt: now(),
+  };
+}
+
+
+export function rejectUnderstandingItem(dossier: ProjectUnderstanding, itemId: string): ProjectUnderstanding {
+  const active = getActiveUnderstandingItems(dossier);
+  if (!active.some((item) => item.id === itemId)) throw new Error("Only an active understanding item can be rejected.");
+  return {
+    ...dossier,
+    version: dossier.version + 1,
+    items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "rejected" } : item),
     updatedAt: now(),
   };
 }
