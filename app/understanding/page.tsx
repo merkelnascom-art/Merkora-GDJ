@@ -17,6 +17,8 @@ import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
 import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
+import { ESCO_API_LANGUAGE_CODES, type ESCOSuggestion } from "../../src/lib/merkora-core/knowledge/esco-api";
+import { UNIVERSAL_DOMAIN_COUNT, UNIVERSAL_DOMAIN_FAMILY_COUNT } from "../../src/lib/merkora-core/knowledge/universal-domain-catalog";
 
 const SCREEN_03_KNOWLEDGE = createUniversalKnowledgeRegistry();
 import type { SituationEntity } from "../../src/lib/merkora-core/situation-graph";
@@ -68,6 +70,9 @@ export default function UnderstandingPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [notice, setNotice] = useState("");
+  const [escoLanguage, setEscoLanguage] = useState("fr");
+  const [escoSuggestions, setEscoSuggestions] = useState<Record<string, ESCOSuggestion[]>>({});
+  const [escoLoadingId, setEscoLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const session = readSession();
@@ -131,7 +136,24 @@ export default function UnderstandingPage() {
     setNotice("Interprétation écartée. Elle reste conservée dans l'historique.");
   }
 
-  function proposeUnknownConcept(entity: SituationEntity) {
+  async function searchESCO(entity: SituationEntity) {
+    setEscoLoadingId(entity.id);
+    setNotice("");
+    try {
+      const params = new URLSearchParams({ text: entity.label, language: escoLanguage });
+      const response = await fetch(`/api/knowledge/esco?${params.toString()}`);
+      const payload = await response.json() as { results?: ESCOSuggestion[]; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Recherche ESCO indisponible.");
+      setEscoSuggestions((current) => ({ ...current, [entity.id]: payload.results ?? [] }));
+      if (!(payload.results ?? []).length) setNotice("Aucune profession ESCO trouvée dans cette langue. Le terme reste libre et peut être proposé.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "La recherche ESCO a échoué.");
+    } finally {
+      setEscoLoadingId(null);
+    }
+  }
+
+  function proposeUnknownConcept(entity: SituationEntity, externalReference?: ESCOSuggestion) {
     if (!dossier || entity.knowledge?.matchStatus !== "unmatched") return;
     const source = entity.evidence[0];
     if (!source) return;
@@ -139,9 +161,18 @@ export default function UnderstandingPage() {
     const proposal = createProjectKnowledgeProposal({
       projectId: dossier.projectId,
       label: entity.label,
-      language: "und",
+      language: externalReference?.language ?? "und",
       sourceMessageId: source.messageId,
       sourceQuote: source.quote,
+      ...(externalReference ? {
+        externalReference: {
+          system: "ESCO" as const,
+          uri: externalReference.uri,
+          label: externalReference.label,
+          language: externalReference.language,
+          datasetVersion: "ESCO API — version par défaut du service",
+        },
+      } : {}),
     }, SCREEN_03_KNOWLEDGE);
     try {
       persist(attachKnowledgeProposalToUnderstanding(dossier, proposal));
@@ -149,7 +180,9 @@ export default function UnderstandingPage() {
       setNotice("Ce terme a déjà été proposé pour ce projet.");
       return;
     }
-    setNotice("Proposition privée enregistrée dans ce projet. Elle n'est pas encore ajoutée au référentiel commun.");
+    setNotice(externalReference
+      ? "Rapprochement ESCO proposé et conservé dans ce projet. Il attend une revue humaine."
+      : "Proposition privée enregistrée dans ce projet. Elle n'est pas encore ajoutée au référentiel commun.");
   }
 
   function continueToDiagnostic() {
@@ -197,12 +230,18 @@ export default function UnderstandingPage() {
               <div className="mk-understanding-section-heading">
                 <div>
                   <h2>Repères du référentiel universel</h2>
-                  <p>MerKora relie les éléments du récit aux concepts généraux connus. Un terme non reconnu reste conservé librement : il n'est ni supprimé ni forcé dans une catégorie.</p>
+                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles et {UNIVERSAL_DOMAIN_COUNT} domaines. Les professions peuvent être recherchées dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
                 </div>
                 <span>{dossier.situationGraph.entities.length}</span>
               </div>
+              <div className="mk-item-meta">
+                <label htmlFor="esco-language">Langue de recherche des professions</label>
+                <select id="esco-language" value={escoLanguage} onChange={(event) => setEscoLanguage(event.target.value)}>
+                  {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
+                </select>
+              </div>
               <div className="mk-understanding-items">
-                {dossier.situationGraph.entities.slice(0, 16).map((entity) => (
+                {dossier.situationGraph.entities.map((entity) => (
                   <article className="mk-understanding-item" key={"knowledge-" + entity.id}>
                     <p><strong>{entity.label}</strong></p>
                     <div className="mk-item-meta">
@@ -229,9 +268,34 @@ export default function UnderstandingPage() {
                       </div>
                     )}
                     {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
-                      <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
-                        Proposer ce terme au référentiel
-                      </button>
+                      <>
+                        <div className="mk-inline-actions">
+                          <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
+                            Proposer comme nouveau concept
+                          </button>
+                          {(entity.kind === "activity" || entity.kind === "actor") && (
+                            <button className="mk-small-action" type="button" onClick={() => searchESCO(entity)} disabled={escoLoadingId === entity.id}>
+                              {escoLoadingId === entity.id ? "Recherche…" : "Chercher une profession dans ESCO"}
+                            </button>
+                          )}
+                        </div>
+                        {(escoSuggestions[entity.id] ?? []).length > 0 && (
+                          <div className="mk-knowledge-proposals">
+                            <small>Suggestions externes ESCO — à vérifier, aucune n'est sélectionnée automatiquement.</small>
+                            {(escoSuggestions[entity.id] ?? []).map((suggestion) => (
+                              <article className="mk-understanding-item" key={suggestion.uri}>
+                                <p><strong>{suggestion.label}</strong></p>
+                                {suggestion.description && <small>{suggestion.description}</small>}
+                                {suggestion.alternativeLabels.length > 0 && <small>Autres appellations : {suggestion.alternativeLabels.join(", ")}</small>}
+                                <div className="mk-inline-actions">
+                                  <a className="mk-small-action" href={suggestion.uri} target="_blank" rel="noreferrer">Consulter la fiche ESCO</a>
+                                  <button className="mk-small-action mk-small-action-gold" type="button" onClick={() => proposeUnknownConcept(entity, suggestion)}>Proposer ce rapprochement</button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </article>
                 ))}
@@ -248,6 +312,7 @@ export default function UnderstandingPage() {
                         <span>Langue non déterminée</span>
                       </div>
                       <small>{proposal.sourceQuote}</small>
+                      {proposal.externalReference && <small>Référence externe proposée : {proposal.externalReference.label} · {proposal.externalReference.language.toUpperCase()} · {proposal.externalReference.system} · {proposal.externalReference.datasetVersion}</small>}
                       {(proposal.possibleDuplicateConceptIds ?? []).length > 0 && <small>Concept(s) proche(s) déjà présent(s) : {(proposal.possibleDuplicateConceptIds ?? []).map((id) => getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id)?.definitions.find((item) => item.language === "fr")?.label ?? id).join(", ")}. Une revue doit décider s’il s’agit d’un synonyme ou d’un concept distinct.</small>}
                     </article>
                   ))}
