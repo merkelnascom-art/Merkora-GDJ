@@ -207,3 +207,40 @@ describe("MerKora intent-first understanding and conversational repair", () => {
     expect(repaired.evidence.some((item) => item.dimension === "cause")).toBe(false);
   });
 });
+
+
+describe("MerKora multi-facet understanding from free-form messages", () => {
+  it("keeps the idea, emotional need, audience and gameplay mechanics as separate evidence", () => {
+    const first = beginUnderstanding("J'ai une idée à développer");
+    const concept = answerUnderstanding(first, "Je veux créer une interface de jeu pour distraire.");
+    const need = answerUnderstanding(
+      concept,
+      "J'ai remarqué que beaucoup de jeunes se frustrent à cause des études et n'arrivent plus à se détendre. Il n'y a pas de cadre particulier.",
+    );
+    const mechanics = answerUnderstanding(
+      need,
+      "Le jeu s'appelle Dare You Catch Me. Le joueur choisit ce qui l'énerve parmi des personnes, animaux, objets ou situations, puis un emoji apparaît. La cible défile, disparaît et réapparaît. Il faut la toucher. Si le joueur rate, la cible grandit et le taquine; s'il réussit, elle lui présente des excuses.",
+    );
+
+    expect(mechanics.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({ dimension: "preference", status: "user_stated" }),
+      expect.objectContaining({ dimension: "problem", status: "user_stated" }),
+      expect.objectContaining({ dimension: "audience", status: "user_stated" }),
+      expect.objectContaining({ dimension: "emotion", status: "user_stated" }),
+      expect.objectContaining({ dimension: "feature", status: "user_stated" }),
+      expect.objectContaining({ dimension: "experience", status: "user_stated" }),
+    ]));
+    expect(mechanics.evidence.some((item) => item.dimension === "context" && /aucun cadre/i.test(item.value))).toBe(true);
+    expect(mechanics.summary ?? "").not.toContain("emoji apparaît");
+    expect(mechanics.summary ?? "").not.toContain("🐶");
+  });
+
+  it("does not keep asking about a missing context after the person explicitly says there is none", () => {
+    const first = beginUnderstanding("J'ai une idée à développer");
+    const concept = answerUnderstanding(first, "Je veux créer une interface de jeu pour distraire.");
+    const noContext = answerUnderstanding(concept, "Il n'y a pas de cadre particulier, je veux juste un jeu accessible à tous.");
+
+    expect(noContext.evidence.some((item) => item.dimension === "context" && /aucun cadre/i.test(item.value))).toBe(true);
+    expect(noContext.pendingQuestion?.dimension).not.toBe("context");
+  });
+});

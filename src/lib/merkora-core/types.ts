@@ -1,5 +1,5 @@
 export type EvidenceStatus = "user_stated" | "observed" | "inferred" | "hypothesis" | "unknown" | "validated" | "rejected";
-export type NeedDimension = "context" | "actor" | "activity" | "problem" | "cause" | "goal" | "expected_outcome" | "constraint" | "resource" | "business_rule" | "risk" | "preference" | "project_scope" | "unknown";
+export type NeedDimension = "context" | "actor" | "audience" | "activity" | "problem" | "cause" | "goal" | "expected_outcome" | "emotion" | "experience" | "feature" | "constraint" | "resource" | "business_rule" | "risk" | "preference" | "project_scope" | "unknown";
 export interface NeedEvidence {
   id: string;
   dimension: NeedDimension;

@@ -105,3 +105,21 @@
   .mk-summary-card,.mk-completion-card{padding:15px}
   .mk-summary-card h2{font-size:18px}
 }
+
+/* Réception, mise en relation et réponse — écran 02 */
+.mk-orb-activity-receiving .mk-orb-wave{animation-duration:1.15s;opacity:.55;border-width:2px}
+.mk-orb-activity-receiving .mk-orb-core{animation:mk-core-receive .72s ease-in-out infinite}
+.mk-orb-activity-receiving .mk-orb-ring{animation-duration:2.6s}
+.mk-orb-activity-analyzing .mk-orb-wave{animation-duration:1.8s;opacity:.45}
+.mk-orb-activity-analyzing .mk-orb-ring{animation-duration:1.9s}
+.mk-orb-activity-analyzing .mk-orb-ring-b{animation-duration:2.4s}
+.mk-orb-activity-analyzing .mk-orb-halo{animation-duration:1.2s}
+.mk-orb-activity-responding .mk-orb-wave{animation-duration:3.8s;opacity:.3}
+.mk-orb-activity-responding .mk-orb-ring{animation-duration:8s}
+.mk-orb-activity-responding .mk-orb-core{animation:mk-core-float 2.2s ease-in-out infinite}
+.mk-orb-activity-receiving .mk-orb-status i,.mk-orb-activity-analyzing .mk-orb-status i{animation:mk-status-pulse .72s ease-in-out infinite alternate}
+@keyframes mk-core-receive{0%,100%{transform:scale(1)}50%{transform:scale(1.075)}}
+@keyframes mk-status-pulse{from{opacity:.45;transform:scale(.8)}to{opacity:1;transform:scale(1.35)}}
+@media(prefers-reduced-motion:reduce){
+  .mk-orb-activity-receiving .mk-orb-wave,.mk-orb-activity-analyzing .mk-orb-wave,.mk-orb-activity-receiving .mk-orb-core,.mk-orb-activity-responding .mk-orb-core,.mk-orb-activity-receiving .mk-orb-status i,.mk-orb-activity-analyzing .mk-orb-status i{animation:none!important}
+}

@@ -37,8 +37,20 @@ let sequence = 0;
 const createId = (prefix: string) => `${prefix}-${Date.now()}-${++sequence}`;
 const now = () => new Date().toISOString();
 
-const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|système|systeme|outil numérique|outil digital|robot|automatiser|automatisation/i;
-const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
+const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|interface|jeu interactif|système|systeme|outil numérique|outil digital|robot|automatiser|automatisation/i;
+const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|frustr|se frustr|stress|col[eè]re|m'énerve|m'enerve|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
+const AUDIENCE_PATTERN = /jeunes|adolescents?|étudiants?|etudiants?|élèves?|eleves?|apprenants?|adultes?|enfants?/i;
+const EMOTION_PATTERN = /frustr\w*|stress\w*|col[eè]re|tension\w*|(?:est|sont|se sent|se sentent)\s+(?:énervé|énervée|énervés|énervées|enervé|enervée|enervés|enervées)/i;
+const EXPERIENCE_PATTERN = /distraire|détendre|detendre|relâcher|relacher|évacuer|evacuer|se défouler|se defouler|se divertir|s'amuser/i;
+const NO_CONTEXT_PATTERN = /(?:pas de cadre|aucun cadre|pas vraiment de contexte|aucun contexte|rien de particulier comme contexte|n'y a pas de cadre|pas vraiment dans un cadre|pas de contexte)/i;
+const GAME_FEATURE_PATTERNS: Array<{ pattern: RegExp; value: string }> = [
+  { pattern: /chois\w*[^.!?\n]{0,100}(?:énerve|enerve|embête|embete|agace|dérange|derange)/i, value: "Choix libre de ce qui énerve ou dérange le joueur" },
+  { pattern: /emoji|émotic[oô]ne|emotic[oô]ne/i, value: "Association d'un symbole ou emoji à l'élément choisi" },
+  { pattern: /défil\w*|defil\w*|dispara[iî]t|réappara[iî]t|reappara[iî]t/i, value: "Cible mobile qui disparaît et réapparaît" },
+  { pattern: /touch\w*|taper sur la cible|attraper la cible/i, value: "Le joueur doit toucher ou attraper la cible" },
+  { pattern: /rat\w*|vide|échec|echec|looser|loser|difficulté augmente|difficulte augmente|grandit/i, value: "La difficulté progresse après un échec, avec une taquinerie humoristique" },
+  { pattern: /excuses|désolé|desole|pardon/i, value: "La cible présente des excuses après une réussite" },
+];
 const PRIVACY_PATTERN = /accord|consentement|informé(?:e)?s?|autorisé(?:e)?s?|confidentiel|privé|personne d'autre|seulement moi|uniquement moi/i;
 const CAUSE_PATTERN = /(?:parce que|car|à cause de|puisque|en raison de|du fait que)[^.!?\n]*/i;
 
@@ -50,6 +62,7 @@ function classifyIntent(raw: string): IntentKind {
   if (/organiser|organisation/i.test(text) && /anniversaire|fête|pool party|soirée|mariage|cérémonie|conférence|événement|rencontre/i.test(text)) return "organize_event";
   if (/inviter|invitation|convier|faire-part/i.test(text)) return "invitation";
   if (/demande|solliciter|réclamer|requête/i.test(text)) return "request";
+  if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text) && /interface de jeu|jeu interactif|expérience ludique|experience ludique/i.test(text)) return "create_project";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text) && SOLUTION_PATTERN.test(text)) return "solve";
   if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text)) return "create_project";
   if (/inventer|invention|imaginer|nouvelle idée/i.test(text)) return "invention";
@@ -95,6 +108,7 @@ const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "enseignants", pattern: /enseignant(?:e)?s?/i },
   { label: "personnel", pattern: /personnel|employé(?:e)?s?|salarié(?:e)?s?|collaborateurs?/i },
   { label: "apprenants", pattern: /élèves?|étudiants?|apprenants?|stagiaires?/i },
+  { label: "jeunes", pattern: /jeunes|adolescents?/i },
   { label: "clients", pattern: /client(?:e)?s?|acheteurs?/i },
   { label: "patients", pattern: /patients?/i },
   { label: "participants et invités", pattern: /visiteurs?|invités?|inviter|participants?|convives|personnes/i },
@@ -166,6 +180,26 @@ function extractExplicitEvidence(raw: string, sourceMessageId: string, current: 
   const cause = raw.match(CAUSE_PATTERN)?.[0]?.trim();
   if (cause) evidence = addEvidence(evidence, "cause", cause, sourceMessageId, cause);
 
+  const audienceMatch = raw.match(AUDIENCE_PATTERN)?.[0];
+  if (audienceMatch) {
+    const audienceQuote = sentenceContaining(raw, AUDIENCE_PATTERN) ?? audienceMatch;
+    evidence = addEvidence(evidence, "audience", audienceMatch, sourceMessageId, audienceQuote);
+  }
+  const emotion = sentenceContaining(raw, EMOTION_PATTERN);
+  if (emotion) evidence = addEvidence(evidence, "emotion", emotion, sourceMessageId, emotion);
+  const experience = sentenceContaining(raw, EXPERIENCE_PATTERN);
+  const describesAnObstacle = experience && /n['’]arriv\w* plus|n['’]arriv\w* pas|ne parv\w* pas|ne peuvent pas|difficulté à|difficulte a/i.test(experience);
+  if (experience && !describesAnObstacle) {
+    evidence = addEvidence(evidence, "experience", experience, sourceMessageId, experience);
+    evidence = addEvidence(evidence, "goal", experience, sourceMessageId, experience);
+  }
+  const noContext = raw.match(NO_CONTEXT_PATTERN)?.[0];
+  if (noContext) evidence = addEvidence(evidence, "context", "Aucun cadre particulier indiqué", sourceMessageId, noContext);
+  for (const feature of GAME_FEATURE_PATTERNS) {
+    const quote = sentenceContaining(raw, feature.pattern);
+    if (quote) evidence = addEvidence(evidence, "feature", feature.value, sourceMessageId, quote);
+  }
+
   return evidence;
 }
 
@@ -200,7 +234,7 @@ const INTENT_QUESTION_CATALOG: Partial<Record<IntentKind, QuestionCandidate[]>> 
   ],
   create_project: [
     { id: "create-beneficiaries-v1", dimension: "actor", prompt: "Qui utilisera, fera vivre ou bénéficiera de ce projet ?", rationale: "Identifier les personnes et rôles.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.9 },
-    { id: "create-context-v1", dimension: "context", prompt: "Dans quel lieu, secteur ou environnement souhaites-tu développer ce projet ?", rationale: "Situer le projet sans l'enfermer.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
+    { id: "create-context-v1", dimension: "context", prompt: "Où et dans quel environnement souhaites-tu créer ce projet ?", rationale: "Situer le projet sans l'enfermer.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
     { id: "create-limits-v1", dimension: "constraint", prompt: "Quelles ressources, limites ou échéances faut-il prendre en compte ?", rationale: "Faire émerger les contraintes.", impact: 0.8, uncertainty: 0.75, decisionRelevance: 0.85, answerability: 0.85 },
   ],
   invention: [
@@ -278,6 +312,10 @@ function buildSummary(session: UnderstandingSession): string {
     preference: "Solution ou approche envisagée par toi",
     project_scope: "Périmètre du projet",
     risk: "Confidentialité et information des personnes",
+    audience: "Public concerné",
+    emotion: "État émotionnel ou ressenti évoqué",
+    experience: "Expérience recherchée",
+    feature: "Fonctionnalités ou mécaniques imaginées",
   };
   const grouped = new Map<NeedDimension, string[]>();
   for (const item of session.evidence) {
@@ -385,6 +423,10 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   }
 
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
+  const hasRichDescription = updatedSession.evidence.some((item) => item.dimension === "feature") &&
+    updatedSession.evidence.some((item) => item.dimension === "problem") &&
+    (updatedSession.evidence.some((item) => item.dimension === "goal") ||
+      updatedSession.evidence.some((item) => item.dimension === "experience"));
   const plan = selectNextQuestion({
     candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
     answeredDimensions,
@@ -392,7 +434,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     askedQuestionIds: updatedSession.askedQuestionIds,
   });
 
-  if (plan.kind === "question") {
+  if (plan.kind === "question" && !hasRichDescription) {
     const next = {
       ...updatedSession,
       pendingQuestion: plan.question,
@@ -495,22 +537,36 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
   }
 
   const visitorMessage = message(session.conversationId, "visitor", clean);
-  let evidence = addEvidence(
-    session.evidence,
-    session.pendingQuestion.dimension,
-    clean,
-    visitorMessage.id,
-    clean,
+  let evidence = extractExplicitEvidence(clean, visitorMessage.id, session.evidence);
+  const answerHasPendingDimension = evidence.some((item) =>
+    item.dimension === session.pendingQuestion?.dimension &&
+    item.sourceMessageId === visitorMessage.id,
   );
-  evidence = extractExplicitEvidence(clean, visitorMessage.id, evidence);
+  const isExplicitClarification = session.pendingQuestion.dimension === "business_rule" ||
+    session.pendingQuestion.dimension === "project_scope";
+  if (!answerHasPendingDimension && (evidence.length === session.evidence.length || isExplicitClarification)) {
+    evidence = addEvidence(
+      evidence,
+      session.pendingQuestion.dimension,
+      clean,
+      visitorMessage.id,
+      clean,
+    );
+  }
   const conflictTopic = session.pendingQuestion.id.startsWith("resolve-contradiction-")
     ? session.pendingQuestion.id.replace("resolve-contradiction-", "").replace("-v1", "")
     : null;
   const clarifiedConflict = conflictTopic
     ? session.contradictions.find((item) => item.topic === conflictTopic)
     : undefined;
+  const cumulativeVisitorText = [...session.messages, visitorMessage]
+    .filter((item) => item.role === "visitor")
+    .map((item) => item.content)
+    .join("\n");
+  const detectedIntent = classifyIntent(cumulativeVisitorText);
   const updated: UnderstandingSession = {
     ...session,
+    intentKind: detectedIntent === "unknown" ? session.intentKind : detectedIntent,
     messages: [...session.messages, visitorMessage],
     evidence,
     pendingQuestion: null,

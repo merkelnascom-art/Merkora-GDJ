@@ -20,10 +20,12 @@ const DRAFT_KEY = "merkora-v2-first-message";
 const ANSWER_DRAFT_KEY = "merkora-v2-answer-draft";
 const CORRECTION_DRAFT_KEY = "merkora-v2-correction-draft";
 
-function MerKoraOrb({ state }: { state: "idle" | "clarification" | "summary_validation" | "complete" }) {
+type OrbActivity = "idle" | "receiving" | "analyzing" | "responding";
+
+function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "summary_validation" | "complete"; activity: OrbActivity }) {
   return (
     <div
-      className={`mk-orb-scene mk-orb-text mk-orb-state-${state}`}
+      className={`mk-orb-scene mk-orb-text mk-orb-state-${state} mk-orb-activity-${activity}`}
       role="img"
       aria-label="Sphère intelligente MerKora"
     >
@@ -70,6 +72,8 @@ export default function ConversationPage() {
   const [session, setSession] = useState<UnderstandingSession | null>(null);
   const [correction, setCorrection] = useState("");
   const [showCorrection, setShowCorrection] = useState(false);
+  const [orbActivity, setOrbActivity] = useState<OrbActivity>("idle");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const restored = readStoredSession();
@@ -118,18 +122,42 @@ export default function ConversationPage() {
     }
   }
 
+  function processIncomingMessage(process: () => void) {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    setOrbActivity("receiving");
+    window.setTimeout(() => {
+      setOrbActivity("analyzing");
+      window.setTimeout(() => {
+        process();
+        setOrbActivity("responding");
+        window.setTimeout(() => {
+          setOrbActivity("idle");
+          setIsProcessing(false);
+        }, 760);
+      }, 260);
+    }, 220);
+  }
+
   function startJourney() {
-    if (!message.trim()) return;
-    storeSession(beginUnderstanding(message.trim()));
-    setMessage("");
-    setCorrection("");
-    setShowCorrection(false);
+    if (!message.trim() || isProcessing) return;
+    const firstMessage = message.trim();
+    processIncomingMessage(() => {
+      storeSession(beginUnderstanding(firstMessage));
+      setMessage("");
+      setCorrection("");
+      setShowCorrection(false);
+    });
   }
 
   function sendAnswer() {
-    if (!session || !message.trim()) return;
-    storeSession(answerUnderstanding(session, message));
-    setMessage("");
+    if (!session || !message.trim() || isProcessing) return;
+    const answer = message;
+    const currentSession = session;
+    processIncomingMessage(() => {
+      storeSession(answerUnderstanding(currentSession, answer));
+      setMessage("");
+    });
   }
 
   function skipQuestion() {
@@ -175,13 +203,19 @@ export default function ConversationPage() {
   }
 
   const orbState = session?.stage ?? "idle";
-  const statusText = session?.stage === "clarification"
-    ? "Je relie les éléments de ton récit"
-    : session?.stage === "summary_validation"
-      ? "Je te présente ce que j'ai compris"
-      : session?.stage === "complete"
-        ? "Cette étape de compréhension est terminée"
-        : "Conversation écrite · prête à commencer";
+  const statusText = orbActivity === "receiving"
+    ? "Je reçois ton message"
+    : orbActivity === "analyzing"
+      ? "Je relie les éléments de ton récit"
+      : orbActivity === "responding"
+        ? "Je prépare ma réponse"
+        : session?.stage === "clarification"
+          ? "À l'écoute · une question à la fois"
+          : session?.stage === "summary_validation"
+            ? "Je te présente ce que j'ai compris"
+            : session?.stage === "complete"
+              ? "Cette étape de compréhension est terminée"
+              : "Conversation écrite · prête à commencer";
 
   return (
     <main className="mk-v2-page mk-conversation-page">
@@ -197,8 +231,8 @@ export default function ConversationPage() {
       <section className="mk-conversation-layout">
         <div className="mk-orb-column">
           <span className="mk-eyebrow"><span /> ESPACE DE COMPRÉHENSION</span>
-          <MerKoraOrb state={orbState} />
-          <div className="mk-orb-status"><i /> {statusText}</div>
+          <MerKoraOrb state={orbState} activity={orbActivity} />
+          <div className="mk-orb-status" role="status" aria-live="polite"><i /> {statusText}</div>
           <p className="mk-orb-caption">
             Une idée, un besoin, une envie de changement.<br />
             <b>On avance une question à la fois.</b>
@@ -249,7 +283,7 @@ export default function ConversationPage() {
                 ))}
               </div>
               <p className="mk-free-note">Tu peux aussi raconter ton besoin librement. Aucun domaine ni type de projet n'est imposé.</p>
-              <button type="button" className="mk-continue-button" onClick={startJourney} disabled={!message.trim()}>
+              <button type="button" className="mk-continue-button" onClick={startJourney} disabled={!message.trim() || isProcessing}>
                 Commencer notre compréhension <span>→</span>
               </button>
               <p className="mk-privacy-note">Tes mots restent le point de départ. Rien n'est considéré comme validé sans ton accord.</p>
@@ -279,7 +313,7 @@ export default function ConversationPage() {
                     rows={3}
                   />
                   <div className="mk-answer-actions">
-                    <button type="button" className="mk-continue-button" onClick={sendAnswer} disabled={!message.trim()}>
+                    <button type="button" className="mk-continue-button" onClick={sendAnswer} disabled={!message.trim() || isProcessing}>
                       Envoyer ma réponse <span>→</span>
                     </button>
                     <button type="button" className="mk-secondary-button" onClick={skipQuestion}>
