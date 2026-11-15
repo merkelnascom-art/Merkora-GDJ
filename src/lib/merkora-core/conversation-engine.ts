@@ -302,9 +302,13 @@ export function decideUnderstandingSummary(
 
   if (decision === "confirmed") {
     const confirmedEvidence = session.evidence.map((item) => ({ ...item, status: "validated" as const }));
+    const confirmedSummary = session.summary
+      .replace("compréhension provisoire", "compréhension validée")
+      .replace("Cette synthèse n'est pas encore une décision ni une solution. Tu peux la confirmer ou me corriger.", "Cette synthèse a été confirmée par toi. Elle constitue le point de départ validé de la suite du parcours.");
     return {
       ...session,
       evidence: confirmedEvidence,
+      summary: confirmedSummary,
       validations: [...session.validations, validation],
       stage: "complete",
       version: session.version + 1,
@@ -315,10 +319,11 @@ export function decideUnderstandingSummary(
   if (decision === "corrected" && cleanCorrection) {
     const correctionMessage = message(session.conversationId, "visitor", cleanCorrection);
     const correctionEvidence = addEvidence(session.evidence, "unknown", cleanCorrection, correctionMessage.id, cleanCorrection);
+    const correctedValidation = { ...validation, evidenceIds: correctionEvidence.map((item) => item.id) };
     return {
       ...session,
       evidence: correctionEvidence,
-      validations: [...session.validations, validation],
+      validations: [...session.validations, correctedValidation],
       summary: `${session.summary}\n\nCorrection apportée par toi : « ${cleanCorrection} ». Cette correction doit encore être vérifiée dans la synthèse.`,
       version: session.version + 1,
       messages: [
