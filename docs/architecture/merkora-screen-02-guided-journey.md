@@ -100,3 +100,23 @@ Aucun modèle IA n'est connecté. Cette décision évite toute dépense ou trans
 6. évaluer séparément les options IA locales/gratuites et les coûts éventuels, sans activation ni dépense automatique.
 
 L'écran 03 ne doit pas commencer avant validation du parcours de compréhension de l'écran 02.
+
+
+## 9. Première couche d'interprétation par intention
+
+Une première couche déterministe distingue désormais plusieurs intentions exprimées :
+- organiser un événement ;
+- effectuer une réservation ;
+- envoyer une invitation ;
+- formuler une demande ;
+- créer une structure ou un projet ;
+- explorer une invention ;
+- améliorer une activité existante ;
+- résoudre un problème ;
+- explorer une idée encore floue.
+
+La première question est choisie selon cette intention, et non systématiquement selon le schéma « problème → fonctionnement actuel → cause ». Par exemple, une réservation appelle des précisions sur l'objet, la date et les bénéficiaires ; un événement appelle des précisions sur le type, la date, les invités et les contraintes ; un projet de création appelle des précisions sur les bénéficiaires et la finalité.
+
+Les formulations signalant que MerKora n'a pas compris déclenchent une réparation conversationnelle : le moteur reconnaît le décalage, reprend les mots déjà exprimés et invite la personne à corriger. Ces messages ne sont pas classés comme des causes métier.
+
+Cette couche reste une heuristique lexicale explicable. Elle ne constitue pas encore une compréhension sémantique générale : les intentions implicites, les formulations inhabituelles, les langues mélangées, l'argot et les projets inédits nécessitent encore des tests et des mécanismes plus riches. Une classification proposée par le moteur reste une hypothèse de travail, jamais une validation du besoin.
