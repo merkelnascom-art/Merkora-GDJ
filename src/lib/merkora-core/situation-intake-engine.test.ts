@@ -68,8 +68,6 @@ describe("whole-message situation intake", () => {
     expect(session.evidence.filter((item) => item.dimension === "feature").length).toBeGreaterThan(1);
     expect(session.evidence.some((item) => item.dimension === "constraint" && /pas.*paiement en ligne/i.test(item.value))).toBe(true);
   });
-});
-
   it("attaches universal knowledge type references to the situation graph used by the understanding session", () => {
     const session = beginUnderstanding("Je veux créer un jeu interactif pour les jeunes.");
     const activity = session.situationGraph.entities.find((entity) => entity.kind === "activity");
@@ -78,3 +76,4 @@ describe("whole-message situation intake", () => {
     expect(activity?.knowledge?.typeConceptId).toBe("core:activity");
     expect(actor?.knowledge?.typeConceptId).toBe("core:actor");
   });
+});
