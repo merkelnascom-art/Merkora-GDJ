@@ -71,6 +71,55 @@ describe("adaptive universal diagnostic", () => {
 
 
 
+
+  it("carries apparent contradictions into the diagnostic and records an explicit resolution", () => {
+    const base = beginUnderstanding("Je prépare un projet avec deux règles à clarifier.");
+    const session = {
+      ...base,
+      contradictions: [{
+        topic: "access",
+        statementA: "L'accès doit être sans compte.",
+        statementB: "Chaque utilisateur doit créer un compte.",
+        question: "L'accès doit-il être possible sans compte, ou le compte est-il obligatoire ?",
+        confirmationRequired: true,
+      }],
+    };
+    const dossier = createProjectUnderstanding(session);
+    const diagnostic = createDiagnosticSession(dossier);
+    const question = getNextDiagnosticQuestion(dossier, diagnostic);
+
+    expect(question?.resolvesContradictionId).toBe(dossier.contradictions[0].id);
+    if (!question) throw new Error("Expected a contradiction-resolution question.");
+    const result = recordDiagnosticAnswer(dossier, diagnostic, question, { value: "Les deux s'appliquent dans des contextes différents" });
+
+    expect(result.understanding.contradictions[0].status).toBe("resolved");
+    expect(getNextDiagnosticQuestion(result.understanding, result.diagnostic)?.resolvesContradictionId).toBeUndefined();
+  });
+
+  it("keeps an unknown contradiction unresolved and makes it resumable", () => {
+    const base = beginUnderstanding("Je prépare un projet avec deux règles à clarifier.");
+    const session = {
+      ...base,
+      contradictions: [{
+        topic: "access",
+        statementA: "L'accès doit être sans compte.",
+        statementB: "Chaque utilisateur doit créer un compte.",
+        question: "L'accès doit-il être possible sans compte, ou le compte est-il obligatoire ?",
+        confirmationRequired: true,
+      }],
+    };
+    const dossier = createProjectUnderstanding(session);
+    const diagnostic = createDiagnosticSession(dossier);
+    const question = getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!question) throw new Error("Expected a contradiction-resolution question.");
+    const result = recordDiagnosticAnswer(dossier, diagnostic, question, { value: "Je ne sais pas encore", status: "unknown" });
+
+    expect(result.understanding.contradictions[0].status).toBe("deferred");
+    expect(getNextDiagnosticQuestion(result.understanding, result.diagnostic)?.resolvesContradictionId).toBeUndefined();
+    const resumed = resumeDeferredDiagnosticQuestions(result.diagnostic);
+    expect(getNextDiagnosticQuestion(result.understanding, resumed)?.resolvesContradictionId).toBe(result.understanding.contradictions[0].id);
+  });
+
   it("asks for local jurisdiction and languages only when the project signals those needs", () => {
     const base = createProjectUnderstanding(beginUnderstanding(
       "Je conçois un service soumis aux règles sur les données personnelles dans plusieurs pays et disponible en plusieurs langues."
