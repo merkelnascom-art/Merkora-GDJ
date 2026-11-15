@@ -8,3 +8,4 @@ export * from "./situation-linker";
 export * from "./classification-graph";
 export * from "./universal-domain-catalog";
 export * from "./esco-import";
+export * from "./esco-api";

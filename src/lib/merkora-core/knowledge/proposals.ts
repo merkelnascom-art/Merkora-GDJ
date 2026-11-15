@@ -17,6 +17,7 @@ export interface CreateKnowledgeProposalInput {
   sourceMessageId: string;
   sourceQuote: string;
   createdAt?: string;
+  externalReference?: KnowledgeProposal["externalReference"];
 }
 
 export interface ApproveKnowledgeProposalInput {
@@ -66,6 +67,7 @@ export function createProjectKnowledgeProposal(
     sourceQuote: input.sourceQuote,
     createdAt: input.createdAt ?? new Date().toISOString(),
     status: "proposed",
+    ...(input.externalReference ? { externalReference: { ...input.externalReference } } : {}),
   };
   const duplicates = registry ? findKnowledgeProposalDuplicates(proposal, registry) : [];
   return duplicates.length ? { ...proposal, possibleDuplicateConceptIds: duplicates } : proposal;

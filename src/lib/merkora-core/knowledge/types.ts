@@ -151,4 +151,12 @@ export interface KnowledgeProposal {
     reason?: string;
   };
   approvedConceptId?: string;
+  /** A project-private external candidate; never published without human review. */
+  externalReference?: {
+    system: "ESCO";
+    uri: string;
+    label: string;
+    language: string;
+    datasetVersion: string;
+  };
 }
