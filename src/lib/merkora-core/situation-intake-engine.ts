@@ -147,7 +147,7 @@ function makeQuestion(dimension: NeedDimension, prompt: string, rationale: strin
 
 const REPAIR = /(?:tu n'as pas (?:encore )?compris|tu n’as pas (?:encore )?compris|tu ne comprends pas|tu ne me comprends pas|tu ne me suis pas|tu m'écoutes pas|tu m’écoutes pas|tu es à côté)/i;
 
-function buildSituationModel(messages: ConversationMessage[]): SituationGraph {
+export function rebuildSituationGraph(messages: ConversationMessage[]): SituationGraph {
   const projectMessages = messages.filter(
     (message) => message.role === "visitor" && !REPAIR.test(message.content),
   );
@@ -291,7 +291,7 @@ export function beginUnderstanding(rawDescription: string): UnderstandingSession
     intentKind: classify(text),
     messages: [firstMessage],
     evidence: extract(text, firstMessage, []),
-    situationGraph: buildSituationModel([firstMessage]),
+    situationGraph: rebuildSituationGraph([firstMessage]),
     validations: [],
     askedQuestionIds: [],
     deferredDimensions: [],
@@ -316,7 +316,7 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
     return advance({
       ...session,
       messages: [...session.messages, visitorMessage],
-      situationGraph: buildSituationModel([...session.messages, visitorMessage]),
+      situationGraph: rebuildSituationGraph([...session.messages, visitorMessage]),
       pendingQuestion: null,
       version: session.version + 1,
     });
@@ -334,7 +334,7 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
     ...session,
     messages: [...session.messages, visitorMessage],
     evidence: completeEvidence,
-    situationGraph: buildSituationModel([...session.messages, visitorMessage]),
+    situationGraph: rebuildSituationGraph([...session.messages, visitorMessage]),
     pendingQuestion: null,
     version: session.version + 1,
   });
@@ -375,7 +375,7 @@ export function decideUnderstandingSummary(
       ...session,
       messages: [...session.messages, message],
       evidence: extract(correction.trim(), message, session.evidence),
-      situationGraph: buildSituationModel([...session.messages, message]),
+      situationGraph: rebuildSituationGraph([...session.messages, message]),
       validations: [...session.validations, validation],
       stage: "clarification",
       summary: undefined,
