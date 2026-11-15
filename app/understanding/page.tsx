@@ -13,6 +13,7 @@ import {
   type ProjectUnderstandingItem,
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
+import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
 
 const SOURCE_SESSION_KEY = "merkora-v2-understanding-session";
 const DOSSIER_KEY = "merkora-v2-project-understanding";
@@ -73,7 +74,7 @@ export default function UnderstandingPage() {
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
           const normalized: ProjectUnderstanding = {
             ...parsed,
-            situationGraph: parsed.situationGraph ?? session.situationGraph,
+            situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph),
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
