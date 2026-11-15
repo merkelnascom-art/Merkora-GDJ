@@ -231,7 +231,6 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     return !session.resolvedContradictionKeys.includes(key) && !session.deferredContradictionKeys.includes(key);
   });
   if (unresolvedContradiction) {
-    const key = `${unresolvedContradiction.topic}::${unresolvedContradiction.statementA}::${unresolvedContradiction.statementB}`;
     const question = makeQuestion(
       "business_rule",
       unresolvedContradiction.question,
@@ -241,6 +240,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     return {
       ...session,
       pendingQuestion: question,
+      askedQuestionIds: [...session.askedQuestionIds, question.id],
       stage: "clarification",
       version: session.version + 1,
       messages: [...session.messages, newMessage(
@@ -259,9 +259,10 @@ function advance(session: UnderstandingSession): UnderstandingSession {
       "Un pronom ou une référence ne possède pas encore d'antécédent suffisamment clair.",
     );
     question.id = `clarify-reference-${unresolvedReference.messageId}-${unresolvedReference.mention.toLocaleLowerCase("fr")}`;
-    return {
+    if (!session.askedQuestionIds.includes(question.id)) return {
       ...session,
       pendingQuestion: question,
+      askedQuestionIds: [...session.askedQuestionIds, question.id],
       stage: "clarification",
       version: session.version + 1,
       messages: [...session.messages, newMessage(session.conversationId, "merkora", question.prompt)],
@@ -392,9 +393,15 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
     ? session.reasoning?.contradictions.find((item) => item.topic === resolvingTopic)
     : undefined;
   const isUncertainAnswer = /je ne sais pas|je ne sais|à vérifier|a verifier|les deux|aucun des deux|je ne peux pas dire/i.test(text);
-  const resolvedContradictionKeys = resolvedConflict && !isUncertainAnswer && text.length > 2
-    ? [...new Set([...session.resolvedContradictionKeys, `${resolvedConflict.topic}::${resolvedConflict.statementA}::${resolvedConflict.statementB}`])]
+  const conflictKey = resolvedConflict
+    ? `${resolvedConflict.topic}::${resolvedConflict.statementA}::${resolvedConflict.statementB}`
+    : null;
+  const resolvedContradictionKeys = resolvedConflict && !isUncertainAnswer && text.length > 2 && conflictKey
+    ? [...new Set([...session.resolvedContradictionKeys, conflictKey])]
     : session.resolvedContradictionKeys;
+  const deferredContradictionKeys = resolvedConflict && isUncertainAnswer && conflictKey
+    ? [...new Set([...session.deferredContradictionKeys, conflictKey])]
+    : session.deferredContradictionKeys;
 
   return advance({
     ...session,
@@ -402,6 +409,7 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
     evidence: completeEvidence,
     situationGraph: rebuildSituationGraph([...session.messages, visitorMessage]),
     resolvedContradictionKeys,
+    deferredContradictionKeys,
     pendingQuestion: null,
     version: session.version + 1,
   });
