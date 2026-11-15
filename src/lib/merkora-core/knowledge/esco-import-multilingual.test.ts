@@ -41,6 +41,33 @@ describe("multilingual ESCO imports", () => {
     expect(english.registry.conceptHistory.some((item) => item.id === concept?.id && item.lifecycle.version === 1)).toBe(true);
   });
 
+  it("replaces obsolete source synonyms when a language pack is refreshed", () => {
+    const first = importESCOBundle(createUniversalKnowledgeRegistry(), {
+      datasetVersion: "1.2.1",
+      importedAt: "2026-11-15T10:00:00.000Z",
+      concepts: [{
+        uri: occupationUri,
+        type: "occupation",
+        preferredLabels: { fr: "Comptable" },
+        alternativeLabels: { fr: ["Ancien synonyme"] },
+      }],
+    });
+    const second = importESCOBundle(first.registry, {
+      datasetVersion: "1.2.2",
+      importedAt: "2026-11-15T11:00:00.000Z",
+      concepts: [{
+        uri: occupationUri,
+        type: "occupation",
+        preferredLabels: { fr: "Expert-comptable" },
+        alternativeLabels: { fr: ["Nouveau synonyme"] },
+      }],
+    });
+    const concept = second.registry.concepts.find((item) => item.externalMappings?.some((mapping) => mapping.externalId === occupationUri));
+    expect(concept?.terms.some((term) => term.value === "Ancien synonyme")).toBe(false);
+    expect(concept?.terms.some((term) => term.value === "Nouveau synonyme")).toBe(true);
+    expect(concept?.lifecycle.version).toBe(2);
+  });
+
   it("does not create duplicate language terms when the same ESCO pack is imported twice", () => {
     const first = importESCOBundle(createUniversalKnowledgeRegistry(), {
       datasetVersion: "v1.2.1",
