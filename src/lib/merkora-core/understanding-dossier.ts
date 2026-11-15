@@ -26,7 +26,7 @@ const CURRENT_ACTIVITY = /aujourd'hui|actuellement|pour le moment|en ce moment|j
 const RESOURCE = /relevé|releve|notes scolaires|bulletin|document|dossier|fichier|photo|image|donnée|donnee|information|formulaire|justificatif|stock|produit|paiement|commande/i;
 const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outil digital|service de réservation|jeu interactif|système|système|interface|agent|agence|quiz|consultation/i;
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
-const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
+const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|enregistre|enregistrement|suivre|suit|gère|gere|organise|organiser|test(?:s|er)?|questionnaire|devinette|classement|résultat/i;
 const CONSTRAINT = /sans connexion|sans compte|sans se connecter|hors ligne|offline|uniquement|seulement|obligatoire|facultatif|gratuit|budget|fcfa|délai|téléphone|ordinateur/i;
 
 function visitorMessages(messages: ConversationMessage[]) {
