@@ -106,6 +106,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
   if (!dimensions.has("audience")) missingDimensions.push("audience");
   if (!dimensions.has("goal")) missingDimensions.push("goal");
   if (!dimensions.has("preference")) missingDimensions.push("preference");
+  if (dimensions.has("preference") && !dimensions.has("feature")) missingDimensions.push("feature");
   if (sensitiveDataMentioned && !privacyAnswerPresent) missingDimensions.push("risk");
 
   const prompts: Partial<Record<NeedDimension, string>> = {
@@ -113,6 +114,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
     audience: "Qui utilisera ce projet ou en bénéficiera principalement ?",
     goal: "Quel résultat concret souhaites-tu obtenir ?",
     preference: "Quelle solution ou expérience imagines-tu ?",
+    feature: "Comment cette solution devrait-elle fonctionner concrètement, étape par étape ?",
     context: "Dans quel environnement le projet sera-t-il utilisé ?",
     constraint: "Y a-t-il une limite importante à respecter dès le départ ?",
     risk: "Qui pourra consulter les relevés et les résultats des élèves ?",
