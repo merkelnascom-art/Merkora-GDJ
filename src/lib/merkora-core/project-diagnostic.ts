@@ -1,5 +1,6 @@
 import type { UnderstandingSession } from "./situation-intake-engine";
 import type { NeedDimension } from "./types";
+import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -201,7 +202,7 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       createdAt: evidence.createdAt,
       ...(evidence.supersedesId ? { supersedesId: evidence.supersedesId } : {}),
     })),
-    situationGraph: session.situationGraph,
+    situationGraph: enrichSituationGraphWithKnowledge(session.situationGraph),
     contradictions: session.contradictions.map((item) => {
       const id = `${item.topic}::${item.statementA}::${item.statementB}`;
       return {
