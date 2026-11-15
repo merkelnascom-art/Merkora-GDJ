@@ -207,6 +207,12 @@ export default function ConversationPage() {
   }
 
   const orbState = session?.stage ?? "idle";
+  const dossierGapLabels: Record<string, string> = {
+    problem: "Besoin ou difficulté", audience: "Public concerné", goal: "Résultat souhaité",
+    preference: "Solution imaginée", feature: "Fonctionnement détaillé", risk: "Données et confidentialité",
+    context: "Cadre d’utilisation", constraint: "Contraintes", actor: "Personnes et rôles",
+  };
+  const currentDossierGap = session?.pendingQuestion?.dimension ?? session?.dossier.missingDimensions.find((dimension) => !session.deferredDimensions.includes(dimension));
   const statusText = orbActivity === "receiving"
     ? "Je reçois ton message"
     : orbActivity === "analyzing"
@@ -330,12 +336,11 @@ export default function ConversationPage() {
                 ) : (
                   <p className="mk-dossier-empty">Je conserve ton récit complet. Je cherche encore les premiers éléments suffisamment explicites pour les classer.</p>
                 )}
-                {session.dossier.openQuestions.length > 0 && (
-                  <div className="mk-dossier-open">
-                    <strong>À éclaircir uniquement si cela devient utile</strong>
-                    <ul>{session.dossier.openQuestions.map((question) => <li key={question}>{question}</li>)}</ul>
-                  </div>
-                )}
+                <div className="mk-dossier-open">
+                  <strong>{currentDossierGap ? "Prochain élément à éclaircir" : "État du dossier"}</strong>
+                  <p>{currentDossierGap ? dossierGapLabels[currentDossierGap] ?? "Un point à préciser" : "Aucun élément essentiel en attente dans cette première analyse."}</p>
+                  {session.dossier.openQuestions.length > 1 && <small>Les autres points seront examinés un par un, seulement s'ils sont utiles.</small>}
+                </div>
               </section>
 
               {session.stage === "clarification" && session.pendingQuestion && (
