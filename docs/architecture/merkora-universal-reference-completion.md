@@ -41,7 +41,7 @@ Le raccordement écran 03 interroge l'API ESCO à la demande dans une langue cho
 - version de dataset et horodatage ;
 - correspondance MerKora explicite, lorsqu'elle a été validée.
 
-Les paquets de langues successifs portant la même URI sont fusionnés dans le même concept canonique. Une nouvelle langue ou une correction réellement différente crée une nouvelle version et archive le snapshot précédent. Réimporter un paquet identique de la même version est idempotent.
+Le parseur `parseESCOCsvLanguageFiles` accepte les exports CSV ESCO multilingues, les groupes de professions/compétences, les fichiers de relations hiérarchiques et les relations profession-compétence. Les paquets de langues successifs portant la même URI sont fusionnés dans le même concept canonique. Une nouvelle langue ou une correction réellement différente crée une nouvelle version et archive le snapshot précédent. Réimporter un paquet identique de la même version est idempotent. Les relations ont des identifiants stables et leur évolution crée également une version avec snapshot historique.
 
 Les domaines MerKora ne sont pas attribués automatiquement aux professions ESCO. `domainMappings` exige une correspondance explicite vers un domaine existant ; l'absence de correspondance laisse la profession non classée localement.
 
