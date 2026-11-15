@@ -100,20 +100,21 @@ function repairQuestion(session: UnderstandingSession): QuestionCandidate {
   const dossier = buildUnderstandingDossier(session.messages);
   const extracted = dossier.facets.map((item) => "• " + item.title + " : " + item.content);
   const captured = extracted.length
-    ? extracted.join("\\n")
-    : dossier.rawVisitorMessages.join("\\n");
+    ? extracted.join("\n")
+    : dossier.rawVisitorMessages.join("\n");
   return {
     id: "repair-understanding-v1", dimension: "unknown",
     prompt: [
       "Tu as raison : j'aurais dû exploiter l'ensemble de ce que tu m'as déjà expliqué avant de te poser une autre question.",
       "Je reprends ton dossier à partir de tes messages, sans te demander de répéter les informations déjà données :",
       captured,
-      "Qu'est-ce que j'ai mal compris ou quel élément important ai-je oublié ? Tu peux corriger uniquement ce point.",
-    ].join("\\n\\n"),
+      "Qu'est-ce que j'ai mal compris ou quel élément important ai-je oublié ? Tu peux corriger uniquement ce point, ou m'expliquer ce que j'ai mal interprété.",
+    ].join("\n\n"),
     rationale: "Reconstruire la compréhension à partir de l'ensemble des messages avant de poursuivre.",
     impact: 1, uncertainty: 1, decisionRelevance: 1, answerability: 0.9,
   };
 }
+
 const CONTEXT_PATTERN = /\b(?:centre de formation|centre de santé|centre de sante|entreprise|boutique|magasin|école|ecole|association|atelier|agence|restaurant|hôpital|hopital|famille|foyer)\b/gi;
 const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "enseignants", pattern: /enseignant(?:e)?s?/i },
