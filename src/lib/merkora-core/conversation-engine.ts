@@ -395,7 +395,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  const coreDimensions = new Set(dossier.facets.map((item) => item.dimension));
+  const coreDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
   const hasCompleteOpeningBrief = ["problem", "audience", "goal", "preference", "feature"].every((dimension) => coreDimensions.has(dimension));
   if (updatedSession.askedQuestionIds.length === 0 && hasCompleteOpeningBrief) {
     const summary = buildSummary(updatedSession);
@@ -423,7 +423,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     ...updatedSession.evidence.map((item) => item.dimension),
     ...dossier.facets.map((item) => item.dimension),
   ])];
-  const dossierDimensions = new Set(dossier.facets.map((item) => item.dimension));
+  const dossierDimensions = new Set<NeedDimension>(dossier.facets.map((item) => item.dimension));
   const hasRichDescription = ["problem", "audience", "goal", "preference", "feature"].every((dimension) => dossierDimensions.has(dimension));
   const plan = selectNextQuestion({
     candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
