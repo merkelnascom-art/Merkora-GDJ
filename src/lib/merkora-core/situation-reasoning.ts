@@ -112,12 +112,12 @@ function detectContradictions(messages: ConversationMessage[]): ReasoningContrad
   return result;
 }
 
-const ANTECEDENT = /\b(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+(plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|medecin|médecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription)\b/gi;
+const ANTECEDENT = /\b(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+(plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|medecin|médecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription)s?\b/gi;
 const REFERENCE = /\b(elle|il|elles|ils|ceux-ci|celles-ci|ce dernier|cette dernière|cette plateforme|cette application|ce site|ce logiciel|ce système|ce systeme|cette solution|cet outil|ce projet|ce service|cet événement|ce rendez-vous|ce document|ce dossier)\b/gi;
 
 function resolveReferences(messages: ConversationMessage[]): ResolvedReference[] {
   const visitorMessages = messages.filter((message) => message.role === "visitor");
-  const known: Array<{ label: string; gender: "f" | "m" | "any"; messageId: string; primary: boolean }> = [];
+  const known: Array<{ label: string; gender: "f" | "m" | "any"; messageId: string; primary: boolean; plural: boolean }> = [];
   const results: ResolvedReference[] = [];
 
   for (const message of visitorMessages) {
@@ -142,15 +142,17 @@ function resolveReferences(messages: ConversationMessage[]): ResolvedReference[]
         const masculine = ["site", "logiciel", "système", "systeme", "outil", "projet", "service", "directeur", "médecin", "medecin", "enseignant", "formateur", "agent", "responsable"].includes(noun);
         const gender = feminine ? "f" : masculine ? "m" : "any";
         const label = tokenItem.match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
-        known.push({ label, gender, messageId: message.id, primary: antecedentIndex === 0 });
+        const plural = /^(?:les|des|ces)\\b/i.test(tokenItem.match[0]) || /s$/i.test(tokenItem.match[0]);
+        known.push({ label, gender, messageId: message.id, primary: antecedentIndex === 0, plural });
         antecedentIndex += 1;
         continue;
       }
 
       const mention = tokenItem.match[0];
       const isFeminine = /^(?:elle|elles|cette|celles)/i.test(mention);
+      const isPlural = /^(?:elles|ils|ceux-ci|celles-ci)/i.test(mention);
       const expectedGender = isFeminine ? "f" : "m";
-      const candidates = known.filter((item) => item.gender === expectedGender || item.gender === "any");
+      const candidates = known.filter((item) => item.plural === isPlural && (item.gender === expectedGender || item.gender === "any"));
       const explicitNoun = mention.match(/plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|médecin|medecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription/i)?.[0];
       const nounCandidates = explicitNoun
         ? candidates.filter((item) => item.label.toLocaleLowerCase("fr") === explicitNoun.toLocaleLowerCase("fr"))
