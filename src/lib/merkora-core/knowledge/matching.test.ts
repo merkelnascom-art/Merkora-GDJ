@@ -109,4 +109,20 @@ describe("knowledge concept matching", () => {
     expect(matchKnowledgeConcept("Terme expérimental", notValidated, { includeNonValidated: true }).status).toBe("matched");
   });
 
+  it("does not expose a local concept outside its declared geographic or project scope", () => {
+    const localRegistry = createKnowledgeRegistry([
+      concept({
+        id: "local:practice",
+        canonicalKey: "local.practice",
+        conceptType: "practice",
+        definitions: [{ language: "fr", label: "Pratique locale", definition: "Connaissance limitée au Bénin." }],
+        terms: [{ value: "pratique locale", language: "fr", kind: "preferred" }],
+        scope: { global: false, countries: ["BJ"] },
+      }),
+    ]);
+
+    expect(matchKnowledgeConcept("Pratique locale", localRegistry).status).toBe("unmatched");
+    expect(matchKnowledgeConcept("Pratique locale", localRegistry, { country: "BJ" }).status).toBe("matched");
+  });
+
 });
