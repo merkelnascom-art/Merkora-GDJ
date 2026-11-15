@@ -9,12 +9,14 @@ import type {
   ValidationDecision,
 } from "./types";
 
+export type IntentKind = "organize_event" | "reservation" | "invitation" | "request" | "create_project" | "invention" | "improve" | "solve" | "explore" | "unknown";
 export type UnderstandingStage = "clarification" | "summary_validation" | "complete";
 
 export interface UnderstandingSession {
   id: string;
   conversationId: string;
   originalDescription: string;
+  intentKind: IntentKind;
   messages: ConversationMessage[];
   evidence: NeedEvidence[];
   validations: ValidationDecision[];
@@ -39,6 +41,52 @@ const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|système|syst
 const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
 const PRIVACY_PATTERN = /accord|consentement|informé(?:e)?s?|autorisé(?:e)?s?|confidentiel|privé|personne d'autre|seulement moi|uniquement moi/i;
 const CAUSE_PATTERN = /(?:parce que|car|à cause de|puisque|en raison de|du fait que)[^.!?\n]*/i;
+
+const REPAIR_PATTERN = /tu ne me suis pas|tu ne me comprends pas|est[- ]ce que tu me comprends|tu n'as pas compris|tu ne comprends pas|tu m'écoutes pas|tu ne m'écoutes pas|tu es à côté|tu pars à côté|ce n'est pas ce que je veux dire/i;
+
+function classifyIntent(raw: string): IntentKind {
+  const text = raw.toLocaleLowerCase("fr");
+  if (/réserv|reserver|réserver|prendre un rendez-vous|booking/i.test(text)) return "reservation";
+  if (/inviter|invitation|convier|faire-part/i.test(text)) return "invitation";
+  if (/organiser|organisation/i.test(text) && /anniversaire|fête|pool party|soirée|mariage|cérémonie|conférence|événement|rencontre/i.test(text)) return "organize_event";
+  if (/demande|solliciter|réclamer|requête/i.test(text)) return "request";
+  if (/créer|creation|création|ouvrir|lancer|fonder|mettre en place|construire/i.test(text)) return "create_project";
+  if (/inventer|invention|imaginer|nouvelle idée/i.test(text)) return "invention";
+  if (/améliorer|optimiser|moderniser|développer/i.test(text)) return "improve";
+  if (PROBLEM_PATTERN.test(text) || /résoudre|régler ce problème/i.test(text)) return "solve";
+  if (/idée|j'imagine|je rêve|explorer|réfléchir/i.test(text)) return "explore";
+  return "unknown";
+}
+
+function intentFirstQuestion(session: UnderstandingSession): QuestionCandidate {
+  const prompts: Record<IntentKind, { dimension: NeedDimension; id: string; prompt: string }> = {
+    organize_event: { dimension: "context", id: "event-date-v1", prompt: "As-tu déjà une date ou une période prévue pour cet événement ?" },
+    reservation: /samedi|dimanche|demain|aujourd'hui|lundi|mardi|mercredi|jeudi|vendredi|\d{1,2}[/-]\d{1,2}/i.test(session.originalDescription)
+      ? { dimension: "actor", id: "reservation-party-v1", prompt: "Pour combien de personnes ou de bénéficiaires souhaites-tu faire cette réservation ?" }
+      : { dimension: "context", id: "reservation-when-v1", prompt: "Qu'est-ce que tu souhaites réserver, et pour quelle date ou période ?" },
+    invitation: { dimension: "context", id: "invitation-occasion-v1", prompt: "À quelle occasion et à quelle date souhaites-tu envoyer cette invitation ?" },
+    request: { dimension: "actor", id: "request-recipient-v1", prompt: "À qui cette demande s'adresse-t-elle ?" },
+    create_project: { dimension: "goal", id: "create-purpose-v1", prompt: "Qu'aimerais-tu créer exactement, à qui cela doit-il servir et dans quel but ?" },
+    invention: { dimension: "goal", id: "invention-purpose-v1", prompt: "Quelle est ton idée, même incomplète, et qu'aimerais-tu qu'elle rende possible ?" },
+    improve: { dimension: "problem", id: "improve-priority-v1", prompt: "Quel aspect souhaites-tu améliorer en priorité, et quel changement aimerais-tu obtenir ?" },
+    solve: { dimension: "problem", id: "solve-priority-v1", prompt: "Qu'est-ce qui se passe exactement, et quel effet cela a-t-il pour toi ?" },
+    explore: { dimension: "goal", id: "explore-purpose-v1", prompt: "Raconte-moi ce que tu imagines, même si ton idée n'est pas encore bien formulée." },
+    unknown: { dimension: "goal", id: "open-purpose-v1", prompt: "Qu'aimerais-tu faire concrètement ? Tu peux me l'expliquer librement, même si ton idée est encore floue." },
+  };
+  const item = prompts[session.intentKind];
+  return { ...item, rationale: "Première question adaptée à l'intention exprimée.", impact: 1, uncertainty: 0.95, decisionRelevance: 1, answerability: 0.9 };
+}
+
+function repairQuestion(session: UnderstandingSession): QuestionCandidate {
+  const prior = session.messages.filter((item) => item.role === "visitor").map((item) => item.content).slice(-3).join(" — ");
+  const excerpt = prior.length > 240 ? prior.slice(0, 237) + "…" : prior;
+  return {
+    id: "repair-understanding-v1", dimension: "unknown",
+    prompt: `Tu as raison, je suis parti dans une mauvaise direction. Je reprends à partir de tes propres mots : « ${excerpt} ». Qu'est-ce que tu veux que je comprenne précisément, ou que dois-je corriger ?`,
+    rationale: "Réparer un décalage conversationnel avant de poursuivre.",
+    impact: 1, uncertainty: 1, decisionRelevance: 1, answerability: 0.9,
+  };
+}
 const CONTEXT_PATTERN = /\b(?:centre de formation|centre de santé|centre de sante|entreprise|boutique|magasin|école|ecole|association|atelier|agence|restaurant|hôpital|hopital|famille|foyer)\b/gi;
 const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "enseignants", pattern: /enseignant(?:e)?s?/i },
@@ -130,6 +178,35 @@ const PROJECT_SCOPE_CHOICE_QUESTION: QuestionCandidate = {
   id: "clarify-project-scope-choice-v1",
   prompt: "Pour éviter un malentendu, précise simplement : un seul projet commun, ou plusieurs projets distincts ?",
 };
+const INTENT_QUESTION_CATALOG: Partial<Record<IntentKind, QuestionCandidate[]>> = {
+  organize_event: [
+    { id: "event-guests-v1", dimension: "actor", prompt: "Qui souhaites-tu inviter, et combien de personnes aimerais-tu accueillir environ ?", rationale: "Comprendre le public et l'échelle.", impact: 0.95, uncertainty: 0.9, decisionRelevance: 0.95, answerability: 0.9 },
+    { id: "event-capacity-v1", dimension: "constraint", prompt: "Y a-t-il une capacité maximale, des règles d'accès ou des limites à respecter ?", rationale: "Identifier les contraintes pratiques.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.85 },
+    { id: "event-experience-v1", dimension: "goal", prompt: "Qu'aimerais-tu que les invités puissent vivre ou faire pendant cet événement ?", rationale: "Définir l'expérience attendue.", impact: 0.85, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
+  ],
+  reservation: [
+    { id: "reservation-details-v1", dimension: "constraint", prompt: "Y a-t-il des préférences, besoins particuliers ou conditions à respecter pour cette réservation ?", rationale: "Identifier les conditions importantes.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.85 },
+  ],
+  invitation: [
+    { id: "invitation-guests-v1", dimension: "actor", prompt: "Qui souhaites-tu inviter ?", rationale: "Identifier les destinataires.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.9 },
+    { id: "invitation-response-v1", dimension: "goal", prompt: "Comment les invités devront-ils répondre : confirmer, décliner, choisir une option ou réserver une place ?", rationale: "Comprendre l'action attendue.", impact: 0.95, uncertainty: 0.85, decisionRelevance: 0.95, answerability: 0.9 },
+  ],
+  request: [
+    { id: "request-outcome-v1", dimension: "goal", prompt: "Qu'aimerais-tu obtenir concrètement à la suite de cette demande ?", rationale: "Définir le résultat attendu.", impact: 1, uncertainty: 0.9, decisionRelevance: 1, answerability: 0.9 },
+  ],
+  create_project: [
+    { id: "create-beneficiaries-v1", dimension: "actor", prompt: "Qui utilisera, fera vivre ou bénéficiera de ce projet ?", rationale: "Identifier les personnes et rôles.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.9 },
+    { id: "create-context-v1", dimension: "context", prompt: "Dans quel lieu, secteur ou environnement souhaites-tu développer ce projet ?", rationale: "Situer le projet sans l'enfermer.", impact: 0.8, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
+    { id: "create-limits-v1", dimension: "constraint", prompt: "Quelles ressources, limites ou échéances faut-il prendre en compte ?", rationale: "Faire émerger les contraintes.", impact: 0.8, uncertainty: 0.75, decisionRelevance: 0.85, answerability: 0.85 },
+  ],
+  invention: [
+    { id: "invention-users-v1", dimension: "actor", prompt: "À qui cette invention pourrait-elle servir ou quelle situation pourrait-elle transformer ?", rationale: "Identifier les bénéficiaires possibles.", impact: 0.85, uncertainty: 0.85, decisionRelevance: 0.85, answerability: 0.85 },
+  ],
+  explore: [
+    { id: "explore-context-v1", dimension: "context", prompt: "Qu'est-ce qui t'a donné envie d'explorer cette idée maintenant ?", rationale: "Comprendre le déclencheur sans présumer d'un problème.", impact: 0.8, uncertainty: 0.85, decisionRelevance: 0.8, answerability: 0.9 },
+  ],
+};
+
 const PRIVACY_QUESTION: QuestionCandidate = {
   id: "clarify-privacy-and-consent-v1",
   dimension: "risk",
@@ -294,9 +371,15 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
+  if (updatedSession.askedQuestionIds.length === 0) {
+    const question = intentFirstQuestion(updatedSession);
+    const next = { ...updatedSession, pendingQuestion: question, askedQuestionIds: [question.id], stage: "clarification" as const, version: updatedSession.version + 1 };
+    return { ...next, messages: [...next.messages, message(next.conversationId, "merkora", question.prompt)] };
+  }
+
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
   const plan = selectNextQuestion({
-    candidates: QUESTION_CATALOG,
+    candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
     answeredDimensions,
     deferredDimensions: updatedSession.deferredDimensions,
     askedQuestionIds: updatedSession.askedQuestionIds,
@@ -352,6 +435,7 @@ export function beginUnderstanding(rawIntent: string): UnderstandingSession {
     id,
     conversationId,
     originalDescription,
+    intentKind: classifyIntent(originalDescription),
     messages: [firstMessage],
     evidence,
     validations: [],
@@ -386,6 +470,19 @@ export function answerUnderstanding(session: UnderstandingSession, answer: strin
       ],
       pendingQuestion: PROJECT_SCOPE_CHOICE_QUESTION,
       askedQuestionIds: [...session.askedQuestionIds, PROJECT_SCOPE_CHOICE_QUESTION.id],
+      version: session.version + 1,
+    };
+  }
+
+  if (REPAIR_PATTERN.test(clean)) {
+    const visitorMessage = message(session.conversationId, "visitor", clean);
+    const question = repairQuestion(session);
+    return {
+      ...session,
+      messages: [...session.messages, visitorMessage, message(session.conversationId, "merkora", question.prompt)],
+      pendingQuestion: question,
+      askedQuestionIds: [...session.askedQuestionIds, question.id],
+      stage: "clarification",
       version: session.version + 1,
     };
   }
