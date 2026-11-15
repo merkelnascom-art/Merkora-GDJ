@@ -19,6 +19,9 @@ describe("whole-message situation intake", () => {
     expect(session.evidence.some((item) => item.dimension === "problem")).toBe(true);
     expect(session.evidence.some((item) => item.dimension === "goal")).toBe(true);
     expect(session.evidence.some((item) => item.dimension === "feature")).toBe(true);
+    expect(session.evidence.filter((item) => item.dimension === "feature").length).toBeGreaterThan(1);
+    expect(session.evidence.some((item) => item.dimension === "resource" && /relevés/i.test(item.value))).toBe(true);
+    expect(session.evidence.every((item) => item.sourceMessageId && item.sourceQuote)).toBe(true);
   });
 
   it("does not classify a bare idea-to-develop as a request to improve something", () => {
@@ -32,5 +35,15 @@ describe("whole-message situation intake", () => {
     const response = answerUnderstanding(first, "Avec tout ce que j'ai dit, tu n'as pas encore compris tout ça.");
     expect(response.messages.at(-1)?.content).toMatch(/reprends ton récit complet|reprends l'ensemble/i);
     expect(response.evidence.some((item) => item.dimension === "problem" && /tu n'as pas encore compris/i.test(item.value))).toBe(false);
+  });
+
+  it("retains multiple actors, workflow details and constraints from one booking narrative", () => {
+    const session = beginUnderstanding(
+      "Je veux une plateforme de réservation pour une clinique. Les patients choisissent un créneau et envoient une demande. Le secrétariat vérifie les disponibilités puis confirme le rendez-vous. Il ne faut pas demander de paiement en ligne."
+    );
+    expect(session.evidence.some((item) => item.dimension === "audience" && /patients/i.test(item.value))).toBe(true);
+    expect(session.evidence.some((item) => item.dimension === "actor" && /secrétariat/i.test(item.value))).toBe(true);
+    expect(session.evidence.filter((item) => item.dimension === "feature").length).toBeGreaterThan(1);
+    expect(session.evidence.some((item) => item.dimension === "constraint" && /pas.*paiement en ligne/i.test(item.value))).toBe(true);
   });
 });
