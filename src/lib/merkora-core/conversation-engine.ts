@@ -97,7 +97,7 @@ const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "apprenants", pattern: /élèves?|étudiants?|apprenants?|stagiaires?/i },
   { label: "clients", pattern: /client(?:e)?s?|acheteurs?/i },
   { label: "patients", pattern: /patients?/i },
-  { label: "visiteurs", pattern: /visiteurs?|invités?/i },
+  { label: "participants et invités", pattern: /visiteurs?|invités?|inviter|participants?|convives|personnes/i },
   { label: "famille", pattern: /famille|parents|enfants|proches/i },
   { label: "amis", pattern: /amis|amies/i },
   { label: "équipe", pattern: /équipe|equipe|membres/i },
