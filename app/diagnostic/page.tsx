@@ -156,7 +156,13 @@ export default function DiagnosticPage() {
   }
 
   function skipQuestion() {
-    if (!diagnostic || !currentQuestion || editingAnswer) { setEditingAnswer(null); resetAnswerFields(); return; }
+    if (!diagnostic || !currentQuestion) return;
+    if (editingAnswer) {
+      clearDraft();
+      setEditingAnswer(null);
+      resetAnswerFields();
+      return;
+    }
     const next = deferDiagnosticQuestion(diagnostic, currentQuestion);
     clearDraft();
     setDiagnostic(next);
