@@ -369,7 +369,7 @@ export default function ConversationPage() {
                 {session.stage==="clarification"&&session.pendingQuestion&&<p style={{marginBottom:0,fontSize:".85rem",color:"#d9bd83"}}>Prochaine précision utile : {session.pendingQuestion.rationale}</p>}
               </section>
               <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
-                {(pendingMessage ? session.messages.slice(0, -2) : session.messages).map((item) => (
+                {(pendingMessage && session.messages.some((item) => item.role === "visitor" && item.content === pendingMessage) ? session.messages.slice(0, -2) : session.messages).map((item) => (
                   <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
                     <span>{item.role === "visitor" ? "TOI" : "MERKORA"}</span>
                     <p>{item.content}</p>
