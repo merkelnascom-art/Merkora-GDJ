@@ -119,8 +119,11 @@ export function importESCOBundle(
     if (!record.uri.trim() || Object.keys(record.preferredLabels).length === 0) continue;
     const id = stableId(record.type, record.uri);
     const domainId = bundle.domainMappings?.[record.uri];
-    if (domainId && !registry.concepts.some((concept) => concept.id === domainId)) {
-      throw new Error(`ESCO domain mapping references an unknown MerKora domain: ${domainId}`);
+    if (domainId) {
+      const mappedDomain = registry.concepts.find((concept) => concept.id === domainId);
+      if (record.type !== "occupation" || mappedDomain?.conceptType !== "domain") {
+        throw new Error(`ESCO domain mapping must reference a MerKora domain concept: ${domainId}`);
+      }
     }
     if (existingUris.has(record.uri)) {
       const current = registry.concepts.find((concept) =>
@@ -134,8 +137,11 @@ export function importESCOBundle(
       }
 
       const labels = Object.entries(record.preferredLabels).filter(([, value]) => value.trim());
+      const importedLanguages = new Set(labels.map(([language]) => language));
       const definitions = [...current.definitions];
-      const terms = [...current.terms];
+      const terms = current.terms.filter((term) =>
+        !importedLanguages.has(term.language) || (term.kind !== "preferred" && term.kind !== "synonym"),
+      );
       for (const [language, value] of labels) {
         const index = definitions.findIndex((item) => item.language === language);
         const definition = {
@@ -146,15 +152,10 @@ export function importESCOBundle(
         if (index >= 0) definitions[index] = definition;
         else definitions.push(definition);
 
-        const preferredIndex = terms.findIndex((term) => term.language === language && term.kind === "preferred");
-        const preferred = { value, language, kind: "preferred" as const };
-        if (preferredIndex >= 0) terms[preferredIndex] = preferred;
-        else terms.push(preferred);
-      }
-      for (const [language, values] of Object.entries(record.alternativeLabels ?? {})) {
-        for (const value of values.filter((item) => item.trim())) {
-          if (!terms.some((term) => term.language === language && term.value === value)) {
-            terms.push({ value, language, kind: "synonym" });
+        terms.push({ value, language, kind: "preferred" });
+        for (const synonym of (record.alternativeLabels?.[language] ?? []).filter((item) => item.trim())) {
+          if (!terms.some((term) => term.language === language && term.value === synonym)) {
+            terms.push({ value: synonym, language, kind: "synonym" });
           }
         }
       }
@@ -260,7 +261,7 @@ export function importESCOBundle(
       id: `rel:esco:broader:${encodeURIComponent(record.uri)}`,
       sourceConceptId: sourceId,
       targetConceptId: targetId,
-      predicate: "broader_than",
+      predicate: "narrower_than",
       status: "validated",
       confidence: 1,
       sourceIds: [`source:esco:${bundle.datasetVersion}`],
