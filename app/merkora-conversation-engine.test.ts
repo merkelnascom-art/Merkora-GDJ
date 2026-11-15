@@ -66,6 +66,12 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
   });
 
+  it("records an imagined solution separately and still asks what need it should solve", () => {
+    const session = beginUnderstanding("Je veux créer une plateforme pour gérer les rendez-vous.");
+    expect(session.evidence.some((item) => item.dimension === "preference" && item.status === "user_stated")).toBe(true);
+    expect(session.pendingQuestion?.dimension).toBe("problem");
+  });
+
   it("pauses the ordinary flow when access statements conflict and asks the person to clarify", () => {
     const session = beginUnderstanding(
       "Toute ma famille doit pouvoir consulter les contributions.\\nFinalement, seul moi peux voir les montants.",
