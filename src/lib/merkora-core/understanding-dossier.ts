@@ -28,8 +28,8 @@ const SOLUTION = /application|plateforme|site web|logiciel|outil numérique|outi
 const GOAL = /je veux|je souhaite|j'aimerais|mon objectif|permet(?:tre)?|afin de|pour que|propose(?:r)?|aider à|accompagner/i;
 const EMOTION = /stress|frustr|col[eè]re|énerv|enerv|agac|angoiss|peur|fatigu|décourag|decourag|pression|s'ennuie|ennui|tristesse/i;
 const EXPERIENCE = /se détendre|se detendre|se divertir|s'amuser|s'amus|se défouler|se defouler|évacuer|evacuer|décompresser|decompresser|se relaxer|rire|se changer les idées|oublier les soucis/i;
-const ACTIVITY = /jeu|quiz|concours|tournoi|danse|formation|orientation|consultation|réservation|rendez-vous|agence|service|événement|vente|livraison|réparation|maintenance|voyage|transport|location|assistance|coaching|suivi|gestion|cours|apprentissage|évaluation|test|spectacle|prestation|mission/i;
-const FEATURE = /choisit|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|enregistre|enregistrement|suivre|suit|gère|gere|test(?:s|er)?|questionnaire|devinette|classement|résultat|défi|défis|déroulement|progression/i;
+const ACTIVITY = /jeu|quiz|concours|tournoi|danse|formation|orientation|consultation|réservation|rendez-vous|service|événement|vente|livraison|réparation|maintenance|voyage|transport|location|assistance|coaching|cours|apprentissage|évaluation|test|spectacle|prestation|mission/i;
+const FEATURE = /chois\w*|sélectionne|indique|renseigne|joint|téléverse|analyse|évalue|calcule|compare|synchronise|propose|réserve|confirme|reçoit|répond|partage|consulte|joue|tape|défile|disparaît|réapparaît|enregistre|enregistrement|annul\w*|gère|gere|test(?:s|er)?|questionnaire|devinette|classement|résultat|défi|défis|déroulement|progression/i;
 const CONSTRAINT = /sans connexion|sans compte|sans se connecter|hors ligne|offline|uniquement|seulement|obligatoire|facultatif|gratuit|budget|fcfa|délai|téléphone|ordinateur/i;
 
 function visitorMessages(messages: ConversationMessage[]) {
@@ -82,7 +82,10 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
       if (PROBLEM.test(sentence)) addFacet(facets, "problem", "Problème ou difficulté", sentence, visitor.id);
       if (AUDIENCE.test(sentence)) addFacet(facets, "audience", "Public concerné", sentence, visitor.id);
       if (ACTOR_ROLE.test(sentence)) addFacet(facets, "actor", "Personnes, rôles et systèmes", sentence, visitor.id);
-      if (ACTIVITY.test(sentence)) addFacet(facets, "activity", "Activité ou service concerné", sentence, visitor.id);
+      const describesASettingRatherThanAnActivity = /centre de formation|centre de santé|centre de sante|établissement scolaire|établissement de santé/i.test(sentence);
+      if (ACTIVITY.test(sentence) && !describesASettingRatherThanAnActivity) {
+        addFacet(facets, "activity", "Activité ou service concerné", sentence, visitor.id);
+      }
       if (CURRENT_ACTIVITY.test(sentence)) addFacet(facets, "activity", "Fonctionnement actuel", sentence, visitor.id);
       if (EMOTION.test(sentence)) addFacet(facets, "emotion", "Émotions ou ressenti exprimé", sentence, visitor.id);
       if (EXPERIENCE.test(sentence)) addFacet(facets, "experience", "Expérience recherchée", sentence, visitor.id);
