@@ -30,7 +30,10 @@ begin
   on conflict (user_id) do nothing;
   return new;
 end;
-$$;
+$;
+
+-- The trigger invokes this function; application roles must not call it directly.
+revoke all on function public.handle_new_merkora_user() from public, anon, authenticated;
 
 drop trigger if exists on_auth_user_created_merkora on auth.users;
 create trigger on_auth_user_created_merkora
