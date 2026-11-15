@@ -47,12 +47,27 @@ export interface ProjectUnderstandingItem {
   supersedesId?: string;
 }
 
+export interface ProjectContradiction {
+  id: string;
+  topic: string;
+  statementA: string;
+  statementB: string;
+  question: string;
+  confirmationRequired: boolean;
+  status: "apparent" | "resolved" | "deferred";
+  answerId?: string;
+}
+
 export interface ProjectUnderstanding {
   id: string;
   projectId: string;
   version: number;
   originalDescription: string;
   items: ProjectUnderstandingItem[];
+  situationGraph: UnderstandingSession["situationGraph"];
+  contradictions: ProjectContradiction[];
+  unresolvedQuestions: string[];
+  privacyConsiderations: string[];
   activityVocabulary: "open";
   validationStatus: "in_progress" | "validated";
   sourceSessionVersion: number;
@@ -70,6 +85,7 @@ export interface DiagnosticQuestion {
   answerType: DiagnosticAnswerType;
   options?: string[];
   allowDetail: boolean;
+  resolvesContradictionId?: string;
 }
 
 export interface DiagnosticAnswer {
@@ -185,6 +201,24 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       createdAt: evidence.createdAt,
       ...(evidence.supersedesId ? { supersedesId: evidence.supersedesId } : {}),
     })),
+    situationGraph: session.situationGraph,
+    contradictions: session.contradictions.map((item) => {
+      const id = `${item.topic}::${item.statementA}::${item.statementB}`;
+      return {
+        id,
+        topic: item.topic,
+        statementA: item.statementA,
+        statementB: item.statementB,
+        question: item.question,
+        confirmationRequired: item.confirmationRequired,
+        status: session.resolvedContradictionKeys.includes(id) ? "resolved" : session.deferredContradictionKeys.includes(id) ? "deferred" : "apparent",
+      };
+    }),
+    unresolvedQuestions: [
+      ...(session.pendingQuestion ? [session.pendingQuestion.prompt] : []),
+      ...(session.reasoning?.references.filter((reference) => !reference.resolved).map((reference) => `Préciser la référence « ${reference.mention} ».`) ?? []),
+    ],
+    privacyConsiderations: [...session.privacyConsiderations],
     activityVocabulary: "open",
     validationStatus: "in_progress",
     sourceSessionVersion: session.version,
@@ -331,6 +365,23 @@ export function getNextDiagnosticQuestion(
   const regulatorySignals = /\\b(réglement\\w*|juridiction\\w*|loi\\w*|norme\\w*|autorisation\\w*|licence\\w*|données personnelles|confidentialité|fiscal\\w*|douane\\w*|conformité|certification)\\b/i.test(activeText);
   const multilingualSignals = /\\b(multilingue|plusieurs langues|traduction|langues? différentes)\\b/i.test(activeText);
 
+  const unresolvedContradiction = dossier.contradictions.find((item) => {
+    const questionId = `resolve-contradiction-${item.id}`;
+    return item.status !== "resolved" && !wasHandled(session, questionId);
+  });
+  if (unresolvedContradiction) {
+    const clarification = question(
+      `resolve-contradiction-${unresolvedContradiction.id}`,
+      "constraints",
+      unresolvedContradiction.question,
+      `Deux indications semblent incompatibles au sujet de « ${unresolvedContradiction.topic} ». Précise le contexte ou la règle correcte ; MerKora ne choisira pas à ta place.`,
+      "single_choice",
+      ["La première indication est correcte", "La deuxième indication est correcte", "Les deux s'appliquent dans des contextes différents", "Aucune des deux n'est exacte", "Je ne sais pas encore"],
+    );
+    clarification.resolvesContradictionId = unresolvedContradiction.id;
+    return clarification;
+  }
+
   const candidates: DiagnosticQuestion[] = [
     question(
       "activity-context",
@@ -461,6 +512,7 @@ export function recordDiagnosticAnswer(
     createdAt: now(),
     version: session.version + 1,
     question: currentQuestion,
+    ...(getActiveDiagnosticAnswers(session).find((previous) => previous.questionId === currentQuestion.id) ? { supersedesId: getActiveDiagnosticAnswers(session).find((previous) => previous.questionId === currentQuestion.id)?.id } : {}),
   };
   const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
@@ -474,20 +526,29 @@ export function recordDiagnosticAnswer(
     sourceReferenceId: answer.id,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
+    ...(answer.supersedesId ? { supersedesId: answer.supersedesId } : {}),
   };
+  const isUnknown = answerStatus === "unknown";
+  const contradictions = currentQuestion.resolvesContradictionId
+    ? dossier.contradictions.map((item) => item.id === currentQuestion.resolvesContradictionId
+      ? { ...item, status: isUnknown ? "deferred" as const : "resolved" as const, answerId: answer.id }
+      : item)
+    : dossier.contradictions;
 
   return {
     understanding: {
       ...dossier,
       version: dossier.version + 1,
       items: [...dossier.items, evidence],
+      contradictions,
       updatedAt: now(),
     },
     diagnostic: {
       ...session,
       version: session.version + 1,
       answers: [...session.answers, answer],
-      askedQuestionIds: [...session.askedQuestionIds, currentQuestion.id],
+      askedQuestionIds: isUnknown ? session.askedQuestionIds : [...session.askedQuestionIds, currentQuestion.id],
+      deferredQuestionIds: isUnknown ? [...new Set([...session.deferredQuestionIds, currentQuestion.id])] : session.deferredQuestionIds,
       updatedAt: now(),
     },
   };
@@ -539,10 +600,21 @@ export function reviseDiagnosticAnswer(
     createdAt: answer.createdAt,
     supersedesId: original.id,
   };
+  const contradictions = original.question.resolvesContradictionId
+    ? dossier.contradictions.map((item) => item.id === original.question.resolvesContradictionId
+      ? { ...item, status: answerStatus === "unknown" ? "deferred" as const : "resolved" as const, answerId: answer.id }
+      : item)
+    : dossier.contradictions;
+  const nextAsked = answerStatus === "unknown"
+    ? session.askedQuestionIds.filter((id) => id !== original.questionId)
+    : [...new Set([...session.askedQuestionIds, original.questionId])];
+  const nextDeferred = answerStatus === "unknown"
+    ? [...new Set([...session.deferredQuestionIds, original.questionId])]
+    : session.deferredQuestionIds.filter((id) => id !== original.questionId);
 
   return {
-    understanding: { ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], updatedAt: now() },
-    diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], updatedAt: now() },
+    understanding: { ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], contradictions, updatedAt: now() },
+    diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], askedQuestionIds: nextAsked, deferredQuestionIds: nextDeferred, updatedAt: now() },
   };
 }
 
