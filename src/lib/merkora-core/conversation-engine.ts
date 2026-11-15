@@ -37,6 +37,7 @@ const now = () => new Date().toISOString();
 
 const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|système|systeme|outil numérique|outil digital|robot|automatiser|automatisation/i;
 const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
+const PRIVACY_PATTERN = /accord|consentement|informé(?:e)?s?|autorisé(?:e)?s?|confidentiel|privé|personne d'autre|seulement moi|uniquement moi/i;
 const CAUSE_PATTERN = /(?:parce que|car|à cause de|puisque|en raison de|du fait que)[^.!?\n]*/i;
 const CONTEXT_PATTERN = /\b(?:centre de formation|centre de santé|centre de sante|entreprise|boutique|magasin|école|ecole|association|atelier|agence|restaurant|hôpital|hopital|famille|foyer)\b/gi;
 const ACTOR_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
@@ -107,6 +108,8 @@ function extractExplicitEvidence(raw: string, sourceMessageId: string, current: 
   for (const constraint of analysis.constraints) {
     evidence = addEvidence(evidence, "constraint", constraint, sourceMessageId);
   }
+  const privacyStatement = raw.match(PRIVACY_PATTERN)?.[0];
+  if (privacyStatement) evidence = addEvidence(evidence, "risk", privacyStatement, sourceMessageId, privacyStatement);
   const problem = sentenceContaining(raw, PROBLEM_PATTERN);
   if (problem) evidence = addEvidence(evidence, "problem", problem, sourceMessageId, problem);
   const cause = raw.match(CAUSE_PATTERN)?.[0]?.trim();
