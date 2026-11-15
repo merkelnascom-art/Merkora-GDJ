@@ -183,6 +183,7 @@ const PROJECT_SCOPE_CHOICE_QUESTION: QuestionCandidate = {
 };
 const INTENT_QUESTION_CATALOG: Partial<Record<IntentKind, QuestionCandidate[]>> = {
   organize_event: [
+    { id: "event-date-v1", dimension: "context", prompt: "As-tu déjà une date ou une période prévue pour cet événement ?", rationale: "Préciser le calendrier de l'événement.", impact: 1, uncertainty: 0.95, decisionRelevance: 1, answerability: 0.95 },
     { id: "event-guests-v1", dimension: "actor", prompt: "Qui souhaites-tu inviter, et combien de personnes aimerais-tu accueillir environ ?", rationale: "Comprendre le public et l'échelle.", impact: 0.95, uncertainty: 0.9, decisionRelevance: 0.95, answerability: 0.9 },
     { id: "event-capacity-v1", dimension: "constraint", prompt: "Y a-t-il une capacité maximale, des règles d'accès ou des limites à respecter ?", rationale: "Identifier les contraintes pratiques.", impact: 0.9, uncertainty: 0.85, decisionRelevance: 0.9, answerability: 0.85 },
     { id: "event-experience-v1", dimension: "goal", prompt: "Qu'aimerais-tu que les invités puissent vivre ou faire pendant cet événement ?", rationale: "Définir l'expérience attendue.", impact: 0.85, uncertainty: 0.8, decisionRelevance: 0.85, answerability: 0.9 },
@@ -266,7 +267,7 @@ const QUESTION_CATALOG: QuestionCandidate[] = [
 function buildSummary(session: UnderstandingSession): string {
   const labels: Partial<Record<NeedDimension, string>> = {
     problem: "Besoin ou difficulté",
-    activity: "Fonctionnement actuel",
+    activity: session.intentKind === "organize_event" ? "Événement ou activité envisagée" : "Fonctionnement actuel",
     cause: "Cause évoquée",
     goal: "Résultat souhaité",
     context: "Contexte",
