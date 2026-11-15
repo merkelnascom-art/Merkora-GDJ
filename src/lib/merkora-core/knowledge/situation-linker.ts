@@ -23,14 +23,15 @@ function label(concept: KnowledgeConcept, language = "fr"): string {
 
 function activityMatch(query: string, registry: KnowledgeRegistry, language?: string) {
   const domain = matchKnowledgeConcept(query, registry, { expectedType: "domain", language });
+  const specialization = matchKnowledgeConcept(query, registry, { expectedType: "specialization", language });
   const occupation = matchKnowledgeConcept(query, registry, { expectedType: "occupation", language });
-  const matches = [domain, occupation].filter((result) => result.status === "matched");
+  const matches = [domain, specialization, occupation].filter((result) => result.status === "matched");
   if (matches.length === 1) return matches[0];
   if (matches.length > 1) {
     const candidates = matches.map((result) => result.concept);
     return { status: "ambiguous" as const, query, candidates };
   }
-  const ambiguous = [domain, occupation].filter((result) => result.status === "ambiguous");
+  const ambiguous = [domain, specialization, occupation].filter((result) => result.status === "ambiguous");
   if (ambiguous.length) {
     return { status: "ambiguous" as const, query, candidates: ambiguous.flatMap((result) => result.candidates) };
   }
@@ -53,7 +54,11 @@ export function enrichSituationGraphWithKnowledge(
           ? matchKnowledgeConcept(entity.role, registry, { expectedType: "occupation", language })
           : matchKnowledgeConcept(entity.label, registry, { expectedType: entity.kind, language });
       const selected = match.status === "matched" || match.status === "type_only" ? match.concept : undefined;
-      const classificationType = selected?.conceptType === "occupation" ? "occupation-domain" : "universal-domain";
+      const classificationType = selected?.conceptType === "occupation"
+        ? "occupation-domain"
+        : selected?.conceptType === "specialization"
+          ? "universal-specialization"
+          : "universal-domain";
       const lineage = selected ? getClassificationLineage(registry, selected.id, classificationType) : [];
       return {
         ...entity,

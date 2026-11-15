@@ -18,7 +18,7 @@ import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/kn
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
 import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
 import { ESCO_API_LANGUAGE_CODES, type ESCOSuggestion } from "../../src/lib/merkora-core/knowledge/esco-api";
-import { UNIVERSAL_DOMAIN_COUNT, UNIVERSAL_DOMAIN_FAMILY_COUNT } from "../../src/lib/merkora-core/knowledge/universal-domain-catalog";
+import { UNIVERSAL_DOMAIN_COUNT, UNIVERSAL_DOMAIN_FAMILY_COUNT, UNIVERSAL_SPECIALIZATION_COUNT } from "../../src/lib/merkora-core/knowledge/universal-domain-catalog";
 
 const SCREEN_03_KNOWLEDGE = createUniversalKnowledgeRegistry();
 import type { SituationEntity } from "../../src/lib/merkora-core/situation-graph";
@@ -232,7 +232,7 @@ export default function UnderstandingPage() {
               <div className="mk-understanding-section-heading">
                 <div>
                   <h2>Repères du référentiel universel</h2>
-                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles et {UNIVERSAL_DOMAIN_COUNT} domaines. Les professions peuvent être recherchées dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
+                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les professions peuvent être recherchées dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
                 </div>
                 <span>{dossier.situationGraph.entities.length}</span>
               </div>
