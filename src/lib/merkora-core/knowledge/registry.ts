@@ -182,9 +182,13 @@ export function reviseKnowledgeConcept(
     },
   };
 
+  const previousEmbeddedRelationIds = new Set(current.relationships.map((relationship) => relationship.id));
+  const registryLevelRelationships = registry.relationships.filter(
+    (relationship) => !previousEmbeddedRelationIds.has(relationship.id),
+  );
   const next = createKnowledgeRegistry(
     registry.concepts.map((concept) => concept.id === conceptId ? revised : concept),
-    registry.relationships.filter((relationship) => relationship.sourceConceptId !== conceptId),
+    registryLevelRelationships,
     [...registry.conceptHistory, current],
   );
   return { ...next, version: registry.version + 1 };
