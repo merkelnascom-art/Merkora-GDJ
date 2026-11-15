@@ -22,6 +22,7 @@ describe("ESCO API suggestion normalization", () => {
       description: "Conçoit et développe des logiciels.",
       alternativeLabels: ["programmeur", "ingénieur logiciel"],
       language: "fr",
+      conceptType: "occupation",
       source: "ESCO",
     }]);
   });
@@ -38,6 +39,22 @@ describe("ESCO API suggestion normalization", () => {
 
     expect(results.map((item) => item.label)).toEqual(["Comptable", "Électricien"]);
     expect(results[0].uri).toContain("/occupation/a");
+  });
+
+  it("normalizes skill and competence suggestions separately from occupations", () => {
+    const results = normalizeESCOApiSuggestions({
+      results: [{
+        uri: "https://data.europa.eu/esco/skill/123",
+        preferredLabel: "Gestion de projet",
+      }],
+    }, "fr", "skill");
+
+    expect(results[0]).toMatchObject({
+      uri: "https://data.europa.eu/esco/skill/123",
+      label: "Gestion de projet",
+      conceptType: "skill",
+      language: "fr",
+    });
   });
 
   it("does not invent a translation when a requested language is absent", () => {
