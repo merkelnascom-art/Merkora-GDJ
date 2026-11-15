@@ -111,6 +111,8 @@ export interface KnowledgeRegistry {
   version: number;
   concepts: KnowledgeConcept[];
   relationships: KnowledgeRelationship[];
+  /** Immutable snapshots of superseded concept versions. */
+  conceptHistory: KnowledgeConcept[];
 }
 
 export interface KnowledgeProposal {
