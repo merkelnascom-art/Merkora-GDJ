@@ -384,6 +384,20 @@ export function getNextDiagnosticQuestion(
     return clarification;
   }
 
+  const unresolvedReferenceIndex = dossier.unresolvedQuestions.findIndex((item, index) => !wasHandled(session, `unresolved-reference-${index}`));
+  if (unresolvedReferenceIndex >= 0) {
+    const unresolvedReference = dossier.unresolvedQuestions[unresolvedReferenceIndex];
+    const prompt = unresolvedReference.startsWith("Préciser")
+      ? "Peux-tu " + unresolvedReference.charAt(0).toLocaleLowerCase("fr") + unresolvedReference.slice(1)
+      : unresolvedReference;
+    return question(
+      `unresolved-reference-${unresolvedReferenceIndex}`,
+      "other",
+      prompt,
+      "Une référence de ton récit n'a pas encore d'antécédent suffisamment clair. Je préfère te demander plutôt que de deviner.",
+    );
+  }
+
   const candidates: DiagnosticQuestion[] = [
     question(
       "activity-context",
