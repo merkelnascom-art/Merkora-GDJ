@@ -38,6 +38,18 @@ describe("cross-message situation reasoning", () => {
     }));
   });
 
+  it("resolves references to people and operational objects across messages", () => {
+    const result = analyzeConversation(messages(
+      "Le directeur supervise la secrétaire et le dossier des patients.",
+      "Elle vérifie ce dossier avant de confirmer le rendez-vous.",
+    ));
+
+    expect(result.references).toEqual(expect.arrayContaining([
+      expect.objectContaining({ mention: "Elle", targetLabel: "secrétaire", resolved: true }),
+      expect.objectContaining({ mention: "ce dossier", targetLabel: "dossier", resolved: true }),
+    ]));
+  });
+
   it("keeps directly stated facts separate from a user's hypothesis", () => {
     const result = analyzeConversation(messages(
       "Les patients choisissent un créneau depuis la plateforme.",
