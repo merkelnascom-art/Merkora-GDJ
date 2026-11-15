@@ -260,3 +260,7 @@
 .mk-relation-list p{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:9px 10px;border-radius:9px;background:#ffffff08;color:#e8dfef;font-size:10px;line-height:1.5}
 .mk-relation-list p span{color:#c6a9e8;font-size:9px}
 .mk-unresolved-count{display:block;margin-top:9px;color:#d7bd8d;font-size:9px}
+
+.mk-answer-versions{margin-top:7px;color:#a99fba;font-size:9px}
+.mk-answer-versions summary{cursor:pointer;color:#c4b0e2}
+.mk-answer-versions p{padding:7px 9px;margin:6px 0;border-left:2px solid #8f76bd;background:#ffffff07}
