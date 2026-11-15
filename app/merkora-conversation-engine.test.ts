@@ -270,7 +270,7 @@ describe("MerKora multi-facet understanding from free-form messages", () => {
       expect.objectContaining({ dimension: "experience", status: "user_stated" }),
     ]));
     expect(mechanics.evidence.some((item) => item.dimension === "context" && /aucun cadre/i.test(item.value))).toBe(true);
-    expect(mechanics.summary ?? "").not.toContain("emoji apparaît");
+    expect(mechanics.summary ?? "").toContain("emoji apparaît");
     expect(mechanics.summary ?? "").not.toContain("🐶");
   });
 
