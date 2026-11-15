@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
+  attachKnowledgeProposalToUnderstanding,
   createProjectUnderstanding,
   getActiveUnderstandingItems,
   reviseUnderstandingItem,
@@ -13,6 +14,14 @@ import {
   type ProjectUnderstandingItem,
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
+import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
+import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
+import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
+import { ESCO_API_LANGUAGE_CODES, type ESCOSuggestion } from "../../src/lib/merkora-core/knowledge/esco-api";
+import { UNIVERSAL_DOMAIN_COUNT, UNIVERSAL_DOMAIN_FAMILY_COUNT, UNIVERSAL_SPECIALIZATION_COUNT } from "../../src/lib/merkora-core/knowledge/universal-domain-catalog";
+
+const SCREEN_03_KNOWLEDGE = createUniversalKnowledgeRegistry();
+import type { SituationEntity } from "../../src/lib/merkora-core/situation-graph";
 
 const SOURCE_SESSION_KEY = "merkora-v2-understanding-session";
 const DOSSIER_KEY = "merkora-v2-project-understanding";
@@ -61,6 +70,10 @@ export default function UnderstandingPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [notice, setNotice] = useState("");
+  const [escoLanguage, setEscoLanguage] = useState("fr");
+  const [escoSearchType, setEscoSearchType] = useState<"occupation" | "skill">("occupation");
+  const [escoSuggestions, setEscoSuggestions] = useState<Record<string, ESCOSuggestion[]>>({});
+  const [escoLoadingId, setEscoLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const session = readSession();
@@ -73,7 +86,8 @@ export default function UnderstandingPage() {
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
           const normalized: ProjectUnderstanding = {
             ...parsed,
-            situationGraph: parsed.situationGraph ?? session.situationGraph,
+            situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
+            knowledgeProposals: Array.isArray(parsed.knowledgeProposals) ? parsed.knowledgeProposals : [],
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
@@ -84,7 +98,11 @@ export default function UnderstandingPage() {
         }
       }
     } catch { /* Reconstruire à partir de la session source. */ }
-    const initial = createProjectUnderstanding(session);
+    const created = createProjectUnderstanding(session);
+    const initial: ProjectUnderstanding = {
+      ...created,
+      situationGraph: enrichSituationGraphWithKnowledge(created.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
+    };
     setDossier(initial);
     restoreEditDraft(initial, setEditingId, setEditValue);
     try { window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(initial)); } catch { /* Mémoire de page seulement. */ }
@@ -121,6 +139,68 @@ export default function UnderstandingPage() {
     if (!dossier) return;
     persist(rejectUnderstandingItem(dossier, itemId));
     setNotice("Interprétation écartée. Elle reste conservée dans l'historique.");
+  }
+
+  function changeKnowledgeLanguage(language: string) {
+    setEscoLanguage(language);
+    setEscoSuggestions({});
+    if (!dossier) return;
+    persist({
+      ...dossier,
+      situationGraph: enrichSituationGraphWithKnowledge(dossier.situationGraph, SCREEN_03_KNOWLEDGE, language),
+    });
+  }
+
+  async function searchESCO(entity: SituationEntity) {
+    setEscoLoadingId(entity.id);
+    setNotice("");
+    try {
+      const searchTerm = entity.kind === "actor" && entity.role ? entity.role : entity.label;
+      const params = new URLSearchParams({ text: searchTerm, language: escoLanguage, type: escoSearchType });
+      const response = await fetch(`/api/knowledge/esco?${params.toString()}`);
+      const payload = await response.json() as { results?: ESCOSuggestion[]; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Recherche ESCO indisponible.");
+      setEscoSuggestions((current) => ({ ...current, [entity.id]: payload.results ?? [] }));
+      if (!(payload.results ?? []).length) setNotice("Aucune profession ESCO trouvée dans cette langue. Le terme reste libre et peut être proposé.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "La recherche ESCO a échoué.");
+    } finally {
+      setEscoLoadingId(null);
+    }
+  }
+
+  function proposeUnknownConcept(entity: SituationEntity, externalReference?: ESCOSuggestion) {
+    if (!dossier || entity.knowledge?.matchStatus !== "unmatched") return;
+    const source = entity.evidence[0];
+    if (!source) return;
+
+    const proposalLabel = entity.kind === "actor" && entity.role ? entity.role : entity.label;
+    const proposal = createProjectKnowledgeProposal({
+      projectId: dossier.projectId,
+      label: proposalLabel,
+      language: externalReference?.language ?? "und",
+      sourceMessageId: source.messageId,
+      sourceQuote: source.quote,
+      ...(externalReference ? {
+        externalReference: {
+          system: "ESCO" as const,
+          conceptType: externalReference.conceptType,
+          uri: externalReference.uri,
+          label: externalReference.label,
+          language: externalReference.language,
+          datasetVersion: "ESCO API — version par défaut du service",
+        },
+      } : {}),
+    }, SCREEN_03_KNOWLEDGE);
+    try {
+      persist(attachKnowledgeProposalToUnderstanding(dossier, proposal));
+    } catch {
+      setNotice("Ce terme a déjà été proposé pour ce projet.");
+      return;
+    }
+    setNotice(externalReference
+      ? "Rapprochement ESCO proposé et conservé dans ce projet. Il attend une revue humaine."
+      : "Proposition privée enregistrée dans ce projet. Elle n'est pas encore ajoutée au référentiel commun.");
   }
 
   function continueToDiagnostic() {
@@ -164,6 +244,105 @@ export default function UnderstandingPage() {
               <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
               <p>{dossier.originalDescription}</p>
             </section>
+            {dossier.situationGraph.entities.length > 0 && <section className="mk-understanding-section mk-knowledge-section">
+              <div className="mk-understanding-section-heading">
+                <div>
+                  <h2>Repères du référentiel universel</h2>
+                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les métiers et compétences peuvent être recherchés dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
+                </div>
+                <span>{dossier.situationGraph.entities.length}</span>
+              </div>
+              <div className="mk-item-meta">
+                <label htmlFor="esco-language">Langue de recherche ESCO</label>
+                <select id="esco-language" value={escoLanguage} onChange={(event) => changeKnowledgeLanguage(event.target.value)}>
+                  {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
+                </select>
+                <label htmlFor="esco-type">Catalogue à consulter</label>
+                <select id="esco-type" value={escoSearchType} onChange={(event) => { setEscoSearchType(event.target.value as "occupation" | "skill"); setEscoSuggestions({}); }}>
+                  <option value="occupation">Métiers et professions</option>
+                  <option value="skill">Compétences et spécialisations</option>
+                </select>
+              </div>
+              <div className="mk-understanding-items">
+                {dossier.situationGraph.entities.map((entity) => (
+                  <article className="mk-understanding-item" key={"knowledge-" + entity.id}>
+                    <p><strong>{entity.label}</strong></p>
+                    <div className="mk-item-meta">
+                      {entity.knowledge?.typeConceptLabel
+                        ? <span>Type universel : {entity.knowledge.typeConceptLabel}</span>
+                        : <span>Type ouvert : {entity.kind}</span>}
+                      {entity.knowledge?.matchStatus === "matched" && entity.knowledge.conceptLabel
+                        ? <span>Concept rapproché : {entity.knowledge.conceptLabel}</span>
+                        : entity.knowledge?.matchStatus === "ambiguous"
+                          ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
+                          : <span>Terme conservé sans correspondance forcée.</span>}
+                    </div>
+                    {entity.knowledge?.classificationPath && entity.knowledge.classificationPath.length > 0 && (
+                      <small>Classement : {entity.knowledge.classificationPath.map((item) => item.label).join(" → ")}</small>
+                    )}
+                    {entity.knowledge?.matchStatus === "ambiguous" && entity.knowledge.candidateConceptIds && (
+                      <div className="mk-item-meta">
+                        <span>Correspondances à départager :</span>
+                        {entity.knowledge.candidateConceptIds.map((id) => {
+                          const candidate = getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id);
+                          const label = candidate?.definitions.find((item) => item.language === "fr")?.label ?? candidate?.definitions[0]?.label ?? id;
+                          return <span key={id}>{label}</span>;
+                        })}
+                      </div>
+                    )}
+                    {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
+                      <>
+                        <div className="mk-inline-actions">
+                          <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
+                            Proposer comme nouveau concept
+                          </button>
+                          {(entity.kind === "activity" || entity.kind === "actor") && (
+                            <button className="mk-small-action" type="button" onClick={() => searchESCO(entity)} disabled={escoLoadingId === entity.id}>
+                              {escoLoadingId === entity.id ? "Recherche…" : escoSearchType === "occupation" ? "Chercher un métier dans ESCO" : "Chercher une compétence dans ESCO"}
+                            </button>
+                          )}
+                        </div>
+                        {(escoSuggestions[entity.id] ?? []).length > 0 && (
+                          <div className="mk-knowledge-proposals">
+                            <small>Suggestions externes ESCO — à vérifier, aucune n'est sélectionnée automatiquement.</small>
+                            {(escoSuggestions[entity.id] ?? []).map((suggestion) => (
+                              <article className="mk-understanding-item" key={suggestion.uri}>
+                                <p><strong>{suggestion.label}</strong></p>
+                                {suggestion.description && <small>{suggestion.description}</small>}
+                                {suggestion.alternativeLabels.length > 0 && <small>Autres appellations : {suggestion.alternativeLabels.join(", ")}</small>}
+                                <div className="mk-inline-actions">
+                                  <a className="mk-small-action" href={suggestion.uri} target="_blank" rel="noreferrer">Consulter la fiche ESCO</a>
+                                  <button className="mk-small-action mk-small-action-gold" type="button" onClick={() => proposeUnknownConcept(entity, suggestion)}>Proposer ce rapprochement</button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </article>
+                ))}
+              </div>
+              <small>Ces repères organisent les connaissances ; ils ne constituent pas de nouvelles déclarations de ta part.</small>
+              {(dossier.knowledgeProposals ?? []).length > 0 && (
+                <div className="mk-knowledge-proposals">
+                  <h3>Propositions privées de ce projet</h3>
+                  {(dossier.knowledgeProposals ?? []).map((proposal) => (
+                    <article className="mk-understanding-item" key={proposal.id}>
+                      <p><strong>{proposal.label}</strong></p>
+                      <div className="mk-item-meta">
+                        <span>{proposal.status === "proposed" ? "Proposition privée" : proposal.status === "under_review" ? "En revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
+                        <span>{proposal.externalReference ? `Langue de la référence : ${proposal.externalReference.language.toUpperCase()}` : "Langue non déterminée"}</span>
+                      </div>
+                      <small>{proposal.sourceQuote}</small>
+                      {proposal.externalReference && <small>Référence externe proposée : {proposal.externalReference.label} · {proposal.externalReference.language.toUpperCase()} · {proposal.externalReference.system} · {proposal.externalReference.datasetVersion}</small>}
+                      {(proposal.possibleDuplicateConceptIds ?? []).length > 0 && <small>Concept(s) proche(s) déjà présent(s) : {(proposal.possibleDuplicateConceptIds ?? []).map((id) => getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id)?.definitions.find((item) => item.language === "fr")?.label ?? id).join(", ")}. Une revue doit décider s’il s’agit d’un synonyme ou d’un concept distinct.</small>}
+                    </article>
+                  ))}
+                  <small>Ces propositions restent attachées à ce projet. Elles ne modifient pas le référentiel commun sans revue explicite.</small>
+                </div>
+              )}
+            </section>}
             {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
               <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
               <div className="mk-relation-list">{dossier.situationGraph.relations.slice(0, 8).map((relation) => {

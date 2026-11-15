@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { beginUnderstanding } from "./situation-intake-engine";
 import {
+  attachKnowledgeProposalToUnderstanding,
   createDiagnosticSession,
   createProjectUnderstanding,
   getNextDiagnosticQuestion,
@@ -11,6 +12,8 @@ import {
   resumeDeferredDiagnosticQuestions,
   validateProjectUnderstanding,
 } from "./project-diagnostic";
+import { createProjectKnowledgeProposal } from "./knowledge/proposals";
+import { createCoreKnowledgeRegistry } from "./knowledge/registry";
 
 describe("universal project understanding", () => {
   it("preserves the original narrative and source trace without requiring a sector classification", () => {
@@ -40,6 +43,48 @@ describe("universal project understanding", () => {
 
     expect(validated.items.find((item) => item.status === "hypothesis")?.status).toBe("hypothesis");
     expect(validated.validationStatus).toBe("validated");
+  });
+
+  it("keeps unknown knowledge proposals private to their project until explicit review", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je développe une activité expérimentale."));
+    const registry = createCoreKnowledgeRegistry();
+    const proposal = createProjectKnowledgeProposal({
+      projectId: dossier.projectId,
+      label: "Activité expérimentale nouvelle",
+      language: "und",
+      sourceMessageId: "message-private",
+      sourceQuote: "Je développe une activité expérimentale nouvelle.",
+      createdAt: "2026-11-15T12:00:00.000Z",
+    });
+    const updated = attachKnowledgeProposalToUnderstanding(dossier, proposal);
+
+    expect(dossier.knowledgeProposals).toEqual([]);
+    expect(updated.knowledgeProposals).toEqual([proposal]);
+    expect(updated.version).toBe(dossier.version + 1);
+    expect(registry.concepts.some((concept) => concept.id === proposal.id)).toBe(false);
+    expect(JSON.stringify(registry)).not.toContain(proposal.sourceQuote);
+  });
+
+  it("rejects proposals attached to another project and duplicate source proposals", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je développe un projet inédit."));
+    const proposal = createProjectKnowledgeProposal({
+      projectId: dossier.projectId,
+      label: "Concept inédit",
+      language: "und",
+      sourceMessageId: "message-1",
+      sourceQuote: "Concept inédit.",
+    });
+    const attached = attachKnowledgeProposalToUnderstanding(dossier, proposal);
+    const duplicate = createProjectKnowledgeProposal({
+      projectId: dossier.projectId,
+      label: proposal.label,
+      language: "und",
+      sourceMessageId: proposal.sourceMessageId,
+      sourceQuote: proposal.sourceQuote,
+    });
+
+    expect(() => attachKnowledgeProposalToUnderstanding(dossier, { ...proposal, projectId: "other-project" })).toThrow(/own project/i);
+    expect(() => attachKnowledgeProposalToUnderstanding(attached, duplicate)).toThrow(/already been proposed/i);
   });
 });
 

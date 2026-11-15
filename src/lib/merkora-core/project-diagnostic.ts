@@ -1,5 +1,7 @@
 import type { UnderstandingSession } from "./situation-intake-engine";
 import type { NeedDimension } from "./types";
+import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
+import type { KnowledgeProposal } from "./knowledge/types";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -68,6 +70,8 @@ export interface ProjectUnderstanding {
   contradictions: ProjectContradiction[];
   unresolvedQuestions: string[];
   privacyConsiderations: string[];
+  /** Project-private proposals; older stored dossiers may not contain this field. */
+  knowledgeProposals?: KnowledgeProposal[];
   activityVocabulary: "open";
   validationStatus: "in_progress" | "validated";
   sourceSessionVersion: number;
@@ -201,7 +205,7 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       createdAt: evidence.createdAt,
       ...(evidence.supersedesId ? { supersedesId: evidence.supersedesId } : {}),
     })),
-    situationGraph: session.situationGraph,
+    situationGraph: enrichSituationGraphWithKnowledge(session.situationGraph),
     contradictions: session.contradictions.map((item) => {
       const id = `${item.topic}::${item.statementA}::${item.statementB}`;
       return {
@@ -218,11 +222,37 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
       ...(session.reasoning?.references.filter((reference) => !reference.resolved).map((reference) => `Préciser la référence « ${reference.mention} ».`) ?? []),
     ],
     privacyConsiderations: [...session.privacyConsiderations],
+    knowledgeProposals: [],
     activityVocabulary: "open",
     validationStatus: "in_progress",
     sourceSessionVersion: session.version,
     createdAt: timestamp,
     updatedAt: timestamp,
+  };
+}
+
+export function attachKnowledgeProposalToUnderstanding(
+  dossier: ProjectUnderstanding,
+  proposal: KnowledgeProposal,
+): ProjectUnderstanding {
+  if (proposal.projectId !== dossier.projectId) {
+    throw new Error("A knowledge proposal can only be attached to its own project.");
+  }
+  const proposals = dossier.knowledgeProposals ?? [];
+  if (proposals.some((item) => item.id === proposal.id)) {
+    throw new Error("This knowledge proposal is already attached to the project.");
+  }
+  if (proposals.some((item) =>
+    item.label === proposal.label && item.sourceMessageId === proposal.sourceMessageId,
+  )) {
+    throw new Error("This term has already been proposed from this source message.");
+  }
+
+  return {
+    ...dossier,
+    version: dossier.version + 1,
+    knowledgeProposals: [...proposals, proposal],
+    updatedAt: now(),
   };
 }
 
