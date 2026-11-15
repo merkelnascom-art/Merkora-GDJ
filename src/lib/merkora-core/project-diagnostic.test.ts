@@ -74,6 +74,17 @@ describe("adaptive universal diagnostic", () => {
 
 
 
+
+  it("clarifies unresolved references before continuing with generic questions", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je développe une activité nouvelle."));
+    const dossier = { ...base, unresolvedQuestions: ["Préciser la référence « elle »." ] };
+    const diagnostic = createDiagnosticSession(dossier);
+    const question = getNextDiagnosticQuestion(dossier, diagnostic);
+
+    expect(question?.id).toBe("unresolved-reference-0");
+    expect(question?.prompt).toContain("Peux-tu préciser la référence");
+  });
+
   it("treats the explicit 'I don't know yet' option as unknown rather than as a fact", () => {
     const dossier = createProjectUnderstanding(beginUnderstanding("Je développe une activité expérimentale."));
     const diagnostic = createDiagnosticSession(dossier);
