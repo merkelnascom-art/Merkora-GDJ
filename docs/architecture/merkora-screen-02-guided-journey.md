@@ -23,6 +23,7 @@ Le parcours suit la séquence :
 - Une extraction lexicale produit un indice, pas une vérité générale.
 - Une réponse est enregistrée comme `user_stated`, avec son message source et sa citation.
 - Une hypothèse ne devient pas un fait par répétition.
+- Des contradictions lexicales apparentes (accès, connectivité, automatisation) interrompent le parcours ordinaire et déclenchent une question de clarification ; elles ne sont jamais tranchées automatiquement.
 - Les éléments ne deviennent `validated` qu'après confirmation explicite de la synthèse.
 - Une correction est conservée comme une nouvelle trace, sans effacer la formulation précédente.
 - Le report d'une question n'est jamais interprété comme une réponse.
@@ -80,9 +81,9 @@ La personne peut passer une question. Le moteur enregistre alors la dimension re
 
 ## 7. Limites connues
 
-Cette version utilise des expressions régulières et des lexiques limités. Elle ne comprend pas librement toutes les formulations, ne raisonne pas sur toutes les causes possibles, ne détecte pas encore les contradictions sémantiques dans le langage naturel et ne couvre pas encore un référentiel exhaustif de métiers/activités.
+Cette version utilise des expressions régulières et des lexiques limités. Elle ne comprend pas librement toutes les formulations, ne raisonne pas sur toutes les causes possibles et ne détecte que quelques familles de contradictions formulées explicitement (accès, connectivité, automatisation). Elle ne détecte pas les contradictions sémantiques générales et ne couvre pas encore un référentiel exhaustif de métiers/activités.
 
-Le détecteur de contradictions structuré existant ne doit être utilisé que lorsque des assertions structurées comparables sont disponibles. Il ne constitue pas un détecteur universel de contradictions en texte libre.
+Le détecteur de contradictions structuré existant ne doit être utilisé que lorsque des assertions structurées comparables sont disponibles. Le contrôle lexical intégré à l'écran 02 est volontairement limité et ne constitue pas un détecteur universel de contradictions en texte libre.
 
 Aucun modèle IA n'est connecté. Cette décision évite toute dépense ou transmission externe non approuvée, mais signifie que la compréhension sémantique générale n'est pas encore atteinte.
 
