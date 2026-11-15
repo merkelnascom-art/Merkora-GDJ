@@ -66,6 +66,12 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
   });
 
+  it("does not force a domain when the initial idea is vague or hybrid", () => {
+    const session = beginUnderstanding("Je veux mieux organiser certaines choses.");
+    expect(session.intentClues).toEqual([]);
+    expect(session.pendingQuestion?.dimension).toBe("problem");
+  });
+
   it("does not ask a second question when an answer is blank", () => {
     const first = beginUnderstanding("Je veux mieux organiser mon activité.");
     const afterBlank = answerUnderstanding(first, "   ");
