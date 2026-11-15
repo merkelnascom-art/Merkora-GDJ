@@ -3,6 +3,7 @@ import {
   createCoreKnowledgeRegistry,
   createKnowledgeRegistry,
   getKnowledgeConcept,
+  addKnowledgeRelationship,
 } from "./registry";
 import { normalizeKnowledgeTerm } from "./normalization";
 
@@ -50,4 +51,26 @@ describe("universal knowledge registry", () => {
     expect(() => createKnowledgeRegistry([concept, { ...concept, id: "another-id" }])).toThrow(/canonical/i);
     expect(() => createKnowledgeRegistry([concept, { ...concept, canonicalKey: "another-key" }])).toThrow(/identifier/i);
   });
+  it("stores only relations whose source and target concepts exist", () => {
+    const registry = createCoreKnowledgeRegistry();
+    const relation = {
+      id: "relation:actor-performs-activity",
+      sourceConceptId: "core:actor",
+      targetConceptId: "core:activity",
+      predicate: "performs",
+      status: "validated" as const,
+      sourceIds: ["source:internal"],
+      version: 1,
+    };
+
+    const extended = addKnowledgeRelationship(registry, relation);
+    expect(extended.relationships).toEqual([relation]);
+    expect(extended.version).toBe(registry.version + 1);
+    expect(() => addKnowledgeRelationship(registry, {
+      ...relation,
+      id: "relation:missing-target",
+      targetConceptId: "missing:concept",
+    })).toThrow(/unknown concept/i);
+  });
+
 });
