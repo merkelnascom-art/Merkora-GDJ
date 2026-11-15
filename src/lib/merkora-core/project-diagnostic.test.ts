@@ -84,13 +84,22 @@ describe("adaptive universal diagnostic", () => {
     expect(revised.understanding.items.at(-1)?.value).toContain("recherche expérimentale");
   });
 \n  it("supports a choice plus optional explanation and retains the explanation", () => {
-    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux explorer une idée nouvelle."));
+    const dossier = {
+      ...base,
+      items: [
+        ...base.items,
+        { id: "activity-1", dimension: "activity" as const, originalDimension: "activity", value: "Exploration d'une idée nouvelle", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Exploration d'une idée nouvelle", createdAt: new Date().toISOString() },
+        { id: "situation-1", dimension: "current_situation" as const, originalDimension: "current_situation", value: "Projet encore au stade de l'idée", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Projet encore au stade de l'idée", createdAt: new Date().toISOString() },
+      ],
+    };
     const diagnostic = createDiagnosticSession(dossier);
     const first = getNextDiagnosticQuestion(dossier, diagnostic);
-    if (!first) throw new Error("Expected a first diagnostic question.");
+    if (!first) throw new Error("Expected a diagnostic question.");
 
+    expect(first.answerType).toBe("single_choice");
     const result = recordDiagnosticAnswer(dossier, diagnostic, first, {
-      value: "autre",
+      value: "Autre",
       detail: "Il s'agit d'une activité qui n'a pas encore de nom reconnu.",
     });
 
