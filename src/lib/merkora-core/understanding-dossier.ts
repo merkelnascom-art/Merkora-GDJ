@@ -92,13 +92,14 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
   }
 
   const dimensions = new Set([...facets.values()].map((item) => item.dimension));
+  const privacyAnswerPresent = /informé|informés|accord|consent|seul(?:e)?s? l['’]?(?:élève|eleve)|uniquement|accès|acces|consulter|consultation|confidentiel|parent|conseiller/i.test(allText);
+  const sensitiveDataMentioned = /relevé|releve|notes scolaires|bulletin|dossier médical|dossier medical|données personnelles|donnees personnelles|résultats scolaires|resultats scolaires/i.test(allText);
   const missingDimensions: NeedDimension[] = [];
   if (!dimensions.has("problem")) missingDimensions.push("problem");
   if (!dimensions.has("audience")) missingDimensions.push("audience");
   if (!dimensions.has("goal")) missingDimensions.push("goal");
   if (!dimensions.has("preference")) missingDimensions.push("preference");
-  if (!dimensions.has("context")) missingDimensions.push("context");
-  if (!dimensions.has("constraint")) missingDimensions.push("constraint");
+  if (sensitiveDataMentioned && !privacyAnswerPresent) missingDimensions.push("risk");
 
   const prompts: Partial<Record<NeedDimension, string>> = {
     problem: "Quelle difficulté ou quel besoin concret ce projet doit-il traiter ?",
@@ -107,6 +108,7 @@ export function buildUnderstandingDossier(messages: ConversationMessage[]): Unde
     preference: "Quelle solution ou expérience imagines-tu ?",
     context: "Dans quel environnement le projet sera-t-il utilisé ?",
     constraint: "Y a-t-il une limite importante à respecter dès le départ ?",
+    risk: "Qui pourra consulter les relevés et les résultats des élèves ?";
   };
   const openQuestions = missingDimensions.map((dimension) => prompts[dimension]).filter((item): item is string => Boolean(item));
 
