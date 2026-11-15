@@ -66,6 +66,17 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(skipped.pendingQuestion?.dimension).not.toBe("problem");
   });
 
+  it("shows skipped points in the final provisional summary instead of silently dropping them", () => {
+    const first = beginUnderstanding(
+      "Je veux améliorer le centre de formation. Aujourd'hui, je note les présences dans un cahier. Les enseignants sont concernés. Parce que les horaires changent.",
+    );
+    const skipped = deferUnderstandingQuestion(first);
+
+    expect(skipped.stage).toBe("summary_validation");
+    expect(skipped.summary).toContain("Points laissés en attente");
+    expect(skipped.summary).toContain("Quel besoin concret veux-tu satisfaire");
+  });
+
   it("records an imagined solution separately and still asks what need it should solve", () => {
     const session = beginUnderstanding("Je veux créer une plateforme pour gérer les rendez-vous.");
     expect(session.evidence.some((item) => item.dimension === "preference" && item.status === "user_stated")).toBe(true);
