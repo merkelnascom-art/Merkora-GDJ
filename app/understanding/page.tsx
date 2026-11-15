@@ -140,7 +140,8 @@ export default function UnderstandingPage() {
     setEscoLoadingId(entity.id);
     setNotice("");
     try {
-      const params = new URLSearchParams({ text: entity.label, language: escoLanguage });
+      const searchTerm = entity.kind === "actor" && entity.role ? entity.role : entity.label;
+      const params = new URLSearchParams({ text: searchTerm, language: escoLanguage });
       const response = await fetch(`/api/knowledge/esco?${params.toString()}`);
       const payload = await response.json() as { results?: ESCOSuggestion[]; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Recherche ESCO indisponible.");
@@ -158,9 +159,10 @@ export default function UnderstandingPage() {
     const source = entity.evidence[0];
     if (!source) return;
 
+    const proposalLabel = entity.kind === "actor" && entity.role ? entity.role : entity.label;
     const proposal = createProjectKnowledgeProposal({
       projectId: dossier.projectId,
-      label: entity.label,
+      label: proposalLabel,
       language: externalReference?.language ?? "und",
       sourceMessageId: source.messageId,
       sourceQuote: source.quote,
@@ -309,7 +311,7 @@ export default function UnderstandingPage() {
                       <p><strong>{proposal.label}</strong></p>
                       <div className="mk-item-meta">
                         <span>{proposal.status === "proposed" ? "Proposition privée" : proposal.status === "under_review" ? "En revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
-                        <span>Langue non déterminée</span>
+                        <span>{proposal.externalReference ? `Langue de la référence : ${proposal.externalReference.language.toUpperCase()}` : "Langue non déterminée"}</span>
                       </div>
                       <small>{proposal.sourceQuote}</small>
                       {proposal.externalReference && <small>Référence externe proposée : {proposal.externalReference.label} · {proposal.externalReference.language.toUpperCase()} · {proposal.externalReference.system} · {proposal.externalReference.datasetVersion}</small>}
