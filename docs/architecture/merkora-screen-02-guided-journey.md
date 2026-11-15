@@ -1,0 +1,98 @@
+# MerKora GDJ — parcours guidé de compréhension, écran 02
+
+Version : 1.1 — 15 novembre 2026  
+Statut : première intégration fonctionnelle, déterministe, à valider sur scénarios réels.
+
+## 1. Objectif
+
+L'écran 02 transforme une première expression libre en une compréhension progressive et vérifiable du besoin. Il ne choisit pas encore de solution, de domaine technique, de technologie ou de devis.
+
+Le parcours suit la séquence :
+
+1. expression libre, sans catégorie obligatoire ;
+2. extraction prudente des indices explicitement formulés ;
+3. choix d'une seule question utile ;
+4. clarification du besoin, du fonctionnement actuel, des causes, du résultat, du contexte et des acteurs ;
+5. synthèse construite à partir des propos conservés ;
+6. confirmation, correction ou report par la personne ;
+7. clôture de cette première compréhension.
+
+## 2. Règles de vérité
+
+- La description originale est conservée séparément et n'est jamais remplacée par la synthèse.
+- Une extraction lexicale produit un indice, pas une vérité générale.
+- Une réponse est enregistrée comme `user_stated`, avec son message source et sa citation.
+- Une hypothèse ne devient pas un fait par répétition.
+- Les éléments ne deviennent `validated` qu'après confirmation explicite de la synthèse.
+- Une correction est conservée comme une nouvelle trace, sans effacer la formulation précédente.
+- Le report d'une question n'est jamais interprété comme une réponse.
+- Aucun pourcentage de confiance n'est affiché sans modèle calibré.
+
+## 3. Dimensions actuellement couvertes
+
+| Dimension | Rôle |
+|---|---|
+| problem | besoin ou difficulté principale |
+| activity | fonctionnement actuel |
+| cause | cause explicitement évoquée |
+| goal | résultat souhaité |
+| context | cadre ou lieu explicitement mentionné |
+| actor | personnes ou groupes explicitement nommés |
+| constraint | contrainte explicitement détectée |
+| unknown | correction non encore classée avec certitude |
+
+Les indices de domaines/métiers issus du lexique sont stockés comme `intentClues`, jamais comme une classification métier validée.
+
+## 4. Planification des questions
+
+Une question candidate est admissible seulement si :
+- son identifiant et son texte sont présents ;
+- sa dimension ne possède pas déjà une preuve enregistrée ;
+- la dimension n'a pas été reportée ;
+- la question n'a pas déjà été posée.
+
+Le score de priorité est :
+
+`S(q) = 0.35 I(q) + 0.30 U(q) + 0.25 R(q) + 0.10 A(q)`
+
+- `I` : impact de la réponse sur la compréhension et la solution future ;
+- `U` : incertitude restante sur un élément utile ;
+- `R` : pertinence pour une décision ultérieure ;
+- `A` : facilité probable de réponse sans deviner.
+
+Chaque valeur est actuellement une appréciation de conception comprise entre 0 et 1. Les poids sont des hypothèses de conception, pas des probabilités apprises ni des vérités scientifiques. Ils devront être évalués sur des conversations de test diversifiées.
+
+## 5. État du parcours
+
+- `clarification` : une seule question principale est proposée à la fois ;
+- `summary_validation` : le moteur n'a plus de question candidate admissible et présente la synthèse ;
+- `complete` : la personne a confirmé la synthèse ou a choisi de reporter sa validation.
+
+La personne peut passer une question. Le moteur enregistre alors la dimension reportée et n'invente aucune réponse.
+
+## 6. Conservation et sécurité
+
+- La conversation et le profil sont conservés dans `sessionStorage` pour la session du navigateur.
+- Aucun compte n'est requis à cette étape.
+- Aucune migration, base de données, API externe ou service payant n'est utilisé.
+- Le stockage de session n'est pas une sauvegarde durable : fermer la session ou effacer les données du navigateur peut faire perdre le brouillon.
+- La voix reste hors du parcours visible et son travail antérieur demeure séparé.
+
+## 7. Limites connues
+
+Cette version utilise des expressions régulières et des lexiques limités. Elle ne comprend pas librement toutes les formulations, ne raisonne pas sur toutes les causes possibles, ne détecte pas encore les contradictions sémantiques dans le langage naturel et ne couvre pas encore un référentiel exhaustif de métiers/activités.
+
+Le détecteur de contradictions structuré existant ne doit être utilisé que lorsque des assertions structurées comparables sont disponibles. Il ne constitue pas un détecteur universel de contradictions en texte libre.
+
+Aucun modèle IA n'est connecté. Cette décision évite toute dépense ou transmission externe non approuvée, mais signifie que la compréhension sémantique générale n'est pas encore atteinte.
+
+## 8. Étapes ultérieures — toujours dans l'écran 02
+
+1. élargir le référentiel universel des domaines, métiers, activités, processus, objets et synonymes locaux ;
+2. améliorer l'extraction multilingue et la segmentation des faits, objectifs, règles et exceptions ;
+3. relier les assertions structurées au contrôle de cohérence et présenter les contradictions apparentes comme des demandes de clarification ;
+4. ajouter une analyse des causes sans transformer les hypothèses en faits ;
+5. tester le parcours sur des scénarios hybrides, personnels, associatifs, administratifs et professionnels ;
+6. évaluer séparément les options IA locales/gratuites et les coûts éventuels, sans activation ni dépense automatique.
+
+L'écran 03 ne doit pas commencer avant validation du parcours de compréhension de l'écran 02.
