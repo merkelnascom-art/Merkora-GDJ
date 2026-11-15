@@ -5,6 +5,7 @@ import {
   createProjectUnderstanding,
   getActiveUnderstandingItems,
   reviseUnderstandingItem,
+  rejectUnderstandingItem,
   validateProjectUnderstanding,
   validateUnderstandingItem,
   UNDERSTANDING_SECTIONS,
@@ -15,6 +16,7 @@ import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-
 
 const SOURCE_SESSION_KEY = "merkora-v2-understanding-session";
 const DOSSIER_KEY = "merkora-v2-project-understanding";
+const EDIT_DRAFT_KEY = "merkora-v2-understanding-edit-draft";
 
 function readSession(): UnderstandingSession | null {
   try {
@@ -82,6 +84,7 @@ export default function UnderstandingPage() {
     setEditingId(item.id);
     setEditValue(item.value);
     setNotice("");
+    try { window.sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ itemId: item.id, value: item.value })); } catch { /* La saisie reste disponible dans le champ courant. */ }
   }
 
   function saveEdit() {
@@ -89,7 +92,14 @@ export default function UnderstandingPage() {
     persist(reviseUnderstandingItem(dossier, editingId, editValue));
     setEditingId(null);
     setEditValue("");
+    try { window.sessionStorage.removeItem(EDIT_DRAFT_KEY); } catch { /* Le dossier est déjà enregistré. */ }
     setNotice("Correction enregistrée comme une nouvelle version. La formulation précédente est conservée.");
+  }
+
+  function rejectItem(itemId: string) {
+    if (!dossier) return;
+    persist(rejectUnderstandingItem(dossier, itemId));
+    setNotice("Interprétation écartée. Elle reste conservée dans l'historique.");
   }
 
   function continueToDiagnostic() {
@@ -156,8 +166,8 @@ export default function UnderstandingPage() {
                             {editingId === item.id ? (
                               <div className="mk-edit-item">
                                 <label htmlFor={"edit-" + item.id}>Corriger cet élément</label>
-                                <textarea id={"edit-" + item.id} value={editValue} onChange={(event) => setEditValue(event.target.value)} rows={3} />
-                                <div className="mk-inline-actions"><button type="button" className="mk-continue-button" onClick={saveEdit} disabled={!editValue.trim()}>Enregistrer la correction</button><button type="button" className="mk-tertiary-button" onClick={() => setEditingId(null)}>Annuler</button></div>
+                                <textarea id={"edit-" + item.id} value={editValue} onChange={(event) => { setEditValue(event.target.value); try { window.sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ itemId: item.id, value: event.target.value })); } catch { /* Le champ reste éditable. */ } }} rows={3} />
+                                <div className="mk-inline-actions"><button type="button" className="mk-continue-button" onClick={saveEdit} disabled={!editValue.trim()}>Enregistrer la correction</button><button type="button" className="mk-tertiary-button" onClick={() => { setEditingId(null); try { window.sessionStorage.removeItem(EDIT_DRAFT_KEY); } catch { /* Rien à nettoyer. */ } }}>Annuler</button></div>
                               </div>
                             ) : (
                               <>
@@ -167,6 +177,7 @@ export default function UnderstandingPage() {
                                 <div className="mk-inline-actions">
                                   <button type="button" className="mk-small-action" onClick={() => startEdit(item)}>Modifier</button>
                                   {item.status !== "validated" && <button type="button" className="mk-small-action mk-small-action-gold" onClick={() => validateItem(item.id)}>Confirmer cet élément</button>}
+                                  {(item.status === "hypothesis" || item.status === "inferred") && <button type="button" className="mk-small-action" onClick={() => rejectItem(item.id)}>Écarter cette interprétation</button>}
                                 </div>
                               </>
                             )}
