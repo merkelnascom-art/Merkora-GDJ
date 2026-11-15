@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCoreKnowledgeRegistry } from "./registry";
+import { createCoreKnowledgeRegistry, createUniversalKnowledgeRegistry } from "./registry";
 import { enrichSituationGraphWithKnowledge } from "./situation-linker";
 import type { SituationGraph } from "../situation-graph";
 
@@ -47,6 +47,21 @@ describe("situation graph knowledge linking", () => {
     expect(second.entities).toEqual(first.entities);
     expect(second.relations).toEqual(graph.relations);
     expect(second.unresolvedRelations).toEqual(graph.unresolvedRelations);
+  });
+
+  it("links an activity mention to a universal domain and exposes its family path", () => {
+    const domainGraph: SituationGraph = {
+      entities: [{ id: "entity:agriculture", key: "agriculture", kind: "activity", label: "Agriculture", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(domainGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched", conceptId: "domain:agriculture", conceptLabel: "Agriculture",
+      classificationPath: [
+        { id: "family:agriculture-living", label: "Agriculture et vivant" },
+        { id: "domain:agriculture", label: "Agriculture" },
+      ],
+    });
   });
 
   it("does not attach a canonical concept from a different semantic type", () => {

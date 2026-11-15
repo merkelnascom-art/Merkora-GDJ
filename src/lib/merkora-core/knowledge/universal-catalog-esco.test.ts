@@ -2,11 +2,19 @@ import { describe, expect, it } from "vitest";
 import { createKnowledgeRegistry } from "./registry";
 import { importESCOBundle } from "./esco-import";
 import { UNIVERSAL_DOMAIN_COUNT, UNIVERSAL_FAMILY_COUNT } from "./universal-domain-catalog";
+import { createUniversalKnowledgeRegistry } from "./registry";
+import { getClassificationLineage } from "./classification-graph";
 
 describe("universal domain catalogue and ESCO import", () => {
   it("provides exactly 20 open families and 100 domain concepts", () => {
     expect(UNIVERSAL_FAMILY_COUNT).toBe(20);
     expect(UNIVERSAL_DOMAIN_COUNT).toBe(100);
+  });
+
+  it("navigates a domain to its family through the canonical classification tree", () => {
+    const registry = createUniversalKnowledgeRegistry();
+    const lineage = getClassificationLineage(registry, "domain:agriculture", "universal-domain");
+    expect(lineage.map((item) => item.id)).toEqual(["family:agriculture-living", "domain:agriculture"]);
   });
 
   it("imports multilingual occupation and skill concepts with their source identities", () => {
