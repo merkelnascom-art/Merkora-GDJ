@@ -37,4 +37,10 @@ describe("local-first project dossiers", () => {
     const storage = { getItem: () => "{broken", setItem: () => undefined };
     expect(readLocalDossiers(storage)).toEqual([]);
   });
+
+  it("retains the last synchronized cloud version for conflict-safe updates", () => {
+    const storage = memoryStorage();
+    saveLocalDossier(storage, { id: "dossier-1", title: "Projet", payload: {}, version: 4, syncedVersion: 2, updatedAt: "2026-11-15T12:00:00.000Z" });
+    expect(readLocalDossiers(storage)[0].syncedVersion).toBe(2);
+  });
 });
