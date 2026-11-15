@@ -35,6 +35,7 @@ let sequence = 0;
 const createId = (prefix: string) => `${prefix}-${Date.now()}-${++sequence}`;
 const now = () => new Date().toISOString();
 
+const SOLUTION_PATTERN = /application|site web|plateforme|logiciel|système|systeme|outil numérique|outil digital|robot|automatiser|automatisation/i;
 const PROBLEM_PATTERN = /probl[eè]me|difficult[eé]|me pose|me gêne|m'empêche|n'arrive pas|retard|perte de temps|désorganis|desorganis|oubli|erreur|bloqu|confus|ne fonctionne pas|fonctionne mal/i;
 const CAUSE_PATTERN = /(?:parce que|car|à cause de|puisque|en raison de|du fait que)[^.!?\n]*/i;
 const CONTEXT_PATTERN = /\b(?:centre de formation|centre de santé|centre de sante|entreprise|boutique|magasin|école|ecole|association|atelier|agence|restaurant|hôpital|hopital|famille|foyer)\b/gi;
@@ -90,6 +91,10 @@ function extractExplicitEvidence(raw: string, sourceMessageId: string, current: 
   }
   for (const outcome of analysis.desiredOutcomes) {
     evidence = addEvidence(evidence, "goal", outcome, sourceMessageId);
+  }
+  const proposedSolution = sentenceContaining(raw, SOLUTION_PATTERN);
+  if (proposedSolution) {
+    evidence = addEvidence(evidence, "preference", proposedSolution, sourceMessageId, proposedSolution);
   }
   for (const actor of ACTOR_PATTERNS) {
     const match = raw.match(actor.pattern);
@@ -165,6 +170,7 @@ function buildSummary(session: UnderstandingSession): string {
     constraint: "Contraintes mentionnées",
     unknown: "Correction à prendre en compte",
     business_rule: "Règle ou clarification",
+    preference: "Solution ou approche envisagée par toi",
   };
   const grouped = new Map<NeedDimension, string[]>();
   for (const item of session.evidence) {
