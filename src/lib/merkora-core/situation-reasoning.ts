@@ -117,34 +117,54 @@ const REFERENCE = /\b(elle|il|elles|ils|ceux-ci|celles-ci|ce dernier|cette derni
 
 function resolveReferences(messages: ConversationMessage[]): ResolvedReference[] {
   const visitorMessages = messages.filter((message) => message.role === "visitor");
-  const known: Array<{ label: string; gender: "f" | "m"; messageId: string; primary: boolean }> = [];
+  const known: Array<{ label: string; gender: "f" | "m" | "any"; messageId: string; primary: boolean }> = [];
   const results: ResolvedReference[] = [];
 
   for (const message of visitorMessages) {
-    const mentions = [...message.content.matchAll(REFERENCE)];
-    for (const mention of mentions) {
-      const token = mention[0];
-      const isFeminine = /^(?:elle|elles|cette|celles)/i.test(token);
-      const candidates = known.filter((item) => item.gender === (isFeminine ? "f" : "m"));
-      const explicitNoun = token.match(/plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|médecin|medecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription/i)?.[0];
-      const nounCandidates = explicitNoun ? candidates.filter((item) => item.label.toLocaleLowerCase("fr") === explicitNoun.toLocaleLowerCase("fr")) : [];
+    const tokens = [
+      ...[...message.content.matchAll(ANTECEDENT)].map((match) => ({
+        type: "antecedent" as const,
+        index: match.index ?? 0,
+        match,
+      })),
+      ...[...message.content.matchAll(REFERENCE)].map((match) => ({
+        type: "reference" as const,
+        index: match.index ?? 0,
+        match,
+      })),
+    ].sort((a, b) => a.index - b.index);
+
+    let antecedentIndex = 0;
+    for (const tokenItem of tokens) {
+      if (tokenItem.type === "antecedent") {
+        const noun = tokenItem.match[1].toLocaleLowerCase("fr");
+        const feminine = ["plateforme", "application", "solution", "clinique", "école", "ecole", "directrice", "secrétaire", "enseignante", "formatrice", "employée", "patiente", "étudiante", "cliente", "invitée", "inscription", "commande"].includes(noun);
+        const masculine = ["site", "logiciel", "système", "systeme", "outil", "projet", "service", "directeur", "médecin", "medecin", "enseignant", "formateur", "agent", "responsable"].includes(noun);
+        const gender = feminine ? "f" : masculine ? "m" : "any";
+        const label = tokenItem.match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
+        known.push({ label, gender, messageId: message.id, primary: antecedentIndex === 0 });
+        antecedentIndex += 1;
+        continue;
+      }
+
+      const mention = tokenItem.match[0];
+      const isFeminine = /^(?:elle|elles|cette|celles)/i.test(mention);
+      const expectedGender = isFeminine ? "f" : "m";
+      const candidates = known.filter((item) => item.gender === expectedGender || item.gender === "any");
+      const explicitNoun = mention.match(/plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|médecin|medecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription/i)?.[0];
+      const nounCandidates = explicitNoun
+        ? candidates.filter((item) => item.label.toLocaleLowerCase("fr") === explicitNoun.toLocaleLowerCase("fr"))
+        : [];
       const primaryCandidates = candidates.filter((item) => item.primary);
       const target = (nounCandidates.length ? nounCandidates : primaryCandidates.length ? primaryCandidates : candidates).at(-1);
       results.push({
         messageId: message.id,
-        mention: token,
+        mention,
         targetLabel: target?.label ?? null,
         resolved: Boolean(target),
-        confidence: target ? 0.82 : 0.2,
+        confidence: target ? (nounCandidates.length ? 0.96 : 0.82) : 0.2,
       });
     }
-    const antecedents = [...message.content.matchAll(ANTECEDENT)];
-    antecedents.forEach((match, index) => {
-      const noun = match[1].toLocaleLowerCase("fr");
-      const gender = ["plateforme", "application", "solution", "clinique", "école", "ecole", "directrice", "secrétaire", "enseignante", "formatrice", "employée", "patiente", "élève", "eleve", "étudiante", "cliente", "invitée", "inscription", "commande"].includes(noun) ? "f" : "m";
-      const label = match[0].replace(/^(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+/i, "").trim();
-      known.push({ label, gender, messageId: message.id, primary: index === 0 });
-    });
   }
   return results;
 }
