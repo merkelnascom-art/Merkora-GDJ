@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { browserDossierStorage, getLatestLocalDossier, saveLocalDossier } from "@/lib/dossiers/local-dossiers";
 import {
   answerUnderstanding,
   beginUnderstanding,
@@ -81,8 +82,10 @@ export function ConversationPendingTurn({ message, activity }: { message: string
 function readStoredSession(): UnderstandingSession | null {
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<UnderstandingSession>;
+    const localStorage = browserDossierStorage();
+    const local = localStorage ? getLatestLocalDossier<UnderstandingSession>(localStorage) : null;
+    const parsed = (raw ? JSON.parse(raw) : local?.payload) as Partial<UnderstandingSession> | undefined;
+    if (!parsed) return null;
     if (
       typeof parsed.originalDescription === "string" &&
       Array.isArray(parsed.messages) &&
@@ -130,6 +133,8 @@ export default function ConversationPage() {
     setSession(next);
     try {
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
+      const localStorage = browserDossierStorage();
+      if (localStorage) saveLocalDossier(localStorage, { id: next.id, title: next.originalDescription.slice(0, 120) || "Nouveau projet", payload: next, version: next.version, updatedAt: new Date().toISOString() });
       window.sessionStorage.removeItem(DRAFT_KEY);
       window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
       window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
