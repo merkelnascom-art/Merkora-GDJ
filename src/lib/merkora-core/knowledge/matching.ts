@@ -37,6 +37,22 @@ export interface KnowledgeMatchOptions {
   expectedType?: string;
   allowTypeFallback?: boolean;
   includeNonValidated?: boolean;
+  projectId?: string;
+  country?: string;
+  jurisdiction?: string;
+  region?: string;
+}
+
+function isWithinRequestedScope(
+  concept: KnowledgeConcept,
+  options: KnowledgeMatchOptions,
+): boolean {
+  if (concept.scope.global) return true;
+  if (options.projectId && concept.scope.projectIds?.includes(options.projectId)) return true;
+  if (options.country && concept.scope.countries?.includes(options.country)) return true;
+  if (options.jurisdiction && concept.scope.jurisdictions?.includes(options.jurisdiction)) return true;
+  if (options.region && concept.scope.regions?.includes(options.region)) return true;
+  return false;
 }
 
 /**
@@ -56,6 +72,7 @@ export function matchKnowledgeConcept(
 
   for (const concept of registry.concepts) {
     if (!options.includeNonValidated && concept.lifecycle.status !== "validated") continue;
+    if (!isWithinRequestedScope(concept, options)) continue;
     if (options.expectedType && concept.conceptType !== options.expectedType) continue;
 
     const terms = [
@@ -107,7 +124,8 @@ export function matchKnowledgeConcept(
   if (options.allowTypeFallback && options.expectedType) {
     const typed = registry.concepts.filter((concept) =>
       concept.conceptType === options.expectedType &&
-      (options.includeNonValidated || concept.lifecycle.status === "validated"),
+      (options.includeNonValidated || concept.lifecycle.status === "validated") &&
+      isWithinRequestedScope(concept, options),
     );
     if (typed.length === 1) {
       return { status: "type_only", query, concept: typed[0], confidence: 0.75 };
