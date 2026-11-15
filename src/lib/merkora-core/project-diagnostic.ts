@@ -41,6 +41,7 @@ export interface ProjectUnderstandingItem {
   status: ProjectUnderstandingStatus;
   source: "conversation" | "user_correction" | "diagnostic_answer";
   sourceMessageId?: string;
+  sourceReferenceId?: string;
   sourceQuote: string;
   createdAt: string;
   supersedesId?: string;
@@ -214,7 +215,7 @@ export function reviseUnderstandingItem(
     value,
     status: "validated",
     source: "user_correction",
-    sourceMessageId: makeId("correction-message"),
+    sourceReferenceId: makeId("correction-reference"),
     sourceQuote: value,
     createdAt: now(),
     supersedesId: original.id,
@@ -470,7 +471,7 @@ export function recordDiagnosticAnswer(
     value: evidenceValue,
     status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
     source: "diagnostic_answer",
-    sourceMessageId: answer.id,
+    sourceReferenceId: answer.id,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
   };
@@ -533,7 +534,7 @@ export function reviseDiagnosticAnswer(
     value: evidenceValue,
     status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
     source: "diagnostic_answer",
-    sourceMessageId: answerIdNext,
+    sourceReferenceId: answerIdNext,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
     supersedesId: original.id,
