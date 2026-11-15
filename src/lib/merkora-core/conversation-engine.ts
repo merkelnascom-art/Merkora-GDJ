@@ -193,7 +193,7 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   const visitorText = session.messages
     .filter((item) => item.role === "visitor")
     .map((item) => item.content)
-    .join("\\n");
+    .join("\n");
   const analysis = analyzeUniversalProjectIntent(visitorText);
   const history = session.messages.map((item) => ({
     role: item.role === "visitor" ? "user" as const : item.role === "merkora" ? "assistant" as const : "system" as const,
