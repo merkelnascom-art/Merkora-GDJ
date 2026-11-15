@@ -39,6 +39,8 @@ export default function ProjectsPage() {
     if (!storage) { setStatus("Le stockage local de ce navigateur est indisponible."); return; }
     try {
       saveLocalDossier(storage, { id: dossier.id, title: dossier.title, payload: dossier.payload, version: dossier.version, syncedVersion: dossier.version, updatedAt: new Date().toISOString() });
+      if (dossier.payload && typeof dossier.payload === "object") window.sessionStorage.setItem("merkora-v2-understanding-session", JSON.stringify(dossier.payload));
+      window.sessionStorage.removeItem("merkora-v2-new-journey");
       refreshLocal();
       setStatus("Dossier restauré sur cet appareil. L'original cloud reste intact.");
     } catch {
