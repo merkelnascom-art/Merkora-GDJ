@@ -397,6 +397,18 @@ function advance(session: UnderstandingSession): UnderstandingSession {
 
   const coreDimensions = new Set(dossier.facets.map((item) => item.dimension));
   const hasCompleteOpeningBrief = ["problem", "audience", "goal", "preference"].every((dimension) => coreDimensions.has(dimension));
+  if (updatedSession.askedQuestionIds.length === 0 && hasCompleteOpeningBrief) {
+    const summary = buildSummary(updatedSession);
+    return {
+      ...updatedSession,
+      pendingQuestion: null,
+      stage: "summary_validation",
+      summary,
+      version: updatedSession.version + 1,
+      messages: [...updatedSession.messages, message(updatedSession.conversationId, "merkora", summary)],
+    };
+  }
+
   if (updatedSession.askedQuestionIds.length === 0 && !hasCompleteOpeningBrief) {
     const question = intentFirstQuestion(updatedSession);
     const alreadyCovered = updatedSession.evidence.some((item) => item.dimension === question.dimension);
@@ -407,10 +419,8 @@ function advance(session: UnderstandingSession): UnderstandingSession {
   }
 
   const answeredDimensions = [...new Set(updatedSession.evidence.map((item) => item.dimension))];
-  const hasRichDescription = updatedSession.evidence.some((item) => item.dimension === "feature") &&
-    updatedSession.evidence.some((item) => item.dimension === "problem") &&
-    (updatedSession.evidence.some((item) => item.dimension === "goal") ||
-      updatedSession.evidence.some((item) => item.dimension === "experience"));
+  const dossierDimensions = new Set(dossier.facets.map((item) => item.dimension));
+  const hasRichDescription = ["problem", "audience", "goal", "preference"].every((dimension) => dossierDimensions.has(dimension));
   const plan = selectNextQuestion({
     candidates: (INTENT_QUESTION_CATALOG[updatedSession.intentKind] ?? QUESTION_CATALOG),
     answeredDimensions,
@@ -432,9 +442,9 @@ function advance(session: UnderstandingSession): UnderstandingSession {
     };
   }
 
-  const hasPrivacyEvidence = updatedSession.evidence.some((item) => item.dimension === "risk");
-  if (updatedSession.privacyConsiderations.length > 0 && !hasPrivacyEvidence &&
-      !updatedSession.deferredDimensions.includes("risk")) {
+  if (dossier.missingDimensions.includes("risk") &&
+      !updatedSession.deferredDimensions.includes("risk") &&
+      !updatedSession.askedQuestionIds.includes("clarify-privacy-and-consent-v1")) {
     return {
       ...updatedSession,
       pendingQuestion: PRIVACY_QUESTION,
@@ -614,6 +624,31 @@ export function decideUnderstandingSummary(
     const confirmedSummary = session.summary
       .replace("compréhension provisoire", "compréhension validée")
       .replace("Cette synthèse n'est pas encore une décision ni une solution. Tu peux la confirmer ou me corriger.", "Cette synthèse a été confirmée par toi. Elle constitue le point de départ validé de la suite du parcours.");
+    const nextPrompt = session.dossier.openQuestions[0];
+    if (nextPrompt) {
+      const dimension = session.dossier.missingDimensions[0] ?? "unknown";
+      const question: QuestionCandidate = {
+        id: "dossier-follow-up-" + dimension + "-v1",
+        dimension,
+        prompt: nextPrompt,
+        rationale: "Cette information manque encore dans le dossier et peut préciser la conception.",
+        impact: 0.9, uncertainty: 0.9, decisionRelevance: 0.9, answerability: 0.85,
+      };
+      return {
+        ...session,
+        evidence: confirmedEvidence,
+        summary: confirmedSummary,
+        validations: [...session.validations, validation],
+        pendingQuestion: question,
+        askedQuestionIds: [...session.askedQuestionIds, question.id],
+        stage: "clarification",
+        version: session.version + 1,
+        messages: [
+          ...session.messages,
+          message(session.conversationId, "merkora", "Merci. J'ai conservé les éléments que tu viens de confirmer. Il reste un seul point utile à éclaircir : " + question.prompt),
+        ],
+      };
+    }
     return {
       ...session,
       evidence: confirmedEvidence,
