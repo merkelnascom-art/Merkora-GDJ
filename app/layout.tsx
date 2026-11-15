@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MerKora GDJ — Vos besoins, des solutions concrètes",
+  title: "MerKora GDJ V2 — Parlons de votre idée",
   description:
-    "Décrivez votre besoin, structurez votre projet et explorez les prochaines étapes avec MerKora GDJ.",
+    "Rencontrez MerKora, exprimez votre idée librement et choisissez de discuter par la voix ou par écrit.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
