@@ -8,6 +8,7 @@ import {
   deferUnderstandingQuestion,
   type UnderstandingSession,
 } from "../../src/lib/merkora-core/conversation-engine";
+import { buildUnderstandingDossier } from "../../src/lib/merkora-core/understanding-dossier";
 
 const examples = [
   { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
@@ -59,7 +60,10 @@ function readStoredSession(): UnderstandingSession | null {
       Array.isArray(parsed.evidence) &&
       typeof parsed.stage === "string"
     ) {
-      return parsed as UnderstandingSession;
+      return {
+        ...parsed,
+        dossier: parsed.dossier ?? buildUnderstandingDossier(parsed.messages),
+      } as UnderstandingSession;
     }
   } catch {
     // Une session illisible ne doit jamais bloquer l'écran.
