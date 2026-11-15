@@ -8,7 +8,7 @@ describe("MerKora screen 03 — project understanding", () => {
   it("presents the universal understanding stage without a sector selector", () => {
     const html = renderToStaticMarkup(<UnderstandingPage />);
     expect(html).toContain("Vérifions-le ensemble");
-    expect(html).toContain("Activité, idée ou phénomène");
+    expect(html).toContain("activité, idée, situation");
     expect(html).toContain("Ce qui reste inconnu ne sera pas inventé");
     expect(html).not.toContain("Choisis ton secteur");
   });
