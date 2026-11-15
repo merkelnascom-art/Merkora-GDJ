@@ -71,8 +71,15 @@ export default function UnderstandingPage() {
       if (saved) {
         const parsed = JSON.parse(saved) as ProjectUnderstanding;
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
-          setDossier(parsed);
-          restoreEditDraft(parsed, setEditingId, setEditValue);
+          const normalized: ProjectUnderstanding = {
+            ...parsed,
+            situationGraph: parsed.situationGraph ?? session.situationGraph,
+            contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
+            unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
+            privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
+          };
+          setDossier(normalized);
+          restoreEditDraft(normalized, setEditingId, setEditValue);
           return;
         }
       }
@@ -157,6 +164,17 @@ export default function UnderstandingPage() {
               <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
               <p>{dossier.originalDescription}</p>
             </section>
+            {dossier.contradictions.length > 0 && <section className="mk-understanding-section mk-contradictions">
+              <div className="mk-understanding-section-heading"><div><h2>Points à clarifier</h2><p>Des indications semblent différentes ou incompatibles. Aucune n'est écartée automatiquement.</p></div><span>{dossier.contradictions.filter((item) => item.status !== "resolved").length}</span></div>
+              {dossier.contradictions.map((item) => <article className="mk-contradiction-item" key={item.id}>
+                <span className={"mk-status " + (item.status === "resolved" ? "mk-status-validated" : "mk-status-inferred")}>{item.status === "resolved" ? "Clarifié" : item.status === "deferred" ? "À reprendre" : "À éclaircir"}</span>
+                <p><strong>Première indication :</strong> {item.statementA}</p>
+                <p><strong>Autre indication :</strong> {item.statementB}</p>
+                {item.status !== "resolved" && <small>Question proposée : {item.question}</small>}
+              </article>)}
+            </section>}
+            {dossier.unresolvedQuestions.length > 0 && <section className="mk-understanding-section"><h2>Références à préciser</h2><ul className="mk-unresolved-list">{dossier.unresolvedQuestions.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
+            {dossier.privacyConsiderations.length > 0 && <section className="mk-understanding-section"><h2>Précautions de confidentialité repérées</h2><ul className="mk-unresolved-list">{dossier.privacyConsiderations.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
 
             <div className="mk-stage-overview">
               <div><strong>{activeItems.length}</strong><span>éléments actifs</span></div>
