@@ -27,6 +27,8 @@ export type ProjectUnderstandingDimension =
   | "constraints"
   | "imagined_solution"
   | "success_criteria"
+  | "jurisdiction"
+  | "languages"
   | "information"
   | "other"
   | (string & {});
@@ -146,6 +148,8 @@ export const UNDERSTANDING_SECTIONS: Array<{
   { id: "constraints", title: "Contraintes et règles", description: "Les limites, obligations, règles et précautions." },
   { id: "imagined_solution", title: "Solution imaginée", description: "Les pistes proposées par l'utilisateur, sans les considérer comme déjà décidées." },
   { id: "success_criteria", title: "Conditions de réussite", description: "Les signes qui permettront de vérifier le résultat." },
+  { id: "jurisdiction", title: "Cadre géographique et réglementaire", description: "Les pays, territoires et juridictions explicitement concernés." },
+  { id: "languages", title: "Langues et terminologies", description: "Les langues nécessaires au projet et à ses utilisateurs." },
   { id: "information", title: "Informations et connaissances", description: "Les données, documents et connaissances déjà mentionnés." },
   { id: "other", title: "Autres éléments", description: "Les éléments importants qui ne correspondent pas encore à une dimension connue." },
 ];
@@ -320,6 +324,11 @@ export function getNextDiagnosticQuestion(
   const hasConstraints = hasDimension(dossier, ["constraints"]);
   const hasResources = hasDimension(dossier, ["resources"]);
   const hasSuccess = hasDimension(dossier, ["success_criteria"]);
+  const hasJurisdiction = hasDimension(dossier, ["jurisdiction"]);
+  const hasLanguages = hasDimension(dossier, ["languages"]);
+  const activeText = [dossier.originalDescription, ...getActiveUnderstandingItems(dossier).map((item) => item.value)].join("\\n");
+  const regulatorySignals = /\\b(réglement\\w*|juridiction\\w*|loi\\w*|norme\\w*|autorisation\\w*|licence\\w*|données personnelles|confidentialité|fiscal\\w*|douane\\w*|conformité|certification)\\b/i.test(activeText);
+  const multilingualSignals = /\\b(multilingue|plusieurs langues|traduction|langues? différentes)\\b/i.test(activeText);
 
   const candidates: DiagnosticQuestion[] = [
     question(
@@ -381,6 +390,18 @@ export function getNextDiagnosticQuestion(
       ["Budget ou moyens disponibles", "Temps ou échéances", "Lieu ou environnement", "Matériel ou équipements", "Accès ou connexion", "Règles ou autorisations", "Confidentialité ou sécurité", "Aucune contrainte identifiée", "Je ne sais pas encore", "Autre"],
     ),
     question(
+      "jurisdiction-context",
+      "jurisdiction",
+      "Dans quels pays, territoires ou cadres juridiques ce projet devra-t-il fonctionner ? Si plusieurs cadres s'appliquent, indique-les.",
+      "Les obligations locales peuvent dépendre du pays, du territoire et de la juridiction concernés.",
+    ),
+    question(
+      "language-context",
+      "languages",
+      "Quelles langues doivent être comprises ou utilisées dans ce projet ?",
+      "Préserver les langues, les variantes locales et les terminologies nécessaires.",
+    ),
+    question(
       "available-resources",
       "resources",
       "Quels moyens sont déjà disponibles pour ce projet : personnes, équipements, documents, données, lieux, outils ou autres ressources ?",
@@ -408,6 +429,8 @@ export function getNextDiagnosticQuestion(
       case "constraints-and-rules": return !hasConstraints;
       case "available-resources": return !hasResources;
       case "success-criteria": return hasObjectives && !hasSuccess;
+      case "jurisdiction-context": return regulatorySignals && !hasJurisdiction;
+      case "language-context": return multilingualSignals && !hasLanguages;
       default: return false;
     }
   });
