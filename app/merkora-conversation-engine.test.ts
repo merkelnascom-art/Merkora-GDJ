@@ -52,7 +52,8 @@ describe("MerKora screen 2 guided understanding journey", () => {
     expect(afterCause.summary).toContain("Les enseignants arrivent souvent en retard.");
 
     const confirmed = decideUnderstandingSummary(afterCause, "confirmed");
-    expect(confirmed.stage).toBe("complete");
+    expect(confirmed.stage).toBe("clarification");
+    expect(confirmed.pendingQuestion?.dimension).toBe("preference");
     expect(confirmed.evidence.every((item) => item.status === "validated")).toBe(true);
   });
 
