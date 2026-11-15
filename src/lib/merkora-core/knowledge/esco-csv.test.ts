@@ -35,6 +35,33 @@ describe("official ESCO CSV language-pack parser", () => {
     });
   });
 
+  it("reads the official ESCO concept headings and occupation-skill relation files", () => {
+    const bundle = parseESCOCsvLanguageFiles({
+      datasetVersion: "1.2.1",
+      files: [{
+        language: "fr",
+        type: "occupation",
+        content: 'Concept URI,Concept PT,Definition,Parent Concept URI\nurn:occupation:teacher,Enseignant,"Transmet des savoirs.",urn:group:education\n',
+      }, {
+        language: "fr",
+        type: "skill",
+        content: 'Concept URI,Concept PT,Definition\nurn:skill:pedagogy,Pédagogie,"Capacité à enseigner."\n',
+      }],
+      occupationSkillRelationsCsv: 'Occupation URI,Skill URI,Relation type\nurn:occupation:teacher,urn:skill:pedagogy,Essential\n',
+      broaderRelationFiles: [{
+        type: "occupation",
+        content: 'Concept URI,Parent Concept URI\nurn:occupation:teacher,urn:group:education\n',
+      }],
+    });
+
+    expect(bundle.concepts.find((item) => item.uri === "urn:occupation:teacher")?.broaderUri).toBe("urn:group:education");
+    expect(bundle.occupationSkillRelations).toEqual([{
+      occupationUri: "urn:occupation:teacher",
+      skillUri: "urn:skill:pedagogy",
+      relation: "essential",
+    }]);
+  });
+
   it("supports quoted commas, escaped quotes and rejects conflicting labels for one URI/language", () => {
     const bundle = parseESCOCsvLanguageFiles({
       datasetVersion: "1.2.1",
