@@ -206,6 +206,16 @@ The planned integration has been completed in the isolated branch. The implement
 - Expose an explicit Screen 03 action to propose an unknown term; persist the proposal in the current project dossier without publishing it to shared knowledge.
 - Keep historical dossiers compatible when the proposal field is absent.
 
-**Verification discipline:** a red CI run was observed for the four missing acceptance behaviors (relationship indexing/endpoint validation, strict scope matching, and language-aware homonym resolution). The implementation was then added and the following CI run passed: 19 test files, 123 tests, TypeScript and Next.js production build. Further snapshot isolation, versioned relation revision and project-private proposal UI changes were added after that run; they require a fresh CI run before this plan can be considered fully verified.
+**Verification discipline:** a red CI run was observed for the four missing acceptance behaviors (relationship indexing/endpoint validation, strict scope matching, and language-aware homonym resolution). The implementation was then added and the following CI run passed: 19 test files, 123 tests, TypeScript and Next.js production build. Further snapshot isolation, versioned relation revision, type-safe graph matching and project-private proposal UI changes were added and verified in the final CI run #1337: 19 test files, 127 tests, TypeScript and Next.js production build all passed.
 
 **Boundaries:** no Supabase migration or write, no external paid AI service, no production deployment and no merge. The shared registry remains a code-seeded in-memory registry; project proposals remain in the current browser session dossier. Server synchronization and a secure global review console remain future infrastructure, not silently simulated here.
+
+
+### Final verification — CI run #1337
+
+Commit: `ce74eebd759a34d4abcd3f9ad764a077b50a42a8`
+
+- TypeScript: passed.
+- Vitest: 19 files, 127 tests passed.
+- Next.js production build: passed.
+- GitHub Actions job: completed successfully.
