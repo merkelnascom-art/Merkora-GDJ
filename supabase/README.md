@@ -32,3 +32,7 @@ migrations/202610280001_create_user_projects.sql and its user_projects table are
 ## Secrets
 
 Never place a Supabase service_role or sb_secret key in browser code or any NEXT_PUBLIC_* variable. This implementation requires only the publishable key in public configuration. No database migration is applied automatically by the application or repository.
+## Quality and dependency security
+
+- Vitest is pinned to 5.1.0 and Vite to 8.3.7; the test runner's React JSX transform is configured in `vitest.config.ts`.
+- CI runs `npm audit --audit-level=moderate` and persists the generated npm lockfile after a successful verification run.
