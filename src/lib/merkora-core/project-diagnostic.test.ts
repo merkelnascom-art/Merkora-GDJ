@@ -73,6 +73,19 @@ describe("adaptive universal diagnostic", () => {
 
 
 
+
+  it("treats the explicit 'I don't know yet' option as unknown rather than as a fact", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je développe une activité expérimentale."));
+    const diagnostic = createDiagnosticSession(dossier);
+    const question = getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!question) throw new Error("Expected a diagnostic question.");
+    const result = recordDiagnosticAnswer(dossier, diagnostic, question, { value: "Je ne sais pas encore" });
+
+    expect(result.diagnostic.answers[0].status).toBe("unknown");
+    expect(result.diagnostic.deferredQuestionIds).toContain(question.id);
+    expect(result.understanding.items.at(-1)?.status).toBe("unknown");
+  });
+
   it("asks for the concrete difficulty after the user chooses a problem-solving motivation", () => {
     const base = createProjectUnderstanding(beginUnderstanding("Je veux explorer une nouvelle activité."));
     const dossier = {
