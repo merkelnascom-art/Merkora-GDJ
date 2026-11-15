@@ -17,6 +17,8 @@ const examples = [
 
 const SESSION_KEY = "merkora-v2-understanding-session";
 const DRAFT_KEY = "merkora-v2-first-message";
+const ANSWER_DRAFT_KEY = "merkora-v2-answer-draft";
+const CORRECTION_DRAFT_KEY = "merkora-v2-correction-draft";
 
 function MerKoraOrb({ state }: { state: "idle" | "clarification" | "summary_validation" | "complete" }) {
   return (
@@ -70,10 +72,17 @@ export default function ConversationPage() {
   const [showCorrection, setShowCorrection] = useState(false);
 
   useEffect(() => {
-    setSession(readStoredSession());
+    const restored = readStoredSession();
+    setSession(restored);
     try {
-      const draft = window.sessionStorage.getItem(DRAFT_KEY);
+      const draftKey = restored ? ANSWER_DRAFT_KEY : DRAFT_KEY;
+      const draft = window.sessionStorage.getItem(draftKey);
+      const correctionDraft = window.sessionStorage.getItem(CORRECTION_DRAFT_KEY);
       if (draft) setMessage(draft);
+      if (correctionDraft) {
+        setCorrection(correctionDraft);
+        setShowCorrection(true);
+      }
     } catch {
       // La page reste utilisable si le stockage de session est indisponible.
     }
@@ -84,8 +93,28 @@ export default function ConversationPage() {
     try {
       window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       window.sessionStorage.removeItem(DRAFT_KEY);
+      window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
+      window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
     } catch {
       // La conversation reste utilisable même sans stockage de session.
+    }
+  }
+
+  function updateMessageDraft(value: string) {
+    setMessage(value);
+    try {
+      window.sessionStorage.setItem(session ? ANSWER_DRAFT_KEY : DRAFT_KEY, value);
+    } catch {
+      // La saisie reste disponible même si le stockage local à la session échoue.
+    }
+  }
+
+  function updateCorrectionDraft(value: string) {
+    setCorrection(value);
+    try {
+      window.sessionStorage.setItem(CORRECTION_DRAFT_KEY, value);
+    } catch {
+      // La correction reste disponible dans le champ courant.
     }
   }
 
@@ -138,6 +167,8 @@ export default function ConversationPage() {
     try {
       window.sessionStorage.removeItem(SESSION_KEY);
       window.sessionStorage.removeItem(DRAFT_KEY);
+      window.sessionStorage.removeItem(ANSWER_DRAFT_KEY);
+      window.sessionStorage.removeItem(CORRECTION_DRAFT_KEY);
     } catch {
       // Le redémarrage visuel reste possible sans stockage.
     }
@@ -198,7 +229,7 @@ export default function ConversationPage() {
                 id="mk-first-message"
                 className="mk-first-message"
                 value={message}
-                onChange={(event) => setMessage(event.target.value)}
+                onChange={(event) => updateMessageDraft(event.target.value)}
                 placeholder="En ce moment, ce qui me pose problème, c'est…"
                 rows={5}
               />
@@ -266,7 +297,7 @@ export default function ConversationPage() {
                   {showCorrection ? (
                     <div className="mk-correction-panel">
                       <label className="mk-input-label" htmlFor="mk-correction">CE QUE JE DOIS CORRIGER</label>
-                      <textarea id="mk-correction" className="mk-first-message" value={correction} onChange={(event) => setCorrection(event.target.value)} rows={3} placeholder="Ce point n'est pas exact…"/>
+                      <textarea id="mk-correction" className="mk-first-message" value={correction} onChange={(event) => updateCorrectionDraft(event.target.value)} rows={3} placeholder="Ce point n'est pas exact…"/>
                       <button type="button" className="mk-continue-button" onClick={submitCorrection} disabled={!correction.trim()}>
                         Envoyer ma correction <span>→</span>
                       </button>
