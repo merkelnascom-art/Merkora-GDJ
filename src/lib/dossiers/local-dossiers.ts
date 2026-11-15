@@ -3,6 +3,8 @@ export type LocalDossier<T = unknown> = {
   title: string;
   payload: T;
   version: number;
+  /** Last cloud version successfully observed for this local dossier. */
+  syncedVersion?: number;
   updatedAt: string;
 };
 
