@@ -164,3 +164,18 @@ La Fondation A est intégrée dans `src/lib/merkora-core/knowledge/` et reliée 
 - Les connaissances locales ne sont rapprochées que lorsque le contexte de pays, de juridiction, de région ou de projet est fourni au moteur de correspondance.
 
 La Fondation A fournit ainsi un premier socle réellement utilisé par le graphe et l'écran 03. Elle ne prétend pas remplacer la compréhension linguistique et le raisonnement qui seront conçus dans les fondations suivantes.
+
+
+### 10.3. Compléments d'intégration de la Fondation A
+
+La validation d'intégrité a complété le premier raccordement :
+
+- Les relations déclarées à l'intérieur d'un concept sont maintenant indexées dans le registre et validées avec leurs deux extrémités.
+- Les classifications hiérarchiques ne peuvent pas référencer un parent absent.
+- Les portées locales appliquent toutes les dimensions déclarées ; une simple concordance du pays ne suffit pas si une juridiction ou une région plus précise est aussi imposée.
+- La correspondance peut être limitée à une langue et à une région, afin de ne pas fusionner des homonymes de langues différentes.
+- Les concepts peuvent être révisés par version attendue ; l'ancienne version reste archivée et une révision obsolète est refusée.
+- Les snapshots du registre copient les collections et sous-structures afin d'éviter qu'une mutation des objets fournis à l'entrée altère silencieusement le registre.
+- L'écran 03 permet de proposer explicitement un terme inconnu. La proposition est conservée dans le dossier privé du projet, avec sa citation et son message source ; elle ne modifie pas le référentiel commun.
+
+Les propositions sont conservées dans le dossier de compréhension du navigateur courant. Leur synchronisation multi-appareils et leur revue administrative sécurisée restent hors périmètre, conformément à l'absence de migration Supabase dans cette fondation.
