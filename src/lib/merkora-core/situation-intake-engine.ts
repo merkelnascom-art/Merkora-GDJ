@@ -94,6 +94,7 @@ export function beginUnderstanding(raw:string):UnderstandingSession{
 export function answerUnderstanding(s:UnderstandingSession,answer:string):UnderstandingSession{
  const text=answer.trim();if(!text||s.stage!=="clarification"||!s.pendingQuestion)return s;
  const visitor=newMessage(s.conversationId,"visitor",text);
+ if(REPAIR.test(text))return advance({...s,messages:[...s.messages,visitor],pendingQuestion:null,version:s.version+1});
  const evidence=extract(text,visitor,s.evidence);
  const hasPending=evidence.some(e=>e.dimension===s.pendingQuestion?.dimension&&e.sourceMessageId===visitor.id);
  const complete=hasPending?evidence:addEvidence(evidence,s.pendingQuestion.dimension,text,visitor,text);
