@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createUniversalKnowledgeRegistry } from "./registry";
 import { matchKnowledgeConcept } from "./matching";
 import { getClassificationLineage } from "./classification-graph";
+import { CONSTRUCTION_BUILT_ENVIRONMENT_CATALOG } from "./construction-built-environment-catalog";
 
 describe("Fondation A — famille 05 Construction et cadre bâti", () => {
   const registry = createUniversalKnowledgeRegistry();
@@ -39,7 +40,8 @@ describe("Fondation A — famille 05 Construction et cadre bâti", () => {
   });
 
   it("représente les spécialités, métiers, activités, processus, problèmes, ressources, fonctions et indicateurs", () => {
-    const types = new Set(registry.concepts.map((item) => item.conceptType));
+    expect(CONSTRUCTION_BUILT_ENVIRONMENT_CATALOG).toHaveLength(68);
+    const types = new Set(CONSTRUCTION_BUILT_ENVIRONMENT_CATALOG.map((item) => item.conceptType));
     for (const type of ["subdomain", "specialization", "occupation", "activity", "process", "problem", "resource", "function", "indicator"]) {
       expect([...types].includes(type)).toBe(true);
     }
