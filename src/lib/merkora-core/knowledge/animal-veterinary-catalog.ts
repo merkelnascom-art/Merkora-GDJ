@@ -241,6 +241,79 @@ const activityProcessLinks: Array<[string, string]> = [
 const processActivityRelationships = activityProcessLinks.map(([processId, activityId]) =>
   relation(`rel:animal-vet:process-activity:${processId.split(":").pop()}:${activityId.split(":").pop()}`, processId, activityId, "includes_activity"),
 );
+const occupationDomainSeeds: Array<[string, string]> = [
+  ["occupation-vet:veterinarian", "domain-vet:veterinary-medicine"],
+  ["occupation-vet:veterinary-nurse", "domain-vet:veterinary-medicine"],
+  ["occupation-vet:animal-health-technician", "domain-vet:veterinary-medicine"],
+  ["occupation-vet:livestock-farmer", "domain:livestock"],
+  ["occupation-vet:poultry-farmer", "domain:livestock"],
+  ["occupation-vet:cattle-farmer", "domain:livestock"],
+  ["occupation-vet:small-ruminant-farmer", "domain:livestock"],
+  ["occupation-vet:pig-farmer", "domain:livestock"],
+  ["occupation-vet:beekeeper", "domain:livestock"],
+  ["occupation-vet:animal-nutritionist", "domain-vet:animal-nutrition"],
+  ["occupation-vet:animal-breeding-technician", "domain-vet:animal-reproduction-genetics"],
+  ["occupation-vet:animal-breeder", "domain-vet:animal-reproduction-genetics"],
+  ["occupation-vet:animal-shelter-manager", "domain-vet:animal-welfare-protection"],
+  ["occupation-vet:animal-groomer", "domain-vet:companion-animal-care"],
+  ["occupation-vet:pet-trainer", "domain-vet:companion-animal-care"],
+  ["occupation-vet:animal-product-collector", "domain-vet:animal-products-primary"],
+  ["occupation-vet:veterinary-laboratory-technician", "domain-vet:veterinary-medicine"],
+  ["occupation-vet:animal-welfare-officer", "domain-vet:animal-welfare-protection"],
+];
+const occupationDomainRelationships = occupationDomainSeeds.map(([occupationId, domainId]) =>
+  relation(`rel:animal-vet:occupation-domain:${occupationId.split(":").pop()}`, occupationId, domainId, "works_in_domain"),
+);
+const resourceDomainSeeds: Array<[string, string]> = [
+  ["animal-herd", "domain:livestock"],
+  ["animal-individual-record", "domain-vet:veterinary-medicine"],
+  ["animal-housing", "domain:livestock"],
+  ["animal-feed", "domain-vet:animal-nutrition"],
+  ["animal-forage", "domain-vet:animal-nutrition"],
+  ["veterinary-medicine", "domain-vet:veterinary-medicine"],
+  ["veterinary-equipment", "domain-vet:veterinary-medicine"],
+  ["animal-identification-tag", "domain-vet:animal-welfare-protection"],
+  ["incubator", "domain:livestock"],
+  ["beehive", "domain:livestock"],
+  ["milking-equipment", "domain-vet:animal-products-primary"],
+  ["animal-water-point", "domain:livestock"],
+  ["animal-transport-vehicle", "domain-vet:animal-welfare-protection"],
+  ["animal-cold-storage", "domain-vet:animal-products-primary"],
+];
+const resourceDomainRelationships = resourceDomainSeeds.map(([resourceKey, domainId]) =>
+  relation(`rel:animal-vet:resource-domain:${resourceKey}`, `resource-vet:${resourceKey}`, domainId, "resource_for_domain"),
+);
+const problemSolutionSeeds: Array<[string, string]> = [
+  ["animal-mortality", "function-vet:track-animal-health"],
+  ["animal-disease-outbreak", "function-vet:report-animal-disease"],
+  ["low-animal-productivity", "function-vet:track-animal-health"],
+  ["animal-feed-shortage", "function-vet:manage-animal-feed"],
+  ["animal-feed-cost", "function-vet:manage-animal-feed"],
+  ["animal-reproduction-failure", "function-vet:manage-animal-breeding"],
+  ["animal-injury", "function-vet:track-animal-health"],
+  ["animal-escape-loss", "function-vet:register-animal"],
+  ["animal-theft", "function-vet:register-animal"],
+  ["animal-identification-gap", "function-vet:register-animal"],
+  ["animal-welfare-risk", "function-vet:manage-animal-shelter"],
+  ["veterinary-stock-expiry", "function-vet:manage-veterinary-stock"],
+  ["animal-product-spoilage", "function-vet:trace-animal-products"],
+  ["animal-records-missing", "function-vet:manage-herd"],
+];
+const problemFunctionRelationships = problemSolutionSeeds.map(([problemKey, functionId]) =>
+  relation(`rel:animal-vet:problem-function:${problemKey}`, `problem-vet:${problemKey}`, functionId, "may_be_addressed_by"),
+);
+const indicatorDomainSeeds: Array<[string, string]> = [
+  ["animal-mortality-rate", "domain-vet:veterinary-medicine"],
+  ["animal-birth-rate", "domain-vet:animal-reproduction-genetics"],
+  ["animal-vaccination-coverage", "domain-vet:veterinary-medicine"],
+  ["average-daily-animal-gain", "domain:livestock"],
+  ["feed-conversion-ratio", "domain-vet:animal-nutrition"],
+  ["egg-laying-rate", "domain:livestock"],
+  ["milk-yield-per-animal", "domain-vet:animal-products-primary"],
+];
+const indicatorDomainRelationships = indicatorDomainSeeds.map(([indicatorKey, domainId]) =>
+  relation(`rel:animal-vet:indicator-domain:${indicatorKey}`, `indicator-vet:${indicatorKey}`, domainId, "measures_domain"),
+);
 const crossFamilyRelationships = [
   relation("rel:animal-vet:existing-livestock-domain", "domain:livestock", FAMILY_SEED.id, "also_classified_in_family"),
   relation("rel:animal-vet:family-agriculture-intersection", FAMILY_SEED.id, "family:agriculture-agrofood", "intersects_with_family"),
@@ -276,4 +349,4 @@ export const ANIMAL_VETERINARY_RESOURCES = concepts.filter((item) => item.concep
 export const ANIMAL_VETERINARY_FUNCTIONS = concepts.filter((item) => item.conceptType === "function");
 export const ANIMAL_VETERINARY_INDICATORS = concepts.filter((item) => item.conceptType === "indicator");
 export const ANIMAL_VETERINARY_CATALOG = [familyConcept, ...concepts];
-export const ANIMAL_VETERINARY_RELATIONSHIPS = [...processActivityRelationships, ...crossFamilyRelationships];
+export const ANIMAL_VETERINARY_RELATIONSHIPS = [\n  ...processActivityRelationships,\n  ...occupationDomainRelationships,\n  ...resourceDomainRelationships,\n  ...problemFunctionRelationships,\n  ...indicatorDomainRelationships,\n  ...crossFamilyRelationships,\n];
