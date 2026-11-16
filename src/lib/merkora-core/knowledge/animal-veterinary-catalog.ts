@@ -349,4 +349,11 @@ export const ANIMAL_VETERINARY_RESOURCES = concepts.filter((item) => item.concep
 export const ANIMAL_VETERINARY_FUNCTIONS = concepts.filter((item) => item.conceptType === "function");
 export const ANIMAL_VETERINARY_INDICATORS = concepts.filter((item) => item.conceptType === "indicator");
 export const ANIMAL_VETERINARY_CATALOG = [familyConcept, ...concepts];
-export const ANIMAL_VETERINARY_RELATIONSHIPS = [\n  ...processActivityRelationships,\n  ...occupationDomainRelationships,\n  ...resourceDomainRelationships,\n  ...problemFunctionRelationships,\n  ...indicatorDomainRelationships,\n  ...crossFamilyRelationships,\n];
+export const ANIMAL_VETERINARY_RELATIONSHIPS = [
+  ...processActivityRelationships,
+  ...occupationDomainRelationships,
+  ...resourceDomainRelationships,
+  ...problemFunctionRelationships,
+  ...indicatorDomainRelationships,
+  ...crossFamilyRelationships,
+];
