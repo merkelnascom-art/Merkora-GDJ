@@ -32,7 +32,7 @@ Le domaine canonique `domain:livestock` est réutilisé, et non compté comme un
 
 ## 4. Domaines couverts
 
-1. Élevage (concept canonique existant).
+1. Élevage (concept canonique existant, réutilisé avec un rattachement familial additionnel non destructif).
 2. Médecine vétérinaire et santé animale.
 3. Animaux de compagnie et services animaliers.
 4. Bien-être et protection animale.
