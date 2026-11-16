@@ -15,3 +15,4 @@ export * from "./animal-veterinary-catalog";
 export * from "./environment-natural-resources-catalog";
 export * from "./industry-manufacturing-catalog";
 export * from "./construction-built-environment-catalog";
+export * from "./energy-utilities-catalog";
