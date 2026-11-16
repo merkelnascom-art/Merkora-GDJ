@@ -81,6 +81,23 @@ describe("situation graph knowledge linking", () => {
     });
   });
 
+  it("links agricultural subdomains and returns their complete family lineage", () => {
+    const agricultureGraph: SituationGraph = {
+      entities: [{ id: "entity:market-gardening", key: "market-gardening", kind: "activity", label: "maraîchage", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(agricultureGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "subdomain-v2:market-gardening",
+      classificationPath: [
+        { id: "family:agriculture-agrofood", label: "Agriculture et agroalimentaire" },
+        { id: "domain-v2:crop-production", label: "Productions végétales" },
+        { id: "subdomain-v2:market-gardening", label: "Maraîchage" },
+      ],
+    });
+  });
+
   it("does not attach a canonical concept from a different semantic type", () => {
     const mismatchedGraph: SituationGraph = {
       ...graph,
