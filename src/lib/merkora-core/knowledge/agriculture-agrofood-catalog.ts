@@ -12,7 +12,7 @@ type Seed = {
   enDefinition: string;
   terms?: Array<{ value: string; language?: string; kind?: "preferred" | "synonym" | "local" | "abbreviation" | "variant"; region?: string; usage?: string }>;
   parentId?: string;
-  parentKind?: "domain" | "subdomain";
+  parentKind?: "domain" | "subdomain" | "specialization";
 };
 
 function makeConcept(seed: Seed): KnowledgeConcept {
@@ -153,14 +153,14 @@ const SUBDOMAIN_SEEDS: Seed[] = [
 ];
 
 const SPECIALTY_SEEDS: Seed[] = [
-  { id: "specialization-v2:organic-farming", type: "specialization", fr: "Agriculture biologique", en: "Organic farming", frDefinition: "Système de production soumis à des principes et règles spécifiques de production biologique, selon le référentiel applicable.", enDefinition: "A production system following specific organic production principles and the applicable standard.", parentId: "subdomain-v2:crop-production", parentKind: "subdomain" },
-  { id: "specialization-v2:agroecology", type: "specialization", fr: "Agroécologie", en: "Agroecology", frDefinition: "Approches de conception et de conduite des systèmes agricoles s'appuyant sur les interactions écologiques et les contextes sociaux.", enDefinition: "Approaches to designing and managing agricultural systems using ecological interactions and social context.", parentId: "subdomain-v2:field-crops", parentKind: "subdomain" },
-  { id: "specialization-v2:precision-agriculture", type: "specialization", fr: "Agriculture de précision", en: "Precision agriculture", frDefinition: "Utilisation de mesures, données et technologies pour adapter les interventions agricoles à la variabilité des parcelles et des cultures.", enDefinition: "Use of measurements, data and technologies to adapt farm operations to field and crop variability.", parentId: "subdomain-v2:land-plot-management", parentKind: "subdomain" },
-  { id: "specialization-v2:climate-smart-agriculture", type: "specialization", fr: "Agriculture climato-intelligente", en: "Climate-smart agriculture", frDefinition: "Pratiques visant à améliorer la productivité, l'adaptation climatique et, lorsque pertinent, l'atténuation des émissions.", enDefinition: "Practices aiming to improve productivity, climate adaptation and, where relevant, emissions mitigation.", parentId: "subdomain-v2:crop-production", parentKind: "subdomain" },
-  { id: "specialization-v2:seed-multiplication", type: "specialization", fr: "Multiplication des semences", en: "Seed multiplication", frDefinition: "Production de semences selon des exigences d'identité variétale, de pureté et de qualité applicables.", enDefinition: "Seed production under applicable varietal identity, purity and quality requirements.", parentId: "subdomain-v2:seed-production", parentKind: "subdomain" },
-  { id: "specialization-v2:food-traceability", type: "specialization", fr: "Traçabilité agroalimentaire", en: "Agri-food traceability", frDefinition: "Capacité à retracer l'origine, les transformations, les mouvements et la destination des produits ou lots alimentaires.", enDefinition: "Ability to trace the origin, processing, movements and destination of food products or batches.", parentId: "subdomain-v2:food-quality-safety", parentKind: "subdomain" },
-  { id: "specialization-v2:smallholder-farming", type: "specialization", fr: "Agriculture familiale et petites exploitations", en: "Family and smallholder farming", frDefinition: "Systèmes agricoles reposant principalement sur le travail familial ou des exploitations de petite échelle, avec des réalités variables selon les territoires.", enDefinition: "Farming systems relying mainly on family labour or small-scale holdings, with context-dependent characteristics.", parentId: "subdomain-v2:farm-labour-management", parentKind: "subdomain" },
-  { id: "specialization-v2:food-processing-enterprise", type: "specialization", fr: "Petite et moyenne transformation alimentaire", en: "Small and medium food processing", frDefinition: "Transformation alimentaire artisanale ou semi-industrielle organisée à petite ou moyenne échelle.", enDefinition: "Artisanal or semi-industrial food processing organized at small or medium scale.", parentId: "subdomain-v2:food-transformation", parentKind: "subdomain" },
+  { id: "specialization-v2:organic-farming", type: "specialization", fr: "Agriculture biologique", en: "Organic farming", frDefinition: "Système de production soumis à des principes et règles spécifiques de production biologique, selon le référentiel applicable.", enDefinition: "A production system following specific organic production principles and the applicable standard.", parentId: "subdomain-v2:crop-production", parentKind: "specialization" },
+  { id: "specialization-v2:agroecology", type: "specialization", fr: "Agroécologie", en: "Agroecology", frDefinition: "Approches de conception et de conduite des systèmes agricoles s'appuyant sur les interactions écologiques et les contextes sociaux.", enDefinition: "Approaches to designing and managing agricultural systems using ecological interactions and social context.", parentId: "subdomain-v2:field-crops", parentKind: "specialization" },
+  { id: "specialization-v2:precision-agriculture", type: "specialization", fr: "Agriculture de précision", en: "Precision agriculture", frDefinition: "Utilisation de mesures, données et technologies pour adapter les interventions agricoles à la variabilité des parcelles et des cultures.", enDefinition: "Use of measurements, data and technologies to adapt farm operations to field and crop variability.", parentId: "subdomain-v2:land-plot-management", parentKind: "specialization" },
+  { id: "specialization-v2:climate-smart-agriculture", type: "specialization", fr: "Agriculture climato-intelligente", en: "Climate-smart agriculture", frDefinition: "Pratiques visant à améliorer la productivité, l'adaptation climatique et, lorsque pertinent, l'atténuation des émissions.", enDefinition: "Practices aiming to improve productivity, climate adaptation and, where relevant, emissions mitigation.", parentId: "subdomain-v2:crop-production", parentKind: "specialization" },
+  { id: "specialization-v2:seed-multiplication", type: "specialization", fr: "Multiplication des semences", en: "Seed multiplication", frDefinition: "Production de semences selon des exigences d'identité variétale, de pureté et de qualité applicables.", enDefinition: "Seed production under applicable varietal identity, purity and quality requirements.", parentId: "subdomain-v2:seed-production", parentKind: "specialization" },
+  { id: "specialization-v2:food-traceability", type: "specialization", fr: "Traçabilité agroalimentaire", en: "Agri-food traceability", frDefinition: "Capacité à retracer l'origine, les transformations, les mouvements et la destination des produits ou lots alimentaires.", enDefinition: "Ability to trace the origin, processing, movements and destination of food products or batches.", parentId: "subdomain-v2:food-quality-safety", parentKind: "specialization" },
+  { id: "specialization-v2:smallholder-farming", type: "specialization", fr: "Agriculture familiale et petites exploitations", en: "Family and smallholder farming", frDefinition: "Systèmes agricoles reposant principalement sur le travail familial ou des exploitations de petite échelle, avec des réalités variables selon les territoires.", enDefinition: "Farming systems relying mainly on family labour or small-scale holdings, with context-dependent characteristics.", parentId: "subdomain-v2:farm-labour-management", parentKind: "specialization" },
+  { id: "specialization-v2:food-processing-enterprise", type: "specialization", fr: "Petite et moyenne transformation alimentaire", en: "Small and medium food processing", frDefinition: "Transformation alimentaire artisanale ou semi-industrielle organisée à petite ou moyenne échelle.", enDefinition: "Artisanal or semi-industrial food processing organized at small or medium scale.", parentId: "subdomain-v2:food-transformation", parentKind: "specialization" },
 ];
 
 const OCCUPATION_SEEDS: Seed[] = [
@@ -355,7 +355,7 @@ const hierarchyRelationships: KnowledgeRelationship[] = allSeeds
     `rel:agri-v2:${seed.id.replace(/^[^:]+:/, "")}:parent`,
     seed.parentId!,
     seed.id,
-    seed.parentKind === "domain" ? "has_domain" : seed.parentKind === "subdomain" ? "has_subdomain_or_specialty" : "has_specialization",
+    seed.parentKind === "domain" ? "has_domain" : seed.parentKind === "subdomain" ? "has_subdomain" : "has_specialization",
   ));
 
 const legacyAlignmentRelationships: KnowledgeRelationship[] = [
@@ -379,6 +379,48 @@ const activityLinks: KnowledgeRelationship[] = [
   relation("rel:agri-v2:water-shortage-may-affect-irrigation", "problem-v2:water-shortage", "activity-v2:irrigate-crops", "may_constrain"),
 ];
 
+
+const domainAssociationSeeds: Array<[string, string, string]> = [
+  ["occupation-v2:farmer", "domain-v2:crop-production", "works_in_domain"],
+  ["occupation-v2:farmer", "domain-v2:farm-management", "works_in_domain"],
+  ["occupation-v2:market-gardener", "domain-v2:crop-production", "specializes_in_domain"],
+  ["occupation-v2:market-gardener", "domain-v2:specialized-crop-systems", "specializes_in_domain"],
+  ["occupation-v2:agronomist", "domain-v2:crop-production", "advises_on_domain"],
+  ["occupation-v2:agricultural-technician", "domain-v2:crop-production", "supports_domain"],
+  ["occupation-v2:horticulturist", "domain-v2:specialized-crop-systems", "works_in_domain"],
+  ["occupation-v2:nursery-worker", "domain-v2:specialized-crop-systems", "works_in_domain"],
+  ["occupation-v2:seed-producer", "domain-v2:specialized-crop-systems", "works_in_domain"],
+  ["occupation-v2:irrigation-technician", "domain-v2:farm-management", "supports_domain"],
+  ["occupation-v2:agricultural-machinery-operator", "domain-v2:farm-management", "works_in_domain"],
+  ["occupation-v2:farm-manager", "domain-v2:farm-management", "manages_domain"],
+  ["occupation-v2:agricultural-advisor", "domain-v2:farm-management", "advises_on_domain"],
+  ["occupation-v2:soil-specialist", "domain-v2:farm-management", "advises_on_domain"],
+  ["occupation-v2:postharvest-technician", "domain-v2:agrofood-processing", "works_in_domain"],
+  ["occupation-v2:food-processor", "domain-v2:agrofood-processing", "works_in_domain"],
+  ["occupation-v2:food-quality-controller", "domain-v2:agrofood-processing", "controls_domain"],
+  ["occupation-v2:warehouse-keeper", "domain-v2:agricultural-marketing", "supports_domain"],
+  ["occupation-v2:cooperative-manager", "domain-v2:agricultural-marketing", "manages_domain"],
+  ["occupation-v2:agricultural-buyer", "domain-v2:agricultural-marketing", "works_in_domain"],
+  ["occupation-v2:agricultural-sales-agent", "domain-v2:agricultural-marketing", "works_in_domain"],
+  ["occupation-v2:agricultural-economist", "domain-v2:farm-management", "advises_on_domain"],
+  ["process-v2:crop-cycle", "domain-v2:crop-production", "process_of_domain"],
+  ["process-v2:postharvest-process", "domain-v2:agrofood-processing", "process_of_domain"],
+  ["process-v2:food-processing-process", "domain-v2:agrofood-processing", "process_of_domain"],
+  ["process-v2:agricultural-sales-process", "domain-v2:agricultural-marketing", "process_of_domain"],
+  ["function-v2:manage-plots", "domain-v2:farm-management", "supports_domain"],
+  ["function-v2:track-harvests", "domain-v2:crop-production", "supports_domain"],
+  ["function-v2:trace-food-batches", "domain-v2:agrofood-processing", "supports_domain"],
+  ["function-v2:manage-produce-orders", "domain-v2:agricultural-marketing", "supports_domain"],
+  ["problem-v2:postharvest-loss", "domain-v2:agrofood-processing", "problem_in_domain"],
+  ["problem-v2:market-price-uncertainty", "domain-v2:agricultural-marketing", "problem_in_domain"],
+  ["problem-v2:low-crop-yield", "domain-v2:crop-production", "problem_in_domain"],
+  ["indicator-v2:yield-per-hectare", "domain-v2:crop-production", "measures_domain"],
+  ["indicator-v2:postharvest-loss-rate", "domain-v2:agrofood-processing", "measures_domain"],
+];
+const domainAssociationRelationships = domainAssociationSeeds.map(([sourceId, targetId, predicate]) =>
+  relation(`rel:agri-v2:association:${sourceId.replace(/^[^:]+:/, "")}:${targetId.replace(/^[^:]+:/, "")}`, sourceId, targetId, predicate),
+);
+
 export const AGRICULTURE_AGROFOOD_FAMILY = familyConcept;
 export const AGRICULTURE_AGROFOOD_DOMAINS = concepts.filter((item) => item.conceptType === "domain");
 export const AGRICULTURE_AGROFOOD_SUBDOMAINS = concepts.filter((item) => item.conceptType === "subdomain");
@@ -395,4 +437,5 @@ export const AGRICULTURE_AGROFOOD_RELATIONSHIPS = [
   ...hierarchyRelationships,
   ...legacyAlignmentRelationships,
   ...activityLinks,
+  ...domainAssociationRelationships,
 ];
