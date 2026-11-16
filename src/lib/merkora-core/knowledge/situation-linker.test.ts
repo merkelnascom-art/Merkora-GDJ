@@ -98,6 +98,20 @@ describe("situation graph knowledge linking", () => {
     });
   });
 
+  it("links a farmer role without changing the actor's original label", () => {
+    const roleGraph: SituationGraph = {
+      entities: [{ id: "entity:farmer", key: "farmer", kind: "actor", label: "Personne", role: "Agriculteur", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(roleGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].label).toBe("Personne");
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "occupation-v2:farmer",
+      conceptLabel: "Agriculteur",
+    });
+  });
+
   it("does not attach a canonical concept from a different semantic type", () => {
     const mismatchedGraph: SituationGraph = {
       ...graph,
