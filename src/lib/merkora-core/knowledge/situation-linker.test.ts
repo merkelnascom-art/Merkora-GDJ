@@ -128,6 +128,7 @@ describe("situation graph knowledge linking", () => {
       classificationPath: [
         { id: "family:animals-veterinary", label: "Animaux et médecine vétérinaire" },
         { id: "domain-vet:veterinary-medicine", label: "Médecine vétérinaire et santé animale" },
+        { id: "occupation-vet:veterinarian", label: "Vétérinaire" },
       ],
     });
     expect(linked.entities[1].knowledge).toMatchObject({
