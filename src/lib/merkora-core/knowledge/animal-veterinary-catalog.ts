@@ -251,9 +251,17 @@ const crossFamilyRelationships = [
 ];
 const existingLivestockDomain = UNIVERSAL_DOMAIN_CATALOG.find((item) => item.id === "domain:livestock");
 if (!existingLivestockDomain) throw new Error("The existing canonical livestock domain is required by the animal family.");
+const linkedLivestockDomain: KnowledgeConcept = {
+  ...existingLivestockDomain,
+  classifications: [
+    ...existingLivestockDomain.classifications,
+    { classificationType: "foundation-a-family-v2", parentConceptId: FAMILY_SEED.id },
+  ],
+};
 
+export const ANIMAL_VETERINARY_LEGACY_DOMAIN_PATCHES = [linkedLivestockDomain];
 export const ANIMAL_VETERINARY_DOMAINS = [
-  existingLivestockDomain,
+  linkedLivestockDomain,
   ...concepts.filter((item) => item.conceptType === "domain"),
 ];
 export const ANIMAL_VETERINARY_FAMILY = familyConcept;
