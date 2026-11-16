@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createUniversalKnowledgeRegistry } from "./registry";
 import { matchKnowledgeConcept } from "./matching";
 import { getClassificationLineage } from "./classification-graph";
+import { ENERGY_UTILITIES_CATALOG } from "./energy-utilities-catalog";
 
 describe("Fondation A — famille 06 Énergie et services essentiels", () => {
   const registry = createUniversalKnowledgeRegistry();
@@ -36,6 +37,10 @@ describe("Fondation A — famille 06 Énergie et services essentiels", () => {
     const activity = matchKnowledgeConcept("relevé du compteur", registry, { expectedType: "activity", language: "fr" });
     expect(activity.status).toBe("matched");
     if (activity.status === "matched") expect(activity.concept.id).toBe("activity-ene:meter-reading");
+  });
+
+  it("contient les 66 concepts documentés dans le catalogue", () => {
+    expect(ENERGY_UTILITIES_CATALOG).toHaveLength(66);
   });
 
   it("contient toutes les catégories de concepts attendues", () => {
