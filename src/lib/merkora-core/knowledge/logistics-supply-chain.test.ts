@@ -52,7 +52,7 @@ describe("Fondation A — famille 08 Logistique et chaîne d'approvisionnement",
   });
 
   it("contient un corpus sectoriel structuré et les neuf catégories attendues", () => {
-    expect(LOGISTICS_SUPPLY_CHAIN_CATALOG.length).toBeGreaterThanOrEqual(75);
+    expect(LOGISTICS_SUPPLY_CHAIN_CATALOG).toHaveLength(88);
     for (const type of ["subdomain", "specialization", "occupation", "activity", "process", "problem", "resource", "function", "indicator"]) {
       expect(LOGISTICS_SUPPLY_CHAIN_CATALOG.some((item) => item.conceptType === type), type).toBe(true);
     }
