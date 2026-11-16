@@ -1,0 +1,91 @@
+import { describe, expect, it } from "vitest";
+import { createUniversalKnowledgeRegistry } from "./registry";
+import { matchKnowledgeConcept } from "./matching";
+import { getClassificationLineage } from "./classification-graph";
+import {
+  ANIMAL_VETERINARY_FAMILY,
+  ANIMAL_VETERINARY_DOMAINS,
+  ANIMAL_VETERINARY_SUBDOMAINS,
+  ANIMAL_VETERINARY_CATALOG,
+  ANIMAL_VETERINARY_RELATIONSHIPS,
+} from "./animal-veterinary-catalog";
+
+describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => {
+  const registry = createUniversalKnowledgeRegistry();
+
+  it("intègre la famille et ses domaines dans le registre universel sans dupliquer le domaine élevage existant", () => {
+    expect(registry.concepts.some((item) => item.id === ANIMAL_VETERINARY_FAMILY.id)).toBe(true);
+    expect(ANIMAL_VETERINARY_DOMAINS.length).toBeGreaterThanOrEqual(6);
+    expect(registry.concepts.filter((item) => item.id === "domain:livestock")).toHaveLength(1);
+    for (const domain of ANIMAL_VETERINARY_DOMAINS) {
+      expect(registry.concepts.some((item) => item.id === domain.id), domain.id).toBe(true);
+    }
+  });
+
+  it("raccorde les nouveaux domaines et sous-domaines à la famille sans déplacer les concepts historiques", () => {
+    const familyDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.filter((item) => item.id !== "domain:livestock").map((item) => item.id));
+    for (const domain of familyDomainIds) {
+      expect(registry.concepts.find((item) => item.id === domain)?.classifications).toContainEqual({
+        classificationType: "foundation-a-family-v2",
+        parentConceptId: ANIMAL_VETERINARY_FAMILY.id,
+      });
+    }
+    for (const subdomain of ANIMAL_VETERINARY_SUBDOMAINS) {
+      expect(registry.concepts.some((item) => item.id === subdomain.id)).toBe(true);
+      expect(subdomain.classifications.some((item) => item.parentConceptId && familyDomainIds.has(item.parentConceptId))).toBe(true);
+    }
+    expect(registry.concepts.find((item) => item.id === "domain:livestock")?.classifications).not.toContainEqual({
+      classificationType: "foundation-a-family-v2",
+      parentConceptId: ANIMAL_VETERINARY_FAMILY.id,
+    });
+  });
+
+  it("fournit des métiers, activités, processus, problèmes, ressources, fonctions et indicateurs", () => {
+    const types = new Set(ANIMAL_VETERINARY_CATALOG.map((item) => item.conceptType));
+    for (const type of ["subdomain", "specialization", "occupation", "activity", "process", "problem", "resource", "function", "indicator"]) {
+      expect(types.has(type), type).toBe(true);
+    }
+  });
+
+  it("reconnaît le vocabulaire animalier et vétérinaire sans confondre les concepts", () => {
+    const examples = [
+      ["volaille", "subdomain-vet:aviculture"],
+      ["vaccination animale", "activity-vet:animal-vaccination"],
+      ["vétérinaire", "occupation-vet:veterinarian"],
+      ["apiculture", "subdomain-vet:beekeeping"],
+      ["alimentation du bétail", "subdomain-vet:animal-nutrition"],
+    ] as const;
+    for (const [term, expectedId] of examples) {
+      const result = matchKnowledgeConcept(term, registry, { language: "fr" });
+      expect(result.status, term).toBe("matched");
+      if (result.status === "matched") expect(result.concept.id).toBe(expectedId);
+    }
+  });
+
+  it("rattache les sous-domaines vétérinaires à leur famille complète", () => {
+    const lineage = getClassificationLineage(registry, "subdomain-vet:clinical-veterinary-medicine", "foundation-a-family-v2");
+    expect(lineage.map((item) => item.id)).toEqual([
+      ANIMAL_VETERINARY_FAMILY.id,
+      "domain-vet:veterinary-medicine",
+      "subdomain-vet:clinical-veterinary-medicine",
+    ]);
+  });
+
+  it("relie le domaine élevage historique à la nouvelle famille sans en changer l'identité", () => {
+    expect(ANIMAL_VETERINARY_RELATIONSHIPS).toContainEqual(expect.objectContaining({
+      sourceConceptId: "domain:livestock",
+      targetConceptId: ANIMAL_VETERINARY_FAMILY.id,
+      predicate: "also_classified_in_family",
+    }));
+    expect(registry.concepts.find((item) => item.id === "domain:livestock")?.definitions[0].label).toBe("Élevage");
+  });
+
+  it("ne publie aucune relation orpheline et préserve les identifiants uniques", () => {
+    const ids = new Set(registry.concepts.map((item) => item.id));
+    expect(new Set(ANIMAL_VETERINARY_CATALOG.map((item) => item.id)).size).toBe(ANIMAL_VETERINARY_CATALOG.length);
+    for (const relation of ANIMAL_VETERINARY_RELATIONSHIPS) {
+      expect(ids.has(relation.sourceConceptId), relation.id).toBe(true);
+      expect(ids.has(relation.targetConceptId), relation.id).toBe(true);
+    }
+  });
+});
