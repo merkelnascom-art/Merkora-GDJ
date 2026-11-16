@@ -71,6 +71,25 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     expect(terms).toContain("coopérative agricole");
   });
 
+  it("reconnaît des cultures courantes et une variante locale béninoise", () => {
+    const examples = [
+      ["maïs", "subdomain-v2:cereal-crops"],
+      ["niébé", "subdomain-v2:legume-crops"],
+      ["manioc", "subdomain-v2:tuber-crops"],
+      ["champ", "subdomain-v2:land-plot-management"],
+    ] as const;
+
+    for (const [term, expectedId] of examples) {
+      const result = matchKnowledgeConcept(term, registry, {
+        expectedType: "subdomain",
+        language: "fr",
+        region: "BJ",
+      });
+      expect(result.status, term).toBe("matched");
+      if (result.status === "matched") expect(result.concept.id).toBe(expectedId);
+    }
+  });
+
   it("permet de remonter de la spécialité au domaine puis à la famille", () => {
     const lineage = getClassificationLineage(
       registry,
