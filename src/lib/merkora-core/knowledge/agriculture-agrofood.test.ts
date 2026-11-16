@@ -21,7 +21,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
       expect(registered, domain.id).toBeDefined();
       expect(
         registered?.classifications.some(
-          (item) => item.classificationType === "foundation-a-agriculture-v1" &&
+          (item) => item.classificationType === "foundation-a-family-v2" &&
             item.parentConceptId === AGRICULTURE_AGROFOOD_FAMILY.id,
         ),
       ).toBe(true);
@@ -35,7 +35,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     for (const subdomain of AGRICULTURE_AGROFOOD_SUBDOMAINS) {
       expect(
         subdomain.classifications.some(
-          (item) => item.classificationType === "foundation-a-agriculture-v1" &&
+          (item) => item.classificationType === "foundation-a-family-v2" &&
             item.parentConceptId && domainIds.has(item.parentConceptId),
         ),
       ).toBe(true);
@@ -62,7 +62,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     const lineage = getClassificationLineage(
       registry,
       "specialization-v2:organic-farming",
-      "foundation-a-agriculture-v1",
+      "foundation-a-family-v2",
     );
     expect(lineage.map((item) => item.id)).toEqual([
       AGRICULTURE_AGROFOOD_FAMILY.id,
