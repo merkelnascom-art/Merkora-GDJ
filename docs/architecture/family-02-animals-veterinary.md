@@ -2,7 +2,7 @@
 
 **Version :** 1.0  
 **Date :** 16 novembre 2026  
-**Statut :** Première intégration sectorielle en branche de travail ; vérification CI en cours.  
+**Statut :** Intégration sectorielle vérifiée en CI sur une branche isolée ; aucune fusion dans main ni déploiement de production.  
 **Référentiel :** Fondation A ouverte, concepts et relations versionnés.
 
 ## 1. Périmètre
@@ -88,7 +88,11 @@ Les données sanitaires, traitements, propriétaires et mouvements d'animaux doi
 - Raccorder les graphes de situation sans modifier les mots d'origine, les preuves ou les relations de l'utilisateur.
 - Préserver les concepts inconnus et les ambiguïtés plutôt que forcer une correspondance.
 
-## 12. Scénarios de compréhension multi-projets
+## 12. Vérification technique
+
+Run GitHub Actions #1436 : typecheck réussi, 32 fichiers de tests réussis, 189 tests réussis, build de production réussi et audit npm sans vulnérabilité connue. Les avertissements de dépréciation Node/punycode ne bloquent pas le build.
+
+## 13. Scénarios de compréhension multi-projets
 
 1. **Élevage avicole :** « J'ai 500 poulets, depuis trois jours ils mangent moins et plusieurs meurent. » Le moteur doit distinguer l'espèce et le lot, les observations rapportées, la durée et la mortalité. Il ne doit pas inventer de maladie ni de cause et doit orienter vers un vétérinaire compétent.
 2. **Cabinet vétérinaire :** « Je veux suivre les consultations, les vaccins, les médicaments et les prochains rendez-vous. » Le moteur doit reconnaître le parcours de consultation, les événements sanitaires, le stock vétérinaire et les rappels, sans produire de prescription.
@@ -99,6 +103,6 @@ Les données sanitaires, traitements, propriétaires et mouvements d'animaux doi
 
 Ces scénarios servent à tester l'extraction des concepts, les relations, les inconnues et les questions suivantes du diagnostic. Ils ne constituent pas des conseils vétérinaires.
 
-## 13. Limites de la version initiale
+## 14. Limites de la version initiale
 
 Les termes, définitions et relations sont un premier corpus organisé par MerKora. Ils nécessitent une revue par des professionnels de l'élevage, des vétérinaires et des spécialistes locaux avant usage réglementaire ou opérationnel. Le catalogue reste ouvert : de nouvelles espèces, filières, métiers, pratiques et spécialités pourront être ajoutés sans réécrire les identifiants existants.
