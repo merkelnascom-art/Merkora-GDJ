@@ -98,6 +98,26 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     expect(registry.concepts.some((item) => item.id === "domain:food-production")).toBe(true);
   });
 
+  it("relie processus, activités, ressources et problèmes sans confondre leurs types", () => {
+    expect(registry.relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceConceptId: "process-v2:crop-cycle",
+        targetConceptId: "activity-v2:sow-seeds",
+        predicate: "includes_activity",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "resource-v2:seed",
+        targetConceptId: "domain-v2:crop-production",
+        predicate: "resource_for_domain",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "problem-v2:postharvest-loss",
+        targetConceptId: "process-v2:postharvest-process",
+        predicate: "may_disrupt",
+      }),
+    ]));
+  });
+
   it("ne publie pas de relations orphelines", () => {
     const conceptIds = new Set(registry.concepts.map((item) => item.id));
     for (const relation of registry.relationships) {
