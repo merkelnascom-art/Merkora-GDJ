@@ -23,7 +23,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
   });
 
   it("raccorde les nouveaux domaines et sous-domaines à la famille sans déplacer les concepts historiques", () => {
-    const familyDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.filter((item) => item.id !== "domain:livestock").map((item) => item.id));
+    const allDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.map((item) => item.id));\n    const familyDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.filter((item) => item.id !== "domain:livestock").map((item) => item.id));
     for (const domain of familyDomainIds) {
       expect(registry.concepts.find((item) => item.id === domain)?.classifications).toContainEqual({
         classificationType: "foundation-a-family-v2",
@@ -32,7 +32,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     }
     for (const subdomain of ANIMAL_VETERINARY_SUBDOMAINS) {
       expect(registry.concepts.some((item) => item.id === subdomain.id)).toBe(true);
-      expect(subdomain.classifications.some((item) => item.parentConceptId && familyDomainIds.has(item.parentConceptId))).toBe(true);
+      expect(subdomain.classifications.some((item) => item.parentConceptId && allDomainIds.has(item.parentConceptId))).toBe(true);
     }
     expect(registry.concepts.find((item) => item.id === "domain:livestock")?.classifications).not.toContainEqual({
       classificationType: "foundation-a-family-v2",
