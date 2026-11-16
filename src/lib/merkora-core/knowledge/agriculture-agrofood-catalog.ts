@@ -416,6 +416,71 @@ const domainAssociationRelationships = domainAssociationSeeds.map(([sourceId, ta
   relation(`rel:agri-v2:association:${sourceId.replace(/^[^:]+:/, "")}:${targetId.replace(/^[^:]+:/, "")}`, sourceId, targetId, predicate),
 );
 
+const processActivitySeeds: Array<[string, string]> = [
+  ["process-v2:crop-cycle", "activity-v2:prepare-soil"],
+  ["process-v2:crop-cycle", "activity-v2:select-seeds"],
+  ["process-v2:crop-cycle", "activity-v2:sow-seeds"],
+  ["process-v2:crop-cycle", "activity-v2:irrigate-crops"],
+  ["process-v2:crop-cycle", "activity-v2:fertilize-crops"],
+  ["process-v2:crop-cycle", "activity-v2:monitor-crops"],
+  ["process-v2:crop-cycle", "activity-v2:harvest-crops"],
+  ["process-v2:postharvest-process", "activity-v2:weigh-harvest"],
+  ["process-v2:postharvest-process", "activity-v2:sort-produce"],
+  ["process-v2:postharvest-process", "activity-v2:dry-produce"],
+  ["process-v2:postharvest-process", "activity-v2:store-produce"],
+  ["process-v2:food-processing-process", "activity-v2:process-raw-materials"],
+  ["process-v2:food-processing-process", "activity-v2:package-food"],
+  ["process-v2:food-quality-process", "activity-v2:inspect-food-quality"],
+  ["process-v2:agricultural-sales-process", "activity-v2:collect-produce"],
+  ["process-v2:agricultural-sales-process", "activity-v2:negotiate-produce-sale"],
+  ["process-v2:agricultural-sales-process", "activity-v2:trace-produce-batch"],
+  ["process-v2:farm-equipment-maintenance-process", "activity-v2:maintain-farm-equipment"],
+];
+const processActivityRelationships = processActivitySeeds.map(([processId, activityId]) =>
+  relation(`rel:agri-v2:process-activity:${processId.split(":").pop()}:${activityId.split(":").pop()}`, processId, activityId, "includes_activity"),
+);
+
+const resourceDomainSeeds: Array<[string, string]> = [
+  ["resource-v2:agricultural-plot", "domain-v2:crop-production"],
+  ["resource-v2:soil", "domain-v2:crop-production"],
+  ["resource-v2:seed", "domain-v2:crop-production"],
+  ["resource-v2:seedling", "domain-v2:specialized-crop-systems"],
+  ["resource-v2:fertilizer", "domain-v2:farm-management"],
+  ["resource-v2:soil-amendment", "domain-v2:farm-management"],
+  ["resource-v2:crop-protection-product", "domain-v2:farm-management"],
+  ["resource-v2:irrigation-system", "domain-v2:farm-management"],
+  ["resource-v2:farm-tool", "domain-v2:farm-management"],
+  ["resource-v2:tractor", "domain-v2:farm-management"],
+  ["resource-v2:harvesting-equipment", "domain-v2:crop-production"],
+  ["resource-v2:storage-facility", "domain-v2:agrofood-processing"],
+  ["resource-v2:cold-room", "domain-v2:agrofood-processing"],
+  ["resource-v2:packaging-material", "domain-v2:agrofood-processing"],
+  ["resource-v2:agricultural-labour", "domain-v2:farm-management"],
+  ["resource-v2:weather-information", "domain-v2:crop-production"],
+  ["resource-v2:farm-capital", "domain-v2:farm-management"],
+  ["resource-v2:agricultural-transport", "domain-v2:agricultural-marketing"],
+];
+const resourceDomainRelationships = resourceDomainSeeds.map(([resourceId, domainId]) =>
+  relation(`rel:agri-v2:resource-domain:${resourceId.split(":").pop()}`, resourceId, domainId, "resource_for_domain"),
+);
+
+const problemProcessSeeds: Array<[string, string, string]> = [
+  ["problem-v2:soil-degradation", "process-v2:crop-cycle", "may_reduce_performance_of"],
+  ["problem-v2:pest-disease-pressure", "activity-v2:monitor-crops", "may_require_attention_in"],
+  ["problem-v2:input-cost-increase", "process-v2:input-procurement", "may_increase_cost_of"],
+  ["problem-v2:storage-spoilage", "process-v2:postharvest-process", "may_disrupt"],
+  ["problem-v2:lack-of-farm-records", "function-v2:record-farm-operations", "may_be_addressed_by"],
+  ["problem-v2:equipment-downtime", "process-v2:farm-equipment-maintenance-process", "may_disrupt"],
+  ["problem-v2:labour-shortage", "subdomain-v2:farm-labour-management", "may_constrain"],
+  ["problem-v2:delayed-input-delivery", "process-v2:input-procurement", "may_delay"],
+  ["problem-v2:quality-rejection", "process-v2:food-quality-process", "may_be_detected_by"],
+  ["problem-v2:weak-product-traceability", "function-v2:trace-food-batches", "may_be_addressed_by"],
+  ["problem-v2:cashflow-gap-farm", "process-v2:farm-finance-process", "may_affect"],
+];
+const problemProcessRelationships = problemProcessSeeds.map(([problemId, targetId, predicate]) =>
+  relation(`rel:agri-v2:problem-link:${problemId.split(":").pop()}`, problemId, targetId, predicate),
+);
+
 export const AGRICULTURE_AGROFOOD_FAMILY = familyConcept;
 export const AGRICULTURE_AGROFOOD_DOMAINS = concepts.filter((item) => item.conceptType === "domain");
 export const AGRICULTURE_AGROFOOD_SUBDOMAINS = concepts.filter((item) => item.conceptType === "subdomain");
@@ -433,4 +498,7 @@ export const AGRICULTURE_AGROFOOD_RELATIONSHIPS = [
   ...legacyAlignmentRelationships,
   ...activityLinks,
   ...domainAssociationRelationships,
+  ...processActivityRelationships,
+  ...resourceDomainRelationships,
+  ...problemProcessRelationships,
 ];
