@@ -338,7 +338,6 @@ export const ANIMAL_VETERINARY_DOMAINS = [
   ...concepts.filter((item) => item.conceptType === "domain"),
 ];
 export const ANIMAL_VETERINARY_FAMILY = familyConcept;
-export { ANIMAL_VETERINARY_DOMAINS };
 export const ANIMAL_VETERINARY_SUBDOMAINS = concepts.filter((item) => item.conceptType === "subdomain");
 export const ANIMAL_VETERINARY_SPECIALIZATIONS = concepts.filter((item) => item.conceptType === "specialization");
 export const ANIMAL_VETERINARY_OCCUPATIONS = concepts.filter((item) => item.conceptType === "occupation");
