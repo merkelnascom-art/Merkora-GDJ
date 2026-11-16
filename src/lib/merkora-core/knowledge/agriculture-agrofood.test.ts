@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createUniversalKnowledgeRegistry } from "./registry";
+import { matchKnowledgeConcept } from "./matching";
+import { getClassificationLineage } from "./classification-graph";
 import {
   AGRICULTURE_AGROFOOD_FAMILY,
   AGRICULTURE_AGROFOOD_DOMAINS,
@@ -54,6 +56,27 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     expect(terms).toContain("intrants agricoles");
     expect(terms).toContain("post-récolte");
     expect(terms).toContain("coopérative agricole");
+  });
+
+  it("permet de remonter de la spécialité au domaine puis à la famille", () => {
+    const lineage = getClassificationLineage(
+      registry,
+      "specialization-v2:organic-farming",
+      "foundation-a-agriculture-v1",
+    );
+    expect(lineage.map((item) => item.id)).toEqual([
+      AGRICULTURE_AGROFOOD_FAMILY.id,
+      "domain-v2:crop-production",
+      "subdomain-v2:crop-production",
+      "specialization-v2:organic-farming",
+    ]);
+  });
+
+  it("rend les termes de la famille recherchables par le moteur lexical", () => {
+    const result = matchKnowledgeConcept("maraîchage", registry, { language: "fr" });
+    expect(result.status).toBe("matched");
+    if (result.status !== "matched") throw new Error("Expected the market-gardening concept.");
+    expect(result.concept.id).toBe("subdomain-v2:market-gardening");
   });
 
   it("ne remplace pas les concepts historiques déjà présents", () => {
