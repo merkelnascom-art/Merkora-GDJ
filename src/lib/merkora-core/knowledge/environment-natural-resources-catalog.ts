@@ -10,7 +10,7 @@ type Seed = {
 function makeConcept(seed: Seed): KnowledgeConcept {
   return {
     id: seed.id,
-    canonicalKey: `merkora.${seed.type}.${seed.id.replace(/^[^:]+:/, "")}`,
+    canonicalKey: `merkora.environment.${seed.type}.${seed.id.replace(/^[^:]+:/, "")}`,
     conceptType: seed.type,
     definitions: [
       { language: "fr", label: seed.fr, definition: seed.frDefinition },
