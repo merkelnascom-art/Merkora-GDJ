@@ -85,6 +85,31 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     expect(registry.concepts.find((item) => item.id === "domain:livestock")?.definitions[0].label).toBe("Élevage");
   });
 
+  it("relie les professions, ressources, problèmes, indicateurs et processus à leurs domaines", () => {
+    expect(registry.relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceConceptId: "occupation-vet:veterinarian",
+        targetConceptId: "domain-vet:veterinary-medicine",
+        predicate: "works_in_domain",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "resource-vet:animal-feed",
+        targetConceptId: "domain-vet:animal-nutrition",
+        predicate: "resource_for_domain",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "problem-vet:animal-disease-outbreak",
+        targetConceptId: "function-vet:report-animal-disease",
+        predicate: "may_be_addressed_by",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "indicator-vet:animal-mortality-rate",
+        targetConceptId: "domain-vet:veterinary-medicine",
+        predicate: "measures_domain",
+      }),
+    ]));
+  });
+
   it("ne publie aucune relation orpheline et préserve les identifiants uniques", () => {
     const ids = new Set(registry.concepts.map((item) => item.id));
     expect(new Set(ANIMAL_VETERINARY_CATALOG.map((item) => item.id)).size).toBe(ANIMAL_VETERINARY_CATALOG.length);
