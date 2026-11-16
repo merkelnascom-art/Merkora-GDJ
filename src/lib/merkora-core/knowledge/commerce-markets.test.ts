@@ -66,7 +66,7 @@ describe("Fondation A — famille 09 Commerce et marchés", () => {
   });
 
   it("contient un catalogue structuré couvrant les neuf catégories", () => {
-    expect(catalog.length).toBeGreaterThanOrEqual(80);
+    expect(catalog).toHaveLength(90);
     for (const type of ["subdomain", "specialization", "occupation", "activity", "process", "problem", "resource", "function", "indicator"]) {
       expect(catalog.some((item) => item.conceptType === type), type).toBe(true);
     }
