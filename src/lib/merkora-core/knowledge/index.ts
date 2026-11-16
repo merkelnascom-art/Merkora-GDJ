@@ -18,3 +18,4 @@ export * from "./construction-built-environment-catalog";
 export * from "./energy-utilities-catalog";
 export * from "./mobility-transport-catalog";
 export * from "./logistics-supply-chain-catalog";
+export * from "./commerce-distribution-catalog";
