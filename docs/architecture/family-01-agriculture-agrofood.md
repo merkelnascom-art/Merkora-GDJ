@@ -245,7 +245,20 @@ Une classification unique `foundation-a-family-v2` relie la famille, les cinq do
 
 Les propositions de termes propres à un projet restent dans le mécanisme existant de propositions privées. Aucun concept client n'est publié automatiquement dans le catalogue partagé.
 
-## 13. Périmètre de la première intégration logicielle
+## 13. Taille et couverture du premier corpus
+
+Le premier corpus contient 150 concepts :
+- 1 famille et 5 domaines ;
+- 29 sous-domaines et 8 spécialisations ;
+- 20 métiers ;
+- 25 activités et 12 processus ;
+- 15 problèmes possibles ;
+- 18 ressources ;
+- 10 fonctions et 7 indicateurs.
+
+Les relations relient les domaines aux concepts historiques, les métiers à leurs domaines d'exercice, les processus à leurs activités, les ressources aux domaines et les problèmes aux processus ou fonctions concernés. Ces liens expriment des associations métier possibles, pas des causalités certaines.
+
+## 14. Périmètre de la première intégration logicielle
 
 Inclus :
 - famille canonique et cinq domaines ;
