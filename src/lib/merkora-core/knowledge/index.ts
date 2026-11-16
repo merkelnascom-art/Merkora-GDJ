@@ -10,3 +10,4 @@ export * from "./universal-domain-catalog";
 export * from "./esco-import";
 export * from "./esco-api";
 export * from "./esco-csv";
+export * from "./agriculture-agrofood-catalog";
