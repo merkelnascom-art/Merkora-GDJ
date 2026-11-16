@@ -29,12 +29,7 @@ function makeConcept(seed: Seed): KnowledgeConcept {
   ];
   const classifications = seed.parentId
     ? [{
-        classificationType:
-          seed.parentKind === "domain"
-            ? "foundation-a-family-v2"
-            : seed.parentKind === "subdomain"
-              ? "foundation-a-subdomain-v2"
-              : "foundation-a-specialization-v2",
+        classificationType: "foundation-a-family-v2",
         parentConceptId: seed.parentId,
       }]
     : [];
