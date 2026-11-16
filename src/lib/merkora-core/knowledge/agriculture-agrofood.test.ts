@@ -50,6 +50,19 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     }
   });
 
+  it("contient un premier corpus sectoriel de 150 concepts structurés", () => {
+    expect(AGRICULTURE_AGROFOOD_CATALOG).toHaveLength(150);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "subdomain")).toHaveLength(29);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "specialization")).toHaveLength(8);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "occupation")).toHaveLength(20);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "activity")).toHaveLength(25);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "process")).toHaveLength(12);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "problem")).toHaveLength(15);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "resource")).toHaveLength(18);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "function")).toHaveLength(10);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "indicator")).toHaveLength(7);
+  });
+
   it("reconnaît les expressions agricoles françaises et conserve les variantes lexicales", () => {
     const terms = AGRICULTURE_AGROFOOD_CATALOG.flatMap((item) => item.terms.map((term) => term.value.toLocaleLowerCase("fr")));
     expect(terms).toContain("maraîchage");
