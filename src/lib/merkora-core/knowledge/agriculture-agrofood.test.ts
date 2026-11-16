@@ -67,7 +67,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     expect(lineage.map((item) => item.id)).toEqual([
       AGRICULTURE_AGROFOOD_FAMILY.id,
       "domain-v2:crop-production",
-      "subdomain-v2:crop-production",
+      "subdomain-v2:field-crops",
       "specialization-v2:organic-farming",
     ]);
   });
