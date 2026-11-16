@@ -5,6 +5,7 @@ import {
   AGRICULTURE_AGROFOOD_RELATIONSHIPS,
 } from "./agriculture-agrofood-catalog";
 import { ANIMAL_VETERINARY_CATALOG, ANIMAL_VETERINARY_LEGACY_DOMAIN_PATCHES, ANIMAL_VETERINARY_RELATIONSHIPS } from "./animal-veterinary-catalog";
+import { ENVIRONMENT_NATURAL_RESOURCES_CATALOG, ENVIRONMENT_NATURAL_RESOURCES_RELATIONSHIPS } from "./environment-natural-resources-catalog";
 import type { KnowledgeConcept, KnowledgeRegistry, KnowledgeRelationship, KnowledgeRelationshipVersion } from "./types";
 
 function cloneRelationship(relationship: KnowledgeRelationship): KnowledgeRelationship {
@@ -156,8 +157,8 @@ export function createCoreKnowledgeRegistry(): KnowledgeRegistry {
 
 export function createUniversalKnowledgeRegistry(): KnowledgeRegistry {
   return createKnowledgeRegistry(
-    [...CORE_KNOWLEDGE_CONCEPTS, ...UNIVERSAL_DOMAIN_CATALOG.filter((item) => item.id !== "domain:livestock"), ...ANIMAL_VETERINARY_LEGACY_DOMAIN_PATCHES, ...AGRICULTURE_AGROFOOD_CATALOG, ...ANIMAL_VETERINARY_CATALOG],
-    [...AGRICULTURE_AGROFOOD_RELATIONSHIPS, ...ANIMAL_VETERINARY_RELATIONSHIPS],
+    [...CORE_KNOWLEDGE_CONCEPTS, ...UNIVERSAL_DOMAIN_CATALOG.filter((item) => item.id !== "domain:livestock"), ...ANIMAL_VETERINARY_LEGACY_DOMAIN_PATCHES, ...AGRICULTURE_AGROFOOD_CATALOG, ...ANIMAL_VETERINARY_CATALOG, ...ENVIRONMENT_NATURAL_RESOURCES_CATALOG],
+    [...AGRICULTURE_AGROFOOD_RELATIONSHIPS, ...ANIMAL_VETERINARY_RELATIONSHIPS, ...ENVIRONMENT_NATURAL_RESOURCES_RELATIONSHIPS],
   );
 }
 
