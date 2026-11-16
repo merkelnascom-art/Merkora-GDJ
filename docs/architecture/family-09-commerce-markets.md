@@ -2,7 +2,7 @@
 
 **Version :** 1.0 — 16 novembre 2026  
 **Identifiant :** `family:commerce-markets`  
-**Catalogue initial :** 88 concepts bilingues FR/EN  
+**Catalogue initial :** 90 concepts bilingues FR/EN  
 **Statut :** branche de travail ; contrôles automatisés et revue métier à effectuer avant fusion.
 
 ## 1. Périmètre et frontières
@@ -22,7 +22,7 @@ Elle réutilise cinq domaines canoniques :
 
 ## 2. Sous-domaines et spécialisations
 
-Le socle couvre le magasin physique, le commerce de gros, la vente en ligne, les places de marché, la caisse, les réseaux de distribution commerciale, B2B, B2C, vente directe, commerce social, omnicanal, franchise, marchandisage, trade marketing, relation client, prix et promotions, assortiment et représentation commerciale.
+Le socle couvre le magasin physique, le commerce de gros, la vente en ligne, les places de marché, la caisse, les réseaux de distribution commerciale, B2B, B2C, vente directe, commerce social, omnicanal, franchise, marchandisage, trade marketing, relation client, prix et promotions, assortiment et représentation commerciale. Il inclut également le commerce par abonnement et les études de marché/connaissance client comme sous-domaines distincts.
 
 Spécialisations initiales : commerce alimentaire, mode et habillement, électronique, pharmacie, automobile et pièces, matériaux de construction, intrants agricoles. Les produits réglementés et activités professionnelles restent soumis aux autorisations et règles du pays.
 
