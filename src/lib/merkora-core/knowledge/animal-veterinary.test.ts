@@ -23,7 +23,8 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
   });
 
   it("raccorde les nouveaux domaines et sous-domaines à la famille sans déplacer les concepts historiques", () => {
-    const allDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.map((item) => item.id));\n    const familyDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.filter((item) => item.id !== "domain:livestock").map((item) => item.id));
+    const allDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.map((item) => item.id));
+    const familyDomainIds = new Set(ANIMAL_VETERINARY_DOMAINS.filter((item) => item.id !== "domain:livestock").map((item) => item.id));
     for (const domain of familyDomainIds) {
       expect(registry.concepts.find((item) => item.id === domain)?.classifications).toContainEqual({
         classificationType: "foundation-a-family-v2",
