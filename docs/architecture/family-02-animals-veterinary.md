@@ -88,6 +88,17 @@ Les données sanitaires, traitements, propriétaires et mouvements d'animaux doi
 - Raccorder les graphes de situation sans modifier les mots d'origine, les preuves ou les relations de l'utilisateur.
 - Préserver les concepts inconnus et les ambiguïtés plutôt que forcer une correspondance.
 
-## 12. Limites de la version initiale
+## 12. Scénarios de compréhension multi-projets
+
+1. **Élevage avicole :** « J'ai 500 poulets, depuis trois jours ils mangent moins et plusieurs meurent. » Le moteur doit distinguer l'espèce et le lot, les observations rapportées, la durée et la mortalité. Il ne doit pas inventer de maladie ni de cause et doit orienter vers un vétérinaire compétent.
+2. **Cabinet vétérinaire :** « Je veux suivre les consultations, les vaccins, les médicaments et les prochains rendez-vous. » Le moteur doit reconnaître le parcours de consultation, les événements sanitaires, le stock vétérinaire et les rappels, sans produire de prescription.
+3. **Élevage bovin :** « J'ai des vaches, je veux suivre les naissances, les maladies, les ventes et les dépenses. » Le moteur doit distinguer troupeau, reproduction, suivi sanitaire, commercialisation et gestion financière.
+4. **Apiculture :** « J'ai plusieurs ruches et je ne sais pas combien chacune produit. » Le moteur doit reconnaître l'apiculture, les ruches, les récoltes et la mesure de production, sans confondre apiculture et aquaculture.
+5. **Refuge animalier :** « Les animaux arrivent, certains repartent chez des familles, je perds le suivi. » Le moteur doit reconnaître admissions, dossiers individuels, hébergement, adoption et traçabilité.
+6. **Nutrition animale :** « Je fabrique la provende, mais je veux suivre les matières premières, les recettes, les lots et les clients. » Le moteur doit distinguer formulation, production d'aliments, stock, lots et vente, sans inventer de formule nutritionnelle.
+
+Ces scénarios servent à tester l'extraction des concepts, les relations, les inconnues et les questions suivantes du diagnostic. Ils ne constituent pas des conseils vétérinaires.
+
+## 13. Limites de la version initiale
 
 Les termes, définitions et relations sont un premier corpus organisé par MerKora. Ils nécessitent une revue par des professionnels de l'élevage, des vétérinaires et des spécialistes locaux avant usage réglementaire ou opérationnel. Le catalogue reste ouvert : de nouvelles espèces, filières, métiers, pratiques et spécialités pourront être ajoutés sans réécrire les identifiants existants.
