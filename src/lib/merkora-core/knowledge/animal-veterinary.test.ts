@@ -80,6 +80,15 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     }
   });
 
+  it("ne confond pas apiculture et pêche ou aquaculture", () => {
+    const bee = matchKnowledgeConcept("apiculture", registry, { language: "fr" });
+    const fisheries = matchKnowledgeConcept("Pêche et aquaculture", registry, { expectedType: "domain", language: "fr" });
+    expect(bee.status).toBe("matched");
+    if (bee.status === "matched") expect(bee.concept.id).toBe("subdomain-vet:beekeeping");
+    expect(fisheries.status).toBe("matched");
+    if (fisheries.status === "matched") expect(fisheries.concept.id).toBe("domain:fisheries");
+  });
+
   it("rattache les sous-domaines vétérinaires à leur famille complète", () => {
     const lineage = getClassificationLineage(registry, "subdomain-vet:clinical-veterinary-medicine", "foundation-a-family-v2");
     expect(lineage.map((item) => item.id)).toEqual([
