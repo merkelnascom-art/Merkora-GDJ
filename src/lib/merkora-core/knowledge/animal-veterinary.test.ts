@@ -52,6 +52,19 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     }
   });
 
+  it("documente précisément le volume du premier corpus animalier", () => {
+    expect(ANIMAL_VETERINARY_CATALOG).toHaveLength(132);
+    expect(ANIMAL_VETERINARY_SUBDOMAINS).toHaveLength(26);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "specialization")).toHaveLength(6);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "occupation")).toHaveLength(18);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "activity")).toHaveLength(20);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "process")).toHaveLength(10);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "problem")).toHaveLength(14);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "resource")).toHaveLength(14);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "function")).toHaveLength(10);
+    expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "indicator")).toHaveLength(7);
+  });
+
   it("reconnaît le vocabulaire animalier et vétérinaire sans confondre les concepts", () => {
     const examples = [
       ["volaille", "subdomain-vet:aviculture"],
