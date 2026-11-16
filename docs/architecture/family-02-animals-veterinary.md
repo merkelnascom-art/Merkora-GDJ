@@ -90,7 +90,7 @@ Les données sanitaires, traitements, propriétaires et mouvements d'animaux doi
 
 ## 12. Vérification technique
 
-Run GitHub Actions #1436 : typecheck réussi, 32 fichiers de tests réussis, 189 tests réussis, build de production réussi et audit npm sans vulnérabilité connue. Les avertissements de dépréciation Node/punycode ne bloquent pas le build.
+Run GitHub Actions #1455 : typecheck réussi, 32 fichiers de tests réussis, 189 tests réussis, build de production réussi et audit npm sans vulnérabilité connue. Les avertissements de dépréciation Node/punycode ne bloquent pas le build.
 
 ## 13. Scénarios de compréhension multi-projets
 
