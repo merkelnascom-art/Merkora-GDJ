@@ -56,7 +56,7 @@ Six professions initiales : chargé de l'environnement, ingénieur environnement
 
 ## 5. Activités et processus
 
-Six activités : prélèvement d'eau, collecte des déchets, tri des déchets, plantation d'arbres, inspection environnementale, inventaire de biodiversité et contrôle de la qualité de l'eau.
+Sept activités : prélèvement d'eau, collecte des déchets, tri des déchets, plantation d'arbres, inspection environnementale, inventaire de biodiversité et contrôle de la qualité de l'eau.
 
 Quatre processus : cycle de surveillance environnementale, cycle de gestion des déchets solides, cycle du service d'eau et processus d'évaluation environnementale.
 
