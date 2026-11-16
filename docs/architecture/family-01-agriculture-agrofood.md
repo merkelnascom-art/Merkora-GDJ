@@ -241,7 +241,7 @@ Attendu : distinguer achat de matière première, transformation, rendement mati
 
 Le catalogue est ajouté au registre universel via `createUniversalKnowledgeRegistry()` et exporté par le module de connaissance. Les identifiants de la nouvelle cartographie utilisent le suffixe de version `v2` pour éviter de remplacer les concepts historiques.
 
-Une classification unique `foundation-a-agriculture-v1` relie la famille, les cinq domaines, les sous-domaines et les spécialisations. Les concepts sont aussi raccordés au graphe de connaissances par des relations typées : appartenance, précision d'un domaine historique, activités possibles d'un métier, inclusion d'une activité dans un processus, contrainte et soutien fonctionnel.
+Une classification unique `foundation-a-family-v2` relie la famille, les cinq domaines, les sous-domaines et les spécialisations. Les concepts sont aussi raccordés au graphe de connaissances par des relations typées : appartenance, précision d'un domaine historique, activités possibles d'un métier, inclusion d'une activité dans un processus, contrainte et soutien fonctionnel.
 
 Les propositions de termes propres à un projet restent dans le mécanisme existant de propositions privées. Aucun concept client n'est publié automatiquement dans le catalogue partagé.
 
