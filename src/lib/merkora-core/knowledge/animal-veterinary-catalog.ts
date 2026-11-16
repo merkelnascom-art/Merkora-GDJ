@@ -1,4 +1,5 @@
 import type { KnowledgeConcept, KnowledgeRelationship } from "./types";
+import { UNIVERSAL_DOMAIN_CATALOG } from "./universal-domain-catalog";
 
 const CREATED_AT = "2026-11-16T00:00:00.000Z";
 const SOURCE_ID = "source:merkora-family-02-animal-veterinary-v1";
@@ -248,9 +249,12 @@ const crossFamilyRelationships = [
   relation("rel:animal-vet:feed-crop-production", "domain-vet:animal-nutrition", "domain-v2:crop-production", "uses_inputs_from"),
   relation("rel:animal-vet:fishery-boundary", FAMILY_SEED.id, "domain:fisheries", "has_adjacent_but_distinct_domain"),
 ];
-const ANIMAL_VETERINARY_DOMAINS = [
+const existingLivestockDomain = UNIVERSAL_DOMAIN_CATALOG.find((item) => item.id === "domain:livestock");
+if (!existingLivestockDomain) throw new Error("The existing canonical livestock domain is required by the animal family.");
+
+export const ANIMAL_VETERINARY_DOMAINS = [
+  existingLivestockDomain,
   ...concepts.filter((item) => item.conceptType === "domain"),
-  // Reuse the existing canonical livestock domain; never create a duplicate.
 ];
 export const ANIMAL_VETERINARY_FAMILY = familyConcept;
 export { ANIMAL_VETERINARY_DOMAINS };
