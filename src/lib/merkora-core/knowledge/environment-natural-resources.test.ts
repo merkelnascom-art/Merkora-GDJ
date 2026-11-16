@@ -54,6 +54,11 @@ describe("Fondation A — famille 03 Environnement et ressources naturelles", ()
     }
   });
 
+  it("conserve des clés canoniques uniques dans tout le registre universel", () => {
+    const keys = registry.concepts.map((item) => item.canonicalKey);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
   it("ne publie aucune relation orpheline et conserve des identifiants uniques", () => {
     const ids = new Set(registry.concepts.map((item) => item.id));
     expect(new Set(ENVIRONMENT_NATURAL_RESOURCES_CATALOG.map((item) => item.id)).size).toBe(ENVIRONMENT_NATURAL_RESOURCES_CATALOG.length);
