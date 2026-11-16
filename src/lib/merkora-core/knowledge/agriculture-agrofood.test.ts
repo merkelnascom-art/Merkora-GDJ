@@ -19,7 +19,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
       expect(registered, domain.id).toBeDefined();
       expect(
         registered?.classifications.some(
-          (item) => item.classificationType === "foundation-a-family-v2" &&
+          (item) => item.classificationType === "foundation-a-agriculture-v1" &&
             item.parentConceptId === AGRICULTURE_AGROFOOD_FAMILY.id,
         ),
       ).toBe(true);
@@ -33,7 +33,7 @@ describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
     for (const subdomain of AGRICULTURE_AGROFOOD_SUBDOMAINS) {
       expect(
         subdomain.classifications.some(
-          (item) => item.classificationType === "foundation-a-subdomain-v2" &&
+          (item) => item.classificationType === "foundation-a-agriculture-v1" &&
             item.parentConceptId && domainIds.has(item.parentConceptId),
         ),
       ).toBe(true);
