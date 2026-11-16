@@ -2,7 +2,7 @@
 
 **Version :** 1.0 — 16 novembre 2026  
 **Identifiant canonique :** `family:logistics-supply-chain`  
-**Catalogue initial :** 87 concepts bilingues FR/EN  
+**Catalogue initial :** 88 concepts bilingues FR/EN  
 **Statut :** intégré à la branche de travail ; validation CI et revue métier requises avant fusion.
 
 ## 1. Périmètre et frontières
