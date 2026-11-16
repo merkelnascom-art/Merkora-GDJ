@@ -112,6 +112,35 @@ describe("situation graph knowledge linking", () => {
     });
   });
 
+  it("links veterinary roles and animal-health activities to the second family", () => {
+    const animalGraph: SituationGraph = {
+      entities: [
+        { id: "entity:veterinarian", key: "veterinarian", kind: "actor", label: "Personne", role: "vétérinaire", evidence: [] },
+        { id: "entity:aviculture", key: "aviculture", kind: "activity", label: "volaille", evidence: [] },
+      ],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(animalGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].label).toBe("Personne");
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "occupation-vet:veterinarian",
+      classificationPath: [
+        { id: "family:animals-veterinary", label: "Animaux et médecine vétérinaire" },
+        { id: "domain-vet:veterinary-medicine", label: "Médecine vétérinaire et santé animale" },
+      ],
+    });
+    expect(linked.entities[1].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "subdomain-vet:aviculture",
+      classificationPath: [
+        { id: "family:animals-veterinary", label: "Animaux et médecine vétérinaire" },
+        { id: "domain:livestock", label: "Élevage" },
+        { id: "subdomain-vet:aviculture", label: "Aviculture" },
+      ],
+    });
+  });
+
   it("does not attach a canonical concept from a different semantic type", () => {
     const mismatchedGraph: SituationGraph = {
       ...graph,
