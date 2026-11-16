@@ -11,3 +11,4 @@ export * from "./esco-import";
 export * from "./esco-api";
 export * from "./esco-csv";
 export * from "./agriculture-agrofood-catalog";
+export * from "./animal-veterinary-catalog";
