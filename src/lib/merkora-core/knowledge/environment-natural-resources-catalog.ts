@@ -21,7 +21,7 @@ function makeConcept(seed: Seed): KnowledgeConcept {
       { value: seed.en, language: "en", kind: "preferred" },
       ...(seed.terms ?? []).map((value) => ({ value, language: "fr", kind: "synonym" as const })),
     ],
-    classifications: seed.parentId ? [{ classificationType: "foundation-a-family-v2", parentConceptId: seed.parentId }] : [],
+    classifications: seed.parentId ? [{ classificationType: "universal-domain", parentConceptId: seed.parentId }] : [],
     attributes: [], relationships: [], scope: { global: true },
     lifecycle: { status: "validated", version: 1, createdAt: CREATED_AT, updatedAt: CREATED_AT },
     sources: [{ id: SOURCE_ID, sourceType: "curated_domain_knowledge", label: "MerKora GDJ — Famille 03 Environnement et ressources naturelles, version 1" }],
