@@ -73,3 +73,30 @@ describe("screen 05 — domain questions remain active when the activity is alre
     expect(next?.prompt).toMatch(/terre|eau|climat|intrants|stockage|qualité|débouchés/i);
   });
 });
+
+
+describe("screen 05 — selectable suggestions alongside free-text answers", () => {
+  it("offers contextual role suggestions without treating them as confirmed roles", () => {
+    const dossier = project([
+      { id: "activity", dimension: "activity", value: "Gérer une pâtisserie et vendre des gâteaux" },
+      { id: "actors", dimension: "actors", value: "La responsable et les pâtissiers" },
+    ]);
+    dossier.originalDescription = "Je veux une plateforme numérique pour une pâtisserie.";
+    dossier.knowledgeMap = {
+      ...dossier.knowledgeMap!,
+      familyCandidates: [],
+      primaryFamilyId: undefined,
+      needsFamilyClarification: false,
+    };
+
+    const next = getNextProductDefinitionQuestion(dossier, createProductDefinitionSession(dossier));
+
+    expect(next?.id).toBe("users-roles");
+    expect(next?.answerType).toBe("text");
+    expect(next?.suggestedOptions).toEqual(expect.arrayContaining([
+      "Responsable / administrateur",
+      "Personnel de préparation",
+      "Client",
+    ]));
+  });
+});
