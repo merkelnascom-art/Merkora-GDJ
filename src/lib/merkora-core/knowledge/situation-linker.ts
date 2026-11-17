@@ -51,6 +51,7 @@ function matchAcrossTypes(query:string,registry:KnowledgeRegistry,types:string[]
 function matchSituationEntity(entity:SituationGraph["entities"][number],registry:KnowledgeRegistry,language?:string){
  if(entity.kind==="activity")return activityMatch(entity.label,registry,language);
  if(entity.kind==="actor"&&entity.role)return matchKnowledgeConcept(entity.role,registry,{expectedType:"occupation",language});
+ if(entity.kind==="actor")return matchKnowledgeConcept(entity.label,registry,{expectedType:"actor",language});
  const types:Record<string,string[]>={
   goal:["indicator","goal"],outcome:["indicator","outcome"],constraint:["risk","constraint"],
   resource:["resource","equipment","document"],object:["product","equipment","object"],
