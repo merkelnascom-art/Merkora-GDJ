@@ -14,6 +14,7 @@ import {
   type ProjectUnderstandingItem,
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
+import { deriveScreen03Evidence } from "../../src/lib/merkora-core/understanding-quality";
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
 import { buildProjectKnowledgeMap } from "../../src/lib/merkora-core/knowledge/universal-project-knowledge";
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
@@ -212,7 +213,10 @@ export default function UnderstandingPage() {
     window.location.href = "/diagnostic";
   }
 
-  const activeItems = dossier ? getActiveUnderstandingItems(dossier) : [];
+  const evidenceView = dossier
+    ? deriveScreen03Evidence(getActiveUnderstandingItems(dossier))
+    : { projectItems: [], conversationOnly: [], notApplicable: [], duplicates: [] };
+  const activeItems = evidenceView.projectItems;
   const populatedSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => activeItems.some((item) => item.dimension === section.id)) : [];
   const missingSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => !activeItems.some((item) => item.dimension === section.id)) : [];
 
@@ -367,10 +371,14 @@ export default function UnderstandingPage() {
             {dossier.privacyConsiderations.length > 0 && <section className="mk-understanding-section"><h2>Précautions de confidentialité repérées</h2><ul className="mk-unresolved-list">{dossier.privacyConsiderations.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
 
             <div className="mk-stage-overview">
-              <div><strong>{activeItems.length}</strong><span>éléments actifs</span></div>
-              <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>déjà validés</span></div>
-              <div><strong>{activeItems.filter((item) => item.status === "hypothesis" || item.status === "inferred").length}</strong><span>à confirmer</span></div>
+              <div><strong>{activeItems.length}</strong><span>déclarations utiles, sans doublons</span></div>
+              <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>confirmées</span></div>
+              <div><strong>{activeItems.filter((item) => item.status !== "validated").length}</strong><span>à vérifier</span></div>
+              <div><strong>{evidenceView.notApplicable.length}</strong><span>non applicables</span></div>
             </div>
+            {evidenceView.duplicates.length > 0 && <p className="mk-unresolved-count">{evidenceView.duplicates.length} répétition(s) regroupée(s) à l’écran. Toutes les déclarations et leurs sources originales restent conservées dans le dossier.</p>}
+            {evidenceView.notApplicable.length > 0 && <section className="mk-understanding-section"><h2>Non applicable au projet</h2><p>Ces réponses explicites sont conservées séparément. Elles ne sont comptées ni comme faits du projet ni comme informations inconnues.</p>{evidenceView.notApplicable.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Source conservée : {item.sourceQuote}</small></article>)}</section>}
+            {evidenceView.conversationOnly.length > 0 && <section className="mk-understanding-section"><h2>Réactions de conversation</h2><p>Ces messages restent dans l’historique, mais ne sont pas présentés comme des objectifs, résultats ou faits du projet.</p>{evidenceView.conversationOnly.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Message conservé hors des éléments métier.</small></article>)}</section>}
 
             {dossier.knowledgeMap && (dossier.knowledgeMap.familyCandidates.length > 0 || dossier.knowledgeMap.unresolved.length > 0) && (
               <section className="mk-knowledge-map" aria-label="Cartographie métier et fonctionnelle">
