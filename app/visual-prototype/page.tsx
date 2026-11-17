@@ -22,6 +22,10 @@ export default function VisualPrototypePage() {
   const [activeProfile, setActiveProfile] = useState("");
   const [notice, setNotice] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [showRequest, setShowRequest] = useState(false);
+  const [changeRequest, setChangeRequest] = useState("");
+  const [proposalIdentity, setProposalIdentity] = useState<{ id: string; version: number } | null>(null);
+  const [prototypeValidated, setPrototypeValidated] = useState(false);
 
   useEffect(() => {
     try {
@@ -42,6 +46,12 @@ export default function VisualPrototypePage() {
         return;
       }
       const nextModel = buildVisualPrototypeModel(dossier, definition, stored.proposal);
+      setProposalIdentity({ id: stored.proposal.id, version: stored.proposal.version });
+      const validationRaw = sessionStorage.getItem("merkora-v2-visual-prototype-validation");
+      if (validationRaw) {
+        const validation = JSON.parse(validationRaw) as { proposalId?: string; proposalVersion?: number };
+        setPrototypeValidated(validation.proposalId === stored.proposal.id && validation.proposalVersion === stored.proposal.version);
+      }
       setModel(nextModel);
       setActiveProfile(nextModel.profiles[0] ?? "");
     } catch {
@@ -72,6 +82,32 @@ export default function VisualPrototypePage() {
 
   function simulateAction(label: string) {
     setNotice("Aperçu interactif : « " + label + " » — cette action est simulée, elle n'enregistre aucune opération réelle.");
+  }
+
+  function saveChangeRequest() {
+    if (!changeRequest.trim() || !proposalIdentity) return;
+    sessionStorage.setItem("merkora-v2-visual-prototype-change-request", JSON.stringify({
+      proposalId: proposalIdentity.id,
+      proposalVersion: proposalIdentity.version,
+      request: changeRequest.trim(),
+      createdAt: new Date().toISOString(),
+      status: "draft_for_review",
+    }));
+    setNotice("Ta demande de modification a été conservée dans cette session pour être reprise à l'étape de spécification.");
+    setChangeRequest("");
+    setShowRequest(false);
+  }
+
+  function validatePrototype() {
+    if (!proposalIdentity) return;
+    sessionStorage.setItem("merkora-v2-visual-prototype-validation", JSON.stringify({
+      proposalId: proposalIdentity.id,
+      proposalVersion: proposalIdentity.version,
+      validatedAt: new Date().toISOString(),
+      status: "validated_by_client",
+    }));
+    setPrototypeValidated(true);
+    setNotice("Maquette validée pour cette version de la composition. Cette validation est conservée dans cet onglet.");
   }
 
   return (
@@ -110,9 +146,10 @@ export default function VisualPrototypePage() {
           <>
             <div className="mk-prototype-toolbar">
               <div><span className="mk-prototype-live-dot" /> APERÇU DU PROJET <small>{model.mode === "digital" ? "PROTOTYPE NUMÉRIQUE" : "VISUALISATION OPÉRATIONNELLE"}</small></div>
-              <button type="button" onClick={() => simulateAction("Demander une modification")}>Demander une modification</button>
+              <button type="button" onClick={() => { setShowRequest((value) => !value); setNotice(""); }}>Demander une modification</button>
             </div>
 
+            {showRequest && <section className="mk-prototype-request"><label htmlFor="mk-prototype-change">Quelle modification souhaites-tu apporter ?</label><textarea id="mk-prototype-change" value={changeRequest} onChange={(event) => setChangeRequest(event.target.value)} placeholder="Décris la partie à modifier et le résultat que tu souhaites…" /><div><button type="button" className="quiet" onClick={() => setShowRequest(false)}>Annuler</button><button type="button" disabled={!changeRequest.trim()} onClick={saveChangeRequest}>Conserver ma demande</button></div></section>}
             <section className="mk-prototype-workspace">
               <aside className="mk-prototype-sidebar">
                 <div className="mk-prototype-brand"><span>{model.title.slice(0, 1).toUpperCase()}</span><div><strong>{model.title}</strong><small>{model.mode === "digital" ? "ESPACE DE GESTION" : "ORGANISATION DU PROJET"}</small></div></div>
@@ -167,7 +204,7 @@ export default function VisualPrototypePage() {
 
             <div className="mk-prototype-bottom-note"><span>✦</span><p>Cette maquette est une représentation de conception. Les boutons illustrent les interactions ; aucune commande réelle, transaction ou donnée métier n'est exécutée.</p></div>
             {notice && <div className="mk-prototype-notice" role="status">{notice}</div>}
-            <div className="mk-prototype-validation"><div><strong>La représentation correspond-elle à ton idée ?</strong><p>Tu peux demander des changements avant de passer à la spécification détaillée.</p></div><button type="button" onClick={() => simulateAction("Valider la maquette et préparer la spécification")}>Valider cette maquette <span>→</span></button></div>
+            <div className="mk-prototype-validation"><div><strong>La représentation correspond-elle à ton idée ?</strong><p>Tu peux demander des changements avant de passer à la spécification détaillée.</p></div><button type="button" onClick={validatePrototype} disabled={prototypeValidated}>{prototypeValidated ? "Maquette validée ✓" : "Valider cette maquette →"}</button></div>
           </>
         )}
       </section>
