@@ -963,13 +963,13 @@ const result=createFamilyCatalog({
     "part_of"
   ],
   [
-    "activity-craft:repair-appliance",
+    "activity-craft:equipment-repair",
     "process-craft:repair-diagnosis-cycle",
     "part_of"
   ],
   [
     "function-craft:repair-job-tracking",
-    "activity-craft:repair-appliance",
+    "activity-craft:equipment-repair",
     "supports"
   ],
   [
