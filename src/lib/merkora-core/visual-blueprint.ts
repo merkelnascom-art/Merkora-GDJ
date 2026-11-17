@@ -202,7 +202,7 @@ function detectDeliveryModes(values: string[]): VisualDeliveryMode[] {
   if (/\b(application mobile|mobile natif|android|iphone|ios)\b/.test(text)) modes.push("mobile");
   if (/\b(web|site internet|site web)\b/.test(text)) modes.push("web");
   if (/\b(hybride|web et mobile|mobile et web)\b/.test(text)) modes.push("hybrid");
-  return unique(modes);
+  return [...new Set(modes)];
 }
 
 function areaFor(component: SolutionProposalComponent, label: string): VisualArea {
@@ -225,7 +225,7 @@ function areaFor(component: SolutionProposalComponent, label: string): VisualAre
 function featureFields(area: VisualArea, label: string): string[] {
   const text = label.toLocaleLowerCase("fr");
   if (/présence|pointage|assiduité|retard/.test(text)) return ["Personne concernée", "Date", "Heure", "Statut"];
-  if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Service ou activité", "Date"];
+  if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Formation ou service", "Date"];
   if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de règlement", "Date"];
   switch (area) {
     case "orders": return ["Référence", "Client ou demandeur", "Date prévue", "Statut"];
