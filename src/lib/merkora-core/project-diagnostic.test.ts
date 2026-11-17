@@ -14,6 +14,7 @@ import {
 } from "./project-diagnostic";
 import { createProjectKnowledgeProposal } from "./knowledge/proposals";
 import { createCoreKnowledgeRegistry } from "./knowledge/registry";
+import { buildProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
 
 describe("universal project understanding", () => {
   it("preserves the original narrative and source trace without requiring a sector classification", () => {
@@ -85,6 +86,32 @@ describe("universal project understanding", () => {
 
     expect(() => attachKnowledgeProposalToUnderstanding(dossier, { ...proposal, projectId: "other-project" })).toThrow(/own project/i);
     expect(() => attachKnowledgeProposalToUnderstanding(attached, duplicate)).toThrow(/already been proposed/i);
+  });
+
+  it("attaches a non-authoritative knowledge map and refreshes it after each answer", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux gérer les rendez-vous d'un salon de coiffure."));
+    expect(dossier.knowledgeMap).toBeDefined();
+    const diagnostic = createDiagnosticSession(dossier);
+    const first = getNextDiagnosticQuestion(dossier, diagnostic)!;
+    const result = recordDiagnosticAnswer(dossier, diagnostic, first, { value: "gestion des rendez-vous d'un salon de coiffure" });
+    expect(result.understanding.knowledgeMap).toBeDefined();
+    expect(result.understanding.knowledgeMap?.automaticDecisions).toEqual([]);
+  });
+
+  it("asks family-specific follow-up questions only after a family is lexically supported", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux améliorer le fonctionnement d'un club sportif."));
+    const items = [
+      ...base.items,
+      { id:"sport-activity",dimension:"activity",originalDimension:"activity",value:"arbitrage d'un match",status:"user_stated",source:"conversation",sourceQuote:"arbitrage d'un match",createdAt:"2026-11-17T00:00:00.000Z" },
+      { id:"sport-context",dimension:"current_situation",originalDimension:"current_situation",value:"un club sportif organise des matchs",status:"user_stated",source:"conversation",sourceQuote:"un club sportif organise des matchs",createdAt:"2026-11-17T00:00:00.000Z" },
+    ];
+    const dossier = { ...base, items, knowledgeMap: buildProjectKnowledgeMap(items) };
+    const diagnostic = { ...createDiagnosticSession(dossier), askedQuestionIds:[
+      "activity-context","current-situation","project-motivation","problem-description","expected-outcome","people-and-roles","operations-and-flow"
+    ] };
+    const next = getNextDiagnosticQuestion(dossier, diagnostic);
+    expect(next?.id).toContain("family-context-family:sport-physical-activity");
+    expect(next?.prompt).toMatch(/discipline|catégories d'âge/i);
   });
 });
 
