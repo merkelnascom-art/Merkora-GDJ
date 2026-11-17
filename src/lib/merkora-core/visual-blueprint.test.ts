@@ -70,4 +70,55 @@ describe("screen 07 — adaptive visual blueprint", () => {
     expect(blueprint.screens[0].primaryActionLabel).toBe("Enregistrer une opération");
     expect(blueprint.screens[0].items).toEqual(["Enregistrer un paiement"]);
   });
+  
+  it("extracts concise role profiles and responsibilities from a long free-text answer", () => {
+    const rolesText = [
+      "1. Propriétaire / administratrice",
+      "Piloter l'activité.",
+      "Valider les décisions importantes.",
+      "2. Responsable commercial / Agent d'accueil",
+      "Enregistrer les nouveaux clients.",
+      "Présenter les produits et les tarifs.",
+      "3. Pâtissier / Chef de production",
+      "Consulter les commandes validées.",
+      "Organiser les tâches de production.",
+      "9. Client",
+      "Consulter le catalogue.",
+      "Suivre sa commande.",
+    ].join("\n");
+    const base = definition();
+    const blueprint = buildVisualBlueprint(dossier(), {
+      ...base,
+      answers: [{ ...base.answers[0], value: rolesText }],
+    }, proposal());
+
+    expect(blueprint.profiles.map((profile) => profile.name)).toEqual([
+      "Propriétaire / administratrice",
+      "Responsable commercial / Agent d'accueil",
+      "Pâtissier / Chef de production",
+      "Client",
+    ]);
+    expect(blueprint.profiles[0].responsibilities).toEqual([
+      "Piloter l'activité.",
+      "Valider les décisions importantes.",
+    ]);
+    expect(blueprint.profiles[1].responsibilities).toContain("Enregistrer les nouveaux clients.");
+    expect(blueprint.profiles.every((profile) => profile.name.length < 70)).toBe(true);
+  });
+
+  it("turns a long accepted answer into a concise feature label instead of rendering the whole dossier", () => {
+    const longTitle = [
+      "Contrôler les performances de l'entreprise.",
+      "2. L'administrateur interne — Gestion quotidienne",
+      "Créer et gérer les comptes utilisateurs.",
+      "Mettre à jour le catalogue des produits.",
+      "Vérifier les informations des commandes.",
+      "Assurer une assistance technique en cas de problème.",
+    ].join("\n");
+    const blueprint = buildVisualBlueprint(dossier(), definition(), proposal(true, longTitle, "operations"));
+
+    expect(blueprint.screens[0].items).toEqual(["Contrôler les performances de l'entreprise"]);
+    expect(blueprint.screens[0].items[0].length).toBeLessThan(70);
+  });
+
 });
