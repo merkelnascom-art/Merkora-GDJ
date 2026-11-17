@@ -215,7 +215,7 @@ export function getNextProductDefinitionQuestion(
           : ["Responsable / administrateur", "Personnel / collaborateur", "Client / bénéficiaire", "Partenaire / fournisseur", "Autre profil"];
   const knownRolePatterns: Array<[string, RegExp]> = [
     ["Responsable / administrateur", /\b(administrateur|administratrice|responsable|gérant|gérante|directeur|directrice|propriétaire)\b/i],
-    ["Personnel de préparation", /\b(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)\b/i],
+    ["Personnel de préparation", /(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)/i],
     ["Vendeur / gestionnaire des commandes", /\b(vendeur|vendeuse|commercial|caissier|caissière|prise de commande)\b/i],
     ["Livreur", /\b(livreur|livraison|coursier)\b/i],
     ["Client", /\b(client|acheteur|consommateur|bénéficiaire)\b/i],
