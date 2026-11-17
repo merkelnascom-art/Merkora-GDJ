@@ -154,6 +154,31 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
     expect(next?.prompt).toMatch(/cultures|productions végétales|saisons|agroalimentaires/i);
   });
 
+
+  it("offers relevant knowledge-base function candidates for human selection", () => {
+    const project = dossier({
+      description: "Créer une plateforme web pour gérer les activités.",
+      items: [{ id: "solution", dimension: "imagined_solution", value: "Une plateforme web" }],
+    });
+    project.knowledgeMap = {
+      ...project.knowledgeMap!,
+      solutionCandidates: [
+        { conceptId: "function:registration", labelFr: "Gestion des inscriptions", labelEn: "Registration management", confidence: 0.9, status: "suggested", humanValidationRequired: true, evidenceIds: ["solution"], relationshipIds: [], explanation: "Fonction candidate" },
+        { conceptId: "function:planning", labelFr: "Planification des activités", labelEn: "Activity planning", confidence: 0.8, status: "suggested", humanValidationRequired: true, evidenceIds: ["solution"], relationshipIds: [], explanation: "Fonction candidate" },
+      ],
+    };
+    const session: ProductDefinitionSession = {
+      ...createProductDefinitionSession(project),
+      askedQuestionIds: ["users-roles", "product-navigation"],
+    };
+    const next = getNextProductDefinitionQuestion(project, session);
+
+    expect(next?.id).toBe("product-functions");
+    expect(next?.answerType).toBe("multi_choice");
+    expect(next?.options).toContain("Gestion des inscriptions");
+    expect(next?.suggestedFunctions).toContain("Planification des activités");
+  });
+
   it("uses an earlier answer to unlock relevant questions instead of staying in a generic path", () => {
     const project = dossier({ description: "Créer un outil de suivi." });
     const session = createProductDefinitionSession(project);
