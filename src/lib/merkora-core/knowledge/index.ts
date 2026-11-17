@@ -22,3 +22,5 @@ export * from "./commerce-markets-catalog";
 export * from "./finance-insurance-catalog";
 
 export * from "./public-governance-catalog";
+
+export * from "./legal-services-catalog";
