@@ -33,7 +33,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     }
     for (const subdomain of ANIMAL_VETERINARY_SUBDOMAINS) {
       expect(registry.concepts.some((item) => item.id === subdomain.id)).toBe(true);
-      expect(subdomain.classifications.some((item) => item.parentConceptId && allDomainIds.has(item.parentConceptId))).toBe(true);
+      expect(subdomain.classifications.some((item) => item.parentConceptId && registry.concepts.some((parent) => parent.id === item.parentConceptId))).toBe(true);
     }
     expect(registry.concepts.find((item) => item.id === "domain:livestock")?.classifications).toContainEqual({
       classificationType: "foundation-a-family-v2",
