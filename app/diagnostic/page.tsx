@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import {
   createDiagnosticSession,
   getActiveDiagnosticAnswers,
+  getProjectEvidenceItems,
+  migrateStoredProjectUnderstanding,
   getNextDiagnosticQuestion,
   recordDiagnosticAnswer,
   reviseDiagnosticAnswer,
@@ -26,14 +28,20 @@ function readDossier(): ProjectUnderstanding | null {
     const raw = window.sessionStorage.getItem(DOSSIER_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ProjectUnderstanding;
-    if (typeof parsed.originalDescription === "string" && Array.isArray(parsed.items)) return {
+    if (typeof parsed.originalDescription !== "string" || !Array.isArray(parsed.items)) return null;
+    const normalizedBase: ProjectUnderstanding = {
       ...parsed,
       situationGraph: parsed.situationGraph ?? { entities: [], relations: [], unresolvedRelations: [] },
       contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
       unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
       privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
-      knowledgeMap: parsed.knowledgeMap ?? buildProjectKnowledgeMap(parsed.items, parsed.situationGraph),
     };
+    const migrated = migrateStoredProjectUnderstanding({
+      ...normalizedBase,
+      knowledgeMap: buildProjectKnowledgeMap(getProjectEvidenceItems(normalizedBase), normalizedBase.situationGraph),
+    });
+    window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch { /* Le parcours reste accessible si le stockage est indisponible. */ }
   return null;
 }

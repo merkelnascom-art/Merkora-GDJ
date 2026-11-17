@@ -27,12 +27,14 @@ const AUDIENCE_PATTERNS = [
   { pattern: /\b(?:les|des|mes|aux)\s+employés?\b/i, key: "actor:employees", label: "Employés", role: "staff" },
   { pattern: /\b(?:les|des|mes|aux)\s+invités?\b/i, key: "audience:guests", label: "Invités" },
   { pattern: /\b(?:les|des|mes|aux)\s+joueurs?\b/i, key: "audience:players", label: "Joueurs" },
+  { pattern: /\b\d+\s+(?:joueurs?|participants?)\b/i, key: "audience:players", label: "Joueurs" },
   { pattern: /\b(?:les|des|mes|aux)\s+adultes?\b/i, key: "audience:adults", label: "Adultes" },
 ];
 
 const CREATION_PATTERN = /\b(?:créer|creer|développer|developper|concevoir|imaginer|lancer|mettre en place)\s+(?:un|une|des|l'|le|la)?\s*([^.!?;,]+)/i;
 const PURPOSE_PATTERN = /\b(?:pour|afin de|dans le but de)\s+((?:me|se|leur)\s+)?([a-zàâçéèêëîïôûùüÿñæœ-]+(?:\s+[^.!?;,]+)?)/i;
-const DIRECT_GOAL_PATTERN = /\b(?:je veux|j'aimerais|je souhaite|mon objectif est de|je cherche à)\s+((?:suivre|gérer|gerer|améliorer|ameliorer|réduire|reduire|mesurer|comprendre|apprendre|automatiser|contrôler|controler|organiser|accompagner|former|vendre)\b[^.!?;,]*)/i;
+const DIRECT_GOAL_PATTERN = /\b(?:je veux|j'aimerais|je souhaite|mon objectif est de|je cherche à)\s+((?:suivre|gérer|gerer|améliorer|ameliorer|réduire|reduire|mesurer|comprendre|apprendre|automatiser|contrôler|controler|accompagner)\b[^.!?;,]*)/i;
+const ORGANIZED_INTENT_PATTERN = /\b(?:je veux|j'aimerais|je souhaite)\s+organiser\s+(?:un|une|des)\s+([^.!?;,]+)/i;
 const PROBLEM_PATTERN = /\b(?:stress\w*|frustr\w*|angoiss\w*|désorganis\w*|desorganis\w*|retard\w*|perte de temps|difficult[ée]s?|probl[eè]mes?)\b[^.!?;,]*/i;
 
 function visitorSentences(messages: ConversationMessage[]): VisitorSentence[] {
@@ -124,6 +126,19 @@ export function extractSituationObservations(
         activity = makeEntity(key, "activity", label, source);
         entities.set(key, activity);
       }
+    }
+
+    const organizedIntentMatch = sentence.content.match(ORGANIZED_INTENT_PATTERN);
+    if (organizedIntentMatch?.[1]) {
+      const label = cleanLabel(organizedIntentMatch[1]);
+      const normalized = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "-");
+      const asciiLabel = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isEvent = /\b(tournoi|match|competition|concours|anniversaire|fete|soiree|mariage|evenement|ceremonie)\b/i.test(asciiLabel);
+      const isInterface = /\b(interface|application|plateforme|logiciel|site|outil|systeme)\b/i.test(asciiLabel);
+      const kind: SituationEntityKind = isEvent ? "event" : isInterface ? "concept" : "activity";
+      const key = `${kind}:${normalized}`;
+      activity = makeEntity(key, kind, label, source);
+      entities.set(key, activity);
     }
 
     const purposeMatch = sentence.content.match(PURPOSE_PATTERN);

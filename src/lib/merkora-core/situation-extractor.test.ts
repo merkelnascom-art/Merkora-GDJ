@@ -50,6 +50,31 @@ describe("situation language extractor", () => {
     ]));
   });
 
+  it("represents an organized tournament as an event, not as an abstract goal", () => {
+    const graph = buildSituationGraph(extractSituationObservations([{
+      id: "tournament",
+      conversationId: "tournament-project",
+      role: "visitor",
+      content: "Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs.",
+      createdAt: "2026-11-17T08:00:00.000Z",
+    }]));
+    expect(graph.entities.some((entity) => entity.kind === "event" && /tournoi de baby foot/i.test(entity.label))).toBe(true);
+    expect(graph.entities.some((entity) => entity.kind === "goal" && /organiser un tournoi/i.test(entity.label))).toBe(false);
+    expect(graph.entities.some((entity) => entity.kind === "actor" && entity.label === "Joueurs")).toBe(true);
+  });
+
+  it("keeps an imagined interface separate from an event or goal", () => {
+    const graph = buildSituationGraph(extractSituationObservations([{
+      id: "interface",
+      conversationId: "interface-project",
+      role: "visitor",
+      content: "Je veux organiser une interface façon organigramme.",
+      createdAt: "2026-11-17T08:01:00.000Z",
+    }]));
+    expect(graph.entities.some((entity) => entity.kind === "concept" && /interface façon organigramme/i.test(entity.label))).toBe(true);
+    expect(graph.entities.some((entity) => entity.kind === "goal")).toBe(false);
+  });
+
   it("uses visitor messages only and preserves the exact sentence behind each extracted fact", () => {
     const graph = buildSituationGraph(extractSituationObservations(messages));
 

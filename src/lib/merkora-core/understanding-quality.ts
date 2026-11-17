@@ -13,6 +13,8 @@ export interface Screen03EvidenceView {
   conversationOnly: ProjectUnderstandingItem[];
   /** Explicit "not applicable" answers are neither unknown nor project facts. */
   notApplicable: ProjectUnderstandingItem[];
+  /** Explicitly unknown answers remain visible without filling a project dimension. */
+  unknown: ProjectUnderstandingItem[];
   duplicates: Screen03DuplicateGroup[];
 }
 
@@ -44,6 +46,10 @@ function classifyDimension(item: ProjectUnderstandingItem): ProjectUnderstanding
   if (/\b(detendre|rassembler|divertir|amuser|creer du lien|passer un bon moment)\b/.test(text)) {
     return "motivation";
   }
+  if (/\b(?:que|si)\s+(?:le\s+)?(?:systeme|outil|plateforme|application)\b.{0,100}\b(?:fonctionne|fonctionner|effectue|effectuer|procede|realise|realiser|termine|terminer)\b/.test(text)
+    || /\bsi\s+(?:il|elle)\s+arrive\s+a\s+(?:effectuer|realiser|terminer|faire)\b/.test(text)) {
+    return "success_criteria";
+  }
   if (/\b(je declare|je designe).{0,80}(gagn|perd)|gagn.{0,60}perd.{0,60}elimin/.test(text)) {
     return "operations";
   }
@@ -62,9 +68,9 @@ function classifyDimension(item: ProjectUnderstandingItem): ProjectUnderstanding
   return item.dimension;
 }
 
-function isConversationOnly(value: string): boolean {
+export function isConversationOnlyStatement(value: string): boolean {
   const text = normalizeText(value);
-  return /\b(j ai deja dit|je l ai deja dit|j ai deja repondu|je viens de le dire|c est deja dit)\b/.test(text);
+  return /^(?:mais )?(?:j ai deja dit ca|je l ai deja dit|j ai deja repondu|je viens de le dire|je l ai deja explique|je l ai deja precise|c est deja dit|c est deja explique|c est deja precise)(?: non)?$/.test(text);
 }
 
 function isNotApplicable(value: string): boolean {
@@ -75,23 +81,29 @@ function isNotApplicable(value: string): boolean {
 export function deriveScreen03Evidence(items: ProjectUnderstandingItem[]): Screen03EvidenceView {
   const conversationOnly: ProjectUnderstandingItem[] = [];
   const notApplicable: ProjectUnderstandingItem[] = [];
+  const unknown: ProjectUnderstandingItem[] = [];
   const unique = new Map<string, ProjectUnderstandingItem>();
   const duplicateSources = new Map<string, string[]>();
 
   for (const original of items) {
     const classified = { ...original, dimension: classifyDimension(original) };
-    if (isConversationOnly(original.value)) {
+    if (original.status === "conversation_only" || isConversationOnlyStatement(original.value)) {
       conversationOnly.push(classified);
       continue;
     }
-    if (isNotApplicable(original.value)) {
+    if (original.status === "not_applicable" || isNotApplicable(original.value)) {
       notApplicable.push(classified);
+      continue;
+    }
+    if (original.status === "unknown" || /^je ne sais pas encore$/i.test(original.value.trim())) {
+      unknown.push(classified);
       continue;
     }
 
     // Prefer the exact user wording; a repeated sentence is shown once even if
     // intake heuristics attached it to several dimensions.
-    const key = `${original.sourceMessageId ?? original.sourceReferenceId ?? "no-source"}::${normalizeText(original.sourceQuote || original.value)}`;
+    const sourceId = original.sourceMessageId ?? original.sourceReferenceId ?? original.id;
+    const key = `${sourceId}::${normalizeText(original.sourceQuote || original.value)}`;
     const existing = unique.get(key);
     if (existing) {
       duplicateSources.set(key, [...(duplicateSources.get(key) ?? [existing.id]), original.id]);
@@ -104,6 +116,7 @@ export function deriveScreen03Evidence(items: ProjectUnderstandingItem[]): Scree
     projectItems: [...unique.values()],
     conversationOnly,
     notApplicable,
+    unknown,
     duplicates: [...duplicateSources.entries()].map(([key, sourceItemIds]) => ({
       key,
       retainedItemId: sourceItemIds[0],
