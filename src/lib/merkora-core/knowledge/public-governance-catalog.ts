@@ -95,7 +95,7 @@ const SEEDS: Seed[] = [
     "en": "Local public services",
     "parentId": "domain:local-government",
     "aliases": [
-      "services municipaux"
+      "services municipaux", "gestion des collectivités territoriales"
     ]
   },
   {
@@ -145,7 +145,7 @@ const SEEDS: Seed[] = [
     "en": "Public expenditure management",
     "parentId": "domain:public-finance",
     "aliases": [
-      "dépenses publiques"
+      "dépenses publiques", "exécution de la dépense publique"
     ]
   },
   {
