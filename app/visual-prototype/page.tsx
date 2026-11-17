@@ -205,6 +205,7 @@ export default function VisualPrototypePage() {
             <div className="mk-prototype-bottom-note"><span>✦</span><p>Cette maquette est une représentation de conception. Les boutons illustrent les interactions ; aucune commande réelle, transaction ou donnée métier n'est exécutée.</p></div>
             {notice && <div className="mk-prototype-notice" role="status">{notice}</div>}
             <div className="mk-prototype-validation"><div><strong>La représentation correspond-elle à ton idée ?</strong><p>Tu peux demander des changements avant de passer à la spécification détaillée.</p></div><button type="button" onClick={validatePrototype} disabled={prototypeValidated}>{prototypeValidated ? "Maquette validée ✓" : "Valider cette maquette →"}</button></div>
+            {prototypeValidated && <div className="mk-prototype-confirmation" role="status"><strong>✓ Maquette validée</strong><p>Cette version est confirmée. La prochaine étape pourra transformer cette représentation en spécification détaillée.</p></div>}
           </>
         )}
       </section>
