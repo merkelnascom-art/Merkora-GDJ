@@ -9,7 +9,7 @@ describe("Fondation A — famille 19 Services professionnels et entreprises",()=
   for(const id of ["domain:business-administration","domain:human-resources","domain:consulting","domain:quality-risk-compliance","domain:entrepreneurship"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
  });
  it("reconnaît conseil, RH, services spécialisés, sécurité et accompagnement d'entreprise",()=>{
-  const cases=[["conseil en stratégie d'entreprise","subdomain-pro:business-consulting"],["gestion des ressources humaines","subdomain-pro:human-resources-operations"],["services professionnels spécialisés","subdomain-pro:specialized-professional-services"],["sécurité et prévention des risques","subdomain-pro:security-risk-services"],["accompagnement à la création d'entreprise","subdomain-pro:business-startup-support"]] as const;
+  const cases=[["conseil en stratégie d'entreprise","subdomain-pro:business-consulting"],["gestion des ressources humaines","subdomain-pro:human-resources-operations"],["services professionnels spécialisés","subdomain-pro:technical-consulting"],["sécurité et prévention des risques","subdomain-pro:security-risk-services"],["accompagnement à la création d'entreprise","subdomain-pro:business-startup-support"]] as const;
   for(const [q,id] of cases){const m=matchKnowledgeConcept(q,registry,{expectedType:"subdomain",language:"fr"});expect(m.status,q).toBe("matched");if(m.status==="matched")expect(m.concept.id).toBe(id);}
  });
  it("distingue conseil, audit, recrutement, prestation et suivi contractuel",()=>{
