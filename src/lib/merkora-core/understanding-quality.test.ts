@@ -42,6 +42,15 @@ describe("screen 03 evidence quality", () => {
     expect(result.projectItems).toHaveLength(0);
   });
 
+  it("keeps an unknown answer separate from project facts", () => {
+    const result = deriveScreen03Evidence([{
+      ...item("unknown", "Je ne sais pas encore", "expected_outcome"),
+      status: "unknown",
+    }]);
+    expect(result.unknown.map((entry) => entry.id)).toContain("unknown");
+    expect(result.projectItems).toHaveLength(0);
+  });
+
   it("deduplicates repeated evidence without deleting its source record", () => {
     const source = [
       item("a", "Tout le monde peut accéder à l'interface sans connexion.", "context"),
