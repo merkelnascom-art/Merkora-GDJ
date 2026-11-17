@@ -264,7 +264,7 @@ export default function ProductDefinitionPage() {
           <h1>Définissons le<br /><em>produit à concevoir.</em></h1>
           <p>
             MerKora réutilise les informations déjà données et sélectionne uniquement les précisions utiles à ton projet.
-            Les 12 familles sont une bibliothèque adaptative, pas 12 formulaires obligatoires.
+            Les 12 familles sont une bibliothèque adaptative, pas 12 formulaires obligatoires. Une question à la fois : tu peux répondre, indiquer « Je ne sais pas encore », « Non applicable » ou « Passer pour le moment ».
           </p>
         </div>
 
