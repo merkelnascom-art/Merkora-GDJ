@@ -362,3 +362,13 @@
  .mk-solution-footer .mk-continue-button{width:100%}
  .mk-solution-section-heading{align-items:flex-start}
 }
+
+/* Écran 05 — réponses hybrides : suggestions facultatives + réponse libre */
+.mk-product-choice-block{margin:17px 0 13px}
+.mk-product-choice-intro{margin-bottom:9px}
+.mk-product-choice-label{display:block;color:#d9bf8a;font-size:9px;font-weight:800;letter-spacing:1px}
+.mk-product-choice-intro p{margin:6px 0 0;color:#a9a1b7;font-size:10px;line-height:1.65}
+.mk-product-choice-block .mk-diagnostic-options{margin-top:10px}
+.mk-product-choice-block .mk-diagnostic-option{cursor:pointer}
+.mk-product-choice-block .mk-diagnostic-option input{accent-color:#d8b875}
+.mk-product-choice-block .mk-diagnostic-option.selected{border-color:#d8b87599;background:#3a3048}
