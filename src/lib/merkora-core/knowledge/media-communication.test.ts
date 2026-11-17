@@ -9,7 +9,7 @@ describe("Fondation A — famille 17 Médias et communication",()=>{
   for(const id of ["domain:journalism","domain:audiovisual-production","domain:marketing-advertising","domain:public-relations","domain:content-management"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
  });
  it("reconnaît presse, audiovisuel, publicité, communication institutionnelle et contenus",()=>{
-  const cases=[["reportage de presse","subdomain-media:press-reporting"],["production audiovisuelle","subdomain-media:audiovisual-production"],["campagne publicitaire","subdomain-media:advertising-campaigns"],["communication institutionnelle","subdomain-media:institutional-communication"],["gestion éditoriale de contenus","subdomain-media:content-management"]] as const;
+  const cases=[["reportage de presse","subdomain-media:press-reporting"],["production audiovisuelle","subdomain-media:video-production"],["campagne publicitaire","subdomain-media:advertising-campaigns"],["communication institutionnelle","subdomain-media:institutional-communication"],["gestion éditoriale de contenus","subdomain-media:content-management"]] as const;
   for(const [q,id] of cases){const m=matchKnowledgeConcept(q,registry,{expectedType:"subdomain",language:"fr"});expect(m.status,q).toBe("matched");if(m.status==="matched")expect(m.concept.id).toBe(id);}
  });
  it("distingue enquête, vérification, production, publication et mesure d'audience",()=>{
