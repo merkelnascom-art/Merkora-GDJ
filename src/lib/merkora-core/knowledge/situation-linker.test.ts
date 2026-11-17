@@ -58,7 +58,8 @@ describe("situation graph knowledge linking", () => {
     expect(linked.entities[0].knowledge).toMatchObject({
       matchStatus: "matched", conceptId: "domain:agriculture", conceptLabel: "Agriculture",
       classificationPath: [
-        { id: "family:agriculture-living", label: "Agriculture et vivant" },
+        { id: "family:agriculture-agrofood", label: "Agriculture et agroalimentaire" },
+        { id: "domain-v2:farm-management", label: "Gestion des exploitations agricoles" },
         { id: "domain:agriculture", label: "Agriculture" },
       ],
     });
@@ -75,7 +76,7 @@ describe("situation graph knowledge linking", () => {
       matchStatus: "matched",
       conceptId: "specialization:law-legal-services",
       classificationPath: [
-        { id: "domain:public-administration", label: "Administration publique" },
+        { id: "domain:legal-advice-documents", label: "Conseil juridique et actes" },
         { id: "specialization:law-legal-services", label: "Droit et services juridiques" },
       ],
     });
