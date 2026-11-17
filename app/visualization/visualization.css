@@ -290,3 +290,22 @@
 .mk-product-profile-context small{color:#777f8f;font-size:7px;line-height:1.5}
 .mk-studio-change-note{margin:10px 0;color:#aaa3b8;font-size:8px;line-height:1.7}
 @media(max-width:760px){.mk-studio-artboard-grid{grid-template-columns:1fr}.mk-studio-artboard-heading{align-items:flex-start;flex-direction:column}.mk-studio-mini-body{grid-template-columns:68px minmax(0,1fr)}}
+
+.mk-studio-operational-product-preview{padding:22px;border-radius:9px;background:#f6f7fb;color:#2d3444;--product-primary:#6553b7;--product-secondary:#eee9fb;--product-accent:#c6a46b}
+.mk-studio-operational-product-preview>header{display:grid;gap:8px;padding-bottom:17px;border-bottom:1px solid #e3e6ee}
+.mk-studio-operational-product-preview>header>span{color:var(--product-primary);font-size:8px;font-weight:850;letter-spacing:1px}
+.mk-studio-operational-product-preview>header h3{margin:0;font-size:23px}
+.mk-studio-operational-product-preview>header p{margin:0;color:#7f8795;font-size:9px;line-height:1.6}
+.mk-studio-operational-product-preview>header label{display:grid;gap:5px;max-width:230px;margin-top:7px;color:#7f8795;font-size:8px;font-weight:800}
+.mk-studio-operational-product-preview>header select{padding:9px;border:1px solid #e0e4ec;border-radius:7px;background:#fff;color:#343b4a;font-size:9px}
+.mk-studio-operational-product-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.mk-studio-operational-product-steps button{display:grid;align-content:start;gap:9px;min-height:130px;padding:14px;border:1px solid #e3e6ed;border-radius:9px;background:#fff;color:#303748;text-align:left;cursor:pointer}
+.mk-studio-operational-product-steps button:hover{border-color:var(--product-primary)}
+.mk-studio-operational-product-steps span{color:var(--product-primary);font-size:7px;font-weight:850;letter-spacing:.8px}
+.mk-studio-operational-product-steps strong{font-size:11px;line-height:1.5}
+.mk-studio-operational-product-steps small{color:#838b9a;font-size:8px;line-height:1.6}
+.mk-studio-operational-product-steps i{align-self:end;color:var(--product-primary);font-size:8px;font-style:normal;font-weight:800}
+.mk-studio-operational-profile{padding:12px;border-left:3px solid var(--product-primary);border-radius:0 8px 8px 0;background:var(--product-secondary)}
+.mk-studio-operational-profile strong{font-size:10px;color:#303748}
+.mk-studio-operational-profile p{margin:5px 0 0;color:#697284;font-size:8px;line-height:1.6}
+@media(max-width:760px){.mk-studio-operational-product-steps{grid-template-columns:1fr}}
