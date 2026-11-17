@@ -29,3 +29,5 @@ export * from "./family-catalog-builder";
 export * from "./education-research-catalog";
 
 export * from "./health-social-services-catalog";
+
+export * from "./sport-physical-activity-catalog";
