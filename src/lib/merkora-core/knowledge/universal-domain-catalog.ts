@@ -18,8 +18,8 @@ const FAMILIES: FamilySeed[] = [
     ["domain-v2:agrofood-processing","Transformation agroalimentaire","Agri-food processing"],
     ["domain-v2:agricultural-marketing","Commercialisation agricole","Agricultural marketing"],
   ]},
-  { id:"animals-veterinary",fr:"Animaux et services vétérinaires",en:"Animals and veterinary services",domains:[
-    ["domain:livestock","Élevage et productions animales","Animal husbandry and livestock"],
+  { id:"animals-veterinary",fr:"Animaux et médecine vétérinaire",en:"Animals and veterinary medicine",domains:[
+    ["domain:livestock","Élevage","Livestock"],
     ["domain-vet:veterinary-medicine","Médecine vétérinaire et santé animale","Veterinary medicine and animal health"],
     ["domain-vet:animal-welfare-protection","Bien-être et protection animale","Animal welfare and protection"],
     ["domain-vet:animal-nutrition","Nutrition et alimentation animales","Animal nutrition and feeding"],
@@ -152,7 +152,7 @@ const domainConcepts: KnowledgeConcept[] = FAMILIES.flatMap((family) =>
 
 
 const ADDITIONAL_SUBDOMAIN_SEEDS: Array<[string,string,string,string]> = [
- ["domain:agriculture","Agriculture générale","General agriculture","domain-v2:farm-management"],
+ ["domain:agriculture","Agriculture","Agriculture","domain-v2:farm-management"],
  ["domain:fisheries","Pêche et aquaculture","Fishing and aquaculture","domain-v2:farm-management"],
  ["domain:forestry","Foresterie et gestion forestière","Forestry and forest management","domain-v2:farm-management"],
  ["domain:food-production","Production et transformation alimentaire","Food production and processing","domain-v2:agrofood-processing"],
