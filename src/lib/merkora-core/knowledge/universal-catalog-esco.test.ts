@@ -14,7 +14,7 @@ describe("universal domain catalogue and ESCO import", () => {
   it("navigates a domain to its family through the canonical classification tree", () => {
     const registry = createUniversalKnowledgeRegistry();
     const lineage = getClassificationLineage(registry, "domain:agriculture", "universal-domain");
-    expect(lineage.map((item) => item.id)).toEqual(["family:agriculture-living", "domain:agriculture"]);
+    expect(lineage.map((item) => item.id)).toEqual(["family:agriculture-agrofood", "domain-v2:farm-management", "domain:agriculture"]);
   });
 
   it("imports multilingual occupation and skill concepts with their source identities", () => {
