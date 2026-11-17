@@ -272,3 +272,15 @@
 .mk-knowledge-proposals>small{color:#8f88a2;font-size:9px;line-height:1.6}
 .mk-knowledge-proposals article>small{display:block;margin-top:8px;color:#aaa2bd;font-size:9px;line-height:1.6;overflow-wrap:anywhere}
 .mk-knowledge-section .mk-small-action{margin-top:10px}
+
+/* Fondation A — universal family knowledge map in the adaptive diagnostic */
+.mk-knowledge-map{display:grid;gap:13px;margin:14px 0 18px;padding:17px 18px;border:1px solid #b89bdf38;border-radius:15px;background:linear-gradient(145deg,#17162bdf,#101927e8);box-shadow:0 10px 30px #00000018}
+.mk-knowledge-map-heading{display:grid;gap:6px}
+.mk-knowledge-map-heading>strong{color:#f1e9fb;font-size:13px;letter-spacing:.01em}
+.mk-knowledge-map-heading>p{margin:0;color:#a9a1b8;font-size:10px;line-height:1.65}
+.mk-knowledge-map-group{display:grid;gap:7px;padding-top:10px;border-top:1px solid #ffffff12}
+.mk-knowledge-map-group>span{color:#d7c2f0;font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.mk-knowledge-chips{display:flex;flex-wrap:wrap;gap:7px}
+.mk-knowledge-chips>span{padding:6px 9px;border:1px solid #b89bdf38;border-radius:999px;background:#a78bfa12;color:#e7d7f7;font-size:10px}
+.mk-knowledge-map-group ul{display:grid;gap:5px;margin:0;padding-left:17px;color:#ddd4e9;font-size:10px;line-height:1.5}
+.mk-knowledge-map-footnote{margin:0;color:#d9bd88;font-size:9px;line-height:1.5}
