@@ -190,6 +190,7 @@ function inferNature(text: string): VisualProductNature | null {
   const normalized = text.toLocaleLowerCase("fr");
   if (/\b(site web|site internet|site vitrine|site e-commerce)\b/.test(normalized)) return "website";
   if (/\b(plateforme|portail)\b/.test(normalized)) return "platform";
+  if (/\b(outil interne|système connecté|solution spécialisée|logiciel spécialisé)\b/.test(normalized)) return "other";
   if (/\b(application mobile|application|logiciel|outil numérique|app)\b/.test(normalized)) return "application";
   return null;
 }
@@ -252,7 +253,12 @@ function sourceLabelFor(
   const ids = component.sourceIds ?? [];
   const answerLabels = getActiveProductDefinitionAnswers(definition)
     .filter((answer) => ids.includes(answer.id))
-    .map((answer) => "Réponse écran 05 : " + answer.question.prompt);
+    .map((answer) => {
+      const summary = answer.familyId === "users_roles"
+        ? conciseVisualLabel(answerValues(answer)[0] ?? "")
+        : conciseVisualLabel(answerValues(answer).join(" · "));
+      return "Réponse écran 05 : " + answer.question.prompt + (summary ? " — " + summary : "");
+    });
   const evidenceLabels = dossier.items
     .filter((item) => ids.includes(item.id))
     .map((item) => "Élément du dossier : " + (item.sourceQuote || item.value).slice(0, 150));
@@ -287,7 +293,8 @@ export function buildVisualBlueprint(
   const natureAnswers = answers.filter((answer) => answer.status === "answered" && answer.familyId === "nature");
   const explicitNatureValues = unique(natureAnswers.flatMap(answerValues));
   const explicitNatures = [...new Set(explicitNatureValues.map(detectNature).filter((value): value is VisualProductNature => value !== null))];
-  const inferredNature = inferNature([dossier.originalDescription, ...dossier.items.map((item) => item.value)].join(" "));
+  const productIntentText = [dossier.originalDescription, proposal.title, proposal.description, proposal.operatingPrinciple, ...natureAnswers.flatMap(answerValues)].join(" ");
+  const inferredNature = inferNature(productIntentText);
   const productNature: VisualProductNature = explicitNatures.length === 1
     ? explicitNatures[0]
     : explicitNatures.length > 1
@@ -301,22 +308,18 @@ export function buildVisualBlueprint(
         ? "suggested"
         : "undetermined";
 
-  const deliveryAnswers = answers.filter((answer) => answer.status === "answered");
+  const deliveryAnswers = answers.filter((answer) => answer.status === "answered" && (answer.familyId === "nature" || answer.familyId === "integrations_equipment"));
   const deliveryValues = deliveryAnswers.flatMap(answerValues);
   const deliveryModes = detectDeliveryModes(deliveryValues);
   const deliveryModeStatus = deliveryModes.length > 0 ? "confirmed" as const : "not_selected" as const;
 
-  const sourceText = [
-    dossier.originalDescription,
-    ...dossier.items.map((item) => item.value),
-    ...answers.filter((answer) => answer.status === "answered").flatMap(answerValues),
-    ...proposal.architectures.flatMap((architecture) => [architecture.title, architecture.description]),
-  ].join(" ").toLocaleLowerCase("fr");
+  const normalizedIntent = productIntentText.toLocaleLowerCase("fr");
+  const digitalSignals = /site web|site internet|application|plateforme|portail|logiciel|outil numérique|numérique|interface|pwa|web app|système connecté|outil interne/;
   const kind = ["website", "platform", "application"].includes(productNature)
     ? "digital" as const
-    : productNature === "other"
-      ? (/application|plateforme|logiciel|site web|portail|numérique|mobile|interface|outil interne|système connecté/.test(sourceText) ? "digital" as const : "operational" as const)
-      : (/application|plateforme|logiciel|site web|portail|numérique|mobile|interface/.test(sourceText) ? "digital" as const : "operational" as const);
+    : digitalSignals.test(normalizedIntent)
+      ? "digital" as const
+      : "operational" as const;
 
   const roleAnswers = answers.filter((answer) => answer.status === "answered" && answer.familyId === "users_roles");
   const profiles = roleAnswers.flatMap((answer, index) => parseRoleProfiles(answer.value, index * 20));
