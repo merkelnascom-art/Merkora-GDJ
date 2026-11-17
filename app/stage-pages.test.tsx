@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import UnderstandingPage from "./understanding/page";
 import DiagnosticPage from "./diagnostic/page";
 import ProductDefinitionPage from "./product-definition/page";
+import SolutionProposalPage from "./solution-proposal/page";
 
 describe("MerKora screen 03 — project understanding", () => {
   it("presents the universal understanding stage without a sector selector", () => {
@@ -37,6 +38,17 @@ describe("MerKora screen 05 — adaptive product definition", () => {
     expect(html).toContain("Je ne sais pas encore");
     expect(html).toContain("Passer pour le moment");
     expect(html).toContain("Réponses déjà données");
+    expect(html).not.toContain("Questionnaire complet");
+  });
+});
+
+
+describe("MerKora screen 06 — solution proposal", () => {
+  it("introduces a concrete proposal and keeps the visual mockup as the next distinct stage", () => {
+    const html = renderToStaticMarkup(<SolutionProposalPage />);
+    expect(html).toContain("Voici la solution");
+    expect(html).toContain("PROPOSITION ET COMPOSITION");
+    expect(html).toContain("07 · Maquette");
     expect(html).not.toContain("Questionnaire complet");
   });
 });
