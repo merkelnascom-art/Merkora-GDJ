@@ -179,16 +179,44 @@ export default function VisualisationPage() {
                   </div>
                   <div className="mk-prototype-content">
                     <div className="mk-prototype-welcome">
-                      <div><small>ESPACE DE TRAVAIL</small><h2>{currentScreen?.title ?? "Vue d'ensemble"}</h2><p>{currentScreen?.description}</p></div>
+                      <div>
+                        <small>ESPACE DE TRAVAIL</small>
+                        <h2>{currentScreen?.title ?? "Vue d'ensemble"}</h2>
+                        <p>{currentScreen?.description}</p>
+                      </div>
                       <span>Bonjour, {activeProfileData?.name}</span>
                     </div>
 
+                    <div className="mk-prototype-metrics">
+                      <article><span>FONCTIONS RETENUES</span><strong>{blueprint.screens.reduce((total, screen) => total + screen.items.length, 0)}</strong><small>Dans la composition validée</small></article>
+                      <article><span>PROFILS IDENTIFIÉS</span><strong>{blueprint.profiles.length}</strong><small>Selon la définition du projet</small></article>
+                      <article><span>POINTS À CONFIRMER</span><strong>{blueprint.unresolvedPoints.length}</strong><small>Restent ouverts à cette étape</small></article>
+                    </div>
+
                     <div className="mk-prototype-profile-switch">
-                      <span>APERÇU EN TANT QUE</span>
-                      {blueprint.profiles.map((profile, index) => (
-                        <button type="button" key={profile.id} className={activeProfile === index ? "active" : ""} onClick={() => { setActiveProfile(index); setActiveFeature(null); setSimulationMessage(""); }}>{profile.name}</button>
-                      ))}
-                      <p>{activeProfileData?.note} Les droits précis restent à confirmer : cette sélection change la perspective, pas encore les autorisations.</p>
+                      <label className="mk-prototype-profile-select">
+                        <span>APERÇU EN TANT QUE</span>
+                        <select value={activeProfile} onChange={(event) => { setActiveProfile(Number(event.target.value)); setActiveFeature(null); setSimulationMessage(""); }}>
+                          {blueprint.profiles.map((profile, index) => (
+                            <option value={index} key={profile.id}>{profile.name}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <p>{activeProfileData?.note} La sélection permet d'examiner ce profil ; elle ne définit pas encore ses autorisations.</p>
+                      {activeProfileData && activeProfileData.responsibilities.length > 0 && (
+                        <div className="mk-prototype-responsibilities">
+                          <small>RESPONSABILITÉS DÉCRITES POUR CE PROFIL</small>
+                          <ul>
+                            {activeProfileData.responsibilities.slice(0, 4).map((item, index) => <li key={index}>{item}</li>)}
+                          </ul>
+                          {activeProfileData.responsibilities.length > 4 && (
+                            <details>
+                              <summary>Voir les autres responsabilités ({activeProfileData.responsibilities.length - 4})</summary>
+                              <ul>{activeProfileData.responsibilities.slice(4).map((item, index) => <li key={index}>{item}</li>)}</ul>
+                            </details>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mk-prototype-screen-toolbar">
