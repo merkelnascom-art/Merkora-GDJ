@@ -17,7 +17,7 @@ export function createFamilyCatalog(input:FamilyCatalogInput, relationSeeds:Arra
   id,canonicalKey:key,conceptType:type,
   definitions:[{language:"fr",label:fr,definition:frDef},{language:"en",label:en,definition:enDef}],
   terms:[{value:fr,language:"fr",kind:"preferred"},{value:en,language:"en",kind:"preferred"}],
-  classifications:parentId?[{classificationType:"universal-domain",parentConceptId:parentId}]:[],
+  classifications:parentId?[{classificationType:type==="specialization"?"universal-specialization":"universal-domain",parentConceptId:parentId}]:[],
   attributes:[],relationships:[],scope:{global:true},
   lifecycle:{status:"validated",version:1,createdAt:CREATED_AT,updatedAt:CREATED_AT},
   sources:[source],reliability
