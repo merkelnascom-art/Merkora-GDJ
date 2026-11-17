@@ -113,7 +113,7 @@ function detectContradictions(messages: ConversationMessage[]): ReasoningContrad
 }
 
 const ANTECEDENT = /\b(?:un|une|la|le|les|des|ce|cet|cette|ces)\s+(plateforme|application|site|logiciel|système|systeme|solution|outil|projet|service|clinique|école|ecole|directeur|directrice|secrétaire|medecin|médecin|enseignant|enseignante|formateur|formatrice|responsable|agent|employé|employée|patient|patiente|élève|eleve|étudiant|etudiant|client|cliente|invité|invite|événement|evenement|rendez-vous|commande|document|dossier|paiement|cours|inscription)s?\b/gi;
-const REFERENCE = /\b(elle|il|elles|ils|ceux-ci|celles-ci|ce dernier|cette dernière|cette plateforme|cette application|ce site|ce logiciel|ce système|ce systeme|cette solution|cet outil|ce projet|ce service|cet événement|ce rendez-vous|ce document|ce dossier)\b/gi;
+const REFERENCE = /\b(elle|il(?!\s+y\s+(?:a|avait|aura|aurait)\b|\s+(?:faut|reste|existe|semble|suffit|manque)\b)|elles|ils|ceux-ci|celles-ci|ce dernier|cette dernière|cette plateforme|cette application|ce site|ce logiciel|ce système|ce systeme|cette solution|cet outil|ce projet|ce service|cet événement|ce rendez-vous|ce document|ce dossier)\b/gi;
 
 function resolveReferences(messages: ConversationMessage[]): ResolvedReference[] {
   const visitorMessages = messages.filter((message) => message.role === "visitor");
