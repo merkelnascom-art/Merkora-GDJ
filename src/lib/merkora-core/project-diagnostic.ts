@@ -271,12 +271,12 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
 }
 
 export function migrateStoredProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
-  const hasImpersonalIl = /\\bil\\s+y\\s+(?:a|avait|aura|aurait)\\b/i.test(dossier.originalDescription);
+  const hasImpersonalIl = /\bil\s+y\s+(?:a|avait|aura|aurait)\b/i.test(dossier.originalDescription);
   const unresolvedQuestions = hasImpersonalIl
-    ? dossier.unresolvedQuestions.filter((item) => !/référence\\s+«\\s*il\\s*»/i.test(item))
+    ? dossier.unresolvedQuestions.filter((item) => !/référence\s+«\s*il\s*»/i.test(item))
     : dossier.unresolvedQuestions;
   const staleGoals = dossier.situationGraph.entities.filter((entity) =>
-    entity.kind === "goal" && /\\borganiser\\b.*\\b(tournoi|interface|anniversaire|fête|soiree|mariage|événement)\\b/i.test(entity.label),
+    entity.kind === "goal" && /\borganiser\b.*\b(tournoi|interface|anniversaire|fête|soiree|mariage|événement)\b/i.test(entity.label),
   );
 
   if (staleGoals.length === 0 && unresolvedQuestions.length === dossier.unresolvedQuestions.length) {
