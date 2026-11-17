@@ -211,10 +211,10 @@ function screenSummary(screen: VisualScreen): string {
 }
 
 function compactText(value: string, limit = 110): string {
-  const normalized = value.replace(/\\s+/g, " ").trim();
-  const firstSentence = normalized.split(/(?<=[.!?])\\s+/u)[0] ?? normalized;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const firstSentence = normalized.split(/(?<=[.!?])\s+/u)[0] ?? normalized;
   if (firstSentence.length <= limit) return firstSentence;
-  return firstSentence.slice(0, limit - 1).replace(/\\s+\\S*$/u, "") + "…";
+  return firstSentence.slice(0, limit - 1).replace(/\s+\S*$/u, "") + "…";
 }
 
 function profileSummary(profile: VisualProfile | null): string {
