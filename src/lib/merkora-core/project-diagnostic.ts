@@ -665,11 +665,15 @@ export function reviseDiagnosticAnswer(
   const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
   if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
 
+  const valueText = normalizedValues.join(" · ");
   const requestedStatus = input.status ?? "answered";
   const isUnknown = requestedStatus === "unknown" || (normalizedValues.length === 1 && /^je ne sais pas encore$/i.test(normalizedValues[0]));
-  const answerStatus = isUnknown ? "unknown" : requestedStatus;
+  const isAlreadyProvided = requestedStatus === "answered" && isConversationOnlyStatement(valueText);
+  const answerStatus = isUnknown ? "unknown" : isAlreadyProvided ? "already_provided" : requestedStatus;
+  const referencedEvidenceIds = isAlreadyProvided
+    ? getProjectEvidenceItems(dossier).filter((item) => item.dimension === original.dimension).map((item) => item.id)
+    : [];
   const answerIdNext = makeId("diagnostic-answer-revision");
-  const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
   const answer: DiagnosticAnswer = {
     id: answerIdNext,
@@ -678,6 +682,7 @@ export function reviseDiagnosticAnswer(
     value: Array.isArray(input.value) ? normalizedValues : normalizedValues[0],
     ...(input.detail?.trim() ? { detail: input.detail.trim() } : {}),
     status: answerStatus,
+    ...(referencedEvidenceIds.length ? { referencedEvidenceIds } : {}),
     createdAt: now(),
     version: session.version + 1,
     question: original.question,
@@ -688,16 +693,17 @@ export function reviseDiagnosticAnswer(
     dimension: original.dimension,
     originalDimension: original.dimension,
     value: evidenceValue,
-    status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
+    status: isAlreadyProvided ? "conversation_only" : answerStatus === "unknown" ? "unknown" : answerStatus === "not_applicable" ? "not_applicable" : "user_stated",
     source: "diagnostic_answer",
     sourceReferenceId: answerIdNext,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
     supersedesId: original.id,
   };
+  const unresolvedAnswer = answerStatus === "unknown" || answerStatus === "not_applicable" || answerStatus === "already_provided";
   const contradictions = original.question.resolvesContradictionId
     ? dossier.contradictions.map((item) => item.id === original.question.resolvesContradictionId
-      ? { ...item, status: answerStatus === "unknown" ? "deferred" as const : "resolved" as const, answerId: answer.id }
+      ? { ...item, status: unresolvedAnswer ? "deferred" as const : "resolved" as const, answerId: answer.id }
       : item)
     : dossier.contradictions;
   const nextAsked = answerStatus === "unknown"
@@ -712,6 +718,7 @@ export function reviseDiagnosticAnswer(
     diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], askedQuestionIds: nextAsked, deferredQuestionIds: nextDeferred, updatedAt: now() },
   };
 }
+
 
 export function deferDiagnosticQuestion(
   session: DiagnosticSession,
