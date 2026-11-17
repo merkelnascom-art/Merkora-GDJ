@@ -25,6 +25,14 @@ describe("screen 03 evidence quality", () => {
     expect(result.projectItems.find((entry) => entry.id === "b")?.dimension).toBe("imagined_solution");
   });
 
+  it("classifies a requested working system as a success criterion, not a cause", () => {
+    const result = deriveScreen03Evidence([
+      item("a", "Bah que le système fonctionne et procède correctement", "causes"),
+      item("b", "Bah si il arrive à effectuer les processus de réalisation d'un tournoi", "causes"),
+    ]);
+    expect(result.projectItems.map((entry) => entry.dimension)).toEqual(["success_criteria", "success_criteria"]);
+  });
+
   it("classifies motivation as motivation and not as a cause", () => {
     const result = deriveScreen03Evidence([item("a", "Je veux juste détendre les jeunes", "causes")]);
     expect(result.projectItems[0]?.dimension).toBe("motivation");
