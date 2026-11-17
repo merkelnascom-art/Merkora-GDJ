@@ -136,11 +136,11 @@ export function buildProjectKnowledgeMap(
   if(result.concept){
    const concept=result.concept,parents=getParents(registry,concept);
    const status:ProjectKnowledgeLinkStatus=item.status==="validated"?"confirmed":"suggested";
-   links.push({evidenceId:item.id,dimension:item.dimension,query:item.value,evidenceStatus:item.status,conceptId:concept.id,conceptType:concept.conceptType,...(parents.familyId?{familyId:parents.familyId}:{}),...(parents.domainId?{domainId:parents.domainId}:{}),lineage:parents.lineage.map(x=>x.id),confidence:0.94,matchMethod:"synonym",status,explanation:status==="confirmed"?"Concept confirmé par validation humaine.":"Correspondance lexicale proposée ; le rattachement reste à confirmer par le client ou l'équipe MerKora."});
+   links.push({evidenceId:item.id,dimension:item.dimension,query:item.value,evidenceStatus:item.status,conceptId:concept.id,conceptType:concept.conceptType,...(parents.familyId?{familyId:parents.familyId}:{}),...(parents.domainId?{domainId:parents.domainId}:{}),lineage:parents.lineage.map(x=>x.id),confidence:0.9,status,explanation:status==="confirmed"?"Concept confirmé par validation humaine.":"Correspondance lexicale proposée ; le rattachement reste à confirmer par le client ou l'équipe MerKora."});
    matchedByEvidence.set(item.id,concept);
    if(parents.familyId){
     const current=familyEvidence.get(parents.familyId)??{confidence:0,evidenceIds:new Set<string>()};
-    current.confidence=Math.max(current.confidence,0.94);current.evidenceIds.add(item.id);familyEvidence.set(parents.familyId,current);
+    current.confidence=Math.max(current.confidence,0.9);current.evidenceIds.add(item.id);familyEvidence.set(parents.familyId,current);
    }
   }else if(result.ambiguous.length){
    links.push({evidenceId:item.id,dimension:item.dimension,query:item.value,evidenceStatus:item.status,status:"ambiguous",lineage:[],confidence:0,candidateConceptIds:result.ambiguous,explanation:"Plusieurs concepts lexicaux correspondent ; MerKora demande une clarification plutôt que de choisir arbitrairement."});
@@ -183,7 +183,6 @@ export function buildProjectKnowledgeMap(
   }
  }
  if(primaryFamilyId){
-  const domainIds=new Set(links.filter(x=>x.familyId===primaryFamilyId&&x.domainId).map(x=>x.domainId));
   const familyIndicators=registry.concepts.filter(x=>x.conceptType==="indicator"&&getParents(registry,x).familyId===primaryFamilyId);
   for(const indicator of familyIndicators.slice(0,3)){
    if(!indicatorMap.has(indicator.id))indicatorMap.set(indicator.id,makeCandidate(registry,indicator,[...familyEvidence.get(primaryFamilyId)!.evidenceIds],[],"Indicateur du même domaine proposé pour le suivi ; sa formule, sa source et sa cible doivent être définies avec le client."));
