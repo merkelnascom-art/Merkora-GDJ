@@ -15,6 +15,7 @@ import {
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
+import { buildProjectKnowledgeMap } from "../../src/lib/merkora-core/knowledge/universal-project-knowledge";
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
 import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
 import { ESCO_API_LANGUAGE_CODES, type ESCOSuggestion } from "../../src/lib/merkora-core/knowledge/esco-api";
@@ -91,6 +92,7 @@ export default function UnderstandingPage() {
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
+            knowledgeMap: parsed.knowledgeMap ?? buildProjectKnowledgeMap(parsed.items, parsed.situationGraph, SCREEN_03_KNOWLEDGE),
           };
           setDossier(normalized);
           restoreEditDraft(normalized, setEditingId, setEditValue);
@@ -370,6 +372,21 @@ export default function UnderstandingPage() {
               <div><strong>{activeItems.filter((item) => item.status === "hypothesis" || item.status === "inferred").length}</strong><span>à confirmer</span></div>
             </div>
 
+            {dossier.knowledgeMap && (dossier.knowledgeMap.familyCandidates.length > 0 || dossier.knowledgeMap.unresolved.length > 0) && (
+              <section className="mk-knowledge-map" aria-label="Cartographie métier et fonctionnelle">
+                <div className="mk-knowledge-map-heading">
+                  <span className="mk-summary-kicker">FONDATION A · 20 FAMILLES · 100 DOMAINES CANONIQUES</span>
+                  <strong>Raccordements métier proposés</strong>
+                  <p>MerKora relie les activités, problèmes, processus, ressources, fonctions et indicateurs identifiés. Les correspondances non validées restent des suggestions.</p>
+                </div>
+                {dossier.knowledgeMap.familyCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Familles et secteurs repérés</span><div className="mk-knowledge-chips">{dossier.knowledgeMap.familyCandidates.slice(0,5).map((family)=><span key={family.familyId}>{family.labelFr}</span>)}</div></div>}
+                {dossier.knowledgeMap.solutionCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Fonctions reliées aux problèmes</span><ul>{dossier.knowledgeMap.solutionCandidates.slice(0,6).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {dossier.knowledgeMap.processCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Processus liés</span><ul>{dossier.knowledgeMap.processCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {dossier.knowledgeMap.resourceCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Ressources liées</span><ul>{dossier.knowledgeMap.resourceCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {dossier.knowledgeMap.indicatorCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Indicateurs à définir</span><ul>{dossier.knowledgeMap.indicatorCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {dossier.knowledgeMap.unresolved.length > 0 && <p className="mk-knowledge-map-footnote">{dossier.knowledgeMap.unresolved.length} élément(s) restent inconnus, non classés ou à clarifier.</p>}
+              </section>
+            )}
             <div className="mk-understanding-sections">
               {populatedSections.length === 0 && <p className="mk-section-empty">Aucun élément structuré n'a encore été extrait. Ton récit initial reste conservé intégralement ; le diagnostic pourra commencer par clarifier l'activité ou l'idée.</p>}
               {populatedSections.map((section) => {
