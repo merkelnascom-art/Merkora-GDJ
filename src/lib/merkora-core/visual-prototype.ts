@@ -1,4 +1,5 @@
 import { getActiveProductDefinitionAnswers, type ProductDefinitionSession } from "./product-definition";
+import { getActiveUnderstandingItems } from "./project-diagnostic";
 import type { ProjectUnderstanding } from "./project-diagnostic";
 import type { SolutionProposal, SolutionProposalComponent } from "./solution-proposal";
 
@@ -45,7 +46,7 @@ export function buildVisualPrototypeModel(
 
   const evidenceText = [
     dossier.originalDescription,
-    ...dossier.items.filter((item) => item.status === "active").map((item) => item.value),
+    ...getActiveUnderstandingItems(dossier).map((item) => item.value),
     proposal.title,
     proposal.description,
   ].join(" ").toLocaleLowerCase("fr");
