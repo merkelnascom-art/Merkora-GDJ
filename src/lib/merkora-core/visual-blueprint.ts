@@ -205,7 +205,7 @@ export function buildVisualBlueprint(
   const retainedComponents = proposal.components.filter(retained);
   const pendingItems = proposal.components
     .filter((component) => component.status === "suggested")
-    .map((component) => component.title);
+    .map((component) => conciseVisualLabel(component.title));
 
   const grouped = new Map<string, SolutionProposalComponent[]>();
   retainedComponents.forEach((component) => {
@@ -239,7 +239,7 @@ export function buildVisualBlueprint(
     projectTitle: proposal.title,
     kind,
     summary: proposal.description,
-    profiles,
+    profiles: uniqueProfiles,
     screens,
     flow,
     pendingItems,
