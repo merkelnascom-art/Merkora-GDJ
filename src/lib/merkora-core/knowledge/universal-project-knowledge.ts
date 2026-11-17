@@ -194,3 +194,70 @@ export function buildProjectKnowledgeMap(
   unresolved,automaticDecisions:[],registryVersion:registry.version
  };
 }
+
+export interface FamilyDiagnosticQuestionSeed { id:string; prompt:string; purpose:string; dimension:"context"|"constraints" }
+const FAMILY_DIAGNOSTIC_QUESTIONS:Record<string,FamilyDiagnosticQuestionSeed[]>={
+ "family:agriculture-agrofood":[
+  {id:"production-cycle",dimension:"context",prompt:"Quelles cultures, productions végétales, saisons ou étapes agroalimentaires sont concernées ?",purpose:"Préciser les cycles agricoles, les produits et les périodes d'activité."},
+  {id:"agri-constraints",dimension:"constraints",prompt:"Quelles contraintes de terre, eau, climat, intrants, stockage, qualité ou débouchés faut-il prendre en compte ?",purpose:"Repérer les contraintes qui conditionnent les choix agricoles et agroalimentaires."}],
+ "family:animals-veterinary":[
+  {id:"animal-species",dimension:"context",prompt:"Quelles espèces et catégories d'animaux sont concernées, et dans quel objectif ?",purpose:"Distinguer élevage, animaux de compagnie, santé animale et productions."},
+  {id:"animal-care-safety",dimension:"constraints",prompt:"Quels vétérinaires, protocoles sanitaires, installations, autorisations et règles de bien-être animal s'appliquent ?",purpose:"Identifier les validations professionnelles et mesures de biosécurité nécessaires."}],
+ "family:environment-natural-resources":[
+  {id:"environment-resource",dimension:"context",prompt:"Quelle ressource ou quel milieu est concerné : eau, sol, air, déchets, biodiversité ou climat ?",purpose:"Préciser le milieu et l'impact environnemental étudié."},
+  {id:"environment-monitoring",dimension:"constraints",prompt:"Quelles mesures, zones, seuils, autorisations et obligations de suivi existent déjà ?",purpose:"Ancrer le projet dans des mesures et règles environnementales vérifiables."}],
+ "family:manufacturing-industry":[
+  {id:"industrial-product",dimension:"context",prompt:"Quel produit est fabriqué, avec quelles matières, capacités et étapes de production ?",purpose:"Décrire le système industriel et ses flux de fabrication."},
+  {id:"industrial-standards",dimension:"constraints",prompt:"Quelles exigences de qualité, maintenance, sécurité, traçabilité et conformité s'appliquent ?",purpose:"Repérer les contraintes industrielles et de sécurité."}],
+ "family:construction-built-environment":[
+  {id:"construction-asset",dimension:"context",prompt:"Quel ouvrage ou bâtiment est concerné, et à quelle phase : étude, chantier, réception ou maintenance ?",purpose:"Situer l'ouvrage et le cycle de vie du projet."},
+  {id:"construction-compliance",dimension:"constraints",prompt:"Quelles autorisations, normes, responsabilités, lots et règles de sécurité encadrent les travaux ?",purpose:"Éviter de proposer un processus de chantier sans cadre réglementaire et technique."}],
+ "family:energy-utilities":[
+  {id:"energy-system",dimension:"context",prompt:"Quelle énergie ou quel service essentiel est concerné : production, stockage, réseau ou distribution ?",purpose:"Identifier la chaîne énergétique et les utilisateurs."},
+  {id:"energy-safety",dimension:"constraints",prompt:"Quels niveaux de continuité, capacité, sécurité, maintenance et autorisations sont requis ?",purpose:"Préciser les exigences de fiabilité et de sécurité."}],
+ "family:mobility-transport":[
+  {id:"transport-mode",dimension:"context",prompt:"Quel mode de transport, quels usagers, marchandises, trajets ou territoires sont concernés ?",purpose:"Identifier les flux et le système de mobilité."},
+  {id:"transport-rules",dimension:"constraints",prompt:"Quelles licences, règles de circulation, horaires, capacités et exigences de sécurité s'appliquent ?",purpose:"Préciser le cadre opérationnel et réglementaire du transport."}],
+ "family:logistics-supply-chain":[
+  {id:"logistics-flow",dimension:"context",prompt:"Quelles marchandises, quels stocks, fournisseurs, entrepôts et flux doivent être suivis ?",purpose:"Cartographier la chaîne d'approvisionnement."},
+  {id:"logistics-traceability",dimension:"constraints",prompt:"Quelles exigences de traçabilité, délais, conservation, douane et preuve de livraison existent ?",purpose:"Identifier les contraintes de flux et de conformité."}],
+ "family:commerce-markets":[
+  {id:"commerce-offer",dimension:"context",prompt:"Quels produits ou services sont vendus, à quels clients et par quels canaux ?",purpose:"Préciser l'offre, la clientèle et les circuits de vente."},
+  {id:"commerce-transaction",dimension:"constraints",prompt:"Comment sont gérés prix, commandes, paiements, livraison, retours et garanties ?",purpose:"Décrire les règles de transaction et de service client."}],
+ "family:finance-insurance":[
+  {id:"finance-product",dimension:"context",prompt:"Quel service est concerné : paiement, compte, crédit, épargne, assurance, investissement ou comptabilité ?",purpose:"Identifier la nature exacte du service financier."},
+  {id:"finance-compliance",dimension:"constraints",prompt:"Quelles obligations d'identification, de conformité, de confidentialité et de contrôle s'appliquent ?",purpose:"Faire ressortir les exigences réglementaires et de protection des données."}],
+ "family:public-governance":[
+  {id:"public-authority",dimension:"context",prompt:"Quel organisme, niveau de gouvernement, territoire et service public sont concernés ?",purpose:"Identifier la compétence administrative et le périmètre institutionnel."},
+  {id:"public-decision",dimension:"constraints",prompt:"Qui est habilité à instruire, contrôler, décider, signer et notifier les actes ?",purpose:"Respecter les compétences, délégations et validations humaines."}],
+ "family:legal-services":[
+  {id:"legal-jurisdiction",dimension:"context",prompt:"Quel pays, quelle juridiction, quelle matière et quel type de dossier ou d'acte sont concernés ?",purpose:"Éviter toute règle juridique décontextualisée."},
+  {id:"legal-authority",dimension:"constraints",prompt:"Quels professionnels sont habilités et quelles validations, signatures ou voies de recours sont requises ?",purpose:"Respecter les réserves professionnelles et les pouvoirs légaux."}],
+ "family:education-research":[
+  {id:"education-learners",dimension:"context",prompt:"Quels apprenants, niveaux, disciplines, parcours ou équipes de recherche sont concernés ?",purpose:"Situer le projet dans le parcours éducatif ou scientifique."},
+  {id:"education-assessment",dimension:"constraints",prompt:"Quelles compétences, méthodes d'évaluation, exigences d'accréditation ou règles éthiques s'appliquent ?",purpose:"Préciser les critères pédagogiques et scientifiques."}],
+ "family:health-social-services":[
+  {id:"health-population",dimension:"context",prompt:"Quel service de santé ou d'accompagnement social est concerné, et pour quelle population ?",purpose:"Distinguer soin, prévention, accompagnement et orientation sociale."},
+  {id:"health-professionals",dimension:"constraints",prompt:"Quels professionnels habilités, consentements, protocoles et niveaux de confidentialité sont nécessaires ?",purpose:"Protéger les personnes et respecter les responsabilités professionnelles."}],
+ "family:sport-physical-activity":[
+  {id:"sport-discipline",dimension:"context",prompt:"Quelle discipline, quel niveau, quelles catégories d'âge et quelles personnes pratiquent ou encadrent ?",purpose:"Préciser la pratique, le niveau et les participants."},
+  {id:"sport-safeguarding",dimension:"constraints",prompt:"Quelles règles de sécurité, licences, assurances, protection des mineurs et validations médicales sont requises ?",purpose:"Intégrer la sécurité et la protection des sportifs."}],
+ "family:culture-arts":[
+  {id:"culture-medium",dimension:"context",prompt:"Quelle discipline artistique, œuvre, collection, institution ou manifestation culturelle est concernée ?",purpose:"Distinguer création, production, diffusion, médiation et patrimoine."},
+  {id:"culture-rights",dimension:"constraints",prompt:"Quels droits d'auteur, droits à l'image, contrats, prêts, provenance et autorisations de diffusion sont nécessaires ?",purpose:"Prévenir toute utilisation non autorisée d'œuvres ou de collections."}],
+ "family:media-communication":[
+  {id:"media-format",dimension:"context",prompt:"Quel contenu, format, canal, public et objectif de communication sont concernés ?",purpose:"Distinguer information, communication institutionnelle, publicité et contenu éditorial."},
+  {id:"media-verification",dimension:"constraints",prompt:"Quelles sources, preuves, droits, consentements et validations éditoriales doivent être vérifiés ?",purpose:"Préserver la fiabilité de l'information et les droits des personnes."}],
+ "family:digital-technology":[
+  {id:"digital-system",dimension:"context",prompt:"Quel logiciel, service numérique, réseau, infrastructure, jeu de données ou système IA est concerné ?",purpose:"Identifier les composants techniques et les utilisateurs."},
+  {id:"digital-security",dimension:"constraints",prompt:"Quelles exigences d'accès, sécurité, disponibilité, localisation, coûts et réversibilité s'appliquent ?",purpose:"Faire ressortir les exigences d'exploitation et de sécurité."}],
+ "family:business-management":[
+  {id:"business-service",dimension:"context",prompt:"Quel service professionnel est vendu ou rendu, à quel client et avec quels livrables ?",purpose:"Préciser la mission, la prestation et la relation contractuelle."},
+  {id:"business-qualification",dimension:"constraints",prompt:"Quelles qualifications, assurances, règles RH, normes qualité et obligations contractuelles s'appliquent ?",purpose:"Vérifier les limites professionnelles et les engagements de service."}],
+ "family:crafts-personal-services":[
+  {id:"craft-object-service",dimension:"context",prompt:"Quel objet, équipement ou service personnel est fabriqué, entretenu, réparé ou réalisé ?",purpose:"Préciser le besoin matériel ou la prestation attendue."},
+  {id:"craft-intervention",dimension:"constraints",prompt:"L'intervention se fait-elle en atelier, salon ou domicile, et quelles règles d'hygiène, sécurité, garantie et consentement s'appliquent ?",purpose:"Encadrer les interventions, les personnes et les biens concernés."}]
+};
+export function getFamilyDiagnosticQuestionSeeds(familyId?:string):FamilyDiagnosticQuestionSeed[]{
+ return familyId?FAMILY_DIAGNOSTIC_QUESTIONS[familyId]??[]:[];
+}
