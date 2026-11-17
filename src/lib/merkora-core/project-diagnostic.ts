@@ -271,7 +271,8 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
 }
 
 export function migrateStoredProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
-  const hasImpersonalIl = /\bil\s+y\s+(?:a|avait|aura|aurait)\b/i.test(dossier.originalDescription);
+  const sourceText = [dossier.originalDescription, ...dossier.items.map((item) => item.sourceQuote)].join("\n");
+  const hasImpersonalIl = /\bil\s+y\s+(?:a|avait|aura|aurait)\b/i.test(sourceText);
   const unresolvedQuestions = hasImpersonalIl
     ? dossier.unresolvedQuestions.filter((item) => !/référence\s+«\s*il\s*»/i.test(item))
     : dossier.unresolvedQuestions;
@@ -285,14 +286,25 @@ export function migrateStoredProjectUnderstanding(dossier: ProjectUnderstanding)
 
   let situationGraph: SituationGraph = dossier.situationGraph;
   if (staleGoals.length > 0) {
-    const sourceMessageId = dossier.items.find((item) => item.sourceMessageId)?.sourceMessageId ?? `legacy-${dossier.id}`;
-    const rebuilt = rebuildSituationGraph([{
-      id: sourceMessageId,
-      conversationId: dossier.projectId,
-      role: "visitor",
-      content: dossier.originalDescription,
-      createdAt: dossier.createdAt,
-    }]);
+    const sourceMessages = new Map<string, { id: string; conversationId: string; role: "visitor"; content: string; createdAt: string }>();
+    for (const item of dossier.items) {
+      if (item.status === "rejected" || item.status === "conversation_only" || item.status === "unknown" || item.status === "not_applicable") continue;
+      const id = item.sourceMessageId ?? item.sourceReferenceId ?? `legacy-${item.id}`;
+      const existing = sourceMessages.get(id);
+      const quote = item.sourceQuote || item.value;
+      if (!existing) sourceMessages.set(id, { id, conversationId: dossier.projectId, role: "visitor", content: quote, createdAt: item.createdAt });
+      else if (!existing.content.includes(quote)) sourceMessages.set(id, { ...existing, content: existing.content + "\n" + quote });
+    }
+    if (![...sourceMessages.values()].some((message) => message.content.includes(dossier.originalDescription))) {
+      sourceMessages.set(`legacy-original-${dossier.id}`, {
+        id: `legacy-original-${dossier.id}`,
+        conversationId: dossier.projectId,
+        role: "visitor",
+        content: dossier.originalDescription,
+        createdAt: dossier.createdAt,
+      });
+    }
+    const rebuilt = rebuildSituationGraph([...sourceMessages.values()]);
     const staleIds = new Set(staleGoals.map((entity) => entity.id));
     const entitiesByKey = new Map<string, SituationGraph["entities"][number]>();
     for (const entity of [...dossier.situationGraph.entities.filter((item) => !staleIds.has(item.id)), ...rebuilt.entities]) {
