@@ -67,7 +67,7 @@ describe("screen 07 — adaptive visual blueprint", () => {
   it("uses payment-specific fields without adding payment functions that were not retained", () => {
     const blueprint = buildVisualBlueprint(dossier(), definition(), proposal(true, "Enregistrer un paiement", "finances"));
     expect(blueprint.screens[0].previewFields).toEqual(["Référence", "Montant", "Mode de paiement", "Date"]);
-    expect(blueprint.screens[0].primaryActionLabel).toBe("Enregistrer une opération");
+    expect(blueprint.screens[0].primaryActionLabel).toBe("Enregistrer un règlement");
     expect(blueprint.screens[0].items).toEqual(["Enregistrer un paiement"]);
   });
   
