@@ -64,9 +64,9 @@ function classifyDimension(item: ProjectUnderstandingItem): ProjectUnderstanding
   return item.dimension;
 }
 
-function isConversationOnly(value: string): boolean {
+export function isConversationOnlyStatement(value: string): boolean {
   const text = normalizeText(value);
-  return /\b(j ai deja dit|je l ai deja dit|j ai deja repondu|je viens de le dire|c est deja dit)\b/.test(text);
+  return /^(?:mais )?(?:j ai deja dit ca|je l ai deja dit|j ai deja repondu|je viens de le dire|je l ai deja explique|je l ai deja precise|c est deja dit|c est deja explique|c est deja precise)(?: non)?$/.test(text);
 }
 
 function isNotApplicable(value: string): boolean {
