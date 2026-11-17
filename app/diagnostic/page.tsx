@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   createDiagnosticSession,
   getActiveDiagnosticAnswers,
+  getProjectEvidenceItems,
   getNextDiagnosticQuestion,
   recordDiagnosticAnswer,
   reviseDiagnosticAnswer,
@@ -32,7 +33,7 @@ function readDossier(): ProjectUnderstanding | null {
       contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
       unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
       privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
-      knowledgeMap: parsed.knowledgeMap ?? buildProjectKnowledgeMap(parsed.items, parsed.situationGraph),
+      knowledgeMap: buildProjectKnowledgeMap(getProjectEvidenceItems(parsed), parsed.situationGraph),
     };
   } catch { /* Le parcours reste accessible si le stockage est indisponible. */ }
   return null;
