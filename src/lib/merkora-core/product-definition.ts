@@ -134,7 +134,7 @@ export function getNextProductDefinitionQuestion(
   const answerText = activeAnswers
     .filter((answer) => answer.status === "answered")
     .flatMap((answer) => Array.isArray(answer.value) ? answer.value : [answer.value]);
-  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value), ...answerText].join("\n");
+  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value)].join("\n");
   const normalizedText = allText.toLocaleLowerCase("fr");
   const byDimension = (dimensions: string[]) => evidence.filter((item) => dimensions.includes(item.dimension));
   const has = (...dimensions: string[]) => byDimension(dimensions).length > 0;
