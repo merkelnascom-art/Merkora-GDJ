@@ -39,6 +39,28 @@ function activityMatch(query: string, registry: KnowledgeRegistry, language?: st
   return matchKnowledgeConcept(query, registry, { expectedType: "activity", language });
 }
 
+function matchAcrossTypes(query:string,registry:KnowledgeRegistry,types:string[],language?:string){
+ const results=types.map(expectedType=>matchKnowledgeConcept(query,registry,{expectedType,language}));
+ const matched=results.filter(result=>result.status==="matched");
+ if(matched.length===1)return matched[0];
+ if(matched.length>1)return {status:"ambiguous" as const,query,candidates:matched.map(result=>result.concept)};
+ const ambiguous=results.filter(result=>result.status==="ambiguous");
+ if(ambiguous.length)return {status:"ambiguous" as const,query,candidates:ambiguous.flatMap(result=>result.candidates)};
+ return results[0]??matchKnowledgeConcept(query,registry,{language});
+}
+function matchSituationEntity(entity:SituationGraph["entities"][number],registry:KnowledgeRegistry,language?:string){
+ if(entity.kind==="activity")return activityMatch(entity.label,registry,language);
+ if(entity.kind==="actor"&&entity.role)return matchKnowledgeConcept(entity.role,registry,{expectedType:"occupation",language});
+ if(entity.kind==="actor")return matchKnowledgeConcept(entity.label,registry,{expectedType:"actor",language});
+ const types:Record<string,string[]>={
+  goal:["indicator","goal"],outcome:["indicator","outcome"],constraint:["risk","constraint"],
+  resource:["resource","equipment","document"],object:["product","equipment","object"],
+  process:["process"],problem:["problem"],organization:["organization"],event:["activity","process","event"],
+  actor:["occupation","organization"],concept:["subdomain","domain","specialization","activity","problem","function"],
+ };
+ return matchAcrossTypes(entity.label,registry,types[entity.kind]??[entity.kind],language);
+}
+
 export function enrichSituationGraphWithKnowledge(
   graph: SituationGraph,
   registry: KnowledgeRegistry = DEFAULT_REGISTRY,
@@ -49,11 +71,7 @@ export function enrichSituationGraphWithKnowledge(
     entities: graph.entities.map((entity) => {
       const typeConceptId = TYPE_CONCEPT_IDS[entity.kind];
       const typeConcept = typeConceptId ? getKnowledgeConcept(registry, typeConceptId) : undefined;
-      const match = entity.kind === "activity"
-        ? activityMatch(entity.label, registry, language)
-        : entity.kind === "actor" && entity.role
-          ? matchKnowledgeConcept(entity.role, registry, { expectedType: "occupation", language })
-          : matchKnowledgeConcept(entity.label, registry, { expectedType: entity.kind, language });
+      const match = matchSituationEntity(entity, registry, language);
       const selected = match.status === "matched" || match.status === "type_only" ? match.concept : undefined;
       const classificationType = selected?.classifications.find((item) => item.parentConceptId)?.classificationType
         ?? (selected?.conceptType === "occupation"

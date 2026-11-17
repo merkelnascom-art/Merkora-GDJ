@@ -6,7 +6,7 @@ describe("Fondation A — famille 18 Numérique et télécommunications",()=>{
  const registry=createUniversalKnowledgeRegistry();
  it("réutilise la famille et cinq domaines canoniques sans doublons",()=>{
   expect(registry.concepts.filter(x=>x.id==="family:digital-technology")).toHaveLength(1);
-  for(const id of ["domain:software-development","domain:it-infrastructure","domain:cybersecurity","domain:data-ai","domain:digital-services"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
+  for(const id of ["domain:software-development","domain:it-infrastructure","domain:cybersecurity","domain:data-ai","domain:telecommunications"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
  });
  it("reconnaît logiciel, infrastructure, cybersécurité, IA/données et services numériques",()=>{
   const cases=[["développement d'applications logicielles","subdomain-digital:software-engineering"],["administration des infrastructures cloud","subdomain-digital:cloud-infrastructure"],["sécurité informatique et réponse aux incidents","subdomain-digital:cybersecurity-operations"],["intelligence artificielle et analyse de données","subdomain-digital:ai-data-engineering"],["services numériques et plateformes en ligne","subdomain-digital:digital-platforms"]] as const;

@@ -28,10 +28,7 @@ function makeConcept(seed: Seed): KnowledgeConcept {
     })),
   ];
   const classifications = seed.parentId
-    ? [{
-        classificationType: "foundation-a-family-v2",
-        parentConceptId: seed.parentId,
-      }]
+    ? [{ classificationType: "foundation-a-family-v2", parentConceptId: seed.parentId }, { classificationType: "universal-domain", parentConceptId: seed.parentId }]
     : [];
 
   return {

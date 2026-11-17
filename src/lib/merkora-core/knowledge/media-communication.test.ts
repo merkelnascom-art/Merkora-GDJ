@@ -6,7 +6,7 @@ describe("Fondation A — famille 17 Médias et communication",()=>{
  const registry=createUniversalKnowledgeRegistry();
  it("réutilise la famille et cinq domaines canoniques",()=>{
   expect(registry.concepts.filter(x=>x.id==="family:media-communication")).toHaveLength(1);
-  for(const id of ["domain:journalism","domain:audiovisual-production","domain:marketing-advertising","domain:public-relations","domain:content-management"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
+  for(const id of ["domain:journalism","domain:audiovisual-production","domain:media-advertising","domain:public-relations","domain:content-management"])expect(registry.concepts.filter(x=>x.id===id)).toHaveLength(1);
  });
  it("reconnaît presse, audiovisuel, publicité, communication institutionnelle et contenus",()=>{
   const cases=[["reportage de presse","subdomain-media:press-reporting"],["production audiovisuelle","subdomain-media:video-production"],["campagne publicitaire","subdomain-media:advertising-campaigns"],["communication institutionnelle","subdomain-media:institutional-communication"],["gestion éditoriale de contenus","subdomain-media:content-management"]] as const;

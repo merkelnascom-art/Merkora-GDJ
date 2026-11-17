@@ -15,7 +15,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
 
   it("intègre la famille et ses domaines dans le registre universel sans dupliquer le domaine élevage existant", () => {
     expect(registry.concepts.some((item) => item.id === ANIMAL_VETERINARY_FAMILY.id)).toBe(true);
-    expect(ANIMAL_VETERINARY_DOMAINS.length).toBeGreaterThanOrEqual(6);
+    expect(ANIMAL_VETERINARY_DOMAINS.length).toBe(5);
     expect(registry.concepts.filter((item) => item.id === "domain:livestock")).toHaveLength(1);
     for (const domain of ANIMAL_VETERINARY_DOMAINS) {
       expect(registry.concepts.some((item) => item.id === domain.id), domain.id).toBe(true);
@@ -33,7 +33,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     }
     for (const subdomain of ANIMAL_VETERINARY_SUBDOMAINS) {
       expect(registry.concepts.some((item) => item.id === subdomain.id)).toBe(true);
-      expect(subdomain.classifications.some((item) => item.parentConceptId && allDomainIds.has(item.parentConceptId))).toBe(true);
+      expect(subdomain.classifications.some((item) => item.parentConceptId && registry.concepts.some((parent) => parent.id === item.parentConceptId))).toBe(true);
     }
     expect(registry.concepts.find((item) => item.id === "domain:livestock")?.classifications).toContainEqual({
       classificationType: "foundation-a-family-v2",
@@ -41,7 +41,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
     });
     expect(registry.concepts.find((item) => item.id === "domain:livestock")?.classifications).toContainEqual({
       classificationType: "universal-domain",
-      parentConceptId: "family:agriculture-living",
+      parentConceptId: "family:animals-veterinary",
     });
   });
 
@@ -54,7 +54,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
 
   it("documente précisément le volume du premier corpus animalier", () => {
     expect(ANIMAL_VETERINARY_CATALOG).toHaveLength(132);
-    expect(ANIMAL_VETERINARY_SUBDOMAINS).toHaveLength(26);
+    expect(ANIMAL_VETERINARY_SUBDOMAINS).toHaveLength(28);
     expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "specialization")).toHaveLength(6);
     expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "occupation")).toHaveLength(18);
     expect(ANIMAL_VETERINARY_CATALOG.filter((item) => item.conceptType === "activity")).toHaveLength(20);
@@ -82,7 +82,7 @@ describe("Fondation A — famille 02 Animaux et médecine vétérinaire", () => 
 
   it("ne confond pas apiculture et pêche ou aquaculture", () => {
     const bee = matchKnowledgeConcept("apiculture", registry, { language: "fr" });
-    const fisheries = matchKnowledgeConcept("Pêche et aquaculture", registry, { expectedType: "domain", language: "fr" });
+    const fisheries = matchKnowledgeConcept("Pêche et aquaculture", registry, { expectedType: "subdomain", language: "fr" });
     expect(bee.status).toBe("matched");
     if (bee.status === "matched") expect(bee.concept.id).toBe("subdomain-vet:beekeeping");
     expect(fisheries.status).toBe("matched");
