@@ -20,3 +20,5 @@ export * from "./mobility-transport-catalog";
 export * from "./logistics-supply-chain-catalog";
 export * from "./commerce-markets-catalog";
 export * from "./finance-insurance-catalog";
+
+export * from "./public-governance-catalog";
