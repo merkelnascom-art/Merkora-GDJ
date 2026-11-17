@@ -53,6 +53,14 @@ describe("screen 03 evidence quality", () => {
     expect(source).toHaveLength(2);
   });
 
+  it("keeps the same wording when it was independently stated in another message", () => {
+    const result = deriveScreen03Evidence([
+      item("a", "Tout le monde peut accéder à l'interface sans connexion.", "constraints"),
+      { ...item("b", "Tout le monde peut accéder à l'interface sans connexion.", "constraints"), sourceMessageId: "message-2" },
+    ]);
+    expect(result.projectItems).toHaveLength(2);
+  });
+
   it("does not merge distinct statements merely because they share a dimension", () => {
     const result = deriveScreen03Evidence([
       item("a", "Il y aura neuf joueurs.", "actors"),
