@@ -21,7 +21,11 @@ export default function AuthPage() {
         : await signUpWithPassword({ email, password, displayName });
       if (result.ok) {
         setMessage(result.message ?? "Opération terminée.");
-        if (mode === "signin") {\n          const requested = new URLSearchParams(window.location.search).get("next");\n          const destination = requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/account";\n          window.location.assign(destination);\n        }
+        if (mode === "signin") {
+          const requested = new URLSearchParams(window.location.search).get("next");
+          const destination = requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/account";
+          window.location.assign(destination);
+        }
       } else setMessage(result.error);
     });
   }
