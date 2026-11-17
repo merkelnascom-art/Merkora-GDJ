@@ -151,9 +151,9 @@ git commit -m "feat: connect diagnostic to product definition"
 
 ## Vérifications exécutées
 
-- GitHub Actions `Quality checks` : succès sur le code de l'écran 05.
+- GitHub Actions `Quality checks` : succès sur le code de l'écran 05, y compris les suggestions de fonctions métier.
 - TypeScript : succès.
-- Vitest : 54 fichiers de tests, 329 tests réussis.
+- Vitest : 54 fichiers de tests, 331 tests réussis.
 - Build de production Next.js : succès.
 - Déploiement de prévisualisation Vercel : `READY` sur le commit applicatif testé.
 - Vérification interactive dans un navigateur : non réalisée, car le contexte navigateur connecté n'était pas disponible et les aperçus sont protégés par SSO.
