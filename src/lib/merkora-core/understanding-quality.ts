@@ -91,7 +91,7 @@ export function deriveScreen03Evidence(items: ProjectUnderstandingItem[]): Scree
 
     // Prefer the exact user wording; a repeated sentence is shown once even if
     // intake heuristics attached it to several dimensions.
-    const key = normalizeText(original.sourceQuote || original.value);
+    const key = `${original.sourceMessageId ?? original.sourceReferenceId ?? "no-source"}::${normalizeText(original.sourceQuote || original.value)}`;
     const existing = unique.get(key);
     if (existing) {
       duplicateSources.set(key, [...(duplicateSources.get(key) ?? [existing.id]), original.id]);
