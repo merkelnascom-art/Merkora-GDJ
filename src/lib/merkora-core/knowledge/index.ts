@@ -31,3 +31,5 @@ export * from "./education-research-catalog";
 export * from "./health-social-services-catalog";
 
 export * from "./sport-physical-activity-catalog";
+
+export * from "./culture-arts-catalog";
