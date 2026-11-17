@@ -137,9 +137,8 @@ export function getNextProductDefinitionQuestion(
   const has = (...dimensions: string[]) => byDimension(dimensions).length > 0;
   const hasSignal = (pattern: RegExp) => pattern.test(normalizedText);
   const activeAnswers = getActiveProductDefinitionAnswers(session);
-  const answeredFamilies = new Set(activeAnswers.map((answer) => answer.familyId));
   const candidate = (item: ProductDefinitionQuestion) =>
-    !handled(session, item.id) && !answeredFamilies.has(item.familyId);
+    !handled(session, item.id);
 
   const activityEvidence = byDimension(["activity"]);
   const solutionEvidence = byDimension(["imagined_solution"]);
@@ -204,12 +203,12 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if (digitalProduct && /\b(plusieurs sites|plusieurs centres|plusieurs agences|plusieurs établissements|plusieurs équipes|plusieurs services|multi-sites|plusieurs lieux)\b/i.test(normalizedText) && !has("context")) {
+  if (digitalProduct && /\b(plusieurs sites|plusieurs centres|plusieurs agences|plusieurs établissements|plusieurs équipes|plusieurs services|multi-sites|plusieurs lieux)\b/i.test(normalizedText) && !hasSignal(/\\b(espaces? dédiés?|espace par|espace de travail par|espace distinct)\\b/i)) {
     questions.push(makeQuestion(
       "product-spaces", "spaces",
       "Quels espaces distincts faut-il prévoir pour ces lieux, équipes ou services ?",
       "Organiser les environnements de travail sans créer d'espaces inutiles.",
-      [...contextEvidence, ...actorsEvidence].map((item) => item.id),
+      [...activityEvidence, ...contextEvidence, ...actorsEvidence].map((item) => item.id),
     ));
   }
 
@@ -245,7 +244,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if ((digitalProduct || dataSignals) && !has("information") && !hasSignal(/\b(base de données|données à enregistrer|informations à conserver|fiches? à créer|historique à conserver)\b/i)) {
+  if (digitalProduct && !dataSignals && !has("information") && !hasSignal(/\b(base de données|données à enregistrer|informations à conserver|fiches? à créer|historique à conserver)\b/i)) {
     questions.push(makeQuestion(
       "product-data", "data",
       "Quelles informations faut-il recueillir, conserver, consulter ou retrouver plus tard dans ce projet ?",
@@ -263,7 +262,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if ((digitalProduct && (actorsEvidence.length > 0 || dataSignals) || securitySignals) && !has("constraints") && !hasSignal(/\b(sécurité|confidentialité|droits d'accès|permissions|protection des données|contrôle d'accès)\b/i)) {
+  if ((digitalProduct && (actorsEvidence.length > 0 || dataSignals) || securitySignals) && !hasSignal(/\b(sécurité|confidentialité|droits d'accès|permissions|protection des données|contrôle d'accès)\b/i)) {
     questions.push(makeQuestion(
       "product-security", "security_control",
       "Quelles informations ou actions doivent être protégées, et qui doit être autorisé à les consulter ou les valider ?",
@@ -305,7 +304,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if (digitalProduct && !exploitationSignals && !has("resources") && !answeredFamilies.has("operations")) {
+  if (digitalProduct && !exploitationSignals) {
     questions.push(makeQuestion(
       "product-exploitation", "operations",
       "Après la mise en service, qui devra faire fonctionner, administrer et suivre ce produit au quotidien ?",
