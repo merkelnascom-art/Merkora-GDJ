@@ -140,7 +140,7 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
     const deferred = deferProductDefinitionQuestion(session, question);
     expect(getNextProductDefinitionQuestion(project, deferred)).not.toEqual(question);
     const resumed = resumeDeferredProductDefinitionQuestions(deferred);
-    expect(resumed.deferredQuestionIds).toHaveLength(0);
+    expect(resumed.deferredQuestionIds).toHaveLength(0);\n    expect(resumed.status).toBe("in_progress");
 
     const answered = recordProductDefinitionAnswer(resumed, question, { value: "Une application web" });
     const previous = answered.answers[0];
