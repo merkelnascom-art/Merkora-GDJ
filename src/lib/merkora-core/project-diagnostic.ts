@@ -1,4 +1,5 @@
-import type { UnderstandingSession } from "./situation-intake-engine";
+import { rebuildSituationGraph, type UnderstandingSession } from "./situation-intake-engine";
+import type { SituationGraph } from "./situation-graph";
 import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 import type { KnowledgeProposal } from "./knowledge/types";
@@ -267,6 +268,62 @@ export function attachKnowledgeProposalToUnderstanding(
 export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
   const superseded = new Set(dossier.items.flatMap((item) => item.supersedesId ? [item.supersedesId] : []));
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
+}
+
+export function migrateStoredProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
+  const hasImpersonalIl = /\\bil\\s+y\\s+(?:a|avait|aura|aurait)\\b/i.test(dossier.originalDescription);
+  const unresolvedQuestions = hasImpersonalIl
+    ? dossier.unresolvedQuestions.filter((item) => !/référence\\s+«\\s*il\\s*»/i.test(item))
+    : dossier.unresolvedQuestions;
+  const staleGoals = dossier.situationGraph.entities.filter((entity) =>
+    entity.kind === "goal" && /\\borganiser\\b.*\\b(tournoi|interface|anniversaire|fête|soiree|mariage|événement)\\b/i.test(entity.label),
+  );
+
+  if (staleGoals.length === 0 && unresolvedQuestions.length === dossier.unresolvedQuestions.length) {
+    return refreshProjectKnowledgeMap(dossier);
+  }
+
+  let situationGraph: SituationGraph = dossier.situationGraph;
+  if (staleGoals.length > 0) {
+    const sourceMessageId = dossier.items.find((item) => item.sourceMessageId)?.sourceMessageId ?? `legacy-${dossier.id}`;
+    const rebuilt = rebuildSituationGraph([{
+      id: sourceMessageId,
+      conversationId: dossier.projectId,
+      role: "visitor",
+      content: dossier.originalDescription,
+      createdAt: dossier.createdAt,
+    }]);
+    const staleIds = new Set(staleGoals.map((entity) => entity.id));
+    const entitiesByKey = new Map<string, SituationGraph["entities"][number]>();
+    for (const entity of [...dossier.situationGraph.entities.filter((item) => !staleIds.has(item.id)), ...rebuilt.entities]) {
+      const existing = entitiesByKey.get(entity.key);
+      if (!existing) entitiesByKey.set(entity.key, { ...entity, evidence: [...entity.evidence] });
+      else {
+        const evidence = [...existing.evidence];
+        for (const item of entity.evidence) {
+          if (!evidence.some((previous) => previous.messageId === item.messageId && previous.quote === item.quote)) evidence.push(item);
+        }
+        entitiesByKey.set(entity.key, { ...existing, evidence });
+      }
+    }
+    const validIds = new Set([...entitiesByKey.values()].map((entity) => entity.id));
+    const relations = new Map<string, SituationGraph["relations"][number]>();
+    for (const relation of [...dossier.situationGraph.relations.filter((item) => !staleIds.has(item.fromEntityId) && !staleIds.has(item.toEntityId)), ...rebuilt.relations]) {
+      if (validIds.has(relation.fromEntityId) && validIds.has(relation.toEntityId)) relations.set(relation.id, relation);
+    }
+    situationGraph = {
+      entities: [...entitiesByKey.values()],
+      relations: [...relations.values()],
+      unresolvedRelations: dossier.situationGraph.unresolvedRelations,
+    };
+  }
+
+  return refreshProjectKnowledgeMap({
+    ...dossier,
+    situationGraph,
+    unresolvedQuestions,
+    updatedAt: now(),
+  });
 }
 
 export function getProjectEvidenceItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
