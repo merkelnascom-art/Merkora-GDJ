@@ -111,7 +111,7 @@ const domainConcepts: KnowledgeConcept[] = FAMILIES.flatMap((family) =>
     const conceptId = canonicalDomainId(reference);
     const key = domainKey(reference);
     const familyId = `family:${family.id}`;
-    const animalFamilyClassifications = family.id === "animals-veterinary"
+    const foundationFamilyClassifications = ["agriculture-agrofood", "animals-veterinary"].includes(family.id)
       ? [{ classificationType: "foundation-a-family-v2", parentConceptId: familyId }]
       : [];
     return ({
@@ -129,7 +129,7 @@ const domainConcepts: KnowledgeConcept[] = FAMILIES.flatMap((family) =>
     classifications: [
       { classificationType: "universal-domain", parentConceptId: familyId },
       { classificationType: "universal-domain-family", parentConceptId: familyId },
-      ...animalFamilyClassifications,
+      ...foundationFamilyClassifications,
     ],
     attributes: [],
     relationships: [{
