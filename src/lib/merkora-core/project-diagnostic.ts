@@ -3,6 +3,7 @@ import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 import type { KnowledgeProposal } from "./knowledge/types";
 import { buildProjectKnowledgeMap, getFamilyDiagnosticQuestionSeeds, type ProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
+import { deriveScreen03Evidence, isConversationOnlyStatement } from "./understanding-quality";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -10,6 +11,8 @@ export type ProjectUnderstandingStatus =
   | "inferred"
   | "hypothesis"
   | "unknown"
+  | "not_applicable"
+  | "conversation_only"
   | "validated"
   | "rejected";
 
@@ -101,7 +104,8 @@ export interface DiagnosticAnswer {
   dimension: ProjectUnderstandingDimension;
   value: string | string[];
   detail?: string;
-  status: "answered" | "unknown" | "not_applicable" | "deferred";
+  status: "answered" | "unknown" | "not_applicable" | "already_provided" | "deferred";
+  referencedEvidenceIds?: string[];
   createdAt: string;
   version: number;
   question: DiagnosticQuestion;
@@ -183,7 +187,7 @@ function normalizeDimension(dimension: NeedDimension): ProjectUnderstandingDimen
 }
 
 function normalizeStatus(status: string): ProjectUnderstandingStatus {
-  if (status === "validated" || status === "hypothesis" || status === "inferred" || status === "unknown" || status === "rejected" || status === "observed") {
+  if (status === "validated" || status === "hypothesis" || status === "inferred" || status === "unknown" || status === "not_applicable" || status === "conversation_only" || status === "rejected" || status === "observed") {
     return status;
   }
   return "user_stated";
@@ -265,8 +269,12 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
 }
 
+function getProjectEvidenceItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
+  return deriveScreen03Evidence(getActiveUnderstandingItems(dossier)).projectItems.filter((item) => item.status !== "unknown" && item.status !== "not_applicable" && item.status !== "conversation_only");
+}
+
 function refreshProjectKnowledgeMap(dossier: ProjectUnderstanding): ProjectUnderstanding {
-  return { ...dossier, knowledgeMap: buildProjectKnowledgeMap(getActiveUnderstandingItems(dossier), dossier.situationGraph) };
+  return { ...dossier, knowledgeMap: buildProjectKnowledgeMap(getProjectEvidenceItems(dossier), dossier.situationGraph) };
 }
 
 export function reviseUnderstandingItem(
@@ -356,8 +364,7 @@ export function createDiagnosticSession(dossier: ProjectUnderstanding): Diagnost
 }
 
 function hasDimension(dossier: ProjectUnderstanding, dimensions: ProjectUnderstandingDimension[]): boolean {
-  const active = getActiveUnderstandingItems(dossier);
-  return active.some((item) => dimensions.includes(item.dimension) && item.status !== "rejected");
+  return getProjectEvidenceItems(dossier).some((item) => dimensions.includes(item.dimension));
 }
 
 function wasHandled(session: DiagnosticSession, id: string): boolean {
@@ -387,7 +394,8 @@ export function getNextDiagnosticQuestion(
   const hasActivity = hasDimension(dossier, ["activity"]);
   const hasSituation = hasDimension(dossier, ["context", "current_situation", "operations"]);
   const hasMotivation = hasDimension(dossier, ["problem", "objectives", "motivation"]);
-  const motivationText = getActiveUnderstandingItems(dossier).filter((item) => item.dimension === "motivation").map((item) => item.value).join(" ");
+  const projectEvidence = getProjectEvidenceItems(dossier);
+  const motivationText = projectEvidence.filter((item) => item.dimension === "motivation").map((item) => item.value).join(" ");
   const motivationRequiresProblemDetail = /résoudre une difficulté|résoudre un problème/i.test(motivationText);
   const hasPeople = hasDimension(dossier, ["actors"]);
   const hasOperations = hasDimension(dossier, ["operations"]);
@@ -400,7 +408,7 @@ export function getNextDiagnosticQuestion(
   const hasSuccess = hasDimension(dossier, ["success_criteria"]);
   const hasJurisdiction = hasDimension(dossier, ["jurisdiction"]);
   const hasLanguages = hasDimension(dossier, ["languages"]);
-  const activeText = [dossier.originalDescription, ...getActiveUnderstandingItems(dossier).map((item) => item.value)].join("\n");
+  const activeText = [dossier.originalDescription, ...projectEvidence.map((item) => item.value)].join("\n");
   const regulatorySignals = /\b(réglement\w*|juridiction\w*|loi\w*|norme\w*|autorisation\w*|licence\w*|données personnelles|confidentialité|fiscal\w*|douane\w*|conformité|certification)\b/i.test(activeText);
   const multilingualSignals = /\b(multilingue|plusieurs langues|traduction|langues? différentes)\b/i.test(activeText);
 
@@ -526,7 +534,7 @@ export function getNextDiagnosticQuestion(
     ),
   ];
 
-  const knowledgeMap = dossier.knowledgeMap ?? buildProjectKnowledgeMap(getActiveUnderstandingItems(dossier), dossier.situationGraph);
+  const knowledgeMap = dossier.knowledgeMap ?? buildProjectKnowledgeMap(projectEvidence, dossier.situationGraph);
   const familyQuestionSeeds = getFamilyDiagnosticQuestionSeeds(knowledgeMap.primaryFamilyId);
   const familyQuestions = familyQuestionSeeds.map((seed) =>
     question(`family-context-${knowledgeMap.primaryFamilyId}-${seed.id}`, seed.dimension, seed.prompt, seed.purpose),
