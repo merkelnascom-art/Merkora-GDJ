@@ -6,6 +6,7 @@ export interface VisualProfile {
   id: string;
   name: string;
   note: string;
+  responsibilities: string[];
 }
 
 export interface VisualScreen {
@@ -47,6 +48,86 @@ const FAMILY_TITLES: Record<string, string> = {
 function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
+
+const ROLE_HINTS = /\\b(propriétaire|responsable|administrateur|administratrice|directeur|directrice|gérant|gérante|chef|agent|employé|employée|collaborateur|collaboratrice|personnel|équipe|client|utilisateur|usager|membre|apprenant|élève|étudiant|enseignant|formateur|technicien|opérateur|vendeur|caissier|livreur|fournisseur|partenaire|prestataire|bénéficiaire|patient|médecin|infirmier|conducteur|exploitant|artisan|comptable|assistant|assistante)\\b/i;
+
+function conciseVisualLabel(value: string): string {
+  const firstLine = value.replace(/\\r/g, "").split("\\n").map((line) => line.trim()).find(Boolean) ?? value.trim();
+  const withoutNumber = firstLine.replace(/^\\s*\\d+[.)]\\s*/, "").trim();
+  const firstSentence = withoutNumber.match(/^(.+?[.!?])(?:\\s|$)/u)?.[1] ?? withoutNumber;
+  const label = firstSentence.replace(/[.!?;:]+$/, "").trim();
+  if (label.length <= 84) return label;
+  return `${label.slice(0, 80).replace(/\\s+\\S*$/, "")}…`;
+}
+
+function splitResponsibilities(lines: string[]): string[] {
+  return unique(lines.flatMap((line) =>
+    line
+      .replace(/^\\s*(?:[-•*]|\\d+[.)])\\s*/, "")
+      .split(/(?<=[.!?])\\s+(?=[A-ZÀ-ÖØ-Þ])/u)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 5 && part.length <= 150 && !/^\\d+[.)]\\s/.test(part)),
+  )).slice(0, 6);
+}
+
+function parseRoleProfiles(value: string | string[], offset: number): VisualProfile[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((entry, index) => {
+      const parsed = parseRoleProfiles(entry, offset + index);
+      return parsed;
+    });
+  }
+
+  const normalized = value
+    .replace(/\\r\\n?/g, "\\n")
+    .replace(/([.!?])\\s+(?=\\d{1,2}[.)]\\s+[A-ZÀ-ÖØ-Þ])/gu, "$1\\n");
+  const lines = normalized.split(/\\n+/).map((line) => line.trim()).filter(Boolean);
+  const sections: Array<{ name: string; lines: string[] }> = [];
+  let current: { name: string; lines: string[] } | null = null;
+
+  for (const line of lines) {
+    const numbered = line.match(/^\\s*\\d{1,2}[.)]\\s*(.+)$/u);
+    const candidate = numbered?.[1]?.trim() ?? "";
+    const heading = candidate && candidate.length <= 90 && ROLE_HINTS.test(candidate)
+      ? candidate.split(/\\s+[—–:]\\s+/u)[0].trim()
+      : null;
+
+    if (heading) {
+      current = { name: conciseVisualLabel(heading), lines: [] };
+      sections.push(current);
+      continue;
+    }
+
+    if (current) {
+      current.lines.push(line);
+    } else if (!numbered && line.length <= 72 && !/[.!?]$/.test(line) && ROLE_HINTS.test(line)) {
+      current = { name: conciseVisualLabel(line), lines: [] };
+      sections.push(current);
+    }
+  }
+
+  if (sections.length > 0) {
+    return sections.map((section, index) => ({
+      id: `profile-${offset + index + 1}`,
+      name: section.name,
+      note: "Profil mentionné dans la définition ; les autorisations restent à confirmer.",
+      responsibilities: splitResponsibilities(section.lines),
+    }));
+  }
+
+  const fallback = conciseVisualLabel(lines[0] ?? "");
+  if (fallback && fallback.length <= 72 && !/[.!?]$/.test(lines[0] ?? "")) {
+    return [{
+      id: `profile-${offset + 1}`,
+      name: fallback,
+      note: "Profil mentionné dans la définition ; les autorisations restent à confirmer.",
+      responsibilities: splitResponsibilities(lines.slice(1)),
+    }];
+  }
+
+  return [];
+}
+
 
 function retained(component: SolutionProposalComponent): boolean {
   return component.status === "accepted" || component.status === "modified";
@@ -110,16 +191,19 @@ export function buildVisualBlueprint(
     ? "digital" as const
     : "operational" as const;
 
-  const roles = definition.answers
-    .filter((answer) => answer.status === "answered" && answer.familyId === "users_roles")
-    .flatMap((answer) => Array.isArray(answer.value) ? answer.value : [answer.value]);
-  const profiles = unique(roles).map((name, index) => ({
-    id: `profile-${index + 1}`,
-    name,
-    note: "Profil mentionné dans la définition du projet ; ses droits détaillés restent à confirmer.",
-  }));
-  if (profiles.length === 0) {
-    profiles.push({ id: "profile-to-define", name: "Vue générale", note: "Aucun profil d'utilisation n'a encore été confirmé." });
+  const roleAnswers = definition.answers
+    .filter((answer) => answer.status === "answered" && answer.familyId === "users_roles");
+  const profiles = roleAnswers.flatMap((answer, index) => parseRoleProfiles(answer.value, index * 20));
+  const uniqueProfiles = profiles.filter((profile, index, all) =>
+    all.findIndex((candidate) => candidate.name.toLocaleLowerCase("fr") === profile.name.toLocaleLowerCase("fr")) === index,
+  );
+  if (uniqueProfiles.length === 0) {
+    uniqueProfiles.push({
+      id: "profile-to-define",
+      name: "Vue générale",
+      note: "Aucun profil d'utilisation n'a encore été confirmé.",
+      responsibilities: [],
+    });
   }
 
   const retainedComponents = proposal.components.filter(retained);
@@ -137,7 +221,7 @@ export function buildVisualBlueprint(
     id: `screen-${index + 1}`,
     title: FAMILY_TITLES[family] ?? "Espace du produit",
     description: "Aperçu construit uniquement à partir des éléments retenus à l'étape 06.",
-    items: components.map((component) => component.title),
+    items: components.map((component) => conciseVisualLabel(component.title)),
     ...demonstrationLayout(components),
   }));
 
@@ -153,7 +237,7 @@ export function buildVisualBlueprint(
   }
 
   const flow = retainedComponents.length
-    ? retainedComponents.map((component) => component.title)
+    ? retainedComponents.map((component) => conciseVisualLabel(component.title))
     : ["Préciser les étapes de l'activité", "Retenir les éléments utiles", "Compléter la représentation"];
   return {
     projectTitle: proposal.title,
