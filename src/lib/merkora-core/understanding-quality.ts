@@ -13,6 +13,8 @@ export interface Screen03EvidenceView {
   conversationOnly: ProjectUnderstandingItem[];
   /** Explicit "not applicable" answers are neither unknown nor project facts. */
   notApplicable: ProjectUnderstandingItem[];
+  /** Explicitly unknown answers remain visible without filling a project dimension. */
+  unknown: ProjectUnderstandingItem[];
   duplicates: Screen03DuplicateGroup[];
 }
 
@@ -75,17 +77,22 @@ function isNotApplicable(value: string): boolean {
 export function deriveScreen03Evidence(items: ProjectUnderstandingItem[]): Screen03EvidenceView {
   const conversationOnly: ProjectUnderstandingItem[] = [];
   const notApplicable: ProjectUnderstandingItem[] = [];
+  const unknown: ProjectUnderstandingItem[] = [];
   const unique = new Map<string, ProjectUnderstandingItem>();
   const duplicateSources = new Map<string, string[]>();
 
   for (const original of items) {
     const classified = { ...original, dimension: classifyDimension(original) };
-    if (isConversationOnly(original.value)) {
+    if (original.status === "conversation_only" || isConversationOnlyStatement(original.value)) {
       conversationOnly.push(classified);
       continue;
     }
-    if (isNotApplicable(original.value)) {
+    if (original.status === "not_applicable" || isNotApplicable(original.value)) {
       notApplicable.push(classified);
+      continue;
+    }
+    if (original.status === "unknown" || /^je ne sais pas encore$/i.test(original.value.trim())) {
+      unknown.push(classified);
       continue;
     }
 
@@ -104,6 +111,7 @@ export function deriveScreen03Evidence(items: ProjectUnderstandingItem[]): Scree
     projectItems: [...unique.values()],
     conversationOnly,
     notApplicable,
+    unknown,
     duplicates: [...duplicateSources.entries()].map(([key, sourceItemIds]) => ({
       key,
       retainedItemId: sourceItemIds[0],
