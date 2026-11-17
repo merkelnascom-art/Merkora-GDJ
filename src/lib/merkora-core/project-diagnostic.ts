@@ -1,7 +1,10 @@
-import type { UnderstandingSession } from "./situation-intake-engine";
+import { rebuildSituationGraph, type UnderstandingSession } from "./situation-intake-engine";
+import type { SituationGraph } from "./situation-graph";
 import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 import type { KnowledgeProposal } from "./knowledge/types";
+import { buildProjectKnowledgeMap, getFamilyDiagnosticQuestionSeeds, type ProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
+import { deriveScreen03Evidence, isConversationOnlyStatement } from "./understanding-quality";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -9,6 +12,8 @@ export type ProjectUnderstandingStatus =
   | "inferred"
   | "hypothesis"
   | "unknown"
+  | "not_applicable"
+  | "conversation_only"
   | "validated"
   | "rejected";
 
@@ -72,6 +77,8 @@ export interface ProjectUnderstanding {
   privacyConsiderations: string[];
   /** Project-private proposals; older stored dossiers may not contain this field. */
   knowledgeProposals?: KnowledgeProposal[];
+  /** Recomputed, non-authoritative links to the universal 20-family knowledge graph. */
+  knowledgeMap?: ProjectKnowledgeMap;
   activityVocabulary: "open";
   validationStatus: "in_progress" | "validated";
   sourceSessionVersion: number;
@@ -98,7 +105,8 @@ export interface DiagnosticAnswer {
   dimension: ProjectUnderstandingDimension;
   value: string | string[];
   detail?: string;
-  status: "answered" | "unknown" | "not_applicable" | "deferred";
+  status: "answered" | "unknown" | "not_applicable" | "already_provided" | "deferred";
+  referencedEvidenceIds?: string[];
   createdAt: string;
   version: number;
   question: DiagnosticQuestion;
@@ -180,7 +188,7 @@ function normalizeDimension(dimension: NeedDimension): ProjectUnderstandingDimen
 }
 
 function normalizeStatus(status: string): ProjectUnderstandingStatus {
-  if (status === "validated" || status === "hypothesis" || status === "inferred" || status === "unknown" || status === "rejected" || status === "observed") {
+  if (status === "validated" || status === "hypothesis" || status === "inferred" || status === "unknown" || status === "not_applicable" || status === "conversation_only" || status === "rejected" || status === "observed") {
     return status;
   }
   return "user_stated";
@@ -188,7 +196,7 @@ function normalizeStatus(status: string): ProjectUnderstandingStatus {
 
 export function createProjectUnderstanding(session: UnderstandingSession): ProjectUnderstanding {
   const timestamp = now();
-  return {
+  const dossier: ProjectUnderstanding = {
     id: `understanding-${session.id}`,
     projectId: session.conversationId,
     version: 1,
@@ -229,6 +237,7 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+  return refreshProjectKnowledgeMap(dossier);
 }
 
 export function attachKnowledgeProposalToUnderstanding(
@@ -261,6 +270,82 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
 }
 
+export function migrateStoredProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
+  const sourceText = [dossier.originalDescription, ...dossier.items.map((item) => item.sourceQuote)].join("\n");
+  const hasImpersonalIl = /\bil\s+y\s+(?:a|avait|aura|aurait)\b/i.test(sourceText);
+  const unresolvedQuestions = hasImpersonalIl
+    ? dossier.unresolvedQuestions.filter((item) => !/référence\s+«\s*il\s*»/i.test(item))
+    : dossier.unresolvedQuestions;
+  const staleGoals = dossier.situationGraph.entities.filter((entity) =>
+    entity.kind === "goal" && /\borganiser\b.*\b(tournoi|interface|anniversaire|fête|soiree|mariage|événement)\b/i.test(entity.label),
+  );
+
+  if (staleGoals.length === 0 && unresolvedQuestions.length === dossier.unresolvedQuestions.length) {
+    return refreshProjectKnowledgeMap(dossier);
+  }
+
+  let situationGraph: SituationGraph = dossier.situationGraph;
+  if (staleGoals.length > 0) {
+    const sourceMessages = new Map<string, { id: string; conversationId: string; role: "visitor"; content: string; createdAt: string }>();
+    for (const item of dossier.items) {
+      if (item.status === "rejected" || item.status === "conversation_only" || item.status === "unknown" || item.status === "not_applicable") continue;
+      const id = item.sourceMessageId ?? item.sourceReferenceId ?? `legacy-${item.id}`;
+      const existing = sourceMessages.get(id);
+      const quote = item.sourceQuote || item.value;
+      if (!existing) sourceMessages.set(id, { id, conversationId: dossier.projectId, role: "visitor", content: quote, createdAt: item.createdAt });
+      else if (!existing.content.includes(quote)) sourceMessages.set(id, { ...existing, content: existing.content + "\n" + quote });
+    }
+    if (![...sourceMessages.values()].some((message) => message.content.includes(dossier.originalDescription))) {
+      sourceMessages.set(`legacy-original-${dossier.id}`, {
+        id: `legacy-original-${dossier.id}`,
+        conversationId: dossier.projectId,
+        role: "visitor",
+        content: dossier.originalDescription,
+        createdAt: dossier.createdAt,
+      });
+    }
+    const rebuilt = rebuildSituationGraph([...sourceMessages.values()]);
+    const staleIds = new Set(staleGoals.map((entity) => entity.id));
+    const entitiesByKey = new Map<string, SituationGraph["entities"][number]>();
+    for (const entity of [...dossier.situationGraph.entities.filter((item) => !staleIds.has(item.id)), ...rebuilt.entities]) {
+      const existing = entitiesByKey.get(entity.key);
+      if (!existing) entitiesByKey.set(entity.key, { ...entity, evidence: [...entity.evidence] });
+      else {
+        const evidence = [...existing.evidence];
+        for (const item of entity.evidence) {
+          if (!evidence.some((previous) => previous.messageId === item.messageId && previous.quote === item.quote)) evidence.push(item);
+        }
+        entitiesByKey.set(entity.key, { ...existing, evidence });
+      }
+    }
+    const validIds = new Set([...entitiesByKey.values()].map((entity) => entity.id));
+    const relations = new Map<string, SituationGraph["relations"][number]>();
+    for (const relation of [...dossier.situationGraph.relations.filter((item) => !staleIds.has(item.fromEntityId) && !staleIds.has(item.toEntityId)), ...rebuilt.relations]) {
+      if (validIds.has(relation.fromEntityId) && validIds.has(relation.toEntityId)) relations.set(relation.id, relation);
+    }
+    situationGraph = {
+      entities: [...entitiesByKey.values()],
+      relations: [...relations.values()],
+      unresolvedRelations: dossier.situationGraph.unresolvedRelations,
+    };
+  }
+
+  return refreshProjectKnowledgeMap({
+    ...dossier,
+    situationGraph,
+    unresolvedQuestions,
+    updatedAt: now(),
+  });
+}
+
+export function getProjectEvidenceItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
+  return deriveScreen03Evidence(getActiveUnderstandingItems(dossier)).projectItems.filter((item) => item.status !== "unknown" && item.status !== "not_applicable" && item.status !== "conversation_only");
+}
+
+function refreshProjectKnowledgeMap(dossier: ProjectUnderstanding): ProjectUnderstanding {
+  return { ...dossier, knowledgeMap: buildProjectKnowledgeMap(getProjectEvidenceItems(dossier), dossier.situationGraph) };
+}
+
 export function reviseUnderstandingItem(
   dossier: ProjectUnderstanding,
   itemId: string,
@@ -284,41 +369,41 @@ export function reviseUnderstandingItem(
     supersedesId: original.id,
   };
 
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: [...dossier.items, revision],
     validationStatus: "in_progress",
     updatedAt: now(),
-  };
+  });
 }
 
 export function validateUnderstandingItem(dossier: ProjectUnderstanding, itemId: string): ProjectUnderstanding {
   const active = getActiveUnderstandingItems(dossier);
   if (!active.some((item) => item.id === itemId)) throw new Error("Only an active understanding item can be validated.");
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "validated" } : item),
     updatedAt: now(),
-  };
+  });
 }
 
 
 export function rejectUnderstandingItem(dossier: ProjectUnderstanding, itemId: string): ProjectUnderstanding {
   const active = getActiveUnderstandingItems(dossier);
   if (!active.some((item) => item.id === itemId)) throw new Error("Only an active understanding item can be rejected.");
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "rejected" } : item),
     updatedAt: now(),
-  };
+  });
 }
 
 export function validateProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
   const activeIds = new Set(getActiveUnderstandingItems(dossier).map((item) => item.id));
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) =>
@@ -328,7 +413,7 @@ export function validateProjectUnderstanding(dossier: ProjectUnderstanding): Pro
     ),
     validationStatus: "validated",
     updatedAt: now(),
-  };
+  });
 }
 
 export function createDiagnosticSession(dossier: ProjectUnderstanding): DiagnosticSession {
@@ -348,8 +433,7 @@ export function createDiagnosticSession(dossier: ProjectUnderstanding): Diagnost
 }
 
 function hasDimension(dossier: ProjectUnderstanding, dimensions: ProjectUnderstandingDimension[]): boolean {
-  const active = getActiveUnderstandingItems(dossier);
-  return active.some((item) => dimensions.includes(item.dimension) && item.status !== "rejected");
+  return getProjectEvidenceItems(dossier).some((item) => dimensions.includes(item.dimension));
 }
 
 function wasHandled(session: DiagnosticSession, id: string): boolean {
@@ -379,7 +463,8 @@ export function getNextDiagnosticQuestion(
   const hasActivity = hasDimension(dossier, ["activity"]);
   const hasSituation = hasDimension(dossier, ["context", "current_situation", "operations"]);
   const hasMotivation = hasDimension(dossier, ["problem", "objectives", "motivation"]);
-  const motivationText = getActiveUnderstandingItems(dossier).filter((item) => item.dimension === "motivation").map((item) => item.value).join(" ");
+  const projectEvidence = getProjectEvidenceItems(dossier);
+  const motivationText = projectEvidence.filter((item) => item.dimension === "motivation").map((item) => item.value).join(" ");
   const motivationRequiresProblemDetail = /résoudre une difficulté|résoudre un problème/i.test(motivationText);
   const hasPeople = hasDimension(dossier, ["actors"]);
   const hasOperations = hasDimension(dossier, ["operations"]);
@@ -392,7 +477,7 @@ export function getNextDiagnosticQuestion(
   const hasSuccess = hasDimension(dossier, ["success_criteria"]);
   const hasJurisdiction = hasDimension(dossier, ["jurisdiction"]);
   const hasLanguages = hasDimension(dossier, ["languages"]);
-  const activeText = [dossier.originalDescription, ...getActiveUnderstandingItems(dossier).map((item) => item.value)].join("\n");
+  const activeText = [dossier.originalDescription, ...projectEvidence.map((item) => item.value)].join("\n");
   const regulatorySignals = /\b(réglement\w*|juridiction\w*|loi\w*|norme\w*|autorisation\w*|licence\w*|données personnelles|confidentialité|fiscal\w*|douane\w*|conformité|certification)\b/i.test(activeText);
   const multilingualSignals = /\b(multilingue|plusieurs langues|traduction|langues? différentes)\b/i.test(activeText);
 
@@ -427,7 +512,7 @@ export function getNextDiagnosticQuestion(
     );
   }
 
-  const candidates: DiagnosticQuestion[] = [
+  const baseCandidates: DiagnosticQuestion[] = [
     question(
       "activity-context",
       "activity",
@@ -518,9 +603,27 @@ export function getNextDiagnosticQuestion(
     ),
   ];
 
+  const knowledgeMap = dossier.knowledgeMap ?? buildProjectKnowledgeMap(projectEvidence, dossier.situationGraph);
+  const familyQuestionSeeds = getFamilyDiagnosticQuestionSeeds(knowledgeMap.primaryFamilyId);
+  const familyQuestions = familyQuestionSeeds.map((seed) =>
+    question(`family-context-${knowledgeMap.primaryFamilyId}-${seed.id}`, seed.dimension, seed.prompt, seed.purpose),
+  );
+  const familyClarification = question(
+    "family-domain-clarification",
+    "context",
+    "Plusieurs domaines semblent concernés. Peux-tu préciser quelles activités ou parties du projet sont réellement au cœur de ta demande ?",
+    "MerKora garde plusieurs rattachements possibles tant que le périmètre n'est pas clarifié ; tu n'as pas à choisir une famille prédéfinie.",
+  );
+  const candidates: DiagnosticQuestion[] = [
+    ...baseCandidates.slice(0, 7),
+    ...(knowledgeMap.needsFamilyClarification ? [familyClarification] : familyQuestions),
+    ...baseCandidates.slice(7),
+  ];
+
   const eligible = candidates.filter((candidate) => {
     if (wasHandled(session, candidate.id)) return false;
     switch (candidate.id) {
+      case "family-domain-clarification": return knowledgeMap.needsFamilyClarification;
       case "activity-context": return !hasActivity;
       case "current-situation": return !hasSituation;
       case "project-motivation": return !hasMotivation;
@@ -535,7 +638,7 @@ export function getNextDiagnosticQuestion(
       case "success-criteria": return hasObjectives && !hasSuccess;
       case "jurisdiction-context": return regulatorySignals && !hasJurisdiction;
       case "language-context": return multilingualSignals && !hasLanguages;
-      default: return false;
+      default: return candidate.id.startsWith("family-context-") && Boolean(knowledgeMap.primaryFamilyId) && hasActivity && hasSituation;
     }
   });
 
@@ -553,9 +656,14 @@ export function recordDiagnosticAnswer(
   const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
   if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
 
+  const valueText = normalizedValues.join(" · ");
   const requestedStatus = input.status ?? "answered";
   const isUnknown = requestedStatus === "unknown" || (normalizedValues.length === 1 && /^je ne sais pas encore$/i.test(normalizedValues[0]));
-  const answerStatus = isUnknown ? "unknown" : requestedStatus;
+  const isAlreadyProvided = requestedStatus === "answered" && isConversationOnlyStatement(valueText);
+  const answerStatus = isUnknown ? "unknown" : isAlreadyProvided ? "already_provided" : requestedStatus;
+  const referencedEvidenceIds = isAlreadyProvided
+    ? getProjectEvidenceItems(dossier).filter((item) => item.dimension === currentQuestion.dimension).map((item) => item.id)
+    : [];
   const answer: DiagnosticAnswer = {
     id: makeId("diagnostic-answer"),
     questionId: currentQuestion.id,
@@ -563,39 +671,40 @@ export function recordDiagnosticAnswer(
     value: Array.isArray(input.value) ? normalizedValues : normalizedValues[0],
     ...(input.detail?.trim() ? { detail: input.detail.trim() } : {}),
     status: answerStatus,
+    ...(referencedEvidenceIds.length ? { referencedEvidenceIds } : {}),
     createdAt: now(),
     version: session.version + 1,
     question: currentQuestion,
     ...(getActiveDiagnosticAnswers(session).find((previous) => previous.questionId === currentQuestion.id) ? { supersedesId: getActiveDiagnosticAnswers(session).find((previous) => previous.questionId === currentQuestion.id)?.id } : {}),
   };
-  const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
   const evidence: ProjectUnderstandingItem = {
     id: answer.id,
     dimension: currentQuestion.dimension,
     originalDimension: currentQuestion.dimension,
     value: evidenceValue,
-    status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
+    status: isAlreadyProvided ? "conversation_only" : answerStatus === "unknown" ? "unknown" : answerStatus === "not_applicable" ? "not_applicable" : "user_stated",
     source: "diagnostic_answer",
     sourceReferenceId: answer.id,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
     ...(answer.supersedesId ? { supersedesId: answer.supersedesId } : {}),
   };
+  const unresolvedAnswer = answerStatus === "unknown" || answerStatus === "not_applicable" || answerStatus === "already_provided";
   const contradictions = currentQuestion.resolvesContradictionId
     ? dossier.contradictions.map((item) => item.id === currentQuestion.resolvesContradictionId
-      ? { ...item, status: isUnknown ? "deferred" as const : "resolved" as const, answerId: answer.id }
+      ? { ...item, status: unresolvedAnswer ? "deferred" as const : "resolved" as const, answerId: answer.id }
       : item)
     : dossier.contradictions;
 
   return {
-    understanding: {
+    understanding: refreshProjectKnowledgeMap({
       ...dossier,
       version: dossier.version + 1,
       items: [...dossier.items, evidence],
       contradictions,
       updatedAt: now(),
-    },
+    }),
     diagnostic: {
       ...session,
       version: session.version + 1,
@@ -625,11 +734,15 @@ export function reviseDiagnosticAnswer(
   const normalizedValues = values.map((value) => value.trim()).filter(Boolean);
   if (!normalizedValues.length) throw new Error("A diagnostic answer cannot be empty.");
 
+  const valueText = normalizedValues.join(" · ");
   const requestedStatus = input.status ?? "answered";
   const isUnknown = requestedStatus === "unknown" || (normalizedValues.length === 1 && /^je ne sais pas encore$/i.test(normalizedValues[0]));
-  const answerStatus = isUnknown ? "unknown" : requestedStatus;
+  const isAlreadyProvided = requestedStatus === "answered" && isConversationOnlyStatement(valueText);
+  const answerStatus = isUnknown ? "unknown" : isAlreadyProvided ? "already_provided" : requestedStatus;
+  const referencedEvidenceIds = isAlreadyProvided
+    ? getProjectEvidenceItems(dossier).filter((item) => item.dimension === original.dimension).map((item) => item.id)
+    : [];
   const answerIdNext = makeId("diagnostic-answer-revision");
-  const valueText = normalizedValues.join(" · ");
   const evidenceValue = [valueText, input.detail?.trim()].filter(Boolean).join(" — ");
   const answer: DiagnosticAnswer = {
     id: answerIdNext,
@@ -638,6 +751,7 @@ export function reviseDiagnosticAnswer(
     value: Array.isArray(input.value) ? normalizedValues : normalizedValues[0],
     ...(input.detail?.trim() ? { detail: input.detail.trim() } : {}),
     status: answerStatus,
+    ...(referencedEvidenceIds.length ? { referencedEvidenceIds } : {}),
     createdAt: now(),
     version: session.version + 1,
     question: original.question,
@@ -648,16 +762,17 @@ export function reviseDiagnosticAnswer(
     dimension: original.dimension,
     originalDimension: original.dimension,
     value: evidenceValue,
-    status: answerStatus === "unknown" || answerStatus === "not_applicable" ? "unknown" : "user_stated",
+    status: isAlreadyProvided ? "conversation_only" : answerStatus === "unknown" ? "unknown" : answerStatus === "not_applicable" ? "not_applicable" : "user_stated",
     source: "diagnostic_answer",
     sourceReferenceId: answerIdNext,
     sourceQuote: evidenceValue,
     createdAt: answer.createdAt,
     supersedesId: original.id,
   };
+  const unresolvedAnswer = answerStatus === "unknown" || answerStatus === "not_applicable" || answerStatus === "already_provided";
   const contradictions = original.question.resolvesContradictionId
     ? dossier.contradictions.map((item) => item.id === original.question.resolvesContradictionId
-      ? { ...item, status: answerStatus === "unknown" ? "deferred" as const : "resolved" as const, answerId: answer.id }
+      ? { ...item, status: unresolvedAnswer ? "deferred" as const : "resolved" as const, answerId: answer.id }
       : item)
     : dossier.contradictions;
   const nextAsked = answerStatus === "unknown"
@@ -668,10 +783,11 @@ export function reviseDiagnosticAnswer(
     : session.deferredQuestionIds.filter((id) => id !== original.questionId);
 
   return {
-    understanding: { ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], contradictions, updatedAt: now() },
+    understanding: refreshProjectKnowledgeMap({ ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], contradictions, updatedAt: now() }),
     diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], askedQuestionIds: nextAsked, deferredQuestionIds: nextDeferred, updatedAt: now() },
   };
 }
+
 
 export function deferDiagnosticQuestion(
   session: DiagnosticSession,

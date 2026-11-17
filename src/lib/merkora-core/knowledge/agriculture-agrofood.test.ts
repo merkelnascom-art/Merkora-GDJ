@@ -1,0 +1,147 @@
+import { describe, expect, it } from "vitest";
+import { createUniversalKnowledgeRegistry } from "./registry";
+import { matchKnowledgeConcept } from "./matching";
+import { getClassificationLineage } from "./classification-graph";
+import {
+  AGRICULTURE_AGROFOOD_FAMILY,
+  AGRICULTURE_AGROFOOD_DOMAINS,
+  AGRICULTURE_AGROFOOD_SUBDOMAINS,
+  AGRICULTURE_AGROFOOD_CATALOG,
+} from "./agriculture-agrofood-catalog";
+
+describe("Fondation A — famille 01 Agriculture et agroalimentaire", () => {
+  const registry = createUniversalKnowledgeRegistry();
+
+  it("intègre la famille et ses cinq domaines canoniques dans le registre universel", () => {
+    expect(registry.concepts.some((item) => item.id === AGRICULTURE_AGROFOOD_FAMILY.id)).toBe(true);
+    expect(AGRICULTURE_AGROFOOD_DOMAINS).toHaveLength(5);
+
+    for (const domain of AGRICULTURE_AGROFOOD_DOMAINS) {
+      const registered = registry.concepts.find((item) => item.id === domain.id);
+      expect(registered, domain.id).toBeDefined();
+      expect(
+        registered?.classifications.some(
+          (item) => item.classificationType === "foundation-a-family-v2" &&
+            item.parentConceptId === AGRICULTURE_AGROFOOD_FAMILY.id,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("raccorde chaque sous-domaine à un domaine existant", () => {
+    const domainIds = new Set(AGRICULTURE_AGROFOOD_DOMAINS.map((item) => item.id));
+    expect(AGRICULTURE_AGROFOOD_SUBDOMAINS.length).toBeGreaterThanOrEqual(20);
+
+    for (const subdomain of AGRICULTURE_AGROFOOD_SUBDOMAINS) {
+      expect(
+        subdomain.classifications.some(
+          (item) => item.classificationType === "foundation-a-family-v2" &&
+            item.parentConceptId && domainIds.has(item.parentConceptId),
+        ),
+      ).toBe(true);
+      expect(registry.concepts.some((item) => item.id === subdomain.id)).toBe(true);
+    }
+  });
+
+  it("fournit des connaissances métier au-delà des seuls noms de domaines", () => {
+    const types = new Set(AGRICULTURE_AGROFOOD_CATALOG.map((item) => item.conceptType));
+    for (const type of ["occupation", "activity", "process", "problem", "resource", "function", "indicator"]) {
+      expect(types.has(type), type).toBe(true);
+    }
+  });
+
+  it("contient un premier corpus sectoriel de 150 concepts structurés", () => {
+    expect(AGRICULTURE_AGROFOOD_CATALOG).toHaveLength(150);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "subdomain")).toHaveLength(29);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "specialization")).toHaveLength(8);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "occupation")).toHaveLength(20);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "activity")).toHaveLength(25);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "process")).toHaveLength(12);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "problem")).toHaveLength(15);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "resource")).toHaveLength(18);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "function")).toHaveLength(10);
+    expect(AGRICULTURE_AGROFOOD_CATALOG.filter((item) => item.conceptType === "indicator")).toHaveLength(7);
+  });
+
+  it("reconnaît les expressions agricoles françaises et conserve les variantes lexicales", () => {
+    const terms = AGRICULTURE_AGROFOOD_CATALOG.flatMap((item) => item.terms.map((term) => term.value.toLocaleLowerCase("fr")));
+    expect(terms).toContain("maraîchage");
+    expect(terms).toContain("intrants agricoles");
+    expect(terms).toContain("post-récolte");
+    expect(terms).toContain("coopérative agricole");
+  });
+
+  it("reconnaît des cultures courantes et une variante locale béninoise", () => {
+    const examples = [
+      ["maïs", "subdomain-v2:cereal-crops"],
+      ["niébé", "subdomain-v2:legume-crops"],
+      ["manioc", "subdomain-v2:tuber-crops"],
+      ["champ", "subdomain-v2:land-plot-management"],
+    ] as const;
+
+    for (const [term, expectedId] of examples) {
+      const result = matchKnowledgeConcept(term, registry, {
+        expectedType: "subdomain",
+        language: "fr",
+        region: "BJ",
+      });
+      expect(result.status, term).toBe("matched");
+      if (result.status === "matched") expect(result.concept.id).toBe(expectedId);
+    }
+  });
+
+  it("permet de remonter de la spécialité au domaine puis à la famille", () => {
+    const lineage = getClassificationLineage(
+      registry,
+      "specialization-v2:organic-farming",
+      "foundation-a-family-v2",
+    );
+    expect(lineage.map((item) => item.id)).toEqual([
+      AGRICULTURE_AGROFOOD_FAMILY.id,
+      "domain-v2:crop-production",
+      "subdomain-v2:field-crops",
+      "specialization-v2:organic-farming",
+    ]);
+  });
+
+  it("rend les termes de la famille recherchables par le moteur lexical", () => {
+    const result = matchKnowledgeConcept("maraîchage", registry, { language: "fr" });
+    expect(result.status).toBe("matched");
+    if (result.status !== "matched") throw new Error("Expected the market-gardening concept.");
+    expect(result.concept.id).toBe("subdomain-v2:market-gardening");
+  });
+
+  it("ne remplace pas les concepts historiques déjà présents", () => {
+    expect(registry.concepts.some((item) => item.id === "family:agriculture-living")).toBe(true);
+    expect(registry.concepts.some((item) => item.id === "domain:agriculture")).toBe(true);
+    expect(registry.concepts.some((item) => item.id === "domain:food-production")).toBe(true);
+  });
+
+  it("relie processus, activités, ressources et problèmes sans confondre leurs types", () => {
+    expect(registry.relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceConceptId: "process-v2:crop-cycle",
+        targetConceptId: "activity-v2:sow-seeds",
+        predicate: "includes_activity",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "resource-v2:seed",
+        targetConceptId: "domain-v2:crop-production",
+        predicate: "resource_for_domain",
+      }),
+      expect.objectContaining({
+        sourceConceptId: "problem-v2:postharvest-loss",
+        targetConceptId: "process-v2:postharvest-process",
+        predicate: "may_disrupt",
+      }),
+    ]));
+  });
+
+  it("ne publie pas de relations orphelines", () => {
+    const conceptIds = new Set(registry.concepts.map((item) => item.id));
+    for (const relation of registry.relationships) {
+      expect(conceptIds.has(relation.sourceConceptId), relation.id).toBe(true);
+      expect(conceptIds.has(relation.targetConceptId), relation.id).toBe(true);
+    }
+  });
+});

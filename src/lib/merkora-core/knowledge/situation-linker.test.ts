@@ -58,7 +58,8 @@ describe("situation graph knowledge linking", () => {
     expect(linked.entities[0].knowledge).toMatchObject({
       matchStatus: "matched", conceptId: "domain:agriculture", conceptLabel: "Agriculture",
       classificationPath: [
-        { id: "family:agriculture-living", label: "Agriculture et vivant" },
+        { id: "family:agriculture-agrofood", label: "Agriculture et agroalimentaire" },
+        { id: "domain-v2:farm-management", label: "Gestion des exploitations agricoles" },
         { id: "domain:agriculture", label: "Agriculture" },
       ],
     });
@@ -75,8 +76,69 @@ describe("situation graph knowledge linking", () => {
       matchStatus: "matched",
       conceptId: "specialization:law-legal-services",
       classificationPath: [
-        { id: "domain:public-administration", label: "Administration publique" },
+        { id: "domain:legal-advice-documents", label: "Conseil juridique et actes" },
         { id: "specialization:law-legal-services", label: "Droit et services juridiques" },
+      ],
+    });
+  });
+
+  it("links agricultural subdomains and returns their complete family lineage", () => {
+    const agricultureGraph: SituationGraph = {
+      entities: [{ id: "entity:market-gardening", key: "market-gardening", kind: "activity", label: "maraîchage", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(agricultureGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "subdomain-v2:market-gardening",
+      classificationPath: [
+        { id: "family:agriculture-agrofood", label: "Agriculture et agroalimentaire" },
+        { id: "domain-v2:crop-production", label: "Productions végétales" },
+        { id: "subdomain-v2:market-gardening", label: "Maraîchage" },
+      ],
+    });
+  });
+
+  it("links a farmer role without changing the actor's original label", () => {
+    const roleGraph: SituationGraph = {
+      entities: [{ id: "entity:farmer", key: "farmer", kind: "actor", label: "Personne", role: "Agriculteur", evidence: [] }],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(roleGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].label).toBe("Personne");
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "occupation-v2:farmer",
+      conceptLabel: "Agriculteur",
+    });
+  });
+
+  it("links veterinary roles and animal-health activities to the second family", () => {
+    const animalGraph: SituationGraph = {
+      entities: [
+        { id: "entity:veterinarian", key: "veterinarian", kind: "actor", label: "Personne", role: "vétérinaire", evidence: [] },
+        { id: "entity:aviculture", key: "aviculture", kind: "activity", label: "volaille", evidence: [] },
+      ],
+      relations: [], unresolvedRelations: [],
+    };
+    const linked = enrichSituationGraphWithKnowledge(animalGraph, createUniversalKnowledgeRegistry());
+    expect(linked.entities[0].label).toBe("Personne");
+    expect(linked.entities[0].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "occupation-vet:veterinarian",
+      classificationPath: [
+        { id: "family:animals-veterinary", label: "Animaux et médecine vétérinaire" },
+        { id: "domain-vet:veterinary-medicine", label: "Médecine vétérinaire et santé animale" },
+        { id: "occupation-vet:veterinarian", label: "Vétérinaire" },
+      ],
+    });
+    expect(linked.entities[1].knowledge).toMatchObject({
+      matchStatus: "matched",
+      conceptId: "subdomain-vet:aviculture",
+      classificationPath: [
+        { id: "family:animals-veterinary", label: "Animaux et médecine vétérinaire" },
+        { id: "domain:livestock", label: "Élevage" },
+        { id: "subdomain-vet:aviculture", label: "Aviculture" },
       ],
     });
   });

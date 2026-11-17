@@ -5,6 +5,7 @@ import {
   createDiagnosticSession,
   createProjectUnderstanding,
   getNextDiagnosticQuestion,
+  migrateStoredProjectUnderstanding,
   recordDiagnosticAnswer,
   reviseUnderstandingItem,
   reviseDiagnosticAnswer,
@@ -14,6 +15,7 @@ import {
 } from "./project-diagnostic";
 import { createProjectKnowledgeProposal } from "./knowledge/proposals";
 import { createCoreKnowledgeRegistry } from "./knowledge/registry";
+import { buildProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
 
 describe("universal project understanding", () => {
   it("preserves the original narrative and source trace without requiring a sector classification", () => {
@@ -24,6 +26,43 @@ describe("universal project understanding", () => {
     expect(dossier.items.every((item) => item.sourceMessageId && item.sourceQuote)).toBe(true);
     expect(dossier.activityVocabulary).toContain("open");
     expect(dossier.validationStatus).toBe("in_progress");
+  });
+
+  it("migrates an older saved tournament dossier and removes the false impersonal-il reference", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux organiser une interface façon organigramme."));
+    const staleDossier = {
+      ...base,
+      items: [
+        ...base.items,
+        {
+          id: "legacy-tournament",
+          dimension: "objectives" as const,
+          originalDimension: "goal",
+          value: "Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs.",
+          status: "validated" as const,
+          source: "conversation" as const,
+          sourceMessageId: "message-3",
+          sourceQuote: "Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs.",
+          createdAt: "2026-11-17T00:00:00.000Z",
+        },
+      ],
+      situationGraph: {
+        ...base.situationGraph,
+        entities: [...base.situationGraph.entities, {
+          id: "stale-goal",
+          key: "goal:organiser-un-tournoi-de-baby-foot",
+          kind: "goal",
+          label: "Organiser un tournoi de Baby foot",
+          evidence: [{ messageId: "message-3", quote: "Je veux organiser un tournoi de Baby foot.", role: "visitor" as const, status: "user_stated" as const }],
+        }],
+      },
+      unresolvedQuestions: ["Préciser la référence « il »."] ,
+    };
+    const migrated = migrateStoredProjectUnderstanding(staleDossier);
+    expect(migrated.situationGraph.entities.some((entity) => entity.kind === "event" && /tournoi de baby foot/i.test(entity.label))).toBe(true);
+    expect(migrated.situationGraph.entities.some((entity) => entity.id === "stale-goal")).toBe(false);
+    expect(migrated.situationGraph.entities.some((entity) => entity.kind === "actor" && entity.label === "Joueurs")).toBe(true);
+    expect(migrated.unresolvedQuestions).toEqual([]);
   });
 
   it("keeps a corrected statement as a new version instead of deleting its source", () => {
@@ -86,6 +125,32 @@ describe("universal project understanding", () => {
     expect(() => attachKnowledgeProposalToUnderstanding(dossier, { ...proposal, projectId: "other-project" })).toThrow(/own project/i);
     expect(() => attachKnowledgeProposalToUnderstanding(attached, duplicate)).toThrow(/already been proposed/i);
   });
+
+  it("attaches a non-authoritative knowledge map and refreshes it after each answer", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux gérer les rendez-vous d'un salon de coiffure."));
+    expect(dossier.knowledgeMap).toBeDefined();
+    const diagnostic = createDiagnosticSession(dossier);
+    const first = getNextDiagnosticQuestion(dossier, diagnostic)!;
+    const result = recordDiagnosticAnswer(dossier, diagnostic, first, { value: "gestion des rendez-vous d'un salon de coiffure" });
+    expect(result.understanding.knowledgeMap).toBeDefined();
+    expect(result.understanding.knowledgeMap?.automaticDecisions).toEqual([]);
+  });
+
+  it("asks family-specific follow-up questions only after a family is lexically supported", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux améliorer le fonctionnement d'un club sportif."));
+    const items = [
+      ...base.items,
+      { id:"sport-activity",dimension:"activity",originalDimension:"activity",value:"arbitrage d'un match",status:"user_stated",source:"conversation",sourceQuote:"arbitrage d'un match",createdAt:"2026-11-17T00:00:00.000Z" },
+      { id:"sport-context",dimension:"current_situation",originalDimension:"current_situation",value:"un club sportif organise des matchs",status:"user_stated",source:"conversation",sourceQuote:"un club sportif organise des matchs",createdAt:"2026-11-17T00:00:00.000Z" },
+    ];
+    const dossier = { ...base, items, knowledgeMap: buildProjectKnowledgeMap(items) };
+    const diagnostic = { ...createDiagnosticSession(dossier), askedQuestionIds:[
+      "activity-context","current-situation","project-motivation","problem-description","expected-outcome","people-and-roles","operations-and-flow"
+    ] };
+    const next = getNextDiagnosticQuestion(dossier, diagnostic);
+    expect(next?.id).toContain("family-context-family:sport-physical-activity");
+    expect(next?.prompt).toMatch(/discipline|catégories d'âge/i);
+  });
 });
 
 describe("adaptive universal diagnostic", () => {
@@ -97,6 +162,46 @@ describe("adaptive universal diagnostic", () => {
     expect(question).not.toBeNull();
     expect(question?.id).toBe("activity-context");
     expect(question?.prompt).not.toMatch(/commerce|santé|éducation|agriculture/i);
+  });
+
+  it("does not classify a tournament elimination workflow as a problem", () => {
+    const session = beginUnderstanding("Je veux organiser un tournoi de Baby foot. Au fur et à mesure, je déclare celui qui a perdu et celui qui a gagné ; le système procède aux éliminations jusqu'à la fin du tournoi.");
+    const dossier = createProjectUnderstanding(session);
+    const diagnostic = {
+      ...createDiagnosticSession(dossier),
+      askedQuestionIds: ["activity-context", "current-situation", "project-motivation", "problem-description", "expected-outcome", "people-and-roles", "operations-and-flow"],
+    };
+    const next = getNextDiagnosticQuestion(dossier, diagnostic);
+    expect(next?.id).not.toBe("problem-impact");
+    expect(next?.id).not.toBe("possible-causes");
+  });
+
+  it("does not store 'I already said that' as a project outcome", () => {
+    const dossier = createProjectUnderstanding(beginUnderstanding("Je veux organiser un tournoi de Baby foot."));
+    const diagnostic = createDiagnosticSession(dossier);
+    const current = getNextDiagnosticQuestion(dossier, diagnostic);
+    if (!current) throw new Error("Expected a diagnostic question.");
+    const result = recordDiagnosticAnswer(dossier, diagnostic, current, { value: "J'ai déjà dit ça non 🤷🏻‍♂️" });
+    expect(result.diagnostic.answers[0]?.status).toBe("already_provided");
+    expect(result.understanding.items.some((item) => item.value.includes("J'ai déjà dit ça") && item.status === "conversation_only")).toBe(true);
+    expect(result.understanding.knowledgeMap?.automaticDecisions).toEqual([]);
+    expect(result.diagnostic.askedQuestionIds).toContain(current.id);
+  });
+
+  it("does not treat an explicit non-applicable answer as a known constraint", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux organiser un tournoi."));
+    const dossier = {
+      ...base,
+      items: [
+        ...base.items,
+        { id: "activity-known", dimension: "activity" as const, originalDimension: "activity", value: "Tournoi", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Tournoi", createdAt: "2026-11-17T00:00:00.000Z" },
+        { id: "situation-known", dimension: "current_situation" as const, originalDimension: "current_situation", value: "Projet nouveau", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Projet nouveau", createdAt: "2026-11-17T00:00:00.000Z" },
+        { id: "motivation-known", dimension: "motivation" as const, originalDimension: "motivation", value: "Créer quelque chose", status: "user_stated" as const, source: "conversation" as const, sourceQuote: "Créer quelque chose", createdAt: "2026-11-17T00:00:00.000Z" },
+        { id: "not-applicable", dimension: "constraints" as const, originalDimension: "constraints", value: "Non applicable à ce projet", status: "not_applicable" as const, source: "diagnostic_answer" as const, sourceQuote: "Non applicable à ce projet", createdAt: "2026-11-17T00:00:00.000Z" },
+      ],
+    };
+    const diagnostic = createDiagnosticSession(dossier);
+    expect(getNextDiagnosticQuestion(dossier, diagnostic)?.id).toBe("expected-outcome");
   });
 
   it("records an answer as traceable evidence and advances to a different question", () => {

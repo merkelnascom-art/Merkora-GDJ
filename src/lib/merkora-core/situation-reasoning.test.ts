@@ -50,6 +50,11 @@ describe("cross-message situation reasoning", () => {
     ]));
   });
 
+  it("does not treat the impersonal French construction 'il y aura' as an unresolved pronoun", () => {
+    const result = analyzeConversation(messages("Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs."));
+    expect(result.references.some((reference) => reference.mention.toLowerCase() === "il" && !reference.resolved)).toBe(false);
+  });
+
   it("keeps directly stated facts separate from a user's hypothesis", () => {
     const result = analyzeConversation(messages(
       "Les patients choisissent un créneau depuis la plateforme.",

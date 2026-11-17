@@ -5,6 +5,7 @@ import {
   attachKnowledgeProposalToUnderstanding,
   createProjectUnderstanding,
   getActiveUnderstandingItems,
+  migrateStoredProjectUnderstanding,
   reviseUnderstandingItem,
   rejectUnderstandingItem,
   validateProjectUnderstanding,
@@ -14,7 +15,9 @@ import {
   type ProjectUnderstandingItem,
 } from "../../src/lib/merkora-core/project-diagnostic";
 import type { UnderstandingSession } from "../../src/lib/merkora-core/situation-intake-engine";
+import { deriveScreen03Evidence } from "../../src/lib/merkora-core/understanding-quality";
 import { enrichSituationGraphWithKnowledge } from "../../src/lib/merkora-core/knowledge/situation-linker";
+import { buildProjectKnowledgeMap } from "../../src/lib/merkora-core/knowledge/universal-project-knowledge";
 import { createProjectKnowledgeProposal } from "../../src/lib/merkora-core/knowledge/proposals";
 import { createUniversalKnowledgeRegistry, getKnowledgeConcept } from "../../src/lib/merkora-core/knowledge/registry";
 import { ESCO_API_LANGUAGE_CODES, type ESCOSuggestion } from "../../src/lib/merkora-core/knowledge/esco-api";
@@ -46,6 +49,8 @@ function statusLabel(status: ProjectUnderstandingItem["status"]): string {
     inferred: "Interprétation à confirmer",
     hypothesis: "Hypothèse à vérifier",
     unknown: "Inconnu",
+    not_applicable: "Non applicable",
+    conversation_only: "Réaction de conversation",
     validated: "Validé par toi",
     rejected: "Écarté",
   };
@@ -84,7 +89,7 @@ export default function UnderstandingPage() {
       if (saved) {
         const parsed = JSON.parse(saved) as ProjectUnderstanding;
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
-          const normalized: ProjectUnderstanding = {
+          const normalizedBase: ProjectUnderstanding = {
             ...parsed,
             situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
             knowledgeProposals: Array.isArray(parsed.knowledgeProposals) ? parsed.knowledgeProposals : [],
@@ -92,7 +97,12 @@ export default function UnderstandingPage() {
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
           };
+          const normalized = migrateStoredProjectUnderstanding({
+            ...normalizedBase,
+            knowledgeMap: buildProjectKnowledgeMap(getActiveUnderstandingItems(normalizedBase), normalizedBase.situationGraph, SCREEN_03_KNOWLEDGE),
+          });
           setDossier(normalized);
+          try { window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(normalized)); } catch { /* Le dossier reste utilisable en mémoire. */ }
           restoreEditDraft(normalized, setEditingId, setEditValue);
           return;
         }
@@ -210,7 +220,11 @@ export default function UnderstandingPage() {
     window.location.href = "/diagnostic";
   }
 
-  const activeItems = dossier ? getActiveUnderstandingItems(dossier) : [];
+  const evidenceView = dossier
+    ? deriveScreen03Evidence(getActiveUnderstandingItems(dossier))
+    : { projectItems: [], conversationOnly: [], notApplicable: [], unknown: [], duplicates: [] };
+  const activeItems = evidenceView.projectItems;
+  const screen03KnowledgeMap = dossier ? buildProjectKnowledgeMap(activeItems, dossier.situationGraph, SCREEN_03_KNOWLEDGE) : null;
   const populatedSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => activeItems.some((item) => item.dimension === section.id)) : [];
   const missingSections = dossier ? UNDERSTANDING_SECTIONS.filter((section) => !activeItems.some((item) => item.dimension === section.id)) : [];
 
@@ -365,11 +379,32 @@ export default function UnderstandingPage() {
             {dossier.privacyConsiderations.length > 0 && <section className="mk-understanding-section"><h2>Précautions de confidentialité repérées</h2><ul className="mk-unresolved-list">{dossier.privacyConsiderations.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
 
             <div className="mk-stage-overview">
-              <div><strong>{activeItems.length}</strong><span>éléments actifs</span></div>
-              <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>déjà validés</span></div>
-              <div><strong>{activeItems.filter((item) => item.status === "hypothesis" || item.status === "inferred").length}</strong><span>à confirmer</span></div>
+              <div><strong>{activeItems.length}</strong><span>déclarations utiles, sans doublons</span></div>
+              <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>confirmées</span></div>
+              <div><strong>{activeItems.filter((item) => item.status !== "validated").length}</strong><span>à vérifier</span></div>
+              <div><strong>{evidenceView.notApplicable.length}</strong><span>non applicables</span></div>
+              <div><strong>{evidenceView.unknown.length}</strong><span>sans réponse connue</span></div>
             </div>
+            {evidenceView.duplicates.length > 0 && <p className="mk-unresolved-count">{evidenceView.duplicates.length} répétition(s) regroupée(s) à l’écran. Toutes les déclarations et leurs sources originales restent conservées dans le dossier.</p>}
+            {evidenceView.notApplicable.length > 0 && <section className="mk-understanding-section"><h2>Non applicable au projet</h2><p>Ces réponses explicites sont conservées séparément. Elles ne sont comptées ni comme faits du projet ni comme informations inconnues.</p>{evidenceView.notApplicable.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Source conservée : {item.sourceQuote}</small></article>)}</section>}
+            {evidenceView.conversationOnly.length > 0 && <section className="mk-understanding-section"><h2>Réactions de conversation</h2><p>Ces messages restent dans l’historique, mais ne sont pas présentés comme des objectifs, résultats ou faits du projet.</p>{evidenceView.conversationOnly.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Message conservé hors des éléments métier.</small></article>)}</section>}
+            {evidenceView.unknown.length > 0 && <section className="mk-understanding-section"><h2>Informations encore inconnues</h2><p>Ces réponses restent visibles, mais ne remplissent pas une dimension du projet.</p>{evidenceView.unknown.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Statut : à préciser</small></article>)}</section>}
 
+            {screen03KnowledgeMap && (screen03KnowledgeMap.familyCandidates.length > 0 || screen03KnowledgeMap.unresolved.length > 0) && (
+              <section className="mk-knowledge-map" aria-label="Cartographie métier et fonctionnelle">
+                <div className="mk-knowledge-map-heading">
+                  <span className="mk-summary-kicker">FONDATION A · 20 FAMILLES · 100 DOMAINES CANONIQUES</span>
+                  <strong>Raccordements métier proposés</strong>
+                  <p>MerKora relie les activités, problèmes, processus, ressources, fonctions et indicateurs identifiés. Les correspondances non validées restent des suggestions.</p>
+                </div>
+                {screen03KnowledgeMap.familyCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Familles et secteurs repérés</span><div className="mk-knowledge-chips">{screen03KnowledgeMap.familyCandidates.slice(0,5).map((family)=><span key={family.familyId}>{family.labelFr}</span>)}</div></div>}
+                {screen03KnowledgeMap.solutionCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Fonctions reliées aux problèmes</span><ul>{screen03KnowledgeMap.solutionCandidates.slice(0,6).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {screen03KnowledgeMap.processCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Processus liés</span><ul>{screen03KnowledgeMap.processCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {screen03KnowledgeMap.resourceCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Ressources liées</span><ul>{screen03KnowledgeMap.resourceCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {screen03KnowledgeMap.indicatorCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Indicateurs à définir</span><ul>{screen03KnowledgeMap.indicatorCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                {screen03KnowledgeMap.unresolved.length > 0 && <p className="mk-knowledge-map-footnote">{screen03KnowledgeMap.unresolved.length} élément(s) restent inconnus, non classés ou à clarifier.</p>}
+              </section>
+            )}
             <div className="mk-understanding-sections">
               {populatedSections.length === 0 && <p className="mk-section-empty">Aucun élément structuré n'a encore été extrait. Ton récit initial reste conservé intégralement ; le diagnostic pourra commencer par clarifier l'activité ou l'idée.</p>}
               {populatedSections.map((section) => {

@@ -272,3 +272,27 @@
 .mk-knowledge-proposals>small{color:#8f88a2;font-size:9px;line-height:1.6}
 .mk-knowledge-proposals article>small{display:block;margin-top:8px;color:#aaa2bd;font-size:9px;line-height:1.6;overflow-wrap:anywhere}
 .mk-knowledge-section .mk-small-action{margin-top:10px}
+
+/* Fondation A — universal family knowledge map in the adaptive diagnostic */
+.mk-knowledge-map{display:grid;gap:13px;margin:14px 0 18px;padding:17px 18px;border:1px solid #b89bdf38;border-radius:15px;background:linear-gradient(145deg,#17162bdf,#101927e8);box-shadow:0 10px 30px #00000018}
+.mk-knowledge-map-heading{display:grid;gap:6px}
+.mk-knowledge-map-heading>strong{color:#f1e9fb;font-size:13px;letter-spacing:.01em}
+.mk-knowledge-map-heading>p{margin:0;color:#a9a1b8;font-size:10px;line-height:1.65}
+.mk-knowledge-map-group{display:grid;gap:7px;padding-top:10px;border-top:1px solid #ffffff12}
+.mk-knowledge-map-group>span{color:#d7c2f0;font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.mk-knowledge-chips{display:flex;flex-wrap:wrap;gap:7px}
+.mk-knowledge-chips>span{padding:6px 9px;border:1px solid #b89bdf38;border-radius:999px;background:#a78bfa12;color:#e7d7f7;font-size:10px}
+.mk-knowledge-map-group ul{display:grid;gap:5px;margin:0;padding-left:17px;color:#ddd4e9;font-size:10px;line-height:1.5}
+.mk-knowledge-map-footnote{margin:0;color:#d9bd88;font-size:9px;line-height:1.5}
+
+
+/* MerKora GDJ V2 — écran 05 : définition adaptative du produit */
+.mk-product-family-library{max-width:900px;margin:0 auto 20px;padding:16px 18px;border:1px solid #a98af044;border-radius:14px;background:#17172bd9}
+.mk-product-family-library-heading p{margin:7px 0 0;color:#aaa2bd;font-size:10px;line-height:1.65}
+.mk-product-family-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.mk-product-family-chip{display:inline-flex;align-items:center;padding:7px 10px;border:1px solid #ffffff1c;border-radius:20px;background:#ffffff07;color:#c9c0d8;font-size:9px}
+.mk-product-question-family{display:inline-flex;align-items:center;gap:6px;margin-top:15px;padding:7px 10px;border:1px solid #d9bf8a55;border-radius:20px;background:#342b4555;color:#f0d6a0;font-size:9px;font-weight:700}
+.mk-product-question-family span{color:#aaa2bd;font-weight:500}
+.mk-product-evidence-note{padding:10px 12px;border:1px solid #a98af044;border-radius:9px;background:#211e38;color:#cfc2e6;font-size:10px;line-height:1.6}
+.mk-product-family-library+.mk-stage-empty{margin-top:22px}
+@media(max-width:680px){.mk-product-family-library{padding:13px}.mk-product-family-chip{font-size:8px;padding:6px 8px}.mk-product-question-family{font-size:8px}}
