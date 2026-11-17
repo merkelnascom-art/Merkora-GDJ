@@ -169,7 +169,8 @@ export function getNextProductDefinitionQuestion(
   const digitalProduct = /\b(application|app|plateforme|site web|site internet|logiciel|portail|interface|tableau de bord|système numérique|outil numérique|application mobile)\b/i.test(normalizedText);
   const publicFacing = digitalProduct || /\b(publication|catalogue public|vitrine|clients|usagers|visiteurs)\b/i.test(normalizedText);
   const explicitProductNature = solutionEvidence.length > 0 || /\b(application|app|plateforme|site web|site internet|logiciel|portail|prototype|équipement|ouvrage|protocole|service|produit physique)\b/i.test(normalizedText);
-  const roleSignals = /\b(administrateur|administratrice|gestionnaire|responsable|enseignant|enseignante|apprenant|élève|client|vendeur|fournisseur|arbitre|joueur|agent|technicien|médecin|infirmier|conducteur|opérateur|superviseur|membre|bénéficiaire)\b/i.test(normalizedText);
+  const roleMatches = [...normalizedText.matchAll(/\b(administrateur|administratrice|gestionnaire|responsable|enseignant|enseignante|apprenant|élève|client|vendeur|fournisseur|arbitre|joueur|agent|technicien|médecin|infirmier|conducteur|opérateur|superviseur|membre|bénéficiaire)\b/gi)].map((match) => match[0]);
+  const roleSignals = roleMatches.length > 0;
   const financeSignals = /\b(prix|paiement|paiements|vente|ventes|chiffre d'affaires|recette|recettes|dépense|dépenses|budget|facture|facturation|commission|cotisation|abonnement|caisse|comptabilité|trésorerie|crédit|assurance|investissement)\b/i.test(normalizedText);
   const securitySignals = /\b(donnée personnelle|données personnelles|santé|patient|mineur|enfant|confidentiel|confidentialité|paiement|identifiant|mot de passe|accès|autorisation|validation|sécurité|secret professionnel)\b/i.test(normalizedText);
   const integrationSignals = /\b(whatsapp|sms|email|e-mail|qr code|code qr|api|synchronis|connecter|intégrer|gps|capteur|biométr|imprimante|scanner|terminal|mobile money|mtn|moov|celtis|canal\+)\b/i.test(normalizedText);
@@ -192,10 +193,12 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if (digitalProduct && (!roleSignals || actorsEvidence.length === 0)) {
+  if (digitalProduct && (!roleSignals || actorsEvidence.length === 0 || new Set(roleMatches).size < 2)) {
     questions.push(makeQuestion(
       "users-roles", "users_roles",
-      "Quels profils utiliseront ce produit, et que devra pouvoir faire chacun d'eux ?",
+      actorsEvidence.length
+        ? "Tu as déjà indiqué certains profils. Quels autres profils devront utiliser le produit, et que pourra faire chacun ?"
+        : "Quels profils utiliseront ce produit, et que devra pouvoir faire chacun d'eux ?",
       "Transformer les personnes déjà identifiées en profils d'utilisation et responsabilités, sans inventer de droits.",
       actorsEvidence.map((item) => item.id),
     ));
@@ -215,7 +218,7 @@ export function getNextProductDefinitionQuestion(
       "product-navigation", "navigation",
       "Comment les utilisateurs devraient-ils retrouver les différentes parties du produit ?",
       "Définir une navigation simple à partir des tâches et des profils réellement prévus.",
-      [...actorsEvidence, ...operationsEvidence].map((item) => item.id),
+      [...activityEvidence, ...actorsEvidence, ...operationsEvidence].map((item) => item.id),
       "single_choice",
       ["Un espace unique et simple", "Des menus par rubrique", "Des espaces différents selon le profil", "Un parcours guidé étape par étape", "Une combinaison de ces approches", "À définir avec la maquette"],
     ));
