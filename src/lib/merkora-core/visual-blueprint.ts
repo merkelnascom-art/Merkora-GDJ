@@ -13,6 +13,8 @@ export interface VisualScreen {
   title: string;
   description: string;
   items: string[];
+  previewFields: string[];
+  primaryActionLabel: string;
 }
 
 export interface VisualBlueprint {
@@ -50,6 +52,45 @@ function retained(component: SolutionProposalComponent): boolean {
   return component.status === "accepted" || component.status === "modified";
 }
 
+function demonstrationLayout(components: SolutionProposalComponent[]): Pick<VisualScreen, "previewFields" | "primaryActionLabel"> {
+  const text = components.map((component) => component.title).join(" ").toLocaleLowerCase("fr");
+
+  if (/paiement|encaissement|transaction|règlement/.test(text)) {
+    return {
+      previewFields: ["Référence", "Montant", "Mode de paiement", "Date"],
+      primaryActionLabel: "Enregistrer une opération",
+    };
+  }
+  if (/présence|présences|pointage|assiduité|retard/.test(text)) {
+    return {
+      previewFields: ["Personne concernée", "Date", "Heure", "Statut"],
+      primaryActionLabel: "Enregistrer une présence",
+    };
+  }
+  if (/inscription|inscrire|apprenant|élève|étudiant|adhésion/.test(text)) {
+    return {
+      previewFields: ["Nom complet", "Contact", "Formation ou service", "Date"],
+      primaryActionLabel: "Ajouter un dossier",
+    };
+  }
+  if (/stock|inventaire|article|produit|équipement/.test(text)) {
+    return {
+      previewFields: ["Article ou ressource", "Quantité", "Emplacement", "État"],
+      primaryActionLabel: "Ajouter une ressource",
+    };
+  }
+  if (/commande|réservation|rendez-vous|livraison/.test(text)) {
+    return {
+      previewFields: ["Référence", "Personne concernée", "Date prévue", "Statut"],
+      primaryActionLabel: "Créer un suivi",
+    };
+  }
+  return {
+    previewFields: ["Intitulé ou référence", "Description", "Responsable", "Date"],
+    primaryActionLabel: "Ajouter un élément",
+  };
+}
+
 export function buildVisualBlueprint(
   dossier: ProjectUnderstanding,
   definition: ProductDefinitionSession,
@@ -78,7 +119,7 @@ export function buildVisualBlueprint(
     note: "Profil mentionné dans la définition du projet ; ses droits détaillés restent à confirmer.",
   }));
   if (profiles.length === 0) {
-    profiles.push({ id: "profile-to-define", name: "Profil à préciser", note: "Aucun profil n'a encore été confirmé." });
+    profiles.push({ id: "profile-to-define", name: "Vue générale", note: "Aucun profil d'utilisation n'a encore été confirmé." });
   }
 
   const retainedComponents = proposal.components.filter(retained);
@@ -97,6 +138,7 @@ export function buildVisualBlueprint(
     title: FAMILY_TITLES[family] ?? "Espace du produit",
     description: "Aperçu construit uniquement à partir des éléments retenus à l'étape 06.",
     items: components.map((component) => component.title),
+    ...demonstrationLayout(components),
   }));
 
   if (kind === "digital" && screens.length === 0) {
@@ -105,6 +147,8 @@ export function buildVisualBlueprint(
       title: "Vue d'ensemble",
       description: "Structure visuelle en attente de fonctions validées.",
       items: ["Aucune fonction n'a encore été retenue."],
+      previewFields: [],
+      primaryActionLabel: "Aucune action à simuler",
     });
   }
 
