@@ -255,7 +255,9 @@ const specializationConcepts: KnowledgeConcept[] = SPECIALIZATION_SEEDS.map(([sl
 export const UNIVERSAL_FAMILY_CONCEPTS = familyConcepts;
 export const UNIVERSAL_DOMAIN_CONCEPTS = domainConcepts;
 export const UNIVERSAL_SPECIALIZATION_CONCEPTS = specializationConcepts;
-export const UNIVERSAL_ADDITIONAL_SUBDOMAIN_CONCEPTS = additionalSubdomainConcepts;\nexport const UNIVERSAL_CROSS_SECTOR_CONCEPTS = crossSectorConcepts;\nexport const UNIVERSAL_DOMAIN_CATALOG = [...familyConcepts, ...domainConcepts, ...specializationConcepts, ...additionalSubdomainConcepts, ...crossSectorConcepts];
+export const UNIVERSAL_ADDITIONAL_SUBDOMAIN_CONCEPTS = additionalSubdomainConcepts;
+export const UNIVERSAL_CROSS_SECTOR_CONCEPTS = crossSectorConcepts;
+export const UNIVERSAL_DOMAIN_CATALOG = [...familyConcepts, ...domainConcepts, ...specializationConcepts, ...additionalSubdomainConcepts, ...crossSectorConcepts];
 export const UNIVERSAL_DOMAIN_FAMILY_COUNT = familyConcepts.length;
 export const UNIVERSAL_FAMILY_COUNT = UNIVERSAL_DOMAIN_FAMILY_COUNT;
 export const UNIVERSAL_DOMAIN_COUNT = domainConcepts.length;
