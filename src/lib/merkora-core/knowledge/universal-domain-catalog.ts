@@ -216,7 +216,7 @@ const crossSectorConcepts: KnowledgeConcept[] = CROSS_SECTOR_SEEDS.map(([id,fr,e
  id,canonicalKey:`merkora.sector-profile.${id.replace("family:","")}`,conceptType:"sector_profile",
  definitions:[{language:"fr",label:fr,definition:`Profil sectoriel transversal conservé pour assurer la continuité des anciennes cartographies : ${fr.toLocaleLowerCase("fr")}.`},{language:"en",label:en,definition:`Cross-sector profile retained for continuity with earlier maps: ${en.toLocaleLowerCase("en")}.`}],
  terms:[{value:fr,language:"fr",kind:"preferred"},{value:en,language:"en",kind:"preferred"}],
- classifications:parents.map(parentConceptId=>({classificationType:"universal-domain-family",parentConceptId})),
+ classifications:[{classificationType:"universal-domain-family",parentConceptId:parents[0]}],
  attributes:[],relationships:[],scope:{global:true},
  lifecycle:{status:"validated",version:1,createdAt:CREATED_AT,updatedAt:CREATED_AT},
  sources:[{id:"source:merkora-domain-map-v2",sourceType:"curated_taxonomy",label:"Profils sectoriels transversaux — continuité des anciennes familles"}],
