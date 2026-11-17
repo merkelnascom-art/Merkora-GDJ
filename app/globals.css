@@ -296,3 +296,79 @@
 .mk-product-evidence-note{padding:10px 12px;border:1px solid #a98af044;border-radius:9px;background:#211e38;color:#cfc2e6;font-size:10px;line-height:1.6}
 .mk-product-family-library+.mk-stage-empty{margin-top:22px}
 @media(max-width:680px){.mk-product-family-library{padding:13px}.mk-product-family-chip{font-size:8px;padding:6px 8px}.mk-product-question-family{font-size:8px}}
+
+/* MerKora GDJ V2 — écran 06 : proposition et composition légère */
+.mk-solution-page .mk-stage-heading>p{max-width:760px}
+.mk-solution-overview,.mk-solution-architecture,.mk-solution-components{max-width:900px;margin:18px auto;padding:clamp(17px,3vw,25px);border:1px solid #ffffff20;border-radius:17px;background:#17182bd9}
+.mk-solution-overview{border-color:#d9bf8a55;background:linear-gradient(145deg,#24203c,#17182d)}
+.mk-solution-overview h2{margin:10px 0 7px;color:#f5e7c8;font-size:clamp(23px,4vw,34px);letter-spacing:-.7px}
+.mk-solution-lead{margin:0;color:#c8bfd7;font-size:13px;line-height:1.7}
+.mk-solution-context-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.mk-solution-context-grid article{padding:13px;border:1px solid #ffffff17;border-radius:11px;background:#ffffff05}
+.mk-solution-context-grid article span{color:#d9bf8a;font-size:8px;font-weight:800;letter-spacing:1px}
+.mk-solution-context-grid article p{margin:7px 0 0;color:#e9e2f0;font-size:11px;line-height:1.65}
+.mk-solution-principle{margin:14px 0 0;color:#aaa2bd;font-size:10px;line-height:1.7}
+.mk-solution-architecture{display:grid;grid-template-columns:1fr auto;align-items:start;gap:20px}
+.mk-solution-architecture h2{margin:8px 0;color:#eee7f6;font-size:17px}
+.mk-solution-architecture p{margin:0;color:#aaa2bd;font-size:11px;line-height:1.7}
+.mk-solution-architecture details{max-width:230px;color:#c9b9e0;font-size:9px}
+.mk-solution-architecture summary,.mk-solution-why summary,.mk-solution-coherence summary{cursor:pointer}
+.mk-solution-architecture ul{padding-left:16px;color:#aaa2bd;line-height:1.8}
+.mk-solution-section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}
+.mk-solution-section-heading h2{margin:7px 0 4px;color:#f0e9f7;font-size:20px}
+.mk-solution-section-heading p{margin:0;color:#9991a9;font-size:10px}
+.mk-solution-count{white-space:nowrap;padding:7px 10px;border:1px solid #ffffff20;border-radius:20px;color:#d9bf8a;font-size:9px}
+.mk-solution-component-list{display:grid;gap:9px}
+.mk-solution-component{padding:14px;border:1px solid #ffffff1d;border-radius:12px;background:#ffffff05}
+.mk-solution-component.is-accepted,.mk-solution-component.is-modified{border-color:#75c7a044;background:#17342e55}
+.mk-solution-component.is-rejected{opacity:.65}
+.mk-solution-component-top{display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:start;gap:11px}
+.mk-solution-index{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#302848;color:#e8cb93;font-size:10px;font-weight:800}
+.mk-solution-component-copy{min-width:0}
+.mk-solution-component-copy h3{margin:2px 0 7px;color:#eee8f5;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.mk-solution-status{display:inline-flex;padding:4px 8px;border-radius:20px;background:#383247;color:#d4c6e5;font-size:8px}
+.mk-solution-status.status-accepted,.mk-solution-status.status-modified{background:#1d483b;color:#a8e3c4}
+.mk-solution-status.status-rejected{background:#433039;color:#d9aeb5}
+.mk-solution-why{max-width:150px;color:#c9b9e0;font-size:9px}
+.mk-solution-why p{color:#c9c0d6;line-height:1.6}
+.mk-solution-why small{color:#8f88a2;line-height:1.5}
+.mk-solution-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0 42px}
+.mk-solution-actions button,.mk-solution-edit button{border:1px solid #c6a66b66;border-radius:8px;background:#3b3047;color:#f1d9a5;padding:8px 11px;font-size:9px;font-weight:700;cursor:pointer}
+.mk-solution-actions button.quiet,.mk-solution-edit button.quiet{border-color:#ffffff24;background:#ffffff08;color:#c5bbd2}
+.mk-solution-edit{display:flex;flex-wrap:wrap;gap:7px}
+.mk-solution-edit input{min-width:160px;flex:1;border:1px solid #a98af055;border-radius:8px;background:#101326;color:#f7f4ff;padding:9px;font-size:11px}
+.mk-solution-empty{padding:17px;border:1px dashed #ffffff28;border-radius:11px;color:#b9b0ca;font-size:11px;line-height:1.7}
+.mk-solution-coherence{max-width:900px;margin:15px auto;padding:13px 16px;border:1px solid #d5a45c44;border-radius:12px;background:#292235;color:#d8c8e7;font-size:10px;line-height:1.7}
+.mk-solution-coherence summary{color:#e8cc99}
+.mk-solution-coherence p{color:#c7b8d5}
+.mk-solution-coherence div{padding:4px 0;color:#bcb2c9}
+.mk-solution-footer{max-width:900px;margin:20px auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:17px 0;border-top:1px solid #ffffff1b}
+.mk-solution-footer strong{color:#e7d2a6;font-size:11px}
+.mk-solution-footer p{max-width:500px;margin:5px 0 0;color:#9891a9;font-size:9px;line-height:1.6}
+.mk-solution-footer .mk-continue-button{flex:0 0 auto}
+.mk-solution-footer .mk-continue-button:disabled{opacity:.4;cursor:not-allowed}
+.mk-solution-validated{max-width:900px;margin:15px auto 30px;display:flex;gap:12px;align-items:flex-start;padding:15px;border:1px solid #75c7a055;border-radius:12px;background:#18352f}
+.mk-solution-validated>span{display:grid;place-items:center;width:27px;height:27px;flex:0 0 auto;border-radius:50%;background:#2d765c;color:#d7f4e5}
+.mk-solution-validated strong{color:#bce8d1;font-size:12px}
+.mk-solution-validated p{margin:5px 0 0;color:#a8d3bf;font-size:10px;line-height:1.7}
+@media(max-width:680px){
+ .mk-solution-context-grid{grid-template-columns:1fr}
+ .mk-solution-architecture{grid-template-columns:1fr}
+ .mk-solution-architecture details{max-width:none}
+ .mk-solution-component-top{grid-template-columns:27px minmax(0,1fr)}
+ .mk-solution-why{grid-column:2;max-width:none}
+ .mk-solution-actions{margin-left:0}
+ .mk-solution-footer{align-items:stretch;flex-direction:column}
+ .mk-solution-footer .mk-continue-button{width:100%}
+ .mk-solution-section-heading{align-items:flex-start}
+}
+
+/* Écran 05 — réponses hybrides : suggestions facultatives + réponse libre */
+.mk-product-choice-block{margin:17px 0 13px}
+.mk-product-choice-intro{margin-bottom:9px}
+.mk-product-choice-label{display:block;color:#d9bf8a;font-size:9px;font-weight:800;letter-spacing:1px}
+.mk-product-choice-intro p{margin:6px 0 0;color:#a9a1b7;font-size:10px;line-height:1.65}
+.mk-product-choice-block .mk-diagnostic-options{margin-top:10px}
+.mk-product-choice-block .mk-diagnostic-option{cursor:pointer}
+.mk-product-choice-block .mk-diagnostic-option input{accent-color:#d8b875}
+.mk-product-choice-block .mk-diagnostic-option.selected{border-color:#d8b87599;background:#3a3048}
