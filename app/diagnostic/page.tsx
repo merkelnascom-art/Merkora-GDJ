@@ -15,6 +15,7 @@ import {
   type DiagnosticSession,
   type ProjectUnderstanding,
 } from "../../src/lib/merkora-core/project-diagnostic";
+import { buildProjectKnowledgeMap } from "../../src/lib/merkora-core/knowledge/universal-project-knowledge";
 
 const DOSSIER_KEY = "merkora-v2-project-understanding";
 const DIAGNOSTIC_KEY = "merkora-v2-diagnostic-session";
@@ -31,6 +32,7 @@ function readDossier(): ProjectUnderstanding | null {
       contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
       unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
       privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
+      knowledgeMap: parsed.knowledgeMap ?? buildProjectKnowledgeMap(parsed.items, parsed.situationGraph),
     };
   } catch { /* Le parcours reste accessible si le stockage est indisponible. */ }
   return null;
@@ -223,6 +225,34 @@ export default function DiagnosticPage() {
               <div><strong>{diagnostic.version}</strong><span>version du diagnostic</span></div>
             </div>
             {diagnostic.deferredQuestionIds.length > 0 && <button type="button" className="mk-secondary-button mk-resume-deferred" onClick={resumeDeferred}>Reprendre les {diagnostic.deferredQuestionIds.length} question(s) mises en attente</button>}
+            {dossier.knowledgeMap && (dossier.knowledgeMap.familyCandidates.length > 0 || dossier.knowledgeMap.solutionCandidates.length > 0 || dossier.knowledgeMap.unresolved.length > 0) && (
+              <section className="mk-knowledge-map" aria-label="Cartographie métier MerKora">
+                <div className="mk-knowledge-map-heading">
+                  <span className="mk-summary-kicker">RÉFÉRENTIEL UNIVERSEL · 20 FAMILLES</span>
+                  <strong>Ce que MerKora commence à relier</strong>
+                  <p>Ces rattachements sont des pistes issues de tes mots. Ils restent à confirmer et ne déclenchent aucune décision automatique.</p>
+                </div>
+                {dossier.knowledgeMap.familyCandidates.length > 0 && (
+                  <div className="mk-knowledge-map-group">
+                    <span>Domaines d'activité possibles</span>
+                    <div className="mk-knowledge-chips">{dossier.knowledgeMap.familyCandidates.slice(0, 3).map((family) => <span key={family.familyId}>{family.labelFr}</span>)}</div>
+                  </div>
+                )}
+                {dossier.knowledgeMap.solutionCandidates.length > 0 && (
+                  <div className="mk-knowledge-map-group">
+                    <span>Fonctions à examiner</span>
+                    <ul>{dossier.knowledgeMap.solutionCandidates.slice(0, 4).map((candidate) => <li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul>
+                  </div>
+                )}
+                {dossier.knowledgeMap.indicatorCandidates.length > 0 && (
+                  <div className="mk-knowledge-map-group">
+                    <span>Indicateurs possibles</span>
+                    <ul>{dossier.knowledgeMap.indicatorCandidates.slice(0, 4).map((candidate) => <li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul>
+                  </div>
+                )}
+                {dossier.knowledgeMap.unresolved.length > 0 && <p className="mk-knowledge-map-footnote">{dossier.knowledgeMap.unresolved.length} élément(s) restent à préciser ou à rattacher.</p>}
+              </section>
+            )}
             <section className="mk-diagnostic-card" aria-live="polite">
               <div className="mk-diagnostic-card-top"><span className="mk-summary-kicker">{editingAnswer ? "CORRECTION D'UNE RÉPONSE" : "QUESTION SUIVANTE · ADAPTÉE À TON PROJET"}</span><span className="mk-question-number">Précision {answeredCount + (editingAnswer ? 0 : 1)}</span></div>
               <h2>{currentQuestion.prompt}</h2>
