@@ -226,10 +226,10 @@ function featureFields(area: VisualArea, label: string): string[] {
   const text = label.toLocaleLowerCase("fr");
   if (/présence|pointage|assiduité|retard/.test(text)) return ["Personne concernée", "Date", "Heure", "Statut"];
   if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Formation ou service", "Date"];
-  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de règlement", "Date"];
+  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de paiement", "Date"];
   switch (area) {
     case "orders": return ["Référence", "Client ou demandeur", "Date prévue", "Statut"];
-    case "finance": return ["Référence", "Montant", "Mode de règlement", "Date"];
+    case "finance": return ["Référence", "Montant", "Mode de paiement", "Date"];
     case "customers": return ["Nom complet", "Contact", "Besoin ou note", "Statut"];
     case "resources": return ["Ressource ou article", "Quantité ou disponibilité", "Emplacement", "État"];
     case "people": return ["Nom complet", "Fonction", "Contact", "Statut"];
