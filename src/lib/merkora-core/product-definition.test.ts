@@ -129,6 +129,31 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
   });
 
 
+
+  it("asks a targeted clarification when the domain is ambiguous, then uses the selected domain", () => {
+    const project = dossier({ description: "Je veux lancer un projet entre agriculture et éducation." });
+    project.knowledgeMap = {
+      ...project.knowledgeMap!,
+      needsFamilyClarification: true,
+      familyCandidates: [
+        { familyId: "family:agriculture-agrofood", labelFr: "Agriculture", labelEn: "Agriculture", confidence: 0.6, evidenceCount: 1 },
+        { familyId: "family:education-research", labelFr: "Éducation", labelEn: "Education", confidence: 0.5, evidenceCount: 1 },
+      ],
+    };
+    const session = createProductDefinitionSession(project);
+    const clarification = getNextProductDefinitionQuestion(project, session);
+
+    expect(clarification?.id).toBe("domain-scope-clarification");
+    expect(clarification?.options).toContain("Agriculture");
+    if (!clarification) return;
+
+    const selected = recordProductDefinitionAnswer(session, clarification, { value: ["Agriculture"] });
+    const next = getNextProductDefinitionQuestion(project, selected);
+
+    expect(next?.domainFamilyId).toBe("family:agriculture-agrofood");
+    expect(next?.prompt).toMatch(/cultures|productions végétales|saisons|agroalimentaires/i);
+  });
+
   it("uses an earlier answer to unlock relevant questions instead of staying in a generic path", () => {
     const project = dossier({ description: "Créer un outil de suivi." });
     const session = createProductDefinitionSession(project);
