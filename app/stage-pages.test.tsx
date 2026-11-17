@@ -29,13 +29,13 @@ describe("MerKora screen 04 — adaptive diagnostic", () => {
 describe("MerKora screen 05 — adaptive product definition", () => {
   it("presents the 12 decision families as a conditional library and keeps one active question", () => {
     const html = renderToStaticMarkup(<ProductDefinitionPage />);
-    expect(html).toContain("Définissons le produit");
+    expect(html).toContain("Définissons le");\n    expect(html).toContain("produit à concevoir.");
     expect(html).toContain("12 familles");
     expect(html).toContain("Une question à la fois");
     expect(html).toContain("Non applicable");
     expect(html).toContain("Je ne sais pas encore");
     expect(html).toContain("Passer pour le moment");
     expect(html).toContain("Réponses déjà données");
-    expect(html).not.toContain("12 formulaires obligatoires");
+    expect(html).not.toContain("Questionnaire complet");
   });
 });
