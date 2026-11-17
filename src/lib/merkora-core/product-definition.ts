@@ -341,7 +341,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  return questions.find(candidate);
+  return questions.find(candidate) ?? null;
 }
 
 export function recordProductDefinitionAnswer(
