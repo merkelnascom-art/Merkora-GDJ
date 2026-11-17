@@ -177,7 +177,7 @@ export function getNextProductDefinitionQuestion(
   }
 
   // When the activity is still vague, use the selected domain's own vocabulary.
-  if (activityEvidence.length === 0 && effectivePrimaryFamilyId) {
+  if (effectivePrimaryFamilyId) {
     const seed = getFamilyDiagnosticQuestionSeeds(effectivePrimaryFamilyId)
       .find((item) => !has(item.dimension) && !handled(session, `domain-${effectivePrimaryFamilyId}-${item.id}`));
     if (seed) {
