@@ -27,8 +27,8 @@ describe("Fondation A — raccordement universel des 20 familles",()=>{
   const examples=[
    ["subdomain-v2:field-crops","family:agriculture-agrofood"],
    ["subdomain-vet:cattle-farming","family:animals-veterinary"],
-   ["subdomain-env:water-resource-management","family:environment-natural-resources"],
-   ["subdomain-industry:industrial-maintenance","family:manufacturing-industry"],
+   ["subdomain-env:water-supply","family:environment-natural-resources"],
+   ["subdomain-ind:industrial-maintenance","family:manufacturing-industry"],
    ["subdomain-gov:public-service-delivery","family:public-governance"],
    ["subdomain-law:corporate-law","family:legal-services"],
    ["subdomain-edu:scientific-research","family:education-research"],
