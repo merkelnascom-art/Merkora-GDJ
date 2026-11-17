@@ -1,8 +1,8 @@
 import {describe,expect,it} from "vitest";
-import {createUniversalKnowledgeRegistry} from "./knowledge/registry";
-import {UNIVERSAL_FAMILY_CONCEPTS,UNIVERSAL_DOMAIN_CONCEPTS,UNIVERSAL_DOMAIN_FAMILY_COUNT,UNIVERSAL_DOMAIN_COUNT} from "./knowledge/universal-domain-catalog";
-import {getClassificationLineage} from "./knowledge/classification-graph";
-import {buildProjectKnowledgeMap} from "./knowledge/universal-project-knowledge";
+import {createUniversalKnowledgeRegistry} from "./registry";
+import {UNIVERSAL_FAMILY_CONCEPTS,UNIVERSAL_DOMAIN_CONCEPTS,UNIVERSAL_DOMAIN_FAMILY_COUNT,UNIVERSAL_DOMAIN_COUNT} from "./universal-domain-catalog";
+import {getClassificationLineage} from "./classification-graph";
+import {buildProjectKnowledgeMap} from "./universal-project-knowledge";
 
 const EXPECTED_FAMILIES=[
  "family:agriculture-agrofood","family:animals-veterinary","family:environment-natural-resources","family:manufacturing-industry","family:construction-built-environment",
