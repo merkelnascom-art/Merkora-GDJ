@@ -59,7 +59,7 @@ export function buildVisualBlueprint(
     throw new Error("Les éléments des étapes précédentes ne correspondent pas au même projet.");
   }
 
-  const sourceText = [dossier.originalDescription, ...dossier.items.map((item) => item.value)].join(" ").toLocaleLowerCase("fr");
+  const sourceText = [\n    dossier.originalDescription,\n    ...dossier.items.map((item) => item.value),\n    ...definition.answers.flatMap((answer) => Array.isArray(answer.value) ? answer.value : [answer.value]),\n    ...proposal.architectures.flatMap((architecture) => [architecture.title, architecture.description]),\n  ].join(" ").toLocaleLowerCase("fr");
   const kind = /application|plateforme|logiciel|site web|portail|numérique|mobile|interface|espace en ligne/.test(sourceText)
     ? "digital" as const
     : "operational" as const;
