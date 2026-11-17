@@ -315,7 +315,7 @@ export default function DiagnosticPage() {
             <p>Les réponses, les éléments confirmés et les points encore inconnus sont conservés. Cela ne signifie pas que toutes les causes sont prouvées ni que la solution est déjà choisie.</p>
             <div className="mk-diagnostic-complete-stats"><strong>{history.length} réponses conservées</strong><strong>{diagnostic.deferredQuestionIds.length} questions différées</strong></div>
             {diagnostic.deferredQuestionIds.length > 0 && <button type="button" className="mk-secondary-button" onClick={resumeDeferred}>Reprendre les questions mises en attente</button>}
-            <a className="mk-secondary-button" href="/understanding">Revoir ma compréhension</a>
+            <a className="mk-continue-button" href="/product-definition">Passer à la définition du produit <span>→</span></a><a className="mk-secondary-button" href="/understanding">Revoir ma compréhension</a>
           </section>
         )}
 
