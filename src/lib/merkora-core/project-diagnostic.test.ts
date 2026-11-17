@@ -183,7 +183,8 @@ describe("adaptive universal diagnostic", () => {
     if (!current) throw new Error("Expected a diagnostic question.");
     const result = recordDiagnosticAnswer(dossier, diagnostic, current, { value: "J'ai déjà dit ça non 🤷🏻‍♂️" });
     expect(result.diagnostic.answers[0]?.status).toBe("already_provided");
-    expect(result.understanding.items.some((item) => item.value.includes("J'ai déjà dit ça"))).toBe(false);
+    expect(result.understanding.items.some((item) => item.value.includes("J'ai déjà dit ça") && item.status === "conversation_only")).toBe(true);
+    expect(result.understanding.knowledgeMap?.automaticDecisions).toEqual([]);
     expect(result.diagnostic.askedQuestionIds).toContain(current.id);
   });
 
