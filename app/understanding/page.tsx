@@ -5,6 +5,7 @@ import {
   attachKnowledgeProposalToUnderstanding,
   createProjectUnderstanding,
   getActiveUnderstandingItems,
+  migrateStoredProjectUnderstanding,
   reviseUnderstandingItem,
   rejectUnderstandingItem,
   validateProjectUnderstanding,
@@ -88,16 +89,20 @@ export default function UnderstandingPage() {
       if (saved) {
         const parsed = JSON.parse(saved) as ProjectUnderstanding;
         if (parsed.projectId === session.conversationId && Array.isArray(parsed.items)) {
-          const normalized: ProjectUnderstanding = {
+          const normalizedBase: ProjectUnderstanding = {
             ...parsed,
             situationGraph: enrichSituationGraphWithKnowledge(parsed.situationGraph ?? session.situationGraph, SCREEN_03_KNOWLEDGE, "fr"),
             knowledgeProposals: Array.isArray(parsed.knowledgeProposals) ? parsed.knowledgeProposals : [],
             contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
             unresolvedQuestions: Array.isArray(parsed.unresolvedQuestions) ? parsed.unresolvedQuestions : [],
             privacyConsiderations: Array.isArray(parsed.privacyConsiderations) ? parsed.privacyConsiderations : [],
-            knowledgeMap: parsed.knowledgeMap ?? buildProjectKnowledgeMap(parsed.items, parsed.situationGraph, SCREEN_03_KNOWLEDGE),
           };
+          const normalized = migrateStoredProjectUnderstanding({
+            ...normalizedBase,
+            knowledgeMap: buildProjectKnowledgeMap(getActiveUnderstandingItems(normalizedBase), normalizedBase.situationGraph, SCREEN_03_KNOWLEDGE),
+          });
           setDossier(normalized);
+          try { window.sessionStorage.setItem(DOSSIER_KEY, JSON.stringify(normalized)); } catch { /* Le dossier reste utilisable en mémoire. */ }
           restoreEditDraft(normalized, setEditingId, setEditValue);
           return;
         }
