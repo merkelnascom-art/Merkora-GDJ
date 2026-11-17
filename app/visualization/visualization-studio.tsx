@@ -55,12 +55,26 @@ interface ReferenceAsset {
   addedAt: string;
 }
 
+interface SourceArchive {
+  dossier: ProjectUnderstanding;
+  definition: ProductDefinitionSession;
+  proposal: SolutionProposal;
+}
+
 interface OfficialDesignVersion {
   version: number;
   revision: number;
   sourceProposalVersion: number;
   approvedAt: string;
   approvedBy: string;
+  approvedByEmail: string;
+  sourceCahierDesCharges: SourceArchive;
+  designSystem: DesignPreferences;
+  screenArchitecture: VisualBlueprint["screens"];
+  userJourneys: string[];
+  interactionMap: Array<{ screenId: string; featureId: string; action: string; fields: string[]; sourceIds: string[] }>;
+  visualResources: ReferenceAsset[];
+  clientDecisions: { preferences: DesignPreferences; changeRequests: string[] };
   preferences: DesignPreferences;
   screenIds: string[];
   decisionRegister: VisualBlueprint["decisionRegister"];
@@ -169,8 +183,15 @@ function loadStudioState(blueprint: VisualBlueprint, projectId: string): DesignS
     const raw = window.sessionStorage.getItem(STUDIO_KEY);
     if (raw) {
       const saved = JSON.parse(raw) as DesignStudioState;
-      if (saved.projectId === projectId && saved.sourceProposalVersion === blueprint.sourceVersion && saved.preferences) {
-        return saved;
+      if (saved.projectId === projectId && saved.preferences) {
+        if (saved.sourceProposalVersion === blueprint.sourceVersion) return saved;
+        return {
+          ...saved,
+          sourceProposalVersion: blueprint.sourceVersion,
+          revision: saved.revision + 1,
+          validatedVersion: null,
+          updatedAt: new Date().toISOString(),
+        };
       }
     }
   } catch {
@@ -191,6 +212,7 @@ function screenSummary(screen: VisualScreen): string {
 
 export default function VisualizationStudio({ actor, email }: { actor: string; email: string }) {
   const [blueprint, setBlueprint] = useState<VisualBlueprint | null>(null);
+  const [sourceArchive, setSourceArchive] = useState<SourceArchive | null>(null);
   const [studio, setStudio] = useState<DesignStudioState | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceId>("type");
   const [activeScreenId, setActiveScreenId] = useState("overview");
@@ -223,6 +245,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
         } else {
           const nextBlueprint = buildVisualBlueprint(dossier, definition, stored.proposal);
           setBlueprint(nextBlueprint);
+          setSourceArchive({ dossier, definition, proposal: stored.proposal });
           setStudio(loadStudioState(nextBlueprint, dossier.projectId));
         }
       }
@@ -239,7 +262,6 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
   const selectedFeature = currentScreen?.features.find((feature) => feature.id === activeFeatureId) ?? null;
   const activeProfileData = blueprint?.profiles[activeProfile] ?? null;
   const acceptedFeatureCount = blueprint?.screens.reduce((total, screen) => total + screen.features.length, 0) ?? 0;
-  const isOperational = blueprint?.kind === "operational";
 
   function persist(next: DesignStudioState) {
     setStudio(next);
@@ -314,6 +336,11 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string" || !studio) return;
+      const currentAssetSize = studio.references.reduce((total, reference) => total + reference.dataUrl.length, 0);
+      if (currentAssetSize + reader.result.length > 3_000_000) {
+        setNotice("Les références de cette session dépassent la limite de conservation locale. Retire une image ou réduis sa taille.");
+        return;
+      }
       const asset: ReferenceAsset = {
         id: "reference-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
         kind,
@@ -346,7 +373,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
   }
 
   function validateDesign() {
-    if (!studio || !blueprint) return;
+    if (!studio || !blueprint || !sourceArchive) return;
     const missing: string[] = [];
     if (!studio.preferences.natureConfirmed || studio.preferences.productNature === "undecided") missing.push("la nature du produit");
     if (blueprint.kind === "digital" && (!studio.preferences.deliveryModesConfirmed || studio.preferences.deliveryModes.length === 0)) missing.push("le mode d'accès");
@@ -365,6 +392,20 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
       sourceProposalVersion: blueprint.sourceVersion,
       approvedAt: new Date().toISOString(),
       approvedBy: actor,
+      approvedByEmail: email,
+      sourceCahierDesCharges: sourceArchive,
+      designSystem: studio.preferences,
+      screenArchitecture: blueprint.screens,
+      userJourneys: blueprint.flow,
+      interactionMap: blueprint.screens.flatMap((screen) => screen.features.map((feature) => ({
+        screenId: screen.id,
+        featureId: feature.id,
+        action: feature.actionLabel,
+        fields: feature.fields,
+        sourceIds: feature.sourceIds,
+      }))),
+      visualResources: studio.references,
+      clientDecisions: { preferences: studio.preferences, changeRequests: studio.changeRequests },
       preferences: studio.preferences,
       screenIds: blueprint.screens.map((screen) => screen.id),
       decisionRegister: blueprint.decisionRegister,
@@ -560,6 +601,23 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
             <div className="mk-studio-architecture-summary"><div><span>PROFILS IDENTIFIÉS</span><strong>{blueprint.profiles.length}</strong><small>Profils déclarés à l'écran 05</small></div><div><span>FONCTIONS RETENUES</span><strong>{acceptedFeatureCount}</strong><small>Acceptées ou modifiées à l'écran 06</small></div><div><span>SOURCES TRAÇABLES</span><strong>{blueprint.decisionRegister.length}</strong><small>Éléments du registre de conception</small></div></div>
             {blueprint.kind === "digital" ? (
               <div className="mk-studio-screen-list">
+                <div className="mk-studio-artboard" style={previewStyle}>
+                  <div className="mk-studio-artboard-heading"><div><span>REPRÉSENTATION VISUELLE · LIVRABLE 1</span><h3>Planche des écrans</h3><p>Une représentation statique de chaque espace. Elle est distincte du prototype interactif que tu peux explorer ensuite.</p></div><small>{blueprint.screens.length} écran(s) conçu(s)</small></div>
+                  <div className="mk-studio-artboard-grid">
+                    {blueprint.screens.map((screen) => (
+                      <article key={screen.id}>
+                        <div className="mk-studio-mini-screen">
+                          <header><span>{blueprint.projectTitle}</span><i>{activeProfileData?.name.slice(0, 1) ?? "U"}</i></header>
+                          <div className="mk-studio-mini-body">
+                            <aside><b>MENU</b><small>Vue d'ensemble</small>{blueprint.screens.map((item) => <small key={item.id} className={item.id === screen.id ? "is-current" : ""}>{item.navLabel}</small>)}</aside>
+                            <main><span>ESPACE DU PRODUIT</span><strong>{screen.title}</strong><p>{screen.description}</p><div>{screen.features.slice(0, 3).map((feature) => <section key={feature.id}><b>{feature.label}</b><small>{feature.description}</small></section>)}</div></main>
+                          </div>
+                        </div>
+                        <footer><strong>{screen.title}</strong><small>{screenSummary(screen)} · {screen.sourceIds.length} référence(s)</small></footer>
+                      </article>
+                    ))}
+                  </div>
+                </div>
                 {blueprint.screens.map((screen, index) => (
                   <article key={screen.id} className="mk-studio-screen-card">
                     <div className="mk-studio-screen-number">{String(index + 1).padStart(2, "0")}</div>
@@ -591,6 +649,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
                   {studio.preferences.layout === "sidebar" && <nav className="mk-product-nav" aria-label="Navigation du produit"><button type="button" className={activeScreenId === "overview" ? "is-active" : ""} onClick={() => { setActiveScreenId("overview"); setActiveFeatureId(null); }}>Vue d'ensemble</button>{blueprint.screens.map((screen) => <button type="button" key={screen.id} className={activeScreenId === screen.id ? "is-active" : ""} onClick={() => { setActiveScreenId(screen.id); setActiveFeatureId(null); }}>{screen.navLabel}</button>)}</nav>}
                   <div className="mk-product-content">
                     <div className="mk-product-content-top"><div><span>ESPACE DE TRAVAIL</span><h3>{currentScreen?.title ?? "Vue d'ensemble"}</h3><p>{currentScreen?.description ?? blueprint.summary}</p></div><label>PROFIL D'APERÇU<select value={activeProfile} onChange={(event) => setActiveProfile(Number(event.target.value))}>{blueprint.profiles.map((profile, index) => <option key={profile.id} value={index}>{profile.name}</option>)}</select></label></div>
+                    <div className="mk-product-profile-context"><span>ESPACE EXAMINÉ POUR</span><strong>{activeProfileData?.name ?? "Profil à définir"}</strong><small>{activeProfileData?.responsibilities.slice(0, 2).join(" · ") || activeProfileData?.note || "Les responsabilités détaillées restent à confirmer."}</small></div>
                     {studio.preferences.layout === "topbar" && <nav className="mk-product-topnav" aria-label="Navigation du produit"><button type="button" className={activeScreenId === "overview" ? "is-active" : ""} onClick={() => { setActiveScreenId("overview"); setActiveFeatureId(null); }}>Vue d'ensemble</button>{blueprint.screens.map((screen) => <button type="button" key={screen.id} className={activeScreenId === screen.id ? "is-active" : ""} onClick={() => { setActiveScreenId(screen.id); setActiveFeatureId(null); }}>{screen.navLabel}</button>)}</nav>}
                     {activeScreenId === "overview" ? (
                       <div className="mk-product-dashboard">
@@ -625,10 +684,11 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
             </div>
             {blueprint.unresolvedPoints.length > 0 && <details className="mk-studio-separated-items"><summary>Points encore à préciser ({blueprint.unresolvedPoints.length})</summary><ul>{blueprint.unresolvedPoints.map((point) => <li key={point}>{point}</li>)}</ul></details>}
             <div className="mk-studio-subsection"><div><h3>Demandes de modification</h3><p>Chaque retouche reste associée à la conception. Une modification après validation créera une nouvelle version.</p></div></div>
+            <p className="mk-studio-change-note">Les demandes sont conservées avec le projet, mais ne modifient pas encore automatiquement les écrans. Elles devront être traitées par le moteur de conception avant d'être intégrées à une nouvelle version.</p>
             <textarea className="mk-studio-large-textarea" value={feedbackDraft} onChange={(event) => setFeedbackDraft(event.target.value)} placeholder="Ex. : Je souhaite déplacer le suivi des paiements sur le tableau de bord…" rows={3} />
             <button type="button" className="mk-studio-secondary" onClick={addChangeRequest} disabled={!feedbackDraft.trim()}>Ajouter cette demande</button>
             {studio.changeRequests.length > 0 && <div className="mk-studio-change-list">{studio.changeRequests.map((request, index) => <p key={index}><span>{String(index + 1).padStart(2, "0")}</span>{request}</p>)}</div>}
-            <div className="mk-studio-lock-note"><strong>Avant de figer la conception</strong><p>Confirme la nature du produit, son mode d'accès si nécessaire, sa palette, son style, sa navigation et les appareils pris en charge. La validation crée un instantané officiel de cette session avec le cahier des charges source, les écrans, les préférences et le registre des décisions.</p></div>
+            <div className="mk-studio-lock-note"><strong>Avant de figer la conception</strong><p>Confirme la nature du produit, son mode d'accès si nécessaire, sa palette, son style, sa navigation et les appareils pris en charge. La version conservera le dossier source des écrans 03, 05 et 06, le système visuel, les écrans, les parcours, les interactions, les ressources jointes, les décisions et ton identité de validation.</p></div>
             <button type="button" className="mk-studio-primary mk-studio-validate-button" onClick={validateDesign} disabled={!canValidate}>Valider et figer la version {((studio.versions[studio.versions.length - 1]?.version ?? 0) + 1)} <span>→</span></button>
             {studio.validatedVersion && <div className="mk-studio-validated-banner" role="status"><span>✓</span><div><strong>Version {studio.validatedVersion} validée par {studio.versions[studio.versions.length - 1]?.approvedBy}</strong><p>Validée le {new Date(studio.versions[studio.versions.length - 1]?.approvedAt ?? "").toLocaleString("fr-FR")}. Toute modification ultérieure ouvrira une nouvelle révision sans effacer cette version.</p></div></div>}
             {studio.versions.length > 0 && <div className="mk-studio-version-history"><h3>Historique des versions officielles</h3>{studio.versions.map((version) => <article key={version.version}><strong>Version {version.version}</strong><span>{new Date(version.approvedAt).toLocaleString("fr-FR")} · {version.approvedBy}</span><small>{version.screenIds.length} espace(s) · {version.decisionRegister.length} décisions · source écran 06 v{version.sourceProposalVersion}</small></article>)}</div>}
