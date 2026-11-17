@@ -46,6 +46,10 @@ function classifyDimension(item: ProjectUnderstandingItem): ProjectUnderstanding
   if (/\b(detendre|rassembler|divertir|amuser|creer du lien|passer un bon moment)\b/.test(text)) {
     return "motivation";
   }
+  if (/\b(?:que|si)\s+(?:le\s+)?(?:systeme|outil|plateforme|application)\b.{0,100}\b(?:fonctionne|fonctionner|effectue|effectuer|procede|realise|realiser|termine|terminer)\b/.test(text)
+    || /\bsi\s+(?:il|elle)\s+arrive\s+a\s+(?:effectuer|realiser|terminer|faire)\b/.test(text)) {
+    return "success_criteria";
+  }
   if (/\b(je declare|je designe).{0,80}(gagn|perd)|gagn.{0,60}perd.{0,60}elimin/.test(text)) {
     return "operations";
   }
