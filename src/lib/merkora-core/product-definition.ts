@@ -134,7 +134,7 @@ export function getNextProductDefinitionQuestion(
   const answerText = activeAnswers
     .filter((answer) => answer.status === "answered")
     .flatMap((answer) => Array.isArray(answer.value) ? answer.value : [answer.value]);
-  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value)].join("\n");
+  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value), ...answerText].join("\n");
   const normalizedText = allText.toLocaleLowerCase("fr");
   const byDimension = (dimensions: string[]) => evidence.filter((item) => dimensions.includes(item.dimension));
   const has = (...dimensions: string[]) => byDimension(dimensions).length > 0;
@@ -155,7 +155,8 @@ export function getNextProductDefinitionQuestion(
   const selectedFamilyLabels = domainClarification
     ? (Array.isArray(domainClarification.value) ? domainClarification.value : [domainClarification.value])
     : [];
-  const selectedFamily = familyCandidates.find((family) => selectedFamilyLabels.includes(family.labelFr));
+  const selectedFamilyMatches = familyCandidates.filter((family) => selectedFamilyLabels.includes(family.labelFr));
+  const selectedFamily = selectedFamilyLabels.length === 1 && selectedFamilyMatches.length === 1 ? selectedFamilyMatches[0] : undefined;
   const effectivePrimaryFamilyId = dossier.knowledgeMap?.primaryFamilyId ?? (selectedFamily ? selectedFamily.familyId : undefined);
   const ambiguousDomainLinks = dossier.knowledgeMap?.unresolved.filter((item) => item.status === "ambiguous") ?? [];
   if ((dossier.knowledgeMap?.needsFamilyClarification || ambiguousDomainLinks.length > 0) && !handled(session, "domain-scope-clarification")) {
@@ -193,7 +194,8 @@ export function getNextProductDefinitionQuestion(
     }
   }
 
-  const digitalProduct = /\b(application|app|plateforme|site web|site internet|logiciel|portail|interface|tableau de bord|système numérique|outil numérique|application mobile)\b/i.test(normalizedText);
+  const digitalProductNegated = /\b(sans|pas de|pas d['’]|aucun(?:e)?|ni)\b.{0,35}\b(application|app|plateforme|site web|site internet|logiciel|portail|interface|tableau de bord|système numérique|outil numérique|application mobile)\b/i.test(normalizedText);
+  const digitalProduct = !digitalProductNegated && /\b(application|app|plateforme|site web|site internet|logiciel|portail|interface|tableau de bord|système numérique|outil numérique|application mobile)\b/i.test(normalizedText);
   const publicFacing = digitalProduct || /\b(publication|catalogue public|vitrine|clients|usagers|visiteurs)\b/i.test(normalizedText);
   const explicitProductNature = solutionEvidence.length > 0 || /\b(application|app|plateforme|site web|site internet|logiciel|portail|prototype|équipement|ouvrage|protocole|service|produit physique)\b/i.test(normalizedText);
   const roleMatches = [...normalizedText.matchAll(/\b(administrateur|administratrice|gestionnaire|responsable|enseignant|enseignante|apprenant|élève|client|vendeur|fournisseur|arbitre|joueur|agent|technicien|médecin|infirmier|conducteur|opérateur|superviseur|membre|bénéficiaire)\b/gi)].map((match) => match[0]);
