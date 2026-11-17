@@ -62,6 +62,15 @@ describe("screen 03 evidence quality", () => {
     expect(source).toHaveLength(2);
   });
 
+  it("does not deduplicate source-less records across independent dimensions", () => {
+    const result = deriveScreen03Evidence([
+      { ...item("activity", "Information déjà précisée", "activity"), sourceMessageId: undefined, sourceReferenceId: undefined },
+      { ...item("actors", "Information déjà précisée", "actors"), sourceMessageId: undefined, sourceReferenceId: undefined },
+    ]);
+    expect(result.projectItems).toHaveLength(2);
+    expect(result.projectItems.map((entry) => entry.dimension)).toEqual(["activity", "actors"]);
+  });
+
   it("keeps the same wording when it was independently stated in another message", () => {
     const result = deriveScreen03Evidence([
       item("a", "Tout le monde peut accéder à l'interface sans connexion.", "constraints"),
