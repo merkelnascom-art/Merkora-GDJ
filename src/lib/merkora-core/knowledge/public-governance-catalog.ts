@@ -448,7 +448,7 @@ const SEEDS: Seed[] = [
     "parentId": "domain:public-finance",
     "aliases": [
       "exécution budgétaire"
-    ]
+    , "exécution de la dépense publique"]
   },
   {
     "id": "activity-gov:public-revenue-collection",
