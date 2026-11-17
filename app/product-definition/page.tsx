@@ -387,6 +387,7 @@ export default function ProductDefinitionPage() {
               <button type="button" className="mk-secondary-button" onClick={resumeDeferred}>Reprendre les questions mises en attente</button>
             )}
             <a className="mk-secondary-button" href="/diagnostic">Revoir le diagnostic</a>
+            <a className="mk-continue-button" href="/solution-proposal">Composer la solution · Écran 06 <span>→</span></a>
           </section>
         )}
 
