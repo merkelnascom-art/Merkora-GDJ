@@ -214,11 +214,11 @@ export function getNextProductDefinitionQuestion(
           ? ["Exploitant / responsable", "Ouvrier / agent de terrain", "Technicien / conseiller", "Fournisseur", "Acheteur / client"]
           : ["Responsable / administrateur", "Personnel / collaborateur", "Client / bénéficiaire", "Partenaire / fournisseur", "Autre profil"];
   const knownRolePatterns: Array<[string, RegExp]> = [
-    ["Responsable / administrateur", /\\b(administrateur|administratrice|responsable|gérant|gérante|directeur|directrice|propriétaire)\\b/i],
-    ["Personnel de préparation", /\\b(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)\\b/i],
-    ["Vendeur / gestionnaire des commandes", /\\b(vendeur|vendeuse|commercial|caissier|caissière|prise de commande)\\b/i],
-    ["Livreur", /\\b(livreur|livraison|coursier)\\b/i],
-    ["Client", /\\b(client|acheteur|consommateur|bénéficiaire)\\b/i],
+    ["Responsable / administrateur", /\b(administrateur|administratrice|responsable|gérant|gérante|directeur|directrice|propriétaire)\b/i],
+    ["Personnel de préparation", /\b(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)\b/i],
+    ["Vendeur / gestionnaire des commandes", /\b(vendeur|vendeuse|commercial|caissier|caissière|prise de commande)\b/i],
+    ["Livreur", /\b(livreur|livraison|coursier)\b/i],
+    ["Client", /\b(client|acheteur|consommateur|bénéficiaire)\b/i],
   ];
   const filteredRoleSuggestions = roleSuggestions.filter((suggestion) => {
     const knownPattern = knownRolePatterns.find(([label]) => label === suggestion)?.[1];
