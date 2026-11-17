@@ -182,7 +182,10 @@ export default function ProductDefinitionPage() {
     let value: string | string[];
     if (status === "unknown") value = "Je ne sais pas encore";
     else if (status === "not_applicable") value = "Non applicable à ce projet";
-    else if (currentQuestion.answerType === "multi_choice") value = multipleChoices;
+    else if (currentQuestion.answerType === "multi_choice" || currentQuestion.suggestedOptions?.length) {
+      const selected = [...multipleChoices, ...(textAnswer.trim() ? [textAnswer.trim()] : [])];
+      value = selected.length > 1 ? selected : selected[0] ?? "";
+    }
     else if (currentQuestion.answerType === "single_choice") value = singleChoice;
     else value = textAnswer.trim();
 
@@ -332,28 +335,59 @@ export default function ProductDefinitionPage() {
               )}
 
               {currentQuestion.answerType === "multi_choice" && (
-                <div className="mk-diagnostic-options" aria-label="Choisir une ou plusieurs réponses">
-                  {(currentQuestion.options ?? []).map((option) => (
-                    <label className={"mk-diagnostic-option" + (multipleChoices.includes(option) ? " selected" : "")} key={option}>
-                      <input type="checkbox" checked={multipleChoices.includes(option)} onChange={(event) => {
-                        const next = event.target.checked ? [...multipleChoices, option] : multipleChoices.filter((item) => item !== option);
-                        setMultipleChoices(next);
-                        persistDraft({ multipleChoices: next });
-                      }} />
-                      <span>{option}</span>
-                    </label>
-                  ))}
+                <div className="mk-product-choice-block">
+                  <span className="mk-product-choice-label">PROPOSITIONS À SÉLECTIONNER</span>
+                  <div className="mk-diagnostic-options" aria-label="Choisir une ou plusieurs réponses">
+                    {(currentQuestion.options ?? []).map((option) => (
+                      <label className={"mk-diagnostic-option" + (multipleChoices.includes(option) ? " selected" : "")} key={option}>
+                        <input type="checkbox" checked={multipleChoices.includes(option)} onChange={(event) => {
+                          const next = event.target.checked ? [...multipleChoices, option] : multipleChoices.filter((item) => item !== option);
+                          setMultipleChoices(next);
+                          persistDraft({ multipleChoices: next });
+                        }} />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {currentQuestion.answerType === "text" && (
+              {currentQuestion.suggestedOptions && currentQuestion.suggestedOptions.length > 0 && (
+                <div className="mk-product-choice-block">
+                  <div className="mk-product-choice-intro">
+                    <span className="mk-product-choice-label">PROPOSITIONS À COCHER · FACULTATIF</span>
+                    <p>Ce sont des idées pour t'aider. Coche uniquement celles qui correspondent à ton projet. Tu peux aussi toutes les ignorer.</p>
+                  </div>
+                  <div className="mk-diagnostic-options" aria-label="Propositions facultatives à sélectionner">
+                    {currentQuestion.suggestedOptions.map((option) => (
+                      <label className={"mk-diagnostic-option" + (multipleChoices.includes(option) ? " selected" : "")} key={option}>
+                        <input type="checkbox" checked={multipleChoices.includes(option)} onChange={(event) => {
+                          const next = event.target.checked ? [...multipleChoices, option] : multipleChoices.filter((item) => item !== option);
+                          setMultipleChoices(next);
+                          persistDraft({ multipleChoices: next });
+                        }} />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(currentQuestion.answerType === "text" && !currentQuestion.suggestedOptions?.length) && (
                 <label className="mk-diagnostic-answer-label" htmlFor="mk-product-answer">
                   TA RÉPONSE
                   <textarea id="mk-product-answer" value={textAnswer} onChange={(event) => { setTextAnswer(event.target.value); persistDraft({ textAnswer: event.target.value }); }} rows={5} placeholder="Explique avec tes propres mots. Tu n'as pas besoin de vocabulaire technique." />
                 </label>
               )}
 
-              {currentQuestion.allowDetail && (
+              {(currentQuestion.answerType === "multi_choice" || Boolean(currentQuestion.suggestedOptions?.length)) && (
+                <label className="mk-diagnostic-answer-label" htmlFor="mk-product-answer">
+                  AUTRE RÉPONSE OU PRÉCISION (FACULTATIF)
+                  <textarea id="mk-product-answer" value={textAnswer} onChange={(event) => { setTextAnswer(event.target.value); persistDraft({ textAnswer: event.target.value }); }} rows={3} placeholder="Tu peux ajouter une proposition, un autre profil ou expliquer un cas particulier…" />
+                </label>
+              )}
+
+              {currentQuestion.allowDetail && currentQuestion.answerType === "single_choice" && (
                 <label className="mk-diagnostic-answer-label mk-diagnostic-detail" htmlFor="mk-product-detail">
                   UNE PRÉCISION COMPLÉMENTAIRE (FACULTATIF)
                   <textarea id="mk-product-detail" value={detail} onChange={(event) => { setDetail(event.target.value); persistDraft({ detail: event.target.value }); }} rows={2} placeholder="Tu peux ajouter un exemple ou une précision…" />
