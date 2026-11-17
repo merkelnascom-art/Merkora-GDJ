@@ -213,6 +213,17 @@ export function getNextProductDefinitionQuestion(
         : /agricul|élevage|culture|récolte|ferme/i.test(normalizedText)
           ? ["Exploitant / responsable", "Ouvrier / agent de terrain", "Technicien / conseiller", "Fournisseur", "Acheteur / client"]
           : ["Responsable / administrateur", "Personnel / collaborateur", "Client / bénéficiaire", "Partenaire / fournisseur", "Autre profil"];
+  const knownRolePatterns: Array<[string, RegExp]> = [
+    ["Responsable / administrateur", /\\b(administrateur|administratrice|responsable|gérant|gérante|directeur|directrice|propriétaire)\\b/i],
+    ["Personnel de préparation", /\\b(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)\\b/i],
+    ["Vendeur / gestionnaire des commandes", /\\b(vendeur|vendeuse|commercial|caissier|caissière|prise de commande)\\b/i],
+    ["Livreur", /\\b(livreur|livraison|coursier)\\b/i],
+    ["Client", /\\b(client|acheteur|consommateur|bénéficiaire)\\b/i],
+  ];
+  const filteredRoleSuggestions = roleSuggestions.filter((suggestion) => {
+    const knownPattern = knownRolePatterns.find(([label]) => label === suggestion)?.[1];
+    return !knownPattern?.test(normalizedText);
+  });
   const financeSignals = /\b(prix|paiement|paiements|vente|ventes|chiffre d'affaires|recette|recettes|dépense|dépenses|budget|facture|facturation|commission|cotisation|abonnement|caisse|comptabilité|trésorerie|crédit|assurance|investissement)\b/i.test(normalizedText);
   const securitySignals = /\b(donnée personnelle|données personnelles|santé|patient|mineur|enfant|confidentiel|confidentialité|paiement|identifiant|mot de passe|accès|autorisation|validation|sécurité|secret professionnel)\b/i.test(normalizedText);
   const integrationSignals = /\b(whatsapp|sms|email|e-mail|qr code|code qr|api|synchronis|connecter|intégrer|gps|capteur|biométr|imprimante|scanner|terminal|mobile money|mtn|moov|celtis|canal\+)\b/i.test(normalizedText);
@@ -245,7 +256,7 @@ export function getNextProductDefinitionQuestion(
       [...activityEvidence, ...actorsEvidence].map((item) => item.id),
       "text",
       undefined,
-      { suggestedOptions: roleSuggestions },
+      { suggestedOptions: filteredRoleSuggestions },
     ));
   }
 
