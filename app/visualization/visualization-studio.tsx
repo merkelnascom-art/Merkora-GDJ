@@ -3,7 +3,7 @@
 import "./visualization.css";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { buildVisualBlueprint, type VisualBlueprint, type VisualDeliveryMode, type VisualProductNature, type VisualScreen } from "../../src/lib/merkora-core/visual-blueprint";
+import { buildVisualBlueprint, type VisualBlueprint, type VisualDeliveryMode, type VisualProductNature, type VisualProfile, type VisualScreen } from "../../src/lib/merkora-core/visual-blueprint";
 import type { ProjectUnderstanding } from "../../src/lib/merkora-core/project-diagnostic";
 import type { ProductDefinitionSession } from "../../src/lib/merkora-core/product-definition";
 import type { SolutionProposal } from "../../src/lib/merkora-core/solution-proposal";
@@ -208,6 +208,18 @@ function screenSummary(screen: VisualScreen): string {
   return screen.features.length === 1
     ? "1 fonction retenue"
     : screen.features.length + " fonctions retenues";
+}
+
+function compactText(value: string, limit = 110): string {
+  const normalized = value.replace(/\\s+/g, " ").trim();
+  const firstSentence = normalized.split(/(?<=[.!?])\\s+/u)[0] ?? normalized;
+  if (firstSentence.length <= limit) return firstSentence;
+  return firstSentence.slice(0, limit - 1).replace(/\\s+\\S*$/u, "") + "…";
+}
+
+function profileSummary(profile: VisualProfile | null): string {
+  const source = profile?.responsibilities[0] ?? profile?.note ?? "Responsabilités à préciser.";
+  return compactText(source, 96);
 }
 
 export default function VisualizationStudio({ actor, email }: { actor: string; email: string }) {
@@ -649,8 +661,8 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
                               <div className="mk-product-layout">
                                 {studio.preferences.layout === "sidebar" && <nav className="mk-product-nav" aria-label="Navigation du produit"><button type="button" className={activeScreenId === "overview" ? "is-active" : ""} onClick={() => { setActiveScreenId("overview"); setActiveFeatureId(null); }}>Vue d'ensemble</button>{blueprint.screens.map((screen) => <button type="button" key={screen.id} className={activeScreenId === screen.id ? "is-active" : ""} onClick={() => { setActiveScreenId(screen.id); setActiveFeatureId(null); }}>{screen.navLabel}</button>)}</nav>}
                                 <div className="mk-product-content">
-                                  <div className="mk-product-content-top"><div><span>ESPACE DE TRAVAIL</span><h3>{currentScreen?.title ?? "Vue d'ensemble"}</h3><p>{currentScreen?.description ?? blueprint.summary}</p></div><label>PROFIL D'APERÇU<select value={activeProfile} onChange={(event) => setActiveProfile(Number(event.target.value))}>{blueprint.profiles.map((profile, index) => <option key={profile.id} value={index}>{profile.name}</option>)}</select></label></div>
-                                  <div className="mk-product-profile-context"><span>ESPACE EXAMINÉ POUR</span><strong>{activeProfileData?.name ?? "Profil à définir"}</strong><small>{activeProfileData?.responsibilities.slice(0, 2).join(" · ") || activeProfileData?.note || "Les responsabilités détaillées restent à confirmer."}</small></div>
+                                  <div className="mk-product-content-top"><div><span>ESPACE DE TRAVAIL</span><h3>{currentScreen?.title ?? "Vue d'ensemble"}</h3><p>{currentScreen?.description ?? compactText(blueprint.summary, 120)}</p></div><label>PROFIL D'APERÇU<select value={activeProfile} onChange={(event) => setActiveProfile(Number(event.target.value))}>{blueprint.profiles.map((profile, index) => <option key={profile.id} value={index}>{profile.name}</option>)}</select></label></div>
+                                  <div className="mk-product-profile-context"><span>ESPACE EXAMINÉ POUR</span><strong>{activeProfileData?.name ?? "Profil à définir"}</strong><small>{profileSummary(activeProfileData)}</small></div>
                                   {studio.preferences.layout === "topbar" && <nav className="mk-product-topnav" aria-label="Navigation du produit"><button type="button" className={activeScreenId === "overview" ? "is-active" : ""} onClick={() => { setActiveScreenId("overview"); setActiveFeatureId(null); }}>Vue d'ensemble</button>{blueprint.screens.map((screen) => <button type="button" key={screen.id} className={activeScreenId === screen.id ? "is-active" : ""} onClick={() => { setActiveScreenId(screen.id); setActiveFeatureId(null); }}>{screen.navLabel}</button>)}</nav>}
                                   {activeScreenId === "overview" ? (
                                     <div className="mk-product-dashboard">
@@ -673,9 +685,9 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
             ) : (
               <div className={"mk-studio-preview-frame device-" + previewDevice}>
                 <div className="mk-studio-operational-product-preview" style={previewStyle}>
-                  <header><span>PARCOURS OPÉRATIONNEL · APERÇU</span><h3>{blueprint.projectTitle}</h3><p>{blueprint.summary}</p><label>PROFIL EXAMINÉ<select value={activeProfile} onChange={(event) => setActiveProfile(Number(event.target.value))}>{blueprint.profiles.map((profile, index) => <option key={profile.id} value={index}>{profile.name}</option>)}</select></label></header>
+                  <header><span>PARCOURS OPÉRATIONNEL · APERÇU</span><h3>{blueprint.projectTitle}</h3><p>{compactText(blueprint.summary, 120)}</p><label>PROFIL EXAMINÉ<select value={activeProfile} onChange={(event) => setActiveProfile(Number(event.target.value))}>{blueprint.profiles.map((profile, index) => <option key={profile.id} value={index}>{profile.name}</option>)}</select></label></header>
                   <div className="mk-studio-operational-product-steps">{blueprint.flow.map((step, index) => <button type="button" key={index} onClick={() => setSimulationMessage("Étape " + (index + 1) + " examinée en démonstration. Aucune opération réelle n'a été déclenchée.")}><span>ÉTAPE {String(index + 1).padStart(2, "0")}</span><strong>{step}</strong><small>Étape issue de la composition retenue. Les procédures détaillées restent à valider.</small><i>Examiner cette étape ↗</i></button>)}</div>
-                  <div className="mk-studio-operational-profile"><strong>{activeProfileData?.name ?? "Profil à définir"}</strong><p>{activeProfileData?.responsibilities.slice(0, 3).join(" · ") || activeProfileData?.note || "Responsabilités à préciser."}</p></div>
+                  <div className="mk-studio-operational-profile"><strong>{activeProfileData?.name ?? "Profil à définir"}</strong><p>{profileSummary(activeProfileData)}</p></div>
                   {simulationMessage && <p className="mk-product-simulation" role="status">{simulationMessage}</p>}
                 </div>
               </div>
