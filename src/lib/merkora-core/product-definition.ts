@@ -200,7 +200,7 @@ export function getNextProductDefinitionQuestion(
         ? "Tu as déjà indiqué certains profils. Quels autres profils devront utiliser le produit, et que pourra faire chacun ?"
         : "Quels profils utiliseront ce produit, et que devra pouvoir faire chacun d'eux ?",
       "Transformer les personnes déjà identifiées en profils d'utilisation et responsabilités, sans inventer de droits.",
-      actorsEvidence.map((item) => item.id),
+      [...activityEvidence, ...actorsEvidence].map((item) => item.id),
     ));
   }
 
