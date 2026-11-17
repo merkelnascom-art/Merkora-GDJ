@@ -32,7 +32,7 @@ export interface ProductDefinitionQuestion {
   options?: string[];
   allowDetail: boolean;
   evidenceIds: string[];
-  suggestedIndicators?: string[];
+  suggestedIndicators?: string[];\n  suggestedFunctions?: string[];
 }
 
 export interface ProductDefinitionAnswer {
@@ -104,7 +104,7 @@ function makeQuestion(
   evidenceIds: string[],
   answerType: ProductDefinitionAnswerType = "text",
   options?: string[],
-  extra: Partial<Pick<ProductDefinitionQuestion, "domainFamilyId" | "suggestedIndicators">> = {},
+  extra: Partial<Pick<ProductDefinitionQuestion, "domainFamilyId" | "suggestedIndicators" | "suggestedFunctions">> = {},
 ): ProductDefinitionQuestion {
   return {
     id,
@@ -148,7 +148,7 @@ export function getNextProductDefinitionQuestion(
   const operationsEvidence = byDimension(["operations"]);
   const actorsEvidence = byDimension(["actors"]);
   const resourcesEvidence = byDimension(["resources"]);
-  const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];
+  const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];\n  const solutionCandidates = dossier.knowledgeMap?.solutionCandidates ?? [];
 
   const familyCandidates = dossier.knowledgeMap?.familyCandidates ?? [];
   const domainClarification = activeAnswers.find((answer) => answer.questionId === "domain-scope-clarification" && answer.status === "answered");
@@ -255,13 +255,25 @@ export function getNextProductDefinitionQuestion(
 
   if (digitalProduct && !hasSignal(/\b(fonctionnalité|fonctionnalités|module|modules|permettra de|doit permettre|options? du produit)\b/i)) {
     const knownOperations = operationsEvidence.map((item) => item.value).filter(Boolean);
+    const problemEvidence = byDimension(["problem", "causes", "objectives", "expected_outcome", "motivation"]);
+    const suggestedFunctions = solutionCandidates.slice(0, 8).map((item) => item.labelFr);
+    const hasSuggestions = suggestedFunctions.length > 0;
     questions.push(makeQuestion(
       "product-functions", "functionalities",
-      knownOperations.length
-        ? "Parmi les actions déjà décrites, lesquelles le produit doit-il prendre en charge directement, et lesquelles resteront manuelles ?"
-        : "Quelles sont les principales actions que ce produit doit permettre de réaliser ?",
-      "Convertir les activités et processus connus en fonctions utiles, sans ajouter de modules hors sujet.",
-      [...activityEvidence, ...operationsEvidence, ...actorsEvidence].map((item) => item.id),
+      hasSuggestions
+        ? problemEvidence.length
+          ? "Pour répondre aux difficultés et objectifs déjà décrits, voici des fonctions possibles. Lesquelles sont réellement utiles pour ce produit ?"
+          : "Voici des fonctions possibles issues du référentiel métier. Lesquelles sont réellement utiles pour ce produit ?"
+        : knownOperations.length
+          ? "Parmi les actions déjà décrites, lesquelles le produit doit-il prendre en charge directement, et lesquelles resteront manuelles ?"
+          : "Quelles sont les principales actions que ce produit doit permettre de réaliser ?",
+      hasSuggestions
+        ? "Ces propositions sont des pistes issues des informations du projet et du référentiel. Tu peux les choisir, les compléter ou les refuser ; aucune n'est activée automatiquement."
+        : "Convertir les activités et processus connus en fonctions utiles, sans ajouter de modules hors sujet.",
+      [...activityEvidence, ...operationsEvidence, ...actorsEvidence, ...problemEvidence].map((item) => item.id),
+      hasSuggestions ? "multi_choice" : "text",
+      hasSuggestions ? suggestedFunctions : undefined,
+      hasSuggestions ? { suggestedFunctions } : {},
     ));
   }
 
