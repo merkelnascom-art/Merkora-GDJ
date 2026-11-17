@@ -5,6 +5,7 @@ import {
   createDiagnosticSession,
   createProjectUnderstanding,
   getNextDiagnosticQuestion,
+  migrateStoredProjectUnderstanding,
   recordDiagnosticAnswer,
   reviseUnderstandingItem,
   reviseDiagnosticAnswer,
@@ -25,6 +26,43 @@ describe("universal project understanding", () => {
     expect(dossier.items.every((item) => item.sourceMessageId && item.sourceQuote)).toBe(true);
     expect(dossier.activityVocabulary).toContain("open");
     expect(dossier.validationStatus).toBe("in_progress");
+  });
+
+  it("migrates an older saved tournament dossier and removes the false impersonal-il reference", () => {
+    const base = createProjectUnderstanding(beginUnderstanding("Je veux organiser une interface façon organigramme."));
+    const staleDossier = {
+      ...base,
+      items: [
+        ...base.items,
+        {
+          id: "legacy-tournament",
+          dimension: "objectives" as const,
+          originalDimension: "goal",
+          value: "Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs.",
+          status: "validated" as const,
+          source: "conversation" as const,
+          sourceMessageId: "message-3",
+          sourceQuote: "Je veux organiser un tournoi de Baby foot. Donc il y aura 9 joueurs.",
+          createdAt: "2026-11-17T00:00:00.000Z",
+        },
+      ],
+      situationGraph: {
+        ...base.situationGraph,
+        entities: [...base.situationGraph.entities, {
+          id: "stale-goal",
+          key: "goal:organiser-un-tournoi-de-baby-foot",
+          kind: "goal",
+          label: "Organiser un tournoi de Baby foot",
+          evidence: [{ messageId: "message-3", quote: "Je veux organiser un tournoi de Baby foot.", role: "visitor" as const, status: "user_stated" as const }],
+        }],
+      },
+      unresolvedQuestions: ["Préciser la référence « il »."] ,
+    };
+    const migrated = migrateStoredProjectUnderstanding(staleDossier);
+    expect(migrated.situationGraph.entities.some((entity) => entity.kind === "event" && /tournoi de baby foot/i.test(entity.label))).toBe(true);
+    expect(migrated.situationGraph.entities.some((entity) => entity.id === "stale-goal")).toBe(false);
+    expect(migrated.situationGraph.entities.some((entity) => entity.kind === "actor" && entity.label === "Joueurs")).toBe(true);
+    expect(migrated.unresolvedQuestions).toEqual([]);
   });
 
   it("keeps a corrected statement as a new version instead of deleting its source", () => {
