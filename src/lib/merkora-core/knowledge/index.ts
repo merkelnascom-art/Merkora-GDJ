@@ -27,3 +27,5 @@ export * from "./legal-services-catalog";
 
 export * from "./family-catalog-builder";
 export * from "./education-research-catalog";
+
+export * from "./health-social-services-catalog";
