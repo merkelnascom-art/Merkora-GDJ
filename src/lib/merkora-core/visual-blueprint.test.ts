@@ -26,11 +26,11 @@ const definition = (): ProductDefinitionSession => ({
   createdAt: "2026-11-17", updatedAt: "2026-11-17",
 });
 
-const proposal = (accepted = true): SolutionProposal => ({
+const proposal = (accepted = true, title = "Inscrire un apprenant", familyId = "functionalities"): SolutionProposal => ({
   id: "solution-project-1", projectId: "project-1", title: "Centre de formation",
   description: "Suivre les apprenants.", problem: "Suivi dispersé.", objective: "Suivre les apprenants.",
   operatingPrinciple: "Organisation centralisée.", architectures: [], components: [
-    { id: "c1", title: "Inscrire un apprenant", description: "Inscription", status: accepted ? "accepted" : "suggested", source: "validated_definition", familyId: "functionalities", sourceIds: [] },
+    { id: "c1", title, description: "Fonction à visualiser", status: accepted ? "accepted" : "suggested", source: "validated_definition", familyId, sourceIds: [] },
     { id: "c2", title: "Suivre les présences", description: "Présences", status: "rejected", source: "validated_definition", familyId: "functionalities", sourceIds: [] },
   ],
   coherenceNotes: [], unresolvedPoints: ["Le calendrier reste à préciser."], version: 2, updatedAt: "2026-11-17",
@@ -56,5 +56,18 @@ describe("screen 07 — adaptive visual blueprint", () => {
     const blueprint = buildVisualBlueprint(dossier("Je veux organiser un service de livraison local."), definition(), proposal());
     expect(blueprint.kind).toBe("operational");
     expect(blueprint.flow.length).toBeGreaterThan(0);
+  });
+
+  it("provides contextual demonstration fields and a matching action for an enrollment screen", () => {
+    const blueprint = buildVisualBlueprint(dossier(), definition(), proposal());
+    expect(blueprint.screens[0].previewFields).toEqual(["Nom complet", "Contact", "Formation ou service", "Date"]);
+    expect(blueprint.screens[0].primaryActionLabel).toBe("Ajouter un dossier");
+  });
+
+  it("uses payment-specific fields without adding payment functions that were not retained", () => {
+    const blueprint = buildVisualBlueprint(dossier(), definition(), proposal(true, "Enregistrer un paiement", "finances"));
+    expect(blueprint.screens[0].previewFields).toEqual(["Référence", "Montant", "Mode de paiement", "Date"]);
+    expect(blueprint.screens[0].primaryActionLabel).toBe("Enregistrer une opération");
+    expect(blueprint.screens[0].items).toEqual(["Enregistrer un paiement"]);
   });
 });
