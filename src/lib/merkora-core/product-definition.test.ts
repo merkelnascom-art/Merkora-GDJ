@@ -84,9 +84,8 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
 
   it("uses agricultural knowledge for an agricultural project, not sports or commerce questions", () => {
     const project = dossier({
-      description: "Créer un outil pour suivre la culture du maïs et les récoltes.",
+      description: "Créer un projet dans le domaine agricole.",
       familyId: "family:agriculture-agrofood",
-      items: [{ id: "activity", dimension: "activity", value: "Cultiver du maïs et suivre les récoltes" }],
     });
     const next = getNextProductDefinitionQuestion(project, createProductDefinitionSession(project));
 
@@ -96,9 +95,8 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
 
   it("uses education knowledge for an educational project without inheriting another sector's questions", () => {
     const project = dossier({
-      description: "Concevoir un parcours pour accompagner les apprenants dans leur orientation.",
+      description: "Créer un projet dans le domaine de l'éducation.",
       familyId: "family:education-research",
-      items: [{ id: "activity", dimension: "activity", value: "Accompagner les apprenants dans leur orientation" }],
     });
     const next = getNextProductDefinitionQuestion(project, createProductDefinitionSession(project));
 
@@ -108,7 +106,7 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
 
   it("does not force an irrelevant family and can finish when no useful question remains", () => {
     const project = dossier({
-      description: "Un projet libre sans besoin d'interface, de finance ou d'identité visuelle.",
+      description: "Un projet libre sans besoin de fonctions numériques, de finance ou d'identité visuelle.",
       items: [
         { id: "nature", dimension: "imagined_solution", value: "Un protocole papier ponctuel" },
         { id: "roles", dimension: "actors", value: "Une seule personne responsable" },
@@ -128,6 +126,21 @@ describe("MerKora screen 05 — universal adaptive product definition", () => {
     };
 
     expect(getNextProductDefinitionQuestion(project, session)).toBeNull();
+  });
+
+
+  it("uses an earlier answer to unlock relevant questions instead of staying in a generic path", () => {
+    const project = dossier({ description: "Créer un outil de suivi." });
+    const session = createProductDefinitionSession(project);
+    const natureQuestion = getNextProductDefinitionQuestion(project, session);
+    expect(natureQuestion?.id).toBe("product-nature");
+    if (!natureQuestion) return;
+
+    const answered = recordProductDefinitionAnswer(session, natureQuestion, { value: "Une plateforme ou un logiciel" });
+    const next = getNextProductDefinitionQuestion(project, answered);
+
+    expect(next?.familyId).toBe("users_roles");
+    expect(next?.id).not.toBe("product-nature");
   });
 
   it("supports defer, resume and answer revision without losing the previous version", () => {
