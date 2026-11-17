@@ -1,5 +1,7 @@
 "use client";
 
+import "./visualization.css";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { buildVisualBlueprint, type VisualBlueprint } from "../../src/lib/merkora-core/visual-blueprint";
 import type { ProjectUnderstanding } from "../../src/lib/merkora-core/project-diagnostic";
