@@ -130,7 +130,11 @@ export function getNextProductDefinitionQuestion(
   if (session.status === "ready_for_review") return null;
 
   const evidence = getProjectEvidenceItems(dossier);
-  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value)].join("\n");
+  const activeAnswers = getActiveProductDefinitionAnswers(session);
+  const answerText = activeAnswers
+    .filter((answer) => answer.status === "answered")
+    .flatMap((answer) => Array.isArray(answer.value) ? answer.value : [answer.value]);
+  const allText = [dossier.originalDescription, ...evidence.map((item) => item.value), ...answerText].join("\n");
   const normalizedText = allText.toLocaleLowerCase("fr");
   const byDimension = (dimensions: string[]) => evidence.filter((item) => dimensions.includes(item.dimension));
   const has = (...dimensions: string[]) => byDimension(dimensions).length > 0;
@@ -147,6 +151,12 @@ export function getNextProductDefinitionQuestion(
   const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];
 
   const familyCandidates = dossier.knowledgeMap?.familyCandidates ?? [];
+  const domainClarification = activeAnswers.find((answer) => answer.questionId === "domain-scope-clarification" && answer.status === "answered");
+  const selectedFamilyLabels = domainClarification
+    ? (Array.isArray(domainClarification.value) ? domainClarification.value : [domainClarification.value])
+    : [];
+  const selectedFamily = familyCandidates.find((family) => selectedFamilyLabels.includes(family.labelFr));
+  const effectivePrimaryFamilyId = dossier.knowledgeMap?.primaryFamilyId ?? (selectedFamily ? selectedFamily.familyId : undefined);
   const ambiguousDomainLinks = dossier.knowledgeMap?.unresolved.filter((item) => item.status === "ambiguous") ?? [];
   if ((dossier.knowledgeMap?.needsFamilyClarification || ambiguousDomainLinks.length > 0) && !handled(session, "domain-scope-clarification")) {
     const options = familyCandidates.length > 1
@@ -164,20 +174,20 @@ export function getNextProductDefinitionQuestion(
   }
 
   // When the activity is still vague, use the selected domain's own vocabulary.
-  if (activityEvidence.length === 0 && dossier.knowledgeMap?.primaryFamilyId) {
-    const seed = getFamilyDiagnosticQuestionSeeds(dossier.knowledgeMap.primaryFamilyId)
-      .find((item) => !has(item.dimension) && !handled(session, `domain-${dossier.knowledgeMap?.primaryFamilyId}-${item.id}`));
+  if (activityEvidence.length === 0 && effectivePrimaryFamilyId) {
+    const seed = getFamilyDiagnosticQuestionSeeds(effectivePrimaryFamilyId)
+      .find((item) => !has(item.dimension) && !handled(session, `domain-${effectivePrimaryFamilyId}-${item.id}`));
     if (seed) {
       const familyId: ProductDefinitionFamilyId = seed.dimension === "constraints" ? "security_control" : "functionalities";
       const item = makeQuestion(
-        `domain-${dossier.knowledgeMap.primaryFamilyId}-${seed.id}`,
+        `domain-${effectivePrimaryFamilyId}-${seed.id}`,
         familyId,
         seed.prompt,
         seed.purpose,
         evidence.map((entry) => entry.id),
         "text",
         undefined,
-        { domainFamilyId: dossier.knowledgeMap.primaryFamilyId },
+        { domainFamilyId: effectivePrimaryFamilyId },
       );
       if (candidate(item)) return item;
     }
