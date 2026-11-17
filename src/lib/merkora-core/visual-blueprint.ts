@@ -49,47 +49,44 @@ function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
-const ROLE_HINTS = /\\b(propriétaire|responsable|administrateur|administratrice|directeur|directrice|gérant|gérante|chef|agent|employé|employée|collaborateur|collaboratrice|personnel|équipe|client|utilisateur|usager|membre|apprenant|élève|étudiant|enseignant|formateur|technicien|opérateur|vendeur|caissier|livreur|fournisseur|partenaire|prestataire|bénéficiaire|patient|médecin|infirmier|conducteur|exploitant|artisan|comptable|assistant|assistante)\\b/i;
+const ROLE_HINTS = /\b(propriétaire|responsable|administrateur|administratrice|directeur|directrice|gérant|gérante|chef|agent|employé|employée|collaborateur|collaboratrice|personnel|équipe|client|utilisateur|usager|membre|apprenant|élève|étudiant|enseignant|formateur|technicien|opérateur|vendeur|caissier|livreur|fournisseur|partenaire|prestataire|bénéficiaire|patient|médecin|infirmier|conducteur|exploitant|artisan|comptable|assistant|assistante)\b/i;
 
 function conciseVisualLabel(value: string): string {
-  const firstLine = value.replace(/\\r/g, "").split("\\n").map((line) => line.trim()).find(Boolean) ?? value.trim();
-  const withoutNumber = firstLine.replace(/^\\s*\\d+[.)]\\s*/, "").trim();
-  const firstSentence = withoutNumber.match(/^(.+?[.!?])(?:\\s|$)/u)?.[1] ?? withoutNumber;
+  const firstLine = value.replace(/\r/g, "").split("\n").map((line) => line.trim()).find(Boolean) ?? value.trim();
+  const withoutNumber = firstLine.replace(/^\s*\d+[.)]\s*/, "").trim();
+  const firstSentence = withoutNumber.match(/^(.+?[.!?])(?:\s|$)/u)?.[1] ?? withoutNumber;
   const label = firstSentence.replace(/[.!?;:]+$/, "").trim();
   if (label.length <= 84) return label;
-  return `${label.slice(0, 80).replace(/\\s+\\S*$/, "")}…`;
+  return label.slice(0, 80).replace(/\s+\S*$/, "") + "…";
 }
 
 function splitResponsibilities(lines: string[]): string[] {
   return unique(lines.flatMap((line) =>
     line
-      .replace(/^\\s*(?:[-•*]|\\d+[.)])\\s*/, "")
-      .split(/(?<=[.!?])\\s+(?=[A-ZÀ-ÖØ-Þ])/u)
+      .replace(/^\s*(?:[-•*]|\d+[.)])\s*/, "")
+      .split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ])/u)
       .map((part) => part.trim())
-      .filter((part) => part.length > 5 && part.length <= 150 && !/^\\d+[.)]\\s/.test(part)),
+      .filter((part) => part.length > 5 && part.length <= 150 && !/^\d+[.)]\s/.test(part)),
   )).slice(0, 6);
 }
 
 function parseRoleProfiles(value: string | string[], offset: number): VisualProfile[] {
   if (Array.isArray(value)) {
-    return value.flatMap((entry, index) => {
-      const parsed = parseRoleProfiles(entry, offset + index);
-      return parsed;
-    });
+    return value.flatMap((entry, index) => parseRoleProfiles(entry, offset + index));
   }
 
   const normalized = value
-    .replace(/\\r\\n?/g, "\\n")
-    .replace(/([.!?])\\s+(?=\\d{1,2}[.)]\\s+[A-ZÀ-ÖØ-Þ])/gu, "$1\\n");
-  const lines = normalized.split(/\\n+/).map((line) => line.trim()).filter(Boolean);
+    .replace(/\r\n?/g, "\n")
+    .replace(/([.!?])\s+(?=\d{1,2}[.)]\s+[A-ZÀ-ÖØ-Þ])/gu, "$1\n");
+  const lines = normalized.split(/\n+/).map((line) => line.trim()).filter(Boolean);
   const sections: Array<{ name: string; lines: string[] }> = [];
   let current: { name: string; lines: string[] } | null = null;
 
   for (const line of lines) {
-    const numbered = line.match(/^\\s*\\d{1,2}[.)]\\s*(.+)$/u);
+    const numbered = line.match(/^\s*\d{1,2}[.)]\s*(.+)$/u);
     const candidate = numbered?.[1]?.trim() ?? "";
     const heading = candidate && candidate.length <= 90 && ROLE_HINTS.test(candidate)
-      ? candidate.split(/\\s+[—–:]\\s+/u)[0].trim()
+      ? candidate.split(/\s+[—–:]\s+/u)[0].trim()
       : null;
 
     if (heading) {
@@ -108,7 +105,7 @@ function parseRoleProfiles(value: string | string[], offset: number): VisualProf
 
   if (sections.length > 0) {
     return sections.map((section, index) => ({
-      id: `profile-${offset + index + 1}`,
+      id: "profile-" + (offset + index + 1),
       name: section.name,
       note: "Profil mentionné dans la définition ; les autorisations restent à confirmer.",
       responsibilities: splitResponsibilities(section.lines),
@@ -118,7 +115,7 @@ function parseRoleProfiles(value: string | string[], offset: number): VisualProf
   const fallback = conciseVisualLabel(lines[0] ?? "");
   if (fallback && fallback.length <= 72 && !/[.!?]$/.test(lines[0] ?? "")) {
     return [{
-      id: `profile-${offset + 1}`,
+      id: "profile-" + (offset + 1),
       name: fallback,
       note: "Profil mentionné dans la définition ; les autorisations restent à confirmer.",
       responsibilities: splitResponsibilities(lines.slice(1)),
@@ -127,7 +124,6 @@ function parseRoleProfiles(value: string | string[], offset: number): VisualProf
 
   return [];
 }
-
 
 function retained(component: SolutionProposalComponent): boolean {
   return component.status === "accepted" || component.status === "modified";
