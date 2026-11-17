@@ -29,7 +29,8 @@ describe("MerKora screen 04 — adaptive diagnostic", () => {
 describe("MerKora screen 05 — adaptive product definition", () => {
   it("presents the 12 decision families as a conditional library and keeps one active question", () => {
     const html = renderToStaticMarkup(<ProductDefinitionPage />);
-    expect(html).toContain("Définissons le");\n    expect(html).toContain("produit à concevoir.");
+    expect(html).toContain("Définissons le");
+    expect(html).toContain("produit à concevoir.");
     expect(html).toContain("12 familles");
     expect(html).toContain("Une question à la fois");
     expect(html).toContain("Non applicable");
