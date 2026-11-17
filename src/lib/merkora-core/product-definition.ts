@@ -1,5 +1,4 @@
 import {
-  getActiveUnderstandingItems,
   getProjectEvidenceItems,
   type ProjectUnderstanding,
 } from "./project-diagnostic";
@@ -136,7 +135,6 @@ export function getNextProductDefinitionQuestion(
   const byDimension = (dimensions: string[]) => evidence.filter((item) => dimensions.includes(item.dimension));
   const has = (...dimensions: string[]) => byDimension(dimensions).length > 0;
   const hasSignal = (pattern: RegExp) => pattern.test(normalizedText);
-  const activeAnswers = getActiveProductDefinitionAnswers(session);
   const candidate = (item: ProductDefinitionQuestion) =>
     !handled(session, item.id);
 
@@ -203,7 +201,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if (digitalProduct && /\b(plusieurs sites|plusieurs centres|plusieurs agences|plusieurs établissements|plusieurs équipes|plusieurs services|multi-sites|plusieurs lieux)\b/i.test(normalizedText) && !hasSignal(/\\b(espaces? dédiés?|espace par|espace de travail par|espace distinct)\\b/i)) {
+  if (digitalProduct && /\b(plusieurs sites|plusieurs centres|plusieurs agences|plusieurs établissements|plusieurs équipes|plusieurs services|multi-sites|plusieurs lieux)\b/i.test(normalizedText) && !hasSignal(/\b(espaces? dédiés?|espace par|espace de travail par|espace distinct)\b/i)) {
     questions.push(makeQuestion(
       "product-spaces", "spaces",
       "Quels espaces distincts faut-il prévoir pour ces lieux, équipes ou services ?",
@@ -212,7 +210,7 @@ export function getNextProductDefinitionQuestion(
     ));
   }
 
-  if (digitalProduct && !navigationSignals && !answeredFamilies.has("navigation")) {
+  if (digitalProduct && !navigationSignals) {
     questions.push(makeQuestion(
       "product-navigation", "navigation",
       "Comment les utilisateurs devraient-ils retrouver les différentes parties du produit ?",
