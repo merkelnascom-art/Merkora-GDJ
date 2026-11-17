@@ -48,6 +48,8 @@ function statusLabel(status: ProjectUnderstandingItem["status"]): string {
     inferred: "Interprétation à confirmer",
     hypothesis: "Hypothèse à vérifier",
     unknown: "Inconnu",
+    not_applicable: "Non applicable",
+    conversation_only: "Réaction de conversation",
     validated: "Validé par toi",
     rejected: "Écarté",
   };
