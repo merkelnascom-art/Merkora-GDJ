@@ -2,6 +2,7 @@ import type { UnderstandingSession } from "./situation-intake-engine";
 import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 import type { KnowledgeProposal } from "./knowledge/types";
+import { buildProjectKnowledgeMap, type ProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -72,6 +73,8 @@ export interface ProjectUnderstanding {
   privacyConsiderations: string[];
   /** Project-private proposals; older stored dossiers may not contain this field. */
   knowledgeProposals?: KnowledgeProposal[];
+  /** Recomputed, non-authoritative links to the universal 20-family knowledge graph. */
+  knowledgeMap?: ProjectKnowledgeMap;
   activityVocabulary: "open";
   validationStatus: "in_progress" | "validated";
   sourceSessionVersion: number;
@@ -188,7 +191,7 @@ function normalizeStatus(status: string): ProjectUnderstandingStatus {
 
 export function createProjectUnderstanding(session: UnderstandingSession): ProjectUnderstanding {
   const timestamp = now();
-  return {
+  const dossier: ProjectUnderstanding = {
     id: `understanding-${session.id}`,
     projectId: session.conversationId,
     version: 1,
@@ -229,6 +232,7 @@ export function createProjectUnderstanding(session: UnderstandingSession): Proje
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+  return refreshProjectKnowledgeMap(dossier);
 }
 
 export function attachKnowledgeProposalToUnderstanding(
@@ -261,6 +265,10 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
 }
 
+function refreshProjectKnowledgeMap(dossier: ProjectUnderstanding): ProjectUnderstanding {
+  return { ...dossier, knowledgeMap: buildProjectKnowledgeMap(getActiveUnderstandingItems(dossier), dossier.situationGraph) };
+}
+
 export function reviseUnderstandingItem(
   dossier: ProjectUnderstanding,
   itemId: string,
@@ -284,41 +292,41 @@ export function reviseUnderstandingItem(
     supersedesId: original.id,
   };
 
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: [...dossier.items, revision],
     validationStatus: "in_progress",
     updatedAt: now(),
-  };
+  });
 }
 
 export function validateUnderstandingItem(dossier: ProjectUnderstanding, itemId: string): ProjectUnderstanding {
   const active = getActiveUnderstandingItems(dossier);
   if (!active.some((item) => item.id === itemId)) throw new Error("Only an active understanding item can be validated.");
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "validated" } : item),
     updatedAt: now(),
-  };
+  });
 }
 
 
 export function rejectUnderstandingItem(dossier: ProjectUnderstanding, itemId: string): ProjectUnderstanding {
   const active = getActiveUnderstandingItems(dossier);
   if (!active.some((item) => item.id === itemId)) throw new Error("Only an active understanding item can be rejected.");
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) => item.id === itemId ? { ...item, status: "rejected" } : item),
     updatedAt: now(),
-  };
+  });
 }
 
 export function validateProjectUnderstanding(dossier: ProjectUnderstanding): ProjectUnderstanding {
   const activeIds = new Set(getActiveUnderstandingItems(dossier).map((item) => item.id));
-  return {
+  return refreshProjectKnowledgeMap({
     ...dossier,
     version: dossier.version + 1,
     items: dossier.items.map((item) =>
@@ -328,7 +336,7 @@ export function validateProjectUnderstanding(dossier: ProjectUnderstanding): Pro
     ),
     validationStatus: "validated",
     updatedAt: now(),
-  };
+  });
 }
 
 export function createDiagnosticSession(dossier: ProjectUnderstanding): DiagnosticSession {
@@ -589,13 +597,13 @@ export function recordDiagnosticAnswer(
     : dossier.contradictions;
 
   return {
-    understanding: {
+    understanding: refreshProjectKnowledgeMap({
       ...dossier,
       version: dossier.version + 1,
       items: [...dossier.items, evidence],
       contradictions,
       updatedAt: now(),
-    },
+    }),
     diagnostic: {
       ...session,
       version: session.version + 1,
@@ -668,7 +676,7 @@ export function reviseDiagnosticAnswer(
     : session.deferredQuestionIds.filter((id) => id !== original.questionId);
 
   return {
-    understanding: { ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], contradictions, updatedAt: now() },
+    understanding: refreshProjectKnowledgeMap({ ...dossier, version: dossier.version + 1, items: [...dossier.items, evidence], contradictions, updatedAt: now() }),
     diagnostic: { ...session, version: session.version + 1, answers: [...session.answers, answer], askedQuestionIds: nextAsked, deferredQuestionIds: nextDeferred, updatedAt: now() },
   };
 }
