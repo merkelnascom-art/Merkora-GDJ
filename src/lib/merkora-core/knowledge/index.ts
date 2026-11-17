@@ -39,3 +39,5 @@ export * from "./media-communication-catalog";
 export * from "./digital-telecom-catalog";
 
 export * from "./professional-services-catalog";
+
+export * from "./crafts-personal-services-catalog";
