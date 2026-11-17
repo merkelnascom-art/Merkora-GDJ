@@ -316,8 +316,8 @@ export default function ProductDefinitionPage() {
               <h2>{currentQuestion.prompt}</h2>
               <p className="mk-question-purpose">{currentQuestion.purpose}</p>
 
-              {currentQuestion.suggestedIndicators && currentQuestion.suggestedIndicators.length > 0 && (
-                <p className="mk-product-evidence-note">Ces indicateurs viennent du référentiel métier. Ils restent des suggestions à confirmer, pas des objectifs imposés.</p>
+              {((currentQuestion.suggestedIndicators && currentQuestion.suggestedIndicators.length > 0) || (currentQuestion.suggestedFunctions && currentQuestion.suggestedFunctions.length > 0)) && (
+                <p className="mk-product-evidence-note">Ces propositions viennent du référentiel métier et des informations déjà données. Tu gardes le choix : elles ne sont ni imposées ni activées automatiquement.</p>
               )}
 
               {currentQuestion.answerType === "single_choice" && (
