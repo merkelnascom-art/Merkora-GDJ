@@ -988,6 +988,6 @@ const result=createFamilyCatalog({
     "part_of"
   ]
 ]);
-export const MEDIA_COMMUNICATION_FAMILY_CONCEPTS=result.familyConcepts;
+export const MEDIA_COMMUNICATION_FAMILY_CONCEPTS=result.familyConcepts.filter(concept=>concept.id!=="family:media-communication");
 export const MEDIA_COMMUNICATION_CATALOG=result.catalog;
 export const MEDIA_COMMUNICATION_RELATIONSHIPS=result.relationships;
