@@ -2,7 +2,7 @@ import type { UnderstandingSession } from "./situation-intake-engine";
 import type { NeedDimension } from "./types";
 import { enrichSituationGraphWithKnowledge } from "./knowledge/situation-linker";
 import type { KnowledgeProposal } from "./knowledge/types";
-import { buildProjectKnowledgeMap, type ProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
+import { buildProjectKnowledgeMap, getFamilyDiagnosticQuestionSeeds, type ProjectKnowledgeMap } from "./knowledge/universal-project-knowledge";
 
 export type ProjectUnderstandingStatus =
   | "user_stated"
@@ -435,7 +435,7 @@ export function getNextDiagnosticQuestion(
     );
   }
 
-  const candidates: DiagnosticQuestion[] = [
+  const baseCandidates: DiagnosticQuestion[] = [
     question(
       "activity-context",
       "activity",
@@ -526,9 +526,27 @@ export function getNextDiagnosticQuestion(
     ),
   ];
 
+  const knowledgeMap = dossier.knowledgeMap ?? buildProjectKnowledgeMap(getActiveUnderstandingItems(dossier), dossier.situationGraph);
+  const familyQuestionSeeds = getFamilyDiagnosticQuestionSeeds(knowledgeMap.primaryFamilyId);
+  const familyQuestions = familyQuestionSeeds.map((seed) =>
+    question(`family-context-${knowledgeMap.primaryFamilyId}-${seed.id}`, seed.dimension, seed.prompt, seed.purpose),
+  );
+  const familyClarification = question(
+    "family-domain-clarification",
+    "context",
+    "Plusieurs domaines semblent concernés. Peux-tu préciser quelles activités ou parties du projet sont réellement au cœur de ta demande ?",
+    "MerKora garde plusieurs rattachements possibles tant que le périmètre n'est pas clarifié ; tu n'as pas à choisir une famille prédéfinie.",
+  );
+  const candidates: DiagnosticQuestion[] = [
+    ...baseCandidates.slice(0, 7),
+    ...(knowledgeMap.needsFamilyClarification ? [familyClarification] : familyQuestions),
+    ...baseCandidates.slice(7),
+  ];
+
   const eligible = candidates.filter((candidate) => {
     if (wasHandled(session, candidate.id)) return false;
     switch (candidate.id) {
+      case "family-domain-clarification": return knowledgeMap.needsFamilyClarification;
       case "activity-context": return !hasActivity;
       case "current-situation": return !hasSituation;
       case "project-motivation": return !hasMotivation;
@@ -543,7 +561,7 @@ export function getNextDiagnosticQuestion(
       case "success-criteria": return hasObjectives && !hasSuccess;
       case "jurisdiction-context": return regulatorySignals && !hasJurisdiction;
       case "language-context": return multilingualSignals && !hasLanguages;
-      default: return false;
+      default: return candidate.id.startsWith("family-context-") && Boolean(knowledgeMap.primaryFamilyId) && hasActivity && hasSituation;
     }
   });
 
