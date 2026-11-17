@@ -146,6 +146,23 @@ export function getNextProductDefinitionQuestion(
   const resourcesEvidence = byDimension(["resources"]);
   const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];
 
+  const familyCandidates = dossier.knowledgeMap?.familyCandidates ?? [];
+  const ambiguousDomainLinks = dossier.knowledgeMap?.unresolved.filter((item) => item.status === "ambiguous") ?? [];
+  if ((dossier.knowledgeMap?.needsFamilyClarification || ambiguousDomainLinks.length > 0) && !handled(session, "domain-scope-clarification")) {
+    const options = familyCandidates.length > 1
+      ? [...familyCandidates.map((family) => family.labelFr), "Plusieurs domaines à la fois", "Autre / à préciser"]
+      : undefined;
+    return makeQuestion(
+      "domain-scope-clarification",
+      "functionalities",
+      "Plusieurs rattachements métier sont possibles. Quelle activité ou quelle partie du projet est réellement au cœur de ta demande ?",
+      "MerKora conserve les possibilités ouvertes et te demande de préciser le périmètre avant de choisir un référentiel métier.",
+      [...ambiguousDomainLinks.map((item) => item.evidenceId), ...evidence.map((item) => item.id)],
+      options ? "multi_choice" : "text",
+      options,
+    );
+  }
+
   // When the activity is still vague, use the selected domain's own vocabulary.
   if (activityEvidence.length === 0 && dossier.knowledgeMap?.primaryFamilyId) {
     const seed = getFamilyDiagnosticQuestionSeeds(dossier.knowledgeMap.primaryFamilyId)
@@ -393,6 +410,7 @@ export function resumeDeferredProductDefinitionQuestions(session: ProductDefinit
     ...session,
     version: session.version + 1,
     deferredQuestionIds: [],
+    status: "in_progress",
     updatedAt: now(),
   };
 }
