@@ -32,7 +32,8 @@ export interface ProductDefinitionQuestion {
   options?: string[];
   allowDetail: boolean;
   evidenceIds: string[];
-  suggestedIndicators?: string[];\n  suggestedFunctions?: string[];
+  suggestedIndicators?: string[];
+  suggestedFunctions?: string[];
 }
 
 export interface ProductDefinitionAnswer {
@@ -148,7 +149,8 @@ export function getNextProductDefinitionQuestion(
   const operationsEvidence = byDimension(["operations"]);
   const actorsEvidence = byDimension(["actors"]);
   const resourcesEvidence = byDimension(["resources"]);
-  const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];\n  const solutionCandidates = dossier.knowledgeMap?.solutionCandidates ?? [];
+  const indicators = dossier.knowledgeMap?.indicatorCandidates ?? [];
+  const solutionCandidates = dossier.knowledgeMap?.solutionCandidates ?? [];
 
   const familyCandidates = dossier.knowledgeMap?.familyCandidates ?? [];
   const domainClarification = activeAnswers.find((answer) => answer.questionId === "domain-scope-clarification" && answer.status === "answered");
