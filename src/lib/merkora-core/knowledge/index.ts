@@ -35,3 +35,5 @@ export * from "./sport-physical-activity-catalog";
 export * from "./culture-arts-catalog";
 
 export * from "./media-communication-catalog";
+
+export * from "./digital-telecom-catalog";
