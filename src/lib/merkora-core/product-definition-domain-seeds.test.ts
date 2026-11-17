@@ -94,9 +94,10 @@ describe("screen 05 — selectable suggestions alongside free-text answers", () 
     expect(next?.id).toBe("users-roles");
     expect(next?.answerType).toBe("text");
     expect(next?.suggestedOptions).toEqual(expect.arrayContaining([
-      "Responsable / administrateur",
-      "Personnel de préparation",
       "Client",
+      "Livreur",
     ]));
+    expect(next?.suggestedOptions).not.toContain("Responsable / administrateur");
+    expect(next?.suggestedOptions).not.toContain("Personnel de préparation");
   });
 });
