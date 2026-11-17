@@ -358,7 +358,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
       setNotice("Avant de figer la conception, confirme : " + missing.join(", ") + ".");
       return;
     }
-    const versionNumber = (studio.versions.at(-1)?.version ?? 0) + 1;
+    const versionNumber = (studio.versions[studio.versions.length - 1]?.version ?? 0) + 1;
     const version: OfficialDesignVersion = {
       version: versionNumber,
       revision: studio.revision,
@@ -629,8 +629,8 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
             <button type="button" className="mk-studio-secondary" onClick={addChangeRequest} disabled={!feedbackDraft.trim()}>Ajouter cette demande</button>
             {studio.changeRequests.length > 0 && <div className="mk-studio-change-list">{studio.changeRequests.map((request, index) => <p key={index}><span>{String(index + 1).padStart(2, "0")}</span>{request}</p>)}</div>}
             <div className="mk-studio-lock-note"><strong>Avant de figer la conception</strong><p>Confirme la nature du produit, son mode d'accès si nécessaire, sa palette, son style, sa navigation et les appareils pris en charge. La validation crée un instantané officiel de cette session avec le cahier des charges source, les écrans, les préférences et le registre des décisions.</p></div>
-            <button type="button" className="mk-studio-primary mk-studio-validate-button" onClick={validateDesign} disabled={!canValidate}>Valider et figer la version {((studio.versions.at(-1)?.version ?? 0) + 1)} <span>→</span></button>
-            {studio.validatedVersion && <div className="mk-studio-validated-banner" role="status"><span>✓</span><div><strong>Version {studio.validatedVersion} validée par {studio.versions.at(-1)?.approvedBy}</strong><p>Validée le {new Date(studio.versions.at(-1)?.approvedAt ?? "").toLocaleString("fr-FR")}. Toute modification ultérieure ouvrira une nouvelle révision sans effacer cette version.</p></div></div>}
+            <button type="button" className="mk-studio-primary mk-studio-validate-button" onClick={validateDesign} disabled={!canValidate}>Valider et figer la version {((studio.versions[studio.versions.length - 1]?.version ?? 0) + 1)} <span>→</span></button>
+            {studio.validatedVersion && <div className="mk-studio-validated-banner" role="status"><span>✓</span><div><strong>Version {studio.validatedVersion} validée par {studio.versions[studio.versions.length - 1]?.approvedBy}</strong><p>Validée le {new Date(studio.versions[studio.versions.length - 1]?.approvedAt ?? "").toLocaleString("fr-FR")}. Toute modification ultérieure ouvrira une nouvelle révision sans effacer cette version.</p></div></div>}
             {studio.versions.length > 0 && <div className="mk-studio-version-history"><h3>Historique des versions officielles</h3>{studio.versions.map((version) => <article key={version.version}><strong>Version {version.version}</strong><span>{new Date(version.approvedAt).toLocaleString("fr-FR")} · {version.approvedBy}</span><small>{version.screenIds.length} espace(s) · {version.decisionRegister.length} décisions · source écran 06 v{version.sourceProposalVersion}</small></article>)}</div>}
             <p className="mk-studio-storage-note">Conservation actuelle : session de ce navigateur et de cet onglet. La synchronisation multi-appareils et l'archivage serveur ne sont pas activés.</p>
           </section>

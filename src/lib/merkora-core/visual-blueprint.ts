@@ -286,7 +286,7 @@ export function buildVisualBlueprint(
   const answers = getActiveProductDefinitionAnswers(definition);
   const natureAnswers = answers.filter((answer) => answer.status === "answered" && answer.familyId === "nature");
   const explicitNatureValues = unique(natureAnswers.flatMap(answerValues));
-  const explicitNatures = unique(explicitNatureValues.map(detectNature).filter((value): value is VisualProductNature => Boolean(value)));
+  const explicitNatures = [...new Set(explicitNatureValues.map(detectNature).filter((value): value is VisualProductNature => value !== null))];
   const inferredNature = inferNature([dossier.originalDescription, ...dossier.items.map((item) => item.value)].join(" "));
   const productNature: VisualProductNature = explicitNatures.length === 1
     ? explicitNatures[0]
