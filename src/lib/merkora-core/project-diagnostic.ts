@@ -269,7 +269,7 @@ export function getActiveUnderstandingItems(dossier: ProjectUnderstanding): Proj
   return dossier.items.filter((item) => !superseded.has(item.id) && item.status !== "rejected");
 }
 
-function getProjectEvidenceItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
+export function getProjectEvidenceItems(dossier: ProjectUnderstanding): ProjectUnderstandingItem[] {
   return deriveScreen03Evidence(getActiveUnderstandingItems(dossier)).projectItems.filter((item) => item.status !== "unknown" && item.status !== "not_applicable" && item.status !== "conversation_only");
 }
 
