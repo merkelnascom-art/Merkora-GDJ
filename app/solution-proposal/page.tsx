@@ -242,7 +242,8 @@ export default function SolutionProposalPage() {
                 <span>✓</span>
                 <div>
                   <strong>Composition validée</strong>
-                  <p>La prochaine étape sera la maquette réelle de l'écran 07 : elle devra représenter les espaces, les écrans, la navigation et les fonctions de cette composition.</p>
+                  <p>La prochaine étape est la maquette de l'écran 07, construite à partir de cette composition validée.</p>
+                  <a className="mk-continue-button" href="/visualization">Découvrir la maquette <span>→</span></a>
                 </div>
               </section>
             )}
