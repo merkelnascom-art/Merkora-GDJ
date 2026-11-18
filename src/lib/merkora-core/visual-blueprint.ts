@@ -223,26 +223,51 @@ function areaFor(component: SolutionProposalComponent, label: string): VisualAre
   return "other";
 }
 
-function featureFields(area: VisualArea, label: string): string[] {
-  const text = label.toLocaleLowerCase("fr");
-  if (/présence|pointage|assiduité|retard/.test(text)) return ["Personne concernée", "Date", "Heure", "Statut"];
-  if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Formation ou service", "Date"];
-  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de paiement", "Date"];
-  switch (area) {
-    case "orders": return ["Référence", "Client ou demandeur", "Date prévue", "Statut"];
-    case "finance": return ["Référence", "Montant", "Mode de paiement", "Date"];
-    case "customers": return ["Nom complet", "Contact", "Besoin ou note", "Statut"];
-    case "resources": return ["Ressource ou article", "Quantité ou disponibilité", "Emplacement", "État"];
-    case "people": return ["Nom complet", "Fonction", "Contact", "Statut"];
-    case "planning": return ["Activité", "Responsable", "Date", "État"];
-    case "production": return ["Tâche ou réalisation", "Responsable", "Échéance", "Avancement"];
-    case "communication": return ["Destinataire", "Canal", "Message", "Date"];
-    case "reporting": return ["Période", "Indicateur", "Résultat", "Commentaire"];
-    case "operations": return ["Opération", "Responsable", "Date", "État"];
-    case "records": return ["Référence", "Intitulé", "Responsable", "Date"];
-    case "settings": return ["Élément à configurer", "Valeur", "Portée", "État"];
-    default: return ["Intitulé", "Description", "Responsable", "Date"];
+function featureFields(area: VisualArea, label: string, description: string, familyId?: string): string[] {
+  const text = (label + " " + description).toLocaleLowerCase("fr");
+  if (/identité visuelle|logo|charte graphique|branding/.test(text) || familyId === "visual_identity") {
+    return ["Nom de la marque", "Logo", "Couleurs", "Typographies", "Déclinaisons"];
   }
+  if (/dépense imprévue|dépense exceptionnelle|urgence|intervention/.test(text)) {
+    return ["Nature de la dépense", "Montant", "Motif", "Justificatif", "Approbateur", "Date"];
+  }
+  if (/présence|pointage|assiduité|retard/.test(text)) return ["Personne concernée", "Date", "Heure d'arrivée", "Heure de départ", "Statut"];
+  if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Formation ou service", "Pièces à fournir", "Date"];
+  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de paiement", "Date", "Statut du règlement"];
+  if (/stock|inventaire|approvisionnement/.test(text)) return ["Article", "Quantité disponible", "Seuil d'alerte", "Mouvement", "Date"];
+  if (/rendez-vous|réservation|planning/.test(text)) return ["Objet", "Personne concernée", "Date", "Heure", "Disponibilité", "Statut"];
+  if (/personnel|équipe|employé|collaborateur/.test(text)) return ["Nom complet", "Fonction", "Contact", "Responsabilités", "Statut"];
+  if (/commande|vente|livraison/.test(text)) return ["Référence", "Client", "Articles ou prestation", "Montant", "Échéance", "Statut"];
+  if (/client|prospect|bénéficiaire|patient|apprenant/.test(text)) return ["Nom complet", "Contact", "Besoin", "Historique", "Statut"];
+  switch (area) {
+    case "orders": return ["Référence", "Client ou demandeur", "Articles ou prestation", "Date prévue", "Statut"];
+    case "finance": return ["Nature de l'opération", "Montant", "Catégorie", "Justificatif", "Date", "Statut"];
+    case "customers": return ["Nom complet", "Contact", "Besoin ou note", "Historique", "Statut"];
+    case "resources": return ["Ressource ou article", "Quantité disponible", "Seuil d'alerte", "Emplacement", "État"];
+    case "people": return ["Nom complet", "Fonction", "Contact", "Responsabilités", "Statut"];
+    case "planning": return ["Activité", "Responsable", "Date", "Heure", "État"];
+    case "production": return ["Tâche ou réalisation", "Responsable", "Ressources nécessaires", "Échéance", "Avancement"];
+    case "communication": return ["Destinataire", "Canal", "Objet", "Message", "Date d'envoi"];
+    case "reporting": return ["Période", "Indicateur", "Valeur actuelle", "Comparaison", "Commentaire"];
+    case "operations": return ["Opération", "Responsable", "Ressources", "Date", "État"];
+    case "records": return ["Référence", "Intitulé", "Catégorie", "Responsable", "Date"];
+    case "settings": return ["Élément concerné", "Valeur actuelle", "Nouvelle valeur", "Justification"];
+    default: return ["Intitulé", "Objectif", "Responsable", "Échéance", "État"];
+  }
+}
+
+function featureAction(area: VisualArea, label: string, description: string): string {
+  const text = (label + " " + description).toLocaleLowerCase("fr");
+  if (/identité visuelle|logo|charte graphique|branding/.test(text)) return "Préparer une proposition visuelle";
+  if (/dépense imprévue|dépense exceptionnelle|urgence|intervention/.test(text)) return "Déclarer cette dépense";
+  if (/présence|pointage|assiduité|retard/.test(text)) return "Enregistrer le pointage";
+  if (/inscription|inscrire|adhésion/.test(text)) return "Enregistrer l'inscription";
+  if (/paiement|règlement|encaissement|facture/.test(text)) return "Enregistrer le règlement";
+  if (/stock|inventaire|approvisionnement/.test(text)) return "Enregistrer le mouvement";
+  if (/rendez-vous|réservation/.test(text)) return "Confirmer la réservation";
+  if (/commande|vente/.test(text)) return "Enregistrer la commande";
+  if (/personnel|équipe|employé|collaborateur/.test(text)) return "Ajouter ce membre";
+  return AREA_META[area].action;
 }
 
 function sourceLabelFor(
@@ -355,9 +380,9 @@ export function buildVisualBlueprint(
       label,
       description: conciseVisualLabel(component.description) || "Fonction retenue dans la composition du projet.",
       area,
-      fields: featureFields(area, label),
-      actionLabel: AREA_META[area].action,
-      blockType: area === "reporting" ? "metrics" : area === "settings" ? "settings" : area === "records" ? "table" : "form",
+      fields: featureFields(area, label, component.description, component.familyId),
+      actionLabel: featureAction(area, label, component.description),
+      blockType: area === "reporting" ? "metrics" : (area === "settings" && !/identité visuelle|logo|charte graphique|branding/i.test(label + " " + component.description)) ? "settings" : area === "records" ? "table" : "form",
       sourceIds,
       sourceLabel,
     };
