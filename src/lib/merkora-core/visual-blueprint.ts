@@ -232,8 +232,8 @@ function featureFields(area: VisualArea, label: string, description: string, fam
     return ["Nature de la dépense", "Montant", "Motif", "Justificatif", "Approbateur", "Date"];
   }
   if (/présence|pointage|assiduité|retard/.test(text)) return ["Personne concernée", "Date", "Heure d'arrivée", "Heure de départ", "Statut"];
-  if (/inscription|inscrire|adhésion/.test(text)) return ["Nom complet", "Contact", "Formation ou service", "Pièces à fournir", "Date"];
-  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de paiement", "Date", "Statut du règlement"];
+  if (/inscription|inscrire|adhésion/.test(text)) return /pièce|document|justificatif/.test(text) ? ["Nom complet", "Contact", "Formation ou service", "Pièces à fournir", "Date"] : ["Nom complet", "Contact", "Formation ou service", "Date"];
+  if (/paiement|règlement|encaissement|facture/.test(text)) return ["Référence", "Montant", "Mode de paiement", "Date"];
   if (/stock|inventaire|approvisionnement/.test(text)) return ["Article", "Quantité disponible", "Seuil d'alerte", "Mouvement", "Date"];
   if (/rendez-vous|réservation|planning/.test(text)) return ["Objet", "Personne concernée", "Date", "Heure", "Disponibilité", "Statut"];
   if (/personnel|équipe|employé|collaborateur/.test(text)) return ["Nom complet", "Fonction", "Contact", "Responsabilités", "Statut"];
@@ -241,7 +241,7 @@ function featureFields(area: VisualArea, label: string, description: string, fam
   if (/client|prospect|bénéficiaire|patient|apprenant/.test(text)) return ["Nom complet", "Contact", "Besoin", "Historique", "Statut"];
   switch (area) {
     case "orders": return ["Référence", "Client ou demandeur", "Articles ou prestation", "Date prévue", "Statut"];
-    case "finance": return ["Nature de l'opération", "Montant", "Catégorie", "Justificatif", "Date", "Statut"];
+    case "finance": return ["Nature de l'opération", "Montant", "Catégorie", "Date"];
     case "customers": return ["Nom complet", "Contact", "Besoin ou note", "Historique", "Statut"];
     case "resources": return ["Ressource ou article", "Quantité disponible", "Seuil d'alerte", "Emplacement", "État"];
     case "people": return ["Nom complet", "Fonction", "Contact", "Responsabilités", "Statut"];
