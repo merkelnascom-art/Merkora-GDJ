@@ -274,6 +274,9 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
   const selectedFeature = currentScreen?.features.find((feature) => feature.id === activeFeatureId) ?? null;
   const activeProfileData = blueprint?.profiles[activeProfile] ?? null;
   const acceptedFeatureCount = blueprint?.screens.reduce((total, screen) => total + screen.features.length, 0) ?? 0;
+  const effectiveKind = studio && ["website", "platform", "application"].includes(studio.preferences.productNature)
+    ? "digital"
+    : blueprint?.kind ?? "operational";
 
   function persist(next: DesignStudioState) {
     setStudio(next);
@@ -388,7 +391,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
     if (!studio || !blueprint || !sourceArchive) return;
     const missing: string[] = [];
     if (!studio.preferences.natureConfirmed || studio.preferences.productNature === "undecided") missing.push("la nature du produit");
-    if (blueprint.kind === "digital" && (!studio.preferences.deliveryModesConfirmed || studio.preferences.deliveryModes.length === 0)) missing.push("le mode d'accès");
+    if (effectiveKind === "digital" && (!studio.preferences.deliveryModesConfirmed || studio.preferences.deliveryModes.length === 0)) missing.push("le mode d'accès");
     if (!studio.preferences.paletteConfirmed) missing.push("la palette de couleurs");
     if (!studio.preferences.layoutConfirmed) missing.push("la structure de navigation");
     if (!studio.preferences.styleConfirmed) missing.push("le style de présentation");
@@ -529,7 +532,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
               <div><h3>Comment le produit sera-t-il accessible ?</h3><p>Plusieurs modes compatibles peuvent être combinés.</p></div>
               <span className={studio.preferences.deliveryModesConfirmed ? "mk-studio-state is-confirmed" : "mk-studio-state"}>{studio.preferences.deliveryModesConfirmed ? "Accès confirmé" : "À confirmer"}</span>
             </div>
-            {blueprint.kind === "digital" ? (
+            {effectiveKind === "digital" ? (
               <div className="mk-studio-delivery-grid">
                 {DELIVERY_OPTIONS.map((option) => (
                   <label key={option.value} className={studio.preferences.deliveryModes.includes(option.value) ? "is-selected" : ""}>
@@ -611,7 +614,7 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
           <section className="mk-studio-panel">
             <div className="mk-studio-panel-heading"><div><span className="mk-studio-kicker">04 · ARCHITECTURE DES ÉCRANS</span><h2>Voici les espaces réellement issus de la solution retenue.</h2><p>Chaque page regroupe des fonctions validées. Les suggestions et les éléments écartés restent à part et ne sont pas injectés dans le produit.</p></div><span className="mk-studio-state is-confirmed">{blueprint.screens.length} espace(s)</span></div>
             <div className="mk-studio-architecture-summary"><div><span>PROFILS IDENTIFIÉS</span><strong>{blueprint.profiles.length}</strong><small>Profils déclarés à l'écran 05</small></div><div><span>FONCTIONS RETENUES</span><strong>{acceptedFeatureCount}</strong><small>Acceptées ou modifiées à l'écran 06</small></div><div><span>SOURCES TRAÇABLES</span><strong>{blueprint.decisionRegister.length}</strong><small>Éléments du registre de conception</small></div></div>
-            {blueprint.kind === "digital" ? (
+            {effectiveKind === "digital" ? (
               <div className="mk-studio-screen-list">
                 <div className="mk-studio-artboard" style={previewStyle}>
                   <div className="mk-studio-artboard-heading"><div><span>REPRÉSENTATION VISUELLE · LIVRABLE 1</span><h3>Planche des écrans</h3><p>Une représentation statique de chaque espace. Elle est distincte du prototype interactif que tu peux explorer ensuite.</p></div><small>{blueprint.screens.length} écran(s) conçu(s)</small></div>
@@ -654,9 +657,9 @@ export default function VisualizationStudio({ actor, email }: { actor: string; e
               <div><span>APERÇU RESPONSIVE</span><strong>{blueprint.projectTitle}</strong></div>
               <div className="mk-studio-device-switch">{(["desktop", "tablet", "mobile"] as DeviceId[]).map((device) => <button type="button" key={device} className={previewDevice === device ? "is-active" : ""} onClick={() => setPreviewDevice(device)}>{device === "desktop" ? "Ordinateur" : device === "tablet" ? "Tablette" : "Mobile"}</button>)}</div>
             </div>
-            {blueprint.kind === "digital" ? (
+            {effectiveKind === "digital" ? (
                           <div className={"mk-studio-preview-frame device-" + previewDevice}>
-                            <div className={"mk-product-preview layout-" + studio.preferences.layout + " style-" + studio.preferences.style} style={previewStyle}>
+                            <div className={"mk-product-preview nature-" + studio.preferences.productNature + " layout-" + studio.preferences.layout + " style-" + studio.preferences.style} style={previewStyle}>
                               <header className="mk-product-topbar"><div className="mk-product-brand"><span>{studio.references.find((reference) => reference.kind === "logo") ? <img src={studio.references.find((reference) => reference.kind === "logo")?.dataUrl} alt="" /> : blueprint.projectTitle.slice(0, 1).toUpperCase()}</span><strong>{blueprint.projectTitle}</strong></div><div className="mk-product-top-actions"><span>APERÇU DU PRODUIT</span><span className="mk-product-user">{activeProfileData?.name.slice(0, 1).toUpperCase() ?? "U"}</span></div></header>
                               <div className="mk-product-layout">
                                 {studio.preferences.layout === "sidebar" && <nav className="mk-product-nav" aria-label="Navigation du produit"><button type="button" className={activeScreenId === "overview" ? "is-active" : ""} onClick={() => { setActiveScreenId("overview"); setActiveFeatureId(null); }}>Vue d'ensemble</button>{blueprint.screens.map((screen) => <button type="button" key={screen.id} className={activeScreenId === screen.id ? "is-active" : ""} onClick={() => { setActiveScreenId(screen.id); setActiveFeatureId(null); }}>{screen.navLabel}</button>)}</nav>}
