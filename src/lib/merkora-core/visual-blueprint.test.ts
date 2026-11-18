@@ -61,7 +61,7 @@ describe("screen 07 — adaptive visual blueprint", () => {
   it("provides contextual demonstration fields and a matching action for an enrollment screen", () => {
     const blueprint = buildVisualBlueprint(dossier(), definition(), proposal());
     expect(blueprint.screens[0].previewFields).toEqual(["Nom complet", "Contact", "Formation ou service", "Date"]);
-    expect(blueprint.screens[0].primaryActionLabel).toBe("Ajouter un dossier");
+    expect(blueprint.screens[0].primaryActionLabel).toBe("Enregistrer l'inscription");
   });
 
   it("uses payment-specific fields without adding payment functions that were not retained", () => {
