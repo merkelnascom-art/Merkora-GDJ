@@ -194,4 +194,49 @@ describe("screen 07 — conception structurée et traçable", () => {
     expect(feature?.sourceLabel).not.toContain("Piloter l'activité");
   });
 
+
+  it("donne à une fonction financière des champs et une action propres à son métier", () => {
+    const base = proposal();
+    const financialProposal = {
+      ...base,
+      components: [{
+        id: "emergency-expenses",
+        title: "Suivre les dépenses imprévues et interventions d'urgence",
+        description: "Déclarer une dépense exceptionnelle, joindre un justificatif et faire approuver le remboursement.",
+        status: "accepted",
+        source: "validated_definition",
+        familyId: "finances",
+        sourceIds: ["answer-delivery"],
+      }],
+    } as SolutionProposal;
+    const result = buildVisualBlueprint(dossier(), definition(), financialProposal) as unknown as StudioBlueprintContract;
+    const feature = result.screens.flatMap((screen) => screen.features)[0];
+
+    expect(feature.fields).toEqual(expect.arrayContaining(["Nature de la dépense", "Justificatif", "Motif", "Approbateur"]));
+    expect(feature.actionLabel).toMatch(/déclarer|soumettre|enregistrer/i);
+    expect(feature.fields).not.toContain("Mode de paiement");
+  });
+
+  it("ne transforme pas une demande d'identité visuelle en formulaire générique de paramètres", () => {
+    const base = proposal();
+    const identityProposal = {
+      ...base,
+      components: [{
+        id: "brand-identity",
+        title: "Créer une nouvelle identité visuelle",
+        description: "Définir le logo, les couleurs, les typographies et les déclinaisons de la marque.",
+        status: "accepted",
+        source: "validated_definition",
+        familyId: "visual_identity",
+        sourceIds: ["answer-roles"],
+      }],
+    } as SolutionProposal;
+    const result = buildVisualBlueprint(dossier(), definition(), identityProposal) as unknown as StudioBlueprintContract;
+    const feature = result.screens.flatMap((screen) => screen.features)[0];
+
+    expect(feature.fields).toEqual(expect.arrayContaining(["Nom de la marque", "Logo", "Couleurs", "Typographies"]));
+    expect(feature.actionLabel).toMatch(/identité|proposition|visuel/i);
+    expect(feature.fields).not.toContain("Portée");
+  });
+
 });
