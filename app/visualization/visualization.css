@@ -371,3 +371,59 @@
   .mk-product-preview.nature-platform .mk-product-nav button{flex:0 0 auto;white-space:nowrap}
   .mk-product-preview.style-editorial .mk-product-content{padding:18px 12px}
 }
+
+
+/* Écran 07 — différencier la structure produit, pas seulement sa couleur */
+.mk-product-preview.nature-website{--product-canvas:#fff;--product-surface:#fff;--product-line:#e8e3dc;--product-ink:#28251f;--product-muted:#77716a;border:1px solid var(--product-line);border-radius:4px}
+.mk-product-preview.nature-website .mk-product-topbar{min-height:64px;padding:0 28px;background:#fff;border-bottom:1px solid var(--product-line)}
+.mk-product-preview.nature-website .mk-product-top-actions>span:first-child{display:none}
+.mk-product-preview.nature-website .mk-product-topbar:after{content:"Accueil   À propos   Services   Réalisations   Contact";margin-left:auto;color:#6e6b67;font-size:10px;letter-spacing:.2px}
+.mk-product-preview.nature-website .mk-product-content-top{min-height:210px;align-content:center;padding:34px 38px;background:linear-gradient(110deg,var(--product-secondary),#fff 78%)}
+.mk-product-preview.nature-website .mk-product-content-top h3{max-width:620px;font-size:clamp(30px,4vw,48px);line-height:1.08;letter-spacing:-1.5px}
+.mk-product-preview.nature-website .mk-product-content-top p{max-width:540px;font-size:13px}
+.mk-product-preview.nature-website .mk-product-screen-tiles button{border-radius:0;border-top:3px solid var(--product-primary);box-shadow:none}
+.mk-product-preview.nature-platform{border:1px solid #dce1eb;border-radius:12px;overflow:hidden}
+.mk-product-preview.nature-platform .mk-product-topbar{min-height:52px;padding:0 18px;background:#fff;border-bottom:1px solid #e4e8ef}
+.mk-product-preview.nature-platform .mk-product-top-actions>span:first-child{display:inline-flex;padding:6px 9px;border-radius:6px;background:var(--product-secondary);color:var(--product-primary);font-size:8px;font-weight:800}
+.mk-product-preview.nature-platform .mk-product-nav{min-height:390px;padding:18px 12px;background:#f7f8fb}
+.mk-product-preview.nature-platform .mk-product-nav:before{content:"ESPACE DE GESTION";margin:0 0 10px;color:#9299a8;font-size:8px;font-weight:850;letter-spacing:.8px}
+.mk-product-preview.nature-platform .mk-product-nav button{padding:10px;border-radius:7px;text-align:left}
+.mk-product-preview.nature-platform .mk-product-content{padding:24px}
+.mk-product-preview.nature-application{width:min(100%,430px);min-height:570px;border:9px solid #202534;border-radius:34px;background:#f6f7fb;box-shadow:0 18px 45px #11182726}
+.mk-product-preview.nature-application .mk-product-topbar{min-height:58px;padding:0 14px;border-radius:20px 20px 0 0}
+.mk-product-preview.nature-application .mk-product-top-actions>span:first-child{display:none}
+.mk-product-preview.nature-application .mk-product-content{padding:18px 14px 22px}
+.mk-product-preview.nature-application .mk-product-content-top h3{font-size:22px}
+.mk-product-preview.nature-application .mk-product-feature-grid button,.mk-product-preview.nature-application .mk-product-screen-tiles button{min-height:110px;border-radius:16px}
+.mk-product-preview.nature-application .mk-product-bottomnav{position:sticky;bottom:0;display:flex;justify-content:space-around;margin:14px -14px -22px;padding:10px 4px;background:#fff;border-top:1px solid #e5e8ef}
+.mk-product-preview.nature-application .mk-product-bottomnav button{font-size:8px}
+.mk-product-preview.style-futuristic .mk-product-content-top{border-bottom:1px solid #28577c}
+.mk-product-preview.style-futuristic .mk-product-content-top>div:before{content:"SYSTEM ONLINE · INTERFACE ACTIVE";display:block;margin-bottom:10px;color:#67d5ff;font-size:8px;font-weight:900;letter-spacing:1.5px}
+.mk-product-preview.style-editorial .mk-product-content-top{border-bottom:1px solid #29251f}
+.mk-product-preview.style-editorial .mk-product-content-top>div:before{content:"DOSSIER / PRÉSENTATION";display:block;margin-bottom:10px;color:#776e63;font-family:Georgia,serif;font-size:9px;letter-spacing:2px}
+.mk-product-preview.style-luxury .mk-product-content-top{background:linear-gradient(130deg,#171923,#302a2b)}
+.mk-product-preview.style-playful .mk-product-content-top{background:radial-gradient(circle at 90% 20%,#ffe4cf,transparent 34%),#fff8f1}
+.mk-product-preview.style-institutional .mk-product-content-top{border-left:6px solid var(--product-primary)}
+.mk-product-preview.style-minimal .mk-product-content-top{background:#fff;border-bottom:1px solid #eceef2}
+.mk-feature-detail-heading{margin-bottom:14px}
+.mk-feature-detail-heading>span{color:var(--product-primary);font-size:8px;font-weight:900;letter-spacing:1px}
+.mk-feature-detail-heading h4{margin:7px 0;color:#273044;font-size:17px}
+.mk-feature-detail-heading p{margin:0;color:#778194;font-size:10px;line-height:1.6}
+.mk-feature-domain-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.mk-feature-domain-summary article{display:grid;gap:8px;padding:11px;border:1px solid #e2e6ee;border-radius:9px;background:#fff}
+.mk-feature-domain-summary small{color:#8a93a2;font-size:7px;font-weight:850;letter-spacing:.6px}
+.mk-feature-domain-summary strong{color:#30394b;font-size:10px}
+.mk-feature-form-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 9px}
+.mk-feature-form-heading strong{color:#30394b;font-size:10px}
+.mk-feature-form-heading small{color:#8b93a2;font-size:8px}
+.mk-feature-detail.detail-finance{border-top:3px solid #2e9b76}
+.mk-feature-detail.detail-people{border-top:3px solid #3b78bd}
+.mk-feature-detail.detail-resources{border-top:3px solid #c18a35}
+.mk-feature-detail.detail-planning{border-top:3px solid #7d68c5}
+.mk-feature-detail.detail-reporting{border-top:3px solid #287e91}
+.mk-feature-detail.detail-settings{border-top:3px solid #9a6a9e}
+.mk-product-preview.style-futuristic .mk-feature-domain-summary article{background:#12213a;border-color:#28577c}
+.mk-product-preview.style-futuristic .mk-feature-domain-summary strong,.mk-product-preview.style-futuristic .mk-feature-form-heading strong{color:#e8f5ff}
+.mk-product-preview.style-luxury .mk-feature-domain-summary article{background:#222431;border-color:#514a42}
+.mk-product-preview.style-luxury .mk-feature-domain-summary strong,.mk-product-preview.style-luxury .mk-feature-form-heading strong{color:#f3eadb}
+@media(max-width:600px){.mk-feature-domain-summary{grid-template-columns:1fr}.mk-product-preview.nature-website .mk-product-topbar{padding:0 10px}.mk-product-preview.nature-website .mk-product-topbar:after{font-size:7px}.mk-product-preview.nature-website .mk-product-content-top{padding:20px 14px}.mk-product-preview.nature-platform .mk-product-content{padding:14px}}
