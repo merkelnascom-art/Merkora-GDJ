@@ -11,7 +11,7 @@ describe("MerKora screen 03 — project understanding", () => {
   it("keeps the first view short and puts the detailed dossier behind a disclosure", () => {
     const html = renderToStaticMarkup(<UnderstandingPage />);
     expect(html).toContain("Vérifions-le ensemble");
-    expect(html).toContain("Voici les quelques repères que j'ai retenus");
+    expect(html).toContain("Voici les quelques repères que j&#x27;ai retenus");
     expect(html).not.toContain("Repères du référentiel universel");
     expect(html).not.toContain("Cartographie métier et fonctionnelle");
     expect(html).not.toContain("Choisis ton secteur");
