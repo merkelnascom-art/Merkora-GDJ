@@ -225,7 +225,7 @@ export default function SolutionProposalPage() {
             <span className="done">04 · Diagnostic</span>
             <span className="done">05 · Définition</span>
             <span className="active">06 · Solution</span>
-            <span>07 · Maquette</span>
+            <span>07 · Espaces</span>
           </div>
           <span className="mk-eyebrow"><span /> ÉTAPE 06 · ARCHITECTURE ET COMPOSITION</span>
           <h1>Construisons la structure<br /><em>de ton projet.</em></h1>
