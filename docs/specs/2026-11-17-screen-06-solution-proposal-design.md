@@ -39,3 +39,28 @@ L'écran 07 doit être une véritable maquette visuelle de la solution retenue :
 - Préserver les écrans précédents.
 - Aucune migration, suppression ou réinitialisation Supabase sans autorisation explicite.
 - Persister la progression dans le stockage de session déjà utilisé par le parcours, sans prétendre à une synchronisation multi-appareils.
+
+
+## Complément approuvé — cadrage universel du produit
+
+L'écran 06 commence désormais par un cadrage produit obligatoire avant d'afficher la proposition :
+
+1. Nom du projet.
+2. Type de réalisation, choisi parmi des catégories distinctes : site vitrine, plateforme web, application mobile, application web/logiciel, réservation, e-commerce, jeu, générateur, espace de conception architecturale et solution opérationnelle.
+3. Un ou plusieurs domaines métier. Le multi-choix active une composition hybride ; il ne fusionne pas les règles des domaines.
+4. Préférence de navigation : latérale, horizontale, inférieure mobile, contextuelle ou sans navigation logicielle.
+5. Situation de l'identité visuelle : logo existant, création souhaitée ou à définir.
+
+Le catalogue fournit des modules de départ adaptés au type de produit et aux domaines sélectionnés. Les catalogues de présence, réservation, finance, éducation, architecture, réseau social, jeu, génération de code, commerce, gestion d'entreprise, télécommunications, santé, agriculture, transport et médias sont distincts. Les domaines sélectionnés peuvent être combinés.
+
+L'espace de la personne propriétaire/administratrice est séparé des espaces des utilisateurs finaux. Les rôles spécialisés proposés par un catalogue restent à confirmer avant de devenir des droits réels.
+
+Les modules du catalogue sont des suggestions. Ils ne sont ni activés, ni tarifés officiellement, ni exécutés tant que le client ne les a pas retenus et que les règles de validation correspondantes ne sont pas satisfaites.
+
+Le cadrage est conservé dans le sessionStorage existant, au même titre que les étapes 03 à 06. Il n'y a donc pas de synchronisation multi-appareils garantie dans cette version.
+
+## Frontière avec IDPH et MerKora Direct
+
+L'écran 06 décrit ici sert le parcours de composition autonome MerKora Direct. Le mode IDPH (accompagnement humain) réutilise les mêmes dossiers, catalogues, devis et Fabrique, mais ajoute la conversation avec un conseiller, la revue humaine du périmètre et l'envoi humain du devis. Le cycle commercial et les connexions sont détaillés dans `docs/architecture/merkora-modes-factory-and-integrations.md`.
+
+La connexion des services listés dans ce document est une étape d'architecture distincte. Aucun service externe n'est installé ou appelé par le seul fait qu'il figure dans un catalogue.
