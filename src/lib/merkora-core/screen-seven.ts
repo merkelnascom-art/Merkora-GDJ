@@ -68,7 +68,15 @@ export function buildWorkspacePlan(profile: SolutionProductProfile): WorkspacePl
   const roles = new Map<string, WorkspaceRole>();
   product.defaultRoles.forEach((role) => {
     if (role.id === "end_user" && profile.productTypeId === "showcase_website") return;
-    roles.set(role.id, roleToWorkspace(role, "product"));
+    const workspaceRole = roleToWorkspace(role, "product");
+    if (role.id === "end_user" && profile.productTypeId === "ecommerce") {
+      workspaceRole.label = "Client / acheteur";
+      workspaceRole.description = "Parcourt le catalogue, passe ses commandes et suit ses achats.";
+    } else if (role.id === "end_user" && profile.productTypeId === "booking_solution") {
+      workspaceRole.label = "Client / demandeur";
+      workspaceRole.description = "Consulte les disponibilités, réserve et suit ses demandes.";
+    }
+    roles.set(role.id, workspaceRole);
   });
 
   buildHybridDomainComposition(profile.domainIds).roles.forEach((role) => {
