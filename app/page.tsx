@@ -1,132 +1,186 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
 
-function MerKoraMascot() {
+const solutionFamilies = [
+  { icon: "◈", title: "Sites web", description: "Sites vitrines, portails, espaces de présentation et expériences web." },
+  { icon: "▣", title: "Applications mobiles", description: "Des expériences utiles, pensées pour les usages du quotidien." },
+  { icon: "⌘", title: "Plateformes métiers", description: "Des outils adaptés aux activités, aux équipes et aux règles de chaque organisation." },
+  { icon: "✧", title: "Jeux numériques", description: "Des univers interactifs, des mécaniques de jeu et des expériences originales." },
+  { icon: "◷", title: "Réservation & services", description: "Des parcours de réservation, de demande, de suivi et de gestion." },
+  { icon: "⚙", title: "Outils spécialisés", description: "Générateurs, automatisations, espaces de travail et solutions sur mesure." },
+];
+
+const steps = [
+  { number: "01", title: "Tu expliques", description: "Tu racontes ton idée, ton activité ou ce qui te pose problème." },
+  { number: "02", title: "Nous concevons", description: "Nous clarifions le besoin et préparons une solution adaptée." },
+  { number: "03", title: "Tu découvres", description: "Tu consultes la proposition, la maquette et le devis avant de décider." },
+  { number: "04", title: "Nous réalisons", description: "Après validation, l'équipe prépare, teste et te présente le produit." },
+];
+
+function BrandMark() {
+  return <span className="mk-home-brand-mark" aria-hidden="true">M</span>;
+}
+
+function HeroVisual() {
   return (
-    <div className="mk-mascot-stage" aria-label="Mascotte robotique MerKora">
-      <div className="mk-orbit mk-orbit-one" />
-      <div className="mk-orbit mk-orbit-two" />
-      <div className="mk-mascot-glow" />
-      <svg className="mk-mascot" viewBox="0 0 360 390" role="img" aria-labelledby="mascot-title">
-        <title id="mascot-title">MerKora, votre compagnon intelligent</title>
-        <defs>
-          <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fffdf8" />
-            <stop offset=".48" stopColor="#c9c9db" />
-            <stop offset="1" stopColor="#85869f" />
-          </linearGradient>
-          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fff0bd" />
-            <stop offset=".5" stopColor="#d7ad62" />
-            <stop offset="1" stopColor="#9e7139" />
-          </linearGradient>
-          <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#d4a7ff" />
-            <stop offset=".55" stopColor="#8055df" />
-            <stop offset="1" stopColor="#432e8b" />
-          </linearGradient>
-          <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#24213e" />
-            <stop offset="1" stopColor="#090b1b" />
-          </linearGradient>
-          <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="9" />
-            <feOffset dy="10" />
-            <feComponentTransfer><feFuncA type="linear" slope=".32" /></feComponentTransfer>
-            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <ellipse cx="180" cy="365" rx="104" ry="13" fill="#050611" opacity=".45" />
-        <g filter="url(#shadow)">
-          <path d="M102 257 Q62 267 50 313 Q44 341 71 350 L111 325 L133 276Z" fill="url(#shell)" stroke="#e9d5a5" strokeWidth="4" />
-          <path d="M258 257 Q298 267 310 313 Q316 341 289 350 L249 325 L227 276Z" fill="url(#shell)" stroke="#e9d5a5" strokeWidth="4" />
-          <path d="M111 242 Q83 258 80 302 L91 349 Q180 382 269 349 L280 302 Q277 258 249 242Z" fill="url(#shell)" stroke="#e8d7b6" strokeWidth="4" />
-          <path d="M129 257 Q180 278 231 257 L246 322 Q180 350 114 322Z" fill="#15162d" stroke="#7860bc" strokeWidth="3" />
-          <path d="M147 251 L180 276 L213 251" fill="none" stroke="url(#gold)" strokeWidth="7" strokeLinecap="round" />
-          <circle cx="180" cy="313" r="24" fill="#17162b" stroke="url(#gold)" strokeWidth="3" />
-          <text x="180" y="323" textAnchor="middle" fontSize="30" fontWeight="800" fill="#f5d48e">M</text>
-          <path d="M153 234 L153 266 Q180 286 207 266 L207 234Z" fill="url(#shell)" stroke="#c8a76c" strokeWidth="3" />
-          <path d="M94 100 Q91 31 180 25 Q269 31 266 100 L285 173 Q293 243 245 270 Q180 298 115 270 Q67 243 75 173Z" fill="url(#shell)" stroke="#f4e2bc" strokeWidth="5" />
-          <path d="M96 101 Q101 42 180 39 Q259 42 264 101 L252 122 Q180 105 108 122Z" fill="#15162f" stroke="url(#gold)" strokeWidth="5" />
-          <path d="M120 55 Q180 8 240 55 L229 79 Q180 96 131 79Z" fill="url(#shell)" stroke="#e5c78f" strokeWidth="3" />
-          <path d="M74 126 Q47 119 42 156 L49 215 Q56 239 82 224 L94 168Z" fill="url(#violet)" stroke="#e3c38a" strokeWidth="4" />
-          <path d="M286 126 Q313 119 318 156 L311 215 Q304 239 278 224 L266 168Z" fill="url(#violet)" stroke="#e3c38a" strokeWidth="4" />
-          <path d="M104 116 Q180 95 256 116 Q276 164 258 218 Q244 254 180 260 Q116 254 102 218 Q84 164 104 116Z" fill="url(#face)" stroke="#282144" strokeWidth="6" />
-          <path d="M120 160 Q143 137 164 159 Q171 181 151 193 Q128 199 120 177Z" fill="#d6c4ff" opacity=".95" />
-          <path d="M196 159 Q217 137 240 160 L240 177 Q230 199 207 193 Q189 181 196 159Z" fill="#d6c4ff" opacity=".95" />
-          <ellipse cx="145" cy="172" rx="12" ry="16" fill="#171a36" />
-          <ellipse cx="215" cy="172" rx="12" ry="16" fill="#171a36" />
-          <circle cx="149" cy="166" r="4" fill="#fff" />
-          <circle cx="219" cy="166" r="4" fill="#fff" />
-          <path d="M149 215 Q180 244 211 215" fill="none" stroke="#f0c98b" strokeWidth="7" strokeLinecap="round" />
-          <path d="M160 218 Q180 230 200 218" fill="none" stroke="#fff1db" strokeWidth="3" strokeLinecap="round" />
-          <path d="M97 135 L77 144 M263 135 L283 144" stroke="#b68af2" strokeWidth="5" strokeLinecap="round" />
-          <path d="M104 270 Q90 300 101 322 M256 270 Q270 300 259 322" fill="none" stroke="url(#gold)" strokeWidth="5" />
-        </g>
-        <path d="M49 321 Q34 311 24 328 Q20 345 41 354 L75 362 Q91 359 85 344Z" fill="url(#shell)" stroke="#e4c58c" strokeWidth="4" />
-        <path d="M311 321 Q326 311 336 328 Q340 345 319 354 L285 362 Q269 359 275 344Z" fill="url(#shell)" stroke="#e4c58c" strokeWidth="4" />
-      </svg>
-      <span className="mk-mascot-spark mk-spark-a">✦</span>
-      <span className="mk-mascot-spark mk-spark-b">✧</span>
+    <div className="mk-home-visual" aria-label="Illustration abstraite d'une idée qui devient une solution numérique">
+      <div className="mk-home-visual-grid" />
+      <div className="mk-home-orbit mk-home-orbit-one" />
+      <div className="mk-home-orbit mk-home-orbit-two" />
+      <div className="mk-home-glow mk-home-glow-blue" />
+      <div className="mk-home-glow mk-home-glow-green" />
+      <div className="mk-home-floating mk-home-floating-top"><span>✦</span> Une idée prend forme</div>
+      <div className="mk-home-product-window">
+        <div className="mk-home-window-bar"><i /><i /><i /><span>votre-solution.app</span></div>
+        <div className="mk-home-window-body">
+          <div className="mk-home-window-sidebar"><b>M</b><i /><i /><i /><i /></div>
+          <div className="mk-home-window-content">
+            <div className="mk-home-window-heading"><span /><b /><i /></div>
+            <div className="mk-home-window-metrics"><i /><i /><i /></div>
+            <div className="mk-home-window-chart"><span /><span /><span /><span /><span /><span /><span /></div>
+            <div className="mk-home-window-bottom"><i /><i /><i /></div>
+          </div>
+        </div>
+      </div>
+      <div className="mk-home-floating mk-home-floating-bottom"><span>✓</span> Pensée autour de tes besoins</div>
+      <span className="mk-home-spark mk-home-spark-a">✧</span>
+      <span className="mk-home-spark mk-home-spark-b">✦</span>
     </div>
   );
 }
 
 export default function HomePage() {
   return (
-    <main className="mk-v2-page">
-      <div className="mk-v2-noise" aria-hidden="true" />
-      <header className="mk-header">
-        <a className="mk-brand" href="/" aria-label="MerKora GDJ, accueil">
-          <span className="mk-brand-mark">M</span>
-          <span><strong>MerKora</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
-        </a>
-        <div style={{display:"flex",alignItems:"center",gap:16}}><Link className="mk-back-link" href="/auth">Se connecter</Link><span className="mk-online"><i /> Votre compagnon est disponible</span></div>
+    <main className="mk-home">
+      <header className="mk-home-header">
+        <Link className="mk-home-brand" href="/" aria-label="MerKora, accueil">
+          <BrandMark />
+          <span><strong>MerKora</strong><small>DES IDÉES AUX SOLUTIONS</small></span>
+        </Link>
+        <nav className="mk-home-nav" aria-label="Navigation principale">
+          <a href="#catalogue">Catalogue</a>
+          <a href="#idp">Assistance humaine</a>
+          <a href="#drt">Conception intelligente</a>
+        </nav>
+        <div className="mk-home-header-actions">
+          <Link className="mk-home-login" href="/auth">Connexion</Link>
+          <Link className="mk-home-header-cta" href="/conversation">Créer mon projet <span>↗</span></Link>
+        </div>
       </header>
 
-      <section className="mk-welcome" aria-labelledby="mk-title">
-        <div className="mk-welcome-copy">
-          <span className="mk-eyebrow"><span /> UN ESPACE POUR DONNER VIE À VOS IDÉES</span>
-          <h1 id="mk-title">Salut !<br /><em>Moi, c'est MerKora.</em></h1>
-          <p className="mk-intro">Alors, qu'est-ce qu'on imagine, qu'est-ce qu'on construit ou qu'est-ce qu'on cherche à améliorer aujourd'hui ?</p>
-
-          <div className="mk-chat-bubble">
-            <span className="mk-chat-avatar">M</span>
-            <div>
-              <strong>MerKora</strong>
-              <p>Raconte-moi ce que tu as en tête. Tu n'as pas besoin de tout savoir ni d'avoir déjà trouvé la solution. On va y réfléchir ensemble.</p>
-            </div>
+      <section className="mk-home-hero" aria-labelledby="mk-home-title">
+        <div className="mk-home-hero-copy">
+          <div className="mk-home-eyebrow"><span /> CONCEVOIR · PERSONNALISER · RÉALISER</div>
+          <h1 id="mk-home-title">L'intelligence de tes idées.<br /><em>La puissance de leur réalisation.</em></h1>
+          <p className="mk-home-hero-lead">Une idée, un problème ou une ambition ? MerKora t'aide à imaginer, concevoir et concrétiser la solution numérique qui te correspond.</p>
+          <div className="mk-home-hero-actions">
+            <Link className="mk-home-primary-button" href="/conversation">Décrire mon projet <span>→</span></Link>
+            <a className="mk-home-secondary-button" href="#parcours">Découvrir les possibilités</a>
           </div>
-
-          <div className="mk-choice-heading">
-            <span>ON COMMENCE PAR ÉCRIT</span>
-            <small>Prends ton temps. Tu peux raconter ton besoin avec tes propres mots.</small>
-          </div>
-
-          <div className="mk-selection-note">
-            Tu peux commencer sans créer de compte. La conversation vocale sera proposée dans une prochaine étape.
-          </div>
-
-          <a className="mk-start-conversation" href="/conversation">
-            Commencer notre échange <span>→</span>
-          </a>
+          <div className="mk-home-trust-line"><span>✦</span> Tu gardes le contrôle à chaque étape. Rien n'est validé sans ton accord.</div>
         </div>
-
-        <div className="mk-welcome-visual">
-          <div className="mk-visual-label"><span className="mk-live-dot" /> PRÉSENT POUR T'ACCOMPAGNER</div>
-          <MerKoraMascot />
-          <div className="mk-visual-caption">
-            <span className="mk-caption-star">✦</span>
-            <div><strong>On avance ensemble.</strong><small>Une idée à la fois. Une étape après l'autre.</small></div>
-          </div>
+        <HeroVisual />
+        <div className="mk-home-hero-foot">
+          <span>DES SOLUTIONS QUI PARTENT DU RÉEL</span>
+          <span>Sites web · Applications · Plateformes · Outils numériques</span>
         </div>
       </section>
 
-      <footer className="mk-footer">
-        <span><b>MerKora GDJ</b> · L'intelligence pour comprendre. La technologie pour réaliser.</span>
-        <span>Vos idées restent les vôtres.</span>
+      <section className="mk-home-pathways" id="parcours" aria-labelledby="mk-pathways-title">
+        <div className="mk-home-section-intro">
+          <div className="mk-home-eyebrow"><span /> TROIS FAÇONS DE COMMENCER</div>
+          <h2 id="mk-pathways-title">Tu choisis ton chemin.<br /><em>Nous avançons avec toi.</em></h2>
+          <p>Tu peux choisir une solution existante, demander un accompagnement humain ou construire ton projet étape par étape avec notre parcours intelligent.</p>
+        </div>
+        <div className="mk-home-path-grid">
+          <article className="mk-home-path-card mk-home-path-catalogue" id="catalogue">
+            <div className="mk-home-path-icon">▦</div>
+            <div className="mk-home-path-meta"><span>01 · CHOISIR</span><span className="mk-home-status">Catalogue en préparation</span></div>
+            <h3>MerKora Catalogue</h3>
+            <p>Parcours nos solutions numériques, découvre leurs possibilités et prépare une commande adaptée à tes besoins.</p>
+            <a className="mk-home-path-link" href="#solutions">Explorer les familles de solutions <span>→</span></a>
+          </article>
+          <article className="mk-home-path-card mk-home-path-idp" id="idp">
+            <div className="mk-home-path-icon">◎</div>
+            <div className="mk-home-path-meta"><span>02 · ÉCHANGER</span><span className="mk-home-status">Assistance humaine en préparation</span></div>
+            <h3>MerKora IDP</h3>
+            <p>Tu préfères être accompagné par une personne ? Un conseiller pourra comprendre ton besoin, structurer ton dossier et suivre les décisions avec toi.</p>
+            <a className="mk-home-path-link" href="#accompagnement">Découvrir l'accompagnement <span>→</span></a>
+          </article>
+          <article className="mk-home-path-card mk-home-path-drt" id="drt">
+            <div className="mk-home-path-icon">✳</div>
+            <div className="mk-home-path-meta"><span>03 · CONCEVOIR</span><span className="mk-home-status mk-home-status-live">Parcours disponible</span></div>
+            <h3>MerKora DRT</h3>
+            <p>Décris librement ton projet. Le parcours intelligent t'aide à clarifier ton besoin, composer la solution et préparer sa maquette.</p>
+            <Link className="mk-home-path-link" href="/conversation">Commencer la conception <span>→</span></Link>
+          </article>
+        </div>
+      </section>
+
+      <section className="mk-home-story" aria-labelledby="mk-story-title">
+        <div className="mk-home-story-scene">
+          <div className="mk-home-scene-glow" />
+          <div className="mk-home-person-card">
+            <div className="mk-home-person-avatar">A</div>
+            <div><strong>Une activité à organiser</strong><span>Des tâches, des informations, des décisions...</span></div>
+            <div className="mk-home-paper-stack"><i /><i /><i /></div>
+          </div>
+          <div className="mk-home-scene-arrow">→</div>
+          <div className="mk-home-solution-card">
+            <div className="mk-home-solution-card-top"><BrandMark /><span>MERKORA · CONCEPTION</span></div>
+            <strong>Une solution pensée pour ton activité.</strong>
+            <div className="mk-home-solution-bars"><i /><i /><i /></div>
+            <span className="mk-home-solution-check">✓ Besoin clarifié · Solution proposée</span>
+          </div>
+          <div className="mk-home-scene-caption"><span className="mk-home-play">▶</span><span>Une histoire à raconter en vidéo</span><small>Film de présentation à produire</small></div>
+        </div>
+        <div className="mk-home-story-copy">
+          <div className="mk-home-eyebrow"><span /> TU N'AS PAS BESOIN D'AVOIR TOUTES LES RÉPONSES</div>
+          <h2 id="mk-story-title">Tu as un problème ?<br /><em>Commençons par l'écouter.</em></h2>
+          <p>Tu n'as pas besoin de connaître le nom du logiciel, les fonctions techniques ou l'architecture qu'il te faut. Explique simplement ce que tu vis, ce que tu veux changer ou ce que tu aimerais créer.</p>
+          <p>MerKora t'accompagne pour comprendre la situation, explorer les possibilités et construire une solution adaptée à ton objectif.</p>
+          <Link className="mk-home-text-link" href="/conversation">Parler de mon besoin <span>→</span></Link>
+        </div>
+      </section>
+
+      <section className="mk-home-solutions" id="solutions" aria-labelledby="mk-solutions-title">
+        <div className="mk-home-section-heading">
+          <div><div className="mk-home-eyebrow"><span /> TON UNIVERS NUMÉRIQUE</div><h2 id="mk-solutions-title">Qu'est-ce qu'on peut construire ?</h2></div>
+          <p>Chaque projet possède son fonctionnement, ses utilisateurs et ses propres règles. Nous ne plaquons pas le même modèle sur tout.</p>
+        </div>
+        <div className="mk-home-solutions-grid">
+          {solutionFamilies.map((family) => (
+            <article className="mk-home-solution-family" key={family.title}>
+              <span className="mk-home-family-icon">{family.icon}</span>
+              <h3>{family.title}</h3>
+              <p>{family.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mk-home-method" aria-labelledby="mk-method-title">
+        <div className="mk-home-method-heading">
+          <div className="mk-home-eyebrow"><span /> UN CHEMIN CLAIR, DE BOUT EN BOUT</div>
+          <h2 id="mk-method-title">De la première idée<br /><em>à une solution réelle.</em></h2>
+          <p>Tu avances à ton rythme. Les étapes s'adaptent à la nature et à la complexité de ton projet.</p>
+        </div>
+        <div className="mk-home-method-steps">
+          {steps.map((step) => (
+            <article key={step.number}><span>{step.number}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mk-home-final-cta">
+        <div className="mk-home-final-orb">M</div>
+        <div><div className="mk-home-eyebrow"><span /> LE PROCHAIN PROJET PEUT ÊTRE LE TIEN</div><h2>Et si on construisait la tienne ?</h2><p>Commence par nous raconter ce que tu as en tête. Nous avancerons une étape à la fois.</p></div>
+        <Link className="mk-home-primary-button" href="/conversation">Commencer maintenant <span>→</span></Link>
+      </section>
+
+      <footer className="mk-home-footer">
+        <Link className="mk-home-brand" href="/"><BrandMark /><span><strong>MerKora</strong><small>DES IDÉES AUX SOLUTIONS</small></span></Link>
+        <span>L'intelligence pour comprendre. La technologie pour réaliser.</span>
+        <span>© {new Date().getFullYear()} MerKora · Tes idées restent les tiennes.</span>
       </footer>
     </main>
   );
