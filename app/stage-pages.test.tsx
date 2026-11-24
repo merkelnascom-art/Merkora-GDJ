@@ -6,6 +6,7 @@ import ConversationPage from "./conversation/page";
 import DiagnosticPage from "./diagnostic/page";
 import ProductDefinitionPage from "./product-definition/page";
 import SolutionProposalPage from "./solution-proposal/page";
+import WorkspaceDesignPage from "./workspace-design/page";
 
 describe("MerKora screen 03 — project understanding", () => {
   it("keeps the first view short and puts the detailed dossier behind a disclosure", () => {
@@ -63,5 +64,18 @@ describe("MerKora screen 06 — solution proposal", () => {
     expect(html).toContain("identifier le produit et son domaine");
     expect(html).toContain("07 · Maquette");
     expect(html).not.toContain("Questionnaire complet");
+  });
+});
+
+
+describe("MerKora screen 07 — workspaces, simulation and launch", () => {
+  it("introduces editable role spaces and a client-controlled launch path", () => {
+    const html = renderToStaticMarkup(<WorkspaceDesignPage />);
+    expect(html).toContain("Organisons les espaces");
+    expect(html).toContain("LIBERTÉ DE CONSTRUCTION");
+    expect(html).toContain("SIMULER LES INTERACTIONS");
+    expect(html).toContain("Tu gardes la main sur le lancement.");
+    expect(html).toContain("Confirmer ma demande de mise en service");
+    expect(html).not.toContain("Déployer maintenant");
   });
 });
