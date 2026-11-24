@@ -8,18 +8,39 @@ import {
   reviseSolutionComponent,
   type SolutionProposal,
 } from "../../src/lib/merkora-core/solution-proposal";
+import {
+  getDomainCatalogs,
+  getProductTypeCatalog,
+  type SolutionBrandingMode,
+  type SolutionDomainId,
+  type SolutionNavigationStyle,
+  type SolutionProductProfile,
+  type SolutionProductTypeId,
+} from "../../src/lib/merkora-core/solution-catalog";
 import type { ProjectUnderstanding } from "../../src/lib/merkora-core/project-diagnostic";
 import type { ProductDefinitionSession } from "../../src/lib/merkora-core/product-definition";
 
 const DOSSIER_KEY = "merkora-v2-project-understanding";
 const DEFINITION_KEY = "merkora-v2-product-definition-session";
 const PROPOSAL_KEY = "merkora-v2-solution-proposal";
+const PROFILE_KEY = "merkora-v2-solution-product-profile";
 
 interface StoredProposal {
   definitionVersion: number;
   proposal: SolutionProposal;
   validated: boolean;
 }
+
+interface ProfileDraft {
+  projectName: string;
+  productTypeId: SolutionProductTypeId | "";
+  domainIds: SolutionDomainId[];
+  navigationStyle: SolutionNavigationStyle;
+  brandingMode: SolutionBrandingMode;
+}
+
+const productTypes = getProductTypeCatalog();
+const domainCatalogs = getDomainCatalogs();
 
 export default function SolutionProposalPage() {
   const [proposal, setProposal] = useState<SolutionProposal | null>(null);
@@ -28,6 +49,16 @@ export default function SolutionProposalPage() {
   const [problem, setProblem] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [dossier, setDossier] = useState<ProjectUnderstanding | null>(null);
+  const [definition, setDefinition] = useState<ProductDefinitionSession | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({
+    projectName: "",
+    productTypeId: "",
+    domainIds: [],
+    navigationStyle: "sidebar",
+    brandingMode: "to_define",
+  });
 
   useEffect(() => {
     try {
@@ -39,22 +70,33 @@ export default function SolutionProposalPage() {
         return;
       }
 
-      const dossier = JSON.parse(dossierRaw) as ProjectUnderstanding;
-      const definition = JSON.parse(definitionRaw) as ProductDefinitionSession;
-      if (definition.understandingId !== dossier.id || definition.status !== "ready_for_review") {
+      const loadedDossier = JSON.parse(dossierRaw) as ProjectUnderstanding;
+      const loadedDefinition = JSON.parse(definitionRaw) as ProductDefinitionSession;
+      if (loadedDefinition.understandingId !== loadedDossier.id || loadedDefinition.status !== "ready_for_review") {
         setProblem("La définition du produit doit être terminée avant de composer la solution.");
         setLoaded(true);
         return;
       }
 
-      const storedRaw = window.sessionStorage.getItem(PROPOSAL_KEY);
-      const stored = storedRaw ? JSON.parse(storedRaw) as StoredProposal : null;
-      const current = stored?.definitionVersion === definition.version
-        ? stored
-        : { definitionVersion: definition.version, proposal: buildSolutionProposal(dossier, definition), validated: false };
-      setProposal(current.proposal);
-      setValidated(current.validated);
-      window.sessionStorage.setItem(PROPOSAL_KEY, JSON.stringify(current));
+      setDossier(loadedDossier);
+      setDefinition(loadedDefinition);
+      const activity = loadedDossier.items.find((item) => item.status === "user_stated" && item.dimension === "activity")?.value ?? "";
+      const storedProfileRaw = window.sessionStorage.getItem(PROFILE_KEY);
+      const storedProfile = storedProfileRaw ? JSON.parse(storedProfileRaw) as SolutionProductProfile : null;
+      if (storedProfile) {
+        setProfileDraft(storedProfile);
+        const storedRaw = window.sessionStorage.getItem(PROPOSAL_KEY);
+        const stored = storedRaw ? JSON.parse(storedRaw) as StoredProposal : null;
+        const current = stored?.definitionVersion === loadedDefinition.version
+          ? stored
+          : { definitionVersion: loadedDefinition.version, proposal: buildSolutionProposal(loadedDossier, loadedDefinition, storedProfile), validated: false };
+        setProposal(current.proposal);
+        setValidated(current.validated);
+        window.sessionStorage.setItem(PROPOSAL_KEY, JSON.stringify(current));
+      } else {
+        setProfileDraft((current) => ({ ...current, projectName: activity }));
+        setNeedsProfile(true);
+      }
     } catch {
       setProblem("Les données du projet n'ont pas pu être lues. Retourne à l'écran 05 pour vérifier la définition.");
     }
@@ -75,15 +117,47 @@ export default function SolutionProposalPage() {
     setValidated(nextValidated);
     try {
       const raw = window.sessionStorage.getItem(DEFINITION_KEY);
-      const definition = raw ? JSON.parse(raw) as ProductDefinitionSession : null;
+      const currentDefinition = raw ? JSON.parse(raw) as ProductDefinitionSession : null;
       window.sessionStorage.setItem(PROPOSAL_KEY, JSON.stringify({
-        definitionVersion: definition?.version ?? 0,
+        definitionVersion: currentDefinition?.version ?? 0,
         proposal: next,
         validated: nextValidated,
       } satisfies StoredProposal));
     } catch {
       setProblem("La modification est visible, mais le navigateur n'a pas pu la conserver. Garde cet onglet ouvert.");
     }
+  }
+
+  function completeProductProfile() {
+    if (!dossier || !definition || !profileDraft.projectName.trim() || !profileDraft.productTypeId) return;
+    const profile: SolutionProductProfile = {
+      ...profileDraft,
+      projectName: profileDraft.projectName.trim(),
+    };
+    const next = buildSolutionProposal(dossier, definition, profile);
+    setProfileDraft(profile);
+    setProposal(next);
+    setValidated(false);
+    setNeedsProfile(false);
+    try {
+      window.sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      window.sessionStorage.setItem(PROPOSAL_KEY, JSON.stringify({
+        definitionVersion: definition.version,
+        proposal: next,
+        validated: false,
+      } satisfies StoredProposal));
+    } catch {
+      setProblem("La proposition est prête, mais le navigateur n'a pas pu conserver le cadrage. Garde cet onglet ouvert.");
+    }
+  }
+
+  function toggleDomain(domainId: SolutionDomainId) {
+    setProfileDraft((current) => ({
+      ...current,
+      domainIds: current.domainIds.includes(domainId)
+        ? current.domainIds.filter((id) => id !== domainId)
+        : [...current.domainIds, domainId],
+    }));
   }
 
   function beginEdit(id: string, title: string) {
@@ -125,12 +199,12 @@ export default function SolutionProposalPage() {
             <span className="active">06 · Solution</span>
             <span>07 · Maquette</span>
           </div>
-          <span className="mk-eyebrow"><span /> ÉTAPE 06 · PROPOSITION ET COMPOSITION</span>
-          <h1>Voici la solution<br /><em>que nous pouvons construire.</em></h1>
-          <p>MerKora organise les éléments de ton projet en une proposition concrète. Tu gardes la main : chaque composant peut être accepté, modifié ou écarté. Rien n'est imposé.</p>
+          <span className="mk-eyebrow"><span /> ÉTAPE 06 · ARCHITECTURE ET COMPOSITION</span>
+          <h1>Construisons la structure<br /><em>de ton projet.</em></h1>
+          <p>On commence par identifier le produit et son domaine. MerKora utilisera ensuite les catalogues adaptés, puis assemblera les modules retenus sans confondre leurs règles métier.</p>
         </div>
 
-        {!loaded && <section className="mk-stage-empty"><p>Préparation de la proposition…</p></section>}
+        {!loaded && <section className="mk-stage-empty"><p>Préparation du projet…</p></section>}
 
         {loaded && problem && (
           <section className="mk-stage-empty">
@@ -140,12 +214,123 @@ export default function SolutionProposalPage() {
           </section>
         )}
 
+        {loaded && needsProfile && (
+          <section className="mk-solution-profile">
+            <div className="mk-solution-profile-heading">
+              <span className="mk-summary-kicker">01 · IDENTITÉ DU PROJET</span>
+              <h2>Quel produit veux-tu créer ?</h2>
+              <p>Le nom, la nature du produit et le ou les domaines déterminent la structure de départ. Tu peux combiner plusieurs domaines : MerKora construira une solution hybride.</p>
+            </div>
+
+            <label className="mk-solution-field">
+              <span>Nom du projet</span>
+              <input
+                value={profileDraft.projectName}
+                onChange={(event) => setProfileDraft((current) => ({ ...current, projectName: event.target.value }))}
+                placeholder="Ex. : Aéro Service — Gestion intégrée"
+                maxLength={100}
+              />
+            </label>
+
+            <div className="mk-solution-profile-group">
+              <span className="mk-solution-field-title">Nature du produit</span>
+              <p>Un site vitrine, une plateforme et une application mobile ne suivent pas la même architecture.</p>
+              <div className="mk-solution-type-grid">
+                {productTypes.map((type) => (
+                  <button
+                    type="button"
+                    key={type.id}
+                    className={"mk-solution-type-card" + (profileDraft.productTypeId === type.id ? " selected" : "")}
+                    aria-pressed={profileDraft.productTypeId === type.id}
+                    onClick={() => setProfileDraft((current) => ({
+                      ...current,
+                      productTypeId: type.id,
+                      navigationStyle: type.defaultNavigation,
+                    }))}
+                  >
+                    <strong>{type.label}</strong>
+                    <span>{type.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mk-solution-profile-group">
+              <span className="mk-solution-field-title">Domaines et secteurs concernés</span>
+              <p>Choisis un ou plusieurs domaines. Tu peux associer, par exemple, présence + réservation ou formation + finance.</p>
+              <div className="mk-solution-domain-grid">
+                {domainCatalogs.map((domain) => (
+                  <label className={"mk-solution-domain-option" + (profileDraft.domainIds.includes(domain.id) ? " selected" : "")} key={domain.id}>
+                    <input
+                      type="checkbox"
+                      checked={profileDraft.domainIds.includes(domain.id)}
+                      onChange={() => toggleDomain(domain.id)}
+                    />
+                    <span><strong>{domain.label}</strong><small>{domain.description}</small></span>
+                  </label>
+                ))}
+              </div>
+              {profileDraft.domainIds.length > 1 && (
+                <p className="mk-solution-hybrid-note">Composition hybride : {profileDraft.domainIds.length} domaines seront assemblés. Leurs règles et fonctions resteront identifiables.</p>
+              )}
+            </div>
+
+            <div className="mk-solution-profile-settings">
+              <label className="mk-solution-field">
+                <span>Style de navigation souhaité</span>
+                <select
+                  value={profileDraft.navigationStyle}
+                  onChange={(event) => setProfileDraft((current) => ({ ...current, navigationStyle: event.target.value as SolutionNavigationStyle }))}
+                >
+                  <option value="sidebar">Menu latéral</option>
+                  <option value="topbar">Menu horizontal supérieur</option>
+                  <option value="bottom_tabs">Navigation inférieure mobile</option>
+                  <option value="contextual">Navigation contextuelle</option>
+                  <option value="not_applicable">Pas de navigation logicielle</option>
+                </select>
+              </label>
+              <label className="mk-solution-field">
+                <span>Identité visuelle</span>
+                <select
+                  value={profileDraft.brandingMode}
+                  onChange={(event) => setProfileDraft((current) => ({ ...current, brandingMode: event.target.value as SolutionBrandingMode }))}
+                >
+                  <option value="to_define">À définir avec MerKora</option>
+                  <option value="existing_logo">J'ai déjà un logo</option>
+                  <option value="create_logo">Je veux créer un logo</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mk-solution-owner-note">
+              <strong>Un espace propriétaire distinct</strong>
+              <p>Le compte de la personne qui commande et administre le produit sera séparé des espaces destinés aux clients, membres, apprenants, agents ou autres utilisateurs finaux.</p>
+            </div>
+
+            <button
+              type="button"
+              className="mk-continue-button"
+              disabled={!profileDraft.projectName.trim() || !profileDraft.productTypeId}
+              onClick={completeProductProfile}
+            >
+              Construire la proposition <span>→</span>
+            </button>
+          </section>
+        )}
+
         {loaded && proposal && (
           <>
             <section className="mk-solution-overview">
               <span className="mk-summary-kicker">PROPOSITION GLOBALE</span>
               <h2>{proposal.title}</h2>
               <p className="mk-solution-lead">{proposal.description}</p>
+              <div className="mk-solution-profile-summary">
+                <span>{productTypes.find((item) => item.id === proposal.productProfile?.productTypeId)?.label ?? "Type à préciser"}</span>
+                {(proposal.productProfile?.domainIds ?? []).map((id) => (
+                  <span key={id}>{domainCatalogs.find((domain) => domain.id === id)?.label ?? id}</span>
+                ))}
+                {proposal.domainComposition?.isHybrid && <strong>Architecture hybride</strong>}
+              </div>
               <div className="mk-solution-context-grid">
                 <article><span>LE BESOIN À RÉSOUDRE</span><p>{proposal.problem}</p></article>
                 <article><span>LE RÉSULTAT RECHERCHÉ</span><p>{proposal.objective}</p></article>
@@ -170,7 +355,7 @@ export default function SolutionProposalPage() {
                 <div>
                   <span className="mk-summary-kicker">COMPOSITION PERSONNALISABLE</span>
                   <h2>Les éléments de la solution</h2>
-                  <p>Ouvre uniquement les éléments que tu veux examiner.</p>
+                  <p>Les éléments du catalogue restent des propositions jusqu'à ta validation.</p>
                 </div>
                 <span className="mk-solution-count">{proposal.components.length} élément(s)</span>
               </div>
@@ -198,7 +383,15 @@ export default function SolutionProposalPage() {
                         <details className="mk-solution-why">
                           <summary>Pourquoi ?</summary>
                           <p>{component.description}</p>
-                          <small>{component.source === "validated_definition" ? "Issu de tes réponses à l'écran 05." : "Suggestion du référentiel métier, à confirmer."}</small>
+                          <small>
+                            {component.source === "validated_definition"
+                              ? "Issu de tes réponses à l'écran 05."
+                              : component.source === "knowledge_suggestion"
+                                ? "Suggestion du référentiel métier, à confirmer."
+                                : component.source === "catalog_suggestion"
+                                  ? "Élément du catalogue produit ou métier, à confirmer."
+                                  : "Issu du dossier de projet."}
+                          </small>
                         </details>
                       </div>
                       {component.status !== "rejected" && editingId !== component.id && (
