@@ -56,7 +56,7 @@ function roleToWorkspace(role: SolutionProductRole, origin: WorkspaceRole["origi
     ...role,
     access: accessFor(role),
     enabled: true,
-    permissions: [...(defaultPermissions[role.id] ?? [\`use_\${role.id}\`, \`view_\${role.id}_activity\`])],
+    permissions: [...(defaultPermissions[role.id] ?? [`use_${role.id}`, `view_${role.id}_activity`])],
     origin,
   };
 }
@@ -165,7 +165,7 @@ export function simulateWorkspaceAction(
     plan.roles.some((role) => role.id === id && role.enabled),
   );
   const event: WorkspaceEvent = {
-    id: \`demo-event-\${plan.events.length + 1}\`,
+    id: `demo-event-${plan.events.length + 1}`,
     kind,
     title: target.title,
     description: target.description,
