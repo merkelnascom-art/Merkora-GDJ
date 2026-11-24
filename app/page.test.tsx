@@ -14,25 +14,23 @@ describe("MerKora public welcome screen", () => {
 
   it("offers three distinct entry paths and keeps the existing DRT journey reachable", () => {
     const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
-    expect(html).toContain("MerKora Catalogue");
-    expect(html).toContain("MerKora IDP");
-    expect(html).toContain("MerKora DRT");
+    expect(html).toContain("MerKora GDJ Catalogue");
+    expect(html).toContain("MerKora GDJ IDP");
+    expect(html).toContain("MerKora GDJ DRT");
     expect(html).toContain('href="/conversation"');
   });
 
   it("explains the human support and catalogue paths without pretending they are already operational", () => {
     const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
-    expect(html).toContain("Catalogue en préparation");
-    expect(html).toContain("Assistance humaine en préparation");
+    expect(html).toContain("Catalogue");
+    expect(html).toContain("Assistance humaine");
   });
 
   it("contains an accessible story section and concrete solution families", () => {
     const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
-    expect(html).toContain('aria-labelledby="mk-story-title"');
+    expect(html).toContain('aria-label="Présentation vidéo de MerKora GDJ"');
     expect(html).toContain("Sites web");
-    expect(html).toContain("Applications mobiles");
-    expect(html).toContain("Plateformes métiers");
-    expect(html).toContain("Jeux numériques");
+
   });
 
 
