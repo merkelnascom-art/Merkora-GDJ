@@ -6,14 +6,14 @@ import ConversationPage, { ConversationPendingTurn, ConversationProcessingIndica
 
 describe("MerKora public welcome screen", () => {
   it("introduces the platform with its new promise and premium identity", () => {
-    const html = renderToStaticMarkup(<HomePage />);
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain("L'intelligence de tes idées");
     expect(html).toContain("La puissance de leur réalisation");
-    expect(html).toContain("Une idée ? Un problème ? Une ambition ?");
+    expect(html).toContain("Une idée, un problème ou une ambition ?");
   });
 
   it("offers three distinct entry paths and keeps the existing DRT journey reachable", () => {
-    const html = renderToStaticMarkup(<HomePage />);
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain("MerKora Catalogue");
     expect(html).toContain("MerKora IDP");
     expect(html).toContain("MerKora DRT");
@@ -21,13 +21,13 @@ describe("MerKora public welcome screen", () => {
   });
 
   it("explains the human support and catalogue paths without pretending they are already operational", () => {
-    const html = renderToStaticMarkup(<HomePage />);
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain("Catalogue en préparation");
     expect(html).toContain("Assistance humaine en préparation");
   });
 
   it("contains an accessible story section and concrete solution families", () => {
-    const html = renderToStaticMarkup(<HomePage />);
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain('aria-labelledby="mk-story-title"');
     expect(html).toContain("Sites web");
     expect(html).toContain("Applications mobiles");
@@ -36,7 +36,7 @@ describe("MerKora public welcome screen", () => {
   });
 
   it("keeps the customer account entry available", () => {
-    const html = renderToStaticMarkup(<HomePage />);
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain('href="/auth"');
   });
 });
