@@ -11,9 +11,9 @@ describe("MerKora screen 03 — project understanding", () => {
   it("keeps the first view short and puts the detailed dossier behind a disclosure", () => {
     const html = renderToStaticMarkup(<UnderstandingPage />);
     expect(html).toContain("Vérifions-le ensemble");
-    expect(html).toContain("Ton projet, en quelques repères");
-    expect(html).toContain("Voir les détails de compréhension");
+    expect(html).toContain("Voici les quelques repères que j'ai retenus");
     expect(html).not.toContain("Repères du référentiel universel");
+    expect(html).not.toContain("Cartographie métier et fonctionnelle");
     expect(html).not.toContain("Choisis ton secteur");
   });
 });
@@ -48,7 +48,7 @@ describe("MerKora screen 05 — adaptive product definition", () => {
 describe("MerKora screen 02 — conversation", () => {
   it("keeps the initial request short and avoids showing the internal dossier as a form", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
-    expect(html).toContain("Une question à la fois");
+    expect(html).toContain("je te pose une question, tu réponds, puis je passe à la suivante");
     expect(html).toContain("En quelques mots, que souhaites-tu améliorer ou créer ?");
     expect(html).not.toContain("DÉCRYPTAGE EN DIRECT");
     expect(html).not.toContain("Quelques points de départ, si tu en as besoin");
