@@ -769,3 +769,19 @@
 .mk2-film{grid-template-columns:1fr;gap:23px;padding:30px 0 48px}.mk2-film-art{min-height:225px}.mk2-film-copy h2{font-size:33px}.mk2-final{flex-wrap:wrap;padding:18px;gap:12px}.mk2-final-mark .mk2-brand-mark{width:39px;height:39px}.mk2-final>div:nth-child(2){flex:1 1 calc(100% - 55px)}.mk2-final h2{font-size:19px}.mk2-final .mk2-primary{width:100%}.mk2-footer{align-items:flex-start;flex-direction:column;gap:11px}}
 @media(max-width:390px){.mk2-nav a{font-size:7px}.mk2-header-cta{font-size:7px}.mk2-hero-actions{align-items:stretch;flex-direction:column}.mk2-hero-actions>*{width:100%}}
 @media(prefers-reduced-motion:reduce){.mk2-home *{scroll-behavior:auto!important;transition:none!important}}
+
+/* Espaces dédiés Catalogue et IDP — contenus isolés de la page d'accueil. */
+.mk2-space-page{min-height:100vh;background:radial-gradient(ellipse at 85% 10%,#dff3fa 0,transparent 42%),#f4f9fb;color:#0b2d49}
+.mk2-space-header{width:min(1120px,calc(100% - 48px));height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dce9ef}
+.mk2-space-back{font-size:10px;font-weight:800;color:#236b8c}
+.mk2-space-content{width:min(850px,calc(100% - 48px));margin:0 auto;padding:clamp(55px,9vw,100px) 0}
+.mk2-space-kicker{color:#347e9e;font-size:9px;font-weight:800;letter-spacing:1.6px}
+.mk2-space-content h1{margin:17px 0 15px;font-family:Manrope,sans-serif;font-size:clamp(37px,6vw,62px);line-height:1.1;letter-spacing:-2px;color:#0b2d49}
+.mk2-space-content h1 em{font-style:normal;color:#287fa7}
+.mk2-space-lead{max-width:690px;color:#627b8b;font-size:14px;line-height:1.9}
+.mk2-space-empty{margin:35px 0 25px;padding:27px;border:1px solid #d9e7ed;border-radius:17px;background:#fff;box-shadow:0 12px 35px #0b2d4910}
+.mk2-space-empty>span{display:grid;place-items:center;width:43px;height:43px;border-radius:12px;background:#e8f6fb;color:#17678d;font-size:23px}
+.mk2-space-empty h2{margin:17px 0 7px;font-family:Manrope,sans-serif;font-size:20px;color:#0b2d49}
+.mk2-space-empty p{max-width:600px;margin:0;color:#6b818d;font-size:12px;line-height:1.8}
+.mk2-space-content>.mk2-primary{min-height:46px}
+@media(max-width:600px){.mk2-space-header{width:calc(100% - 32px);height:70px}.mk2-space-back{font-size:8px}.mk2-space-content{width:calc(100% - 32px)}.mk2-space-empty{padding:20px}}
