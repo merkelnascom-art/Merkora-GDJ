@@ -264,6 +264,7 @@ export default function UnderstandingPage() {
                     <li key={item.id}>
                       <span>{item.dimension.replaceAll("_", " ")}</span>
                       <strong>{item.value}</strong>
+                      <small>{statusLabel(item.status)}</small>
                     </li>
                   ))}
                 </ul>
