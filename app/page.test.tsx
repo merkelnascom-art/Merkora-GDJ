@@ -35,6 +35,25 @@ describe("MerKora public welcome screen", () => {
     expect(html).toContain("Jeux numériques");
   });
 
+
+  it("keeps the homepage short and reserves each product catalogue for its own MerKora GDJ space", () => {
+    const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
+    expect(html).toContain("MerKora GDJ");
+    expect(html).toContain('href="/catalogue"');
+    expect(html).toContain('href="/idp"');
+    expect(html).toContain('href="/conversation"');
+    expect(html).not.toContain("Applications mobiles");
+    expect(html).not.toContain("Qu'est-ce qu'on peut construire ?");
+    expect(html).not.toContain("De la première idée");
+  });
+
+  it("uses the brand's deep marine blue and presents a clearly identified video area", () => {
+    const html = renderToStaticMarkup(<HomePage />);
+    expect(html).toContain("MerKora GDJ");
+    expect(html).toContain('aria-label="Présentation vidéo de MerKora GDJ"');
+    expect(html).toContain("Vidéo de présentation bientôt disponible");
+  });
+
   it("keeps the customer account entry available", () => {
     const html = renderToStaticMarkup(<HomePage />).replace(/&#x27;/g, "'");
     expect(html).toContain('href="/auth"');
