@@ -64,7 +64,7 @@ export default function CataloguePage() {
             <div>
               <span className="mk2-catalogue-kicker">02 · LE MÉTIER À ACCOMPAGNER</span>
               <h2>Dans quel domaine sera-t-il utilisé ?</h2>
-              <p>Une même activité peut avoir besoin de plusieurs domaines. Les combinaisons sont possibles, sans mélanger les règles propres à chaque métier.</p>
+              <p>Une même activité peut avoir besoin de plusieurs domaines. Un domaine peut utiliser plusieurs types de produits, et un produit peut servir plusieurs domaines. Les combinaisons sont possibles, sans mélanger les règles propres à chaque métier.</p>
             </div>
             <span className="mk2-catalogue-count">{domains.length} domaines référencés</span>
           </div>
