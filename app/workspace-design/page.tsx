@@ -37,6 +37,7 @@ export default function WorkspaceDesignPage() {
   const [newRoleLabel, setNewRoleLabel] = useState("");
   const [newRoleDescription, setNewRoleDescription] = useState("");
   const [newRoleAccess, setNewRoleAccess] = useState<WorkspaceAccess>("authenticated");
+  const [newPermission, setNewPermission] = useState("");
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -216,10 +217,16 @@ export default function WorkspaceDesignPage() {
                             <span>{permission.replace(/_/g, " ")}</span>
                           </label>
                         ))}
-                        <label style={{ display: "flex", gap: 9, alignItems: "center" }}>
-                          <input type="checkbox" checked={false} onChange={() => togglePermission("view_assigned_information")} />
-                          <span>Ajouter l'accès : view assigned information</span>
-                        </label>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          <input style={{ ...styles.input, flex: "1 1 180px" }} value={newPermission} onChange={(event) => setNewPermission(event.target.value)} placeholder="Nouvelle permission" />
+                          <button type="button" style={styles.button} disabled={!newPermission.trim()} onClick={() => {
+                            if (!plan || !selectedRole || !newPermission.trim()) return;
+                            const permission = newPermission.trim().toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+                            if (!permission || selectedRole.permissions.includes(permission)) return;
+                            persist(updateWorkspaceRole(plan, selectedRole.id, { permissions: [...selectedRole.permissions, permission] }));
+                            setNewPermission("");
+                          }}>Ajouter</button>
+                        </div>
                       </div>
                     </div>
                     <div style={{ marginTop: 16, borderTop: "1px solid rgba(255,255,255,.12)", paddingTop: 12 }}>
