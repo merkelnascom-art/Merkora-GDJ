@@ -99,4 +99,32 @@ describe("screen 06 — solution proposal", () => {
     const proposal = buildSolutionProposal(dossier(), definition());
     expect(proposal.architectures).toHaveLength(1);
   });
+  it("uses the selected product type and combines domain-specific modules for a hybrid project", () => {
+    const proposal = buildSolutionProposal(dossier(), definition(), {
+      projectName: "Aéro Service — Gestion intégrée",
+      productTypeId: "web_platform",
+      domainIds: ["attendance", "reservation"],
+      navigationStyle: "sidebar",
+      brandingMode: "create_logo",
+    });
+
+    expect(proposal.title).toBe("Aéro Service — Gestion intégrée");
+    expect(proposal.architectures[0].title).toContain("Plateforme web");
+    expect(proposal.domainComposition?.isHybrid).toBe(true);
+    expect(proposal.components.map((component) => component.title)).toEqual(
+      expect.arrayContaining([
+        "Espaces par profil",
+        "Espace administrateur",
+        "Pointage et identification",
+        "Retards, absences et justificatifs",
+        "Disponibilités et créneaux",
+        "Invitations et QR codes",
+        "Transformer une réservation en présence",
+      ]),
+    );
+    expect(proposal.components.filter((component) => component.source === "catalog_suggestion")
+      .every((component) => component.status === "suggested")).toBe(true);
+    expect(proposal.productProfile?.brandingMode).toBe("create_logo");
+  });
+
 });
