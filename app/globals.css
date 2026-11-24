@@ -372,3 +372,72 @@
 .mk-product-choice-block .mk-diagnostic-option{cursor:pointer}
 .mk-product-choice-block .mk-diagnostic-option input{accent-color:#d8b875}
 .mk-product-choice-block .mk-diagnostic-option.selected{border-color:#d8b87599;background:#3a3048}
+
+
+/* MerKora — écran 06 : cadrage universel du produit */
+.mk-solution-profile{max-width:960px;margin:18px auto 30px;padding:clamp(17px,3vw,27px);border:1px solid #77c8d055;border-radius:20px;background:linear-gradient(145deg,#f7fcff 0%,#ffffff 58%,#f0faf7 100%);box-shadow:0 18px 50px #051a2d35;color:#173349}
+.mk-solution-profile-heading h2{margin:9px 0;color:#123b54;font-size:clamp(21px,4vw,30px);letter-spacing:-.7px}
+.mk-solution-profile-heading p,.mk-solution-profile-group>p{max-width:760px;margin:0;color:#557080;font-size:11px;line-height:1.75}
+.mk-solution-profile .mk-summary-kicker{color:#147c86}
+.mk-solution-field{display:grid;gap:7px;min-width:0}
+.mk-solution-field>span,.mk-solution-field-title{color:#1a5267;font-size:10px;font-weight:800;letter-spacing:.06em}
+.mk-solution-field input,.mk-solution-field select{width:100%;min-height:44px;border:1px solid #b9d4dc;border-radius:10px;background:#fff;color:#173349;padding:11px 12px;font:inherit;font-size:12px;outline:none}
+.mk-solution-field input:focus,.mk-solution-field select:focus{border-color:#278e99;box-shadow:0 0 0 3px #278e9920}
+.mk-solution-profile>.mk-solution-field{margin:20px 0}
+.mk-solution-profile-group{margin:22px 0}
+.mk-solution-profile-group>p{margin-top:6px}
+.mk-solution-type-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.mk-solution-type-card{display:grid;gap:6px;min-height:94px;padding:13px;border:1px solid #c6dbe0;border-radius:12px;background:#fff;text-align:left;color:#234658;cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+.mk-solution-type-card:hover{border-color:#68aeb3;transform:translateY(-1px)}
+.mk-solution-type-card.selected{border-color:#16868d;background:#e8f8f5;box-shadow:inset 0 0 0 1px #16868d}
+.mk-solution-type-card strong{color:#174e65;font-size:11px}
+.mk-solution-type-card span{color:#5c7481;font-size:10px;line-height:1.55}
+.mk-solution-domain-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.mk-solution-domain-option{display:flex;align-items:flex-start;gap:9px;padding:11px;border:1px solid #c9dce0;border-radius:11px;background:#fff;cursor:pointer}
+.mk-solution-domain-option.selected{border-color:#16868d;background:#eaf8f5}
+.mk-solution-domain-option input{margin:3px 0 0;accent-color:#16868d;flex:0 0 auto}
+.mk-solution-domain-option span{display:grid;gap:4px;min-width:0}
+.mk-solution-domain-option strong{color:#174e65;font-size:10px}
+.mk-solution-domain-option small{color:#607985;font-size:9px;line-height:1.55}
+.mk-solution-hybrid-note{margin-top:10px!important;padding:10px 12px;border-left:3px solid #c5a45e;border-radius:6px;background:#fff8e9;color:#6b5424!important}
+.mk-solution-profile-settings{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.mk-solution-owner-note{margin:18px 0;padding:13px 15px;border:1px solid #c8e3d9;border-radius:11px;background:#eef9f4}
+.mk-solution-owner-note strong{color:#176b61;font-size:11px}
+.mk-solution-owner-note p{margin:5px 0 0;color:#55756e;font-size:10px;line-height:1.65}
+.mk-solution-profile>.mk-continue-button{width:100%;max-width:340px;display:flex;justify-content:center;gap:12px;margin:20px 0 0;border:0;background:linear-gradient(110deg,#137e8b,#176a63);color:#fff}
+.mk-solution-profile>.mk-continue-button:disabled{opacity:.42;cursor:not-allowed}
+.mk-solution-profile-summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.mk-solution-profile-summary span,.mk-solution-profile-summary strong{padding:6px 9px;border:1px solid #6db7b055;border-radius:20px;background:#e8f7f3;color:#176b68;font-size:9px}
+.mk-solution-profile-summary strong{border-color:#d3b66c;background:#fff8e8;color:#7b5e20}
+.mk-solution-page .mk-solution-overview{border-color:#69b8b455;background:linear-gradient(145deg,#eefaff,#f6fcfa);color:#173349}
+.mk-solution-page .mk-solution-overview h2{color:#17465d}
+.mk-solution-page .mk-solution-lead,.mk-solution-page .mk-solution-context-grid article p{color:#4c6877}
+.mk-solution-page .mk-solution-context-grid article{border-color:#c7dfe2;background:#ffffffb8}
+.mk-solution-page .mk-solution-context-grid article span{color:#16818a}
+.mk-solution-page .mk-solution-principle{color:#56717c}
+.mk-solution-page .mk-solution-architecture{border-color:#b9d9d9;background:#f4fbfa}
+.mk-solution-page .mk-solution-architecture h2{color:#17465d}
+.mk-solution-page .mk-solution-architecture p,.mk-solution-page .mk-solution-architecture ul{color:#55717d}
+.mk-solution-page .mk-solution-components{border-color:#c8dfe2;background:#f7fbfc}
+.mk-solution-page .mk-solution-section-heading h2{color:#17465d}
+.mk-solution-page .mk-solution-section-heading p{color:#607984}
+.mk-solution-page .mk-solution-component{border-color:#d0e1e4;background:#fff}
+.mk-solution-page .mk-solution-component-copy h3{color:#17465d}
+.mk-solution-page .mk-solution-why{color:#147c86}
+.mk-solution-page .mk-solution-why p{color:#4e6b78}
+.mk-solution-page .mk-solution-why small{color:#6c8791}
+.mk-solution-page .mk-solution-actions button{border-color:#7ab8b0;background:#e7f5f1;color:#17675f}
+.mk-solution-page .mk-solution-actions button.quiet{border-color:#c9dce0;background:#fff;color:#496572}
+.mk-solution-page .mk-solution-edit input{border-color:#b9d4dc;background:#fff;color:#173349}
+.mk-solution-page .mk-solution-count{border-color:#b9d4dc;color:#176b68}
+.mk-solution-page .mk-solution-footer{border-color:#cbdde1}
+.mk-solution-page .mk-solution-footer strong{color:#176b68}
+.mk-solution-page .mk-solution-footer p{color:#617985}
+.mk-solution-page .mk-solution-coherence{border-color:#e1d1a6;background:#fffaf0;color:#68572d}
+.mk-solution-page .mk-solution-coherence summary{color:#886a25}
+.mk-solution-page .mk-solution-coherence p,.mk-solution-page .mk-solution-coherence div{color:#756644}
+@media(max-width:680px){
+ .mk-solution-type-grid,.mk-solution-domain-grid,.mk-solution-profile-settings{grid-template-columns:1fr}
+ .mk-solution-profile{padding:15px}
+ .mk-solution-type-card{min-height:0}
+}
