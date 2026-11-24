@@ -1,4 +1,4 @@
-import type { SolutionProductProfile, SolutionProductTypeId } from "./solution-catalog";
+import type { SolutionProductTypeId } from "./solution-catalog";
 
 export interface SolutionProfileAnswers {
   projectName: string;
