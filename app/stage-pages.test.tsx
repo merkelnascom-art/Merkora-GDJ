@@ -62,7 +62,7 @@ describe("MerKora screen 06 — solution proposal", () => {
     expect(html).toContain("Construisons la structure");
     expect(html).toContain("ÉTAPE 06 · ARCHITECTURE ET COMPOSITION");
     expect(html).toContain("identifier le produit et son domaine");
-    expect(html).toContain("07 · Maquette");
+    expect(html).toContain("07 · Espaces");
     expect(html).not.toContain("Questionnaire complet");
   });
 });
