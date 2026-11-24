@@ -48,17 +48,18 @@ describe("MerKora GDJ V2 conversation screen", () => {
     expect(html.indexOf("Je veux organiser mon activité.")).toBeLessThan(html.indexOf("mk-thinking-indicator"));
     expect(html).toContain("MerKora réfléchit à ta réponse");
   });
-  it("offers optional examples without forcing a project category", () => {
+  it("starts with one short open question instead of several examples", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
-    expect(html).toContain("Améliorer la gestion de mon établissement");
-    expect(html).toContain("Mieux suivre les ventes de mon activité");
-    expect(html).toContain("J&#x27;ai une idée à développer");
-    expect(html).toContain("Tu peux aussi raconter ton besoin librement");
+    expect(html).toContain("UNE PREMIÈRE QUESTION");
+    expect(html).toContain("En quelques mots, que souhaites-tu améliorer ou créer ?");
+    expect(html).toContain("je te pose une question, tu réponds, puis je passe à la suivante");
+    expect(html).not.toContain("Améliorer la gestion de mon établissement");
+    expect(html).not.toContain("DÉCRYPTAGE EN DIRECT");
   });
 
   it("keeps a text-only input and removes voice mode controls", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
-    expect(html).toContain("DÉCRIS CE QUE TU SOUHAITES IMAGINER");
+    expect(html).toContain("UNE PREMIÈRE QUESTION");
     expect(html).not.toContain("Notre façon d'échanger");
     expect(html).not.toContain(">Voix<");
     expect(html).not.toContain("Mode voix sélectionné");
