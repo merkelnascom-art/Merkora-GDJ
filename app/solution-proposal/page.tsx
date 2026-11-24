@@ -476,7 +476,8 @@ export default function SolutionProposalPage() {
                 <span>✓</span>
                 <div>
                   <strong>Composition validée</strong>
-                  <p>La prochaine étape sera la maquette réelle de l'écran 07 : elle devra représenter les espaces, les écrans, la navigation et les fonctions de cette composition.</p>
+                  <p>Tu peux maintenant organiser les espaces de chaque profil, ajuster les permissions et simuler les échanges avant la maquette détaillée.</p>
+                  <a className="mk-continue-button" href="/workspace-design">Organiser les espaces et tester le produit · Écran 07 <span>→</span></a>
                 </div>
               </section>
             )}
