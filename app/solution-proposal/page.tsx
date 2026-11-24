@@ -19,6 +19,7 @@ import {
 } from "../../src/lib/merkora-core/solution-catalog";
 import type { ProjectUnderstanding } from "../../src/lib/merkora-core/project-diagnostic";
 import type { ProductDefinitionSession } from "../../src/lib/merkora-core/product-definition";
+import { canAdvanceSolutionProfileStep, SOLUTION_PROFILE_QUESTIONS } from "../../src/lib/merkora-core/solution-profile-wizard";
 
 const DOSSIER_KEY = "merkora-v2-project-understanding";
 const DEFINITION_KEY = "merkora-v2-product-definition-session";
@@ -116,6 +117,7 @@ export default function SolutionProposalPage() {
     () => proposal?.components.filter((item) => item.status === "rejected").length ?? 0,
     [proposal],
   );
+  const activeProfileQuestion = SOLUTION_PROFILE_QUESTIONS[profileStep];
 
   function save(next: SolutionProposal, nextValidated = false) {
     setProposal(next);
@@ -247,20 +249,8 @@ export default function SolutionProposalPage() {
               <div className="mk-solution-wizard-progress" aria-label={`Étape ${profileStep + 1} sur 5`}>
                 {Array.from({ length: 5 }, (_, index) => <span key={index} className={index <= profileStep ? "active" : ""} />)}
               </div>
-              <h2>{[
-                "Comment s'appelle ton projet ?",
-                "Quel type de produit veux-tu créer ?",
-                "Dans quel(s) domaine(s) sera-t-il utilisé ?",
-                "Comment souhaites-tu naviguer dans le produit ?",
-                "Quelle identité visuelle souhaites-tu ?",
-              ][profileStep]}</h2>
-              <p>{[
-                "Tu peux garder le nom déjà proposé ou le modifier.",
-                "Un site, une plateforme et une application mobile n'ont pas la même structure.",
-                "Tu peux choisir plusieurs domaines pour créer une solution hybride. Tu peux aussi passer cette question.",
-                "MerKora propose un choix adapté au produit. Tu pourras le modifier plus tard.",
-                "Tu pourras créer un logo, utiliser celui que tu as déjà ou décider plus tard.",
-              ][profileStep]}</p>
+              <h2>{activeProfileQuestion.title}</h2>
+              <p>{activeProfileQuestion.description}</p>
             </div>
 
             {profileStep === 0 && (
@@ -349,7 +339,7 @@ export default function SolutionProposalPage() {
                 <button
                   type="button"
                   className="mk-continue-button"
-                  disabled={(profileStep === 0 && !profileDraft.projectName.trim()) || (profileStep === 1 && !profileDraft.productTypeId)}
+                  disabled={!canAdvanceSolutionProfileStep(profileStep, profileDraft)}
                   onClick={() => moveProfileStep(profileStep + 1)}
                 >
                   Suivant <span>→</span>
