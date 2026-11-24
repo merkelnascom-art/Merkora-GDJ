@@ -4,24 +4,40 @@ import { renderToStaticMarkup } from "react-dom/server";
 import HomePage from "./page";
 import ConversationPage, { ConversationPendingTurn, ConversationProcessingIndicator } from "./conversation/page";
 
-describe("MerKora GDJ V2 welcome screen", () => {
-  it("introduces MerKora with the approved natural greeting", () => {
+describe("MerKora public welcome screen", () => {
+  it("introduces the platform with its new promise and premium identity", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("Salut !");
-    expect(html).toContain("MerKora.");
-    expect(html).toContain("Alors, qu&#x27;est-ce qu&#x27;on imagine");
+    expect(html).toContain("L'intelligence de tes idées");
+    expect(html).toContain("La puissance de leur réalisation");
+    expect(html).toContain("Une idée ? Un problème ? Une ambition ?");
   });
 
-  it("offers written communication only while voice is paused", () => {
+  it("offers three distinct entry paths and keeps the existing DRT journey reachable", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("ON COMMENCE PAR ÉCRIT");
-    expect(html).not.toContain("Par la voix");
-    expect(html).not.toContain("Choisir la conversation par la voix");
+    expect(html).toContain("MerKora Catalogue");
+    expect(html).toContain("MerKora IDP");
+    expect(html).toContain("MerKora DRT");
+    expect(html).toContain('href="/conversation"');
   });
 
-  it("does not require an account to begin", () => {
+  it("explains the human support and catalogue paths without pretending they are already operational", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html).toContain("sans créer de compte");
+    expect(html).toContain("Catalogue en préparation");
+    expect(html).toContain("Assistance humaine en préparation");
+  });
+
+  it("contains an accessible story section and concrete solution families", () => {
+    const html = renderToStaticMarkup(<HomePage />);
+    expect(html).toContain('aria-labelledby="mk-story-title"');
+    expect(html).toContain("Sites web");
+    expect(html).toContain("Applications mobiles");
+    expect(html).toContain("Plateformes métiers");
+    expect(html).toContain("Jeux numériques");
+  });
+
+  it("keeps the customer account entry available", () => {
+    const html = renderToStaticMarkup(<HomePage />);
+    expect(html).toContain('href="/auth"');
   });
 });
 
@@ -43,11 +59,13 @@ describe("MerKora GDJ V2 conversation screen", () => {
     const html = renderToStaticMarkup(<ConversationProcessingIndicator visible={false} activity="idle" />);
     expect(html).toBe("");
   });
+
   it("places the thinking animation directly after the visitor message in the dialogue", () => {
     const html = renderToStaticMarkup(<ConversationPendingTurn message="Je veux organiser mon activité." activity="analyzing" />);
     expect(html.indexOf("Je veux organiser mon activité.")).toBeLessThan(html.indexOf("mk-thinking-indicator"));
     expect(html).toContain("MerKora réfléchit à ta réponse");
   });
+
   it("starts with one short open question instead of several examples", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
     expect(html).toContain("UNE PREMIÈRE QUESTION");
