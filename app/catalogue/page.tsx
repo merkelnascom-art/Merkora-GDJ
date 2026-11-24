@@ -3,7 +3,7 @@ import {
   getBaselineModuleLabel,
   getDomainCatalogs,
   getProductTypeCatalog,
-} from "@/src/lib/merkora-core/solution-catalog";
+} from "../../src/lib/merkora-core/solution-catalog";
 
 export default function CataloguePage() {
   const productTypes = getProductTypeCatalog();
