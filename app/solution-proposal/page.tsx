@@ -117,7 +117,7 @@ export default function SolutionProposalPage() {
     () => proposal?.components.filter((item) => item.status === "rejected").length ?? 0,
     [proposal],
   );
-  const activeProfileQuestion = SOLUTION_PROFILE_QUESTIONS[profileStep];
+  const activeProfileQuestion = SOLUTION_PROFILE_QUESTIONS[profileStep] ?? SOLUTION_PROFILE_QUESTIONS[0];
 
   function save(next: SolutionProposal, nextValidated = false) {
     setProposal(next);
