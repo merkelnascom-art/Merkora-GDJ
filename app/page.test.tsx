@@ -61,7 +61,7 @@ describe("MerKora public welcome screen", () => {
 describe("MerKora GDJ V2 conversation screen", () => {
   it("presents the animated orb as the central conversation visual", () => {
     const html = renderToStaticMarkup(<ConversationPage />);
-    expect(html).toContain('aria-label="Sphère intelligente MerKora"');
+    expect(html).toContain('aria-label="Sphère intelligente MerKora GDJ"');
     expect(html).toContain("Les ondes de MerKora");
   });
 
