@@ -1,4 +1,12 @@
 import {
+  buildHybridDomainComposition,
+  getBaselineModuleLabel,
+  getDomainCatalog,
+  getProductType,
+  type HybridDomainComposition,
+  type SolutionProductProfile,
+} from "./solution-catalog";
+import {
   getActiveUnderstandingItems,
   type ProjectUnderstanding,
 } from "./project-diagnostic";
@@ -14,9 +22,10 @@ export interface SolutionProposalComponent {
   title: string;
   description: string;
   status: SolutionComponentStatus;
-  source: "validated_definition" | "project_evidence" | "knowledge_suggestion";
+  source: "validated_definition" | "project_evidence" | "knowledge_suggestion" | "catalog_suggestion";
   familyId?: string;
   sourceIds: string[];
+  domainIds?: string[];
 }
 
 export interface SolutionProposalArchitecture {
@@ -39,6 +48,8 @@ export interface SolutionProposal {
   components: SolutionProposalComponent[];
   coherenceNotes: string[];
   unresolvedPoints: string[];
+  productProfile?: SolutionProductProfile;
+  domainComposition?: HybridDomainComposition;
   version: number;
   updatedAt: string;
 }
@@ -56,9 +67,32 @@ function makeComponentId(sourceId: string, index: number): string {
   return `component-${sourceId.replace(/[^a-z0-9-]/gi, "-").toLowerCase()}-${index + 1}`;
 }
 
+function addCatalogComponent(
+  components: SolutionProposalComponent[],
+  knownTitles: Set<string>,
+  id: string,
+  title: string,
+  description: string,
+  domainIds: string[] = [],
+): void {
+  const normalized = title.toLocaleLowerCase("fr");
+  if (knownTitles.has(normalized)) return;
+  components.push({
+    id: makeComponentId(id, components.length),
+    title,
+    description,
+    status: "suggested",
+    source: "catalog_suggestion",
+    sourceIds: [`catalog:${id}`],
+    domainIds,
+  });
+  knownTitles.add(normalized);
+}
+
 export function buildSolutionProposal(
   dossier: ProjectUnderstanding,
   definition: ProductDefinitionSession,
+  profile?: SolutionProductProfile,
 ): SolutionProposal {
   if (definition.understandingId !== dossier.id) {
     throw new Error("The product definition does not belong to this project dossier.");
@@ -102,11 +136,40 @@ export function buildSolutionProposal(
     knownTitles.add(title.toLocaleLowerCase("fr"));
   });
 
+  let domainComposition: HybridDomainComposition | undefined;
+  const productType = profile ? getProductType(profile.productTypeId) : undefined;
+  if (profile && productType) {
+    productType.baselineModules.forEach((moduleId) => {
+      addCatalogComponent(
+        components,
+        knownTitles,
+        `product-${moduleId}`,
+        getBaselineModuleLabel(moduleId),
+        `Élément de base associé au type « ${productType.label} ». À examiner et à retenir uniquement s'il correspond au projet.`,
+      );
+    });
+
+    domainComposition = buildHybridDomainComposition(profile.domainIds);
+    domainComposition.modules.forEach((module) => {
+      addCatalogComponent(
+        components,
+        knownTitles,
+        module.id,
+        module.label,
+        module.description,
+        module.domainIds,
+      );
+    });
+  }
+
   const activity = firstEvidence(evidence, ["activity", "project_identity"]);
   const problem = firstEvidence(evidence, ["problem", "causes", "current_situation"]);
   const objective = firstEvidence(evidence, ["objectives", "expected_outcome", "success_criteria"]);
   const context = firstEvidence(evidence, ["context", "operations"]);
-  const projectLabel = activity || dossier.originalDescription.trim().slice(0, 90) || "votre projet";
+  const projectLabel = profile?.projectName.trim()
+    || activity
+    || dossier.originalDescription.trim().slice(0, 90)
+    || "votre projet";
   const title = /^je veux\b/i.test(projectLabel)
     ? projectLabel.replace(/^je veux\s+/i, "").replace(/[.!?]+$/, "")
     : projectLabel;
@@ -125,13 +188,30 @@ export function buildSolutionProposal(
   }
   if (!problem) coherenceNotes.push("Le problème principal reste à préciser avant de figer le périmètre.");
   if (!objective) coherenceNotes.push("Le résultat attendu mérite encore une confirmation.");
+  if (profile && profile.domainIds.length > 1) {
+    coherenceNotes.push("Plusieurs domaines ont été combinés. Les dépendances entre modules et les règles de partage seront vérifiées avant la maquette.");
+  }
+  if (profile && profile.domainIds.length === 0) {
+    coherenceNotes.push("Aucun domaine métier n'a encore été choisi. La proposition reste volontairement générique.");
+  }
   if (unresolvedPoints.length > 0) {
     coherenceNotes.push("Certains points restent inconnus ou contradictoires : ils ne sont pas considérés comme des décisions.");
   }
 
-  const isDigital = /application|plateforme|logiciel|site web|portail|numérique|mobile/i.test(
-    [dossier.originalDescription, ...evidence.map((item) => item.value)].join(" "),
-  );
+  const digitalTypes = new Set([
+    "showcase_website", "web_platform", "mobile_app", "web_application",
+    "booking_solution", "ecommerce", "game", "generator", "architecture_workspace",
+  ]);
+  const isDigital = profile
+    ? digitalTypes.has(profile.productTypeId)
+    : /application|plateforme|logiciel|site web|portail|numérique|mobile/i.test(
+      [dossier.originalDescription, ...evidence.map((item) => item.value)].join(" "),
+    );
+  const domainNames = (profile?.domainIds ?? [])
+    .map((id) => getDomainCatalog(id)?.label)
+    .filter((value): value is string => Boolean(value));
+  const productLabel = productType?.label;
+
   return {
     id: `solution-${dossier.projectId}`,
     projectId: dossier.projectId,
@@ -141,23 +221,32 @@ export function buildSolutionProposal(
       : `Une proposition construite à partir de l'activité exprimée : ${projectLabel}.`,
     problem: problem || "À préciser avec le client.",
     objective: objective || "À confirmer avec le client.",
-    operatingPrinciple: context
-      ? `La solution s'inscrit dans le contexte décrit : ${context}.`
-      : "Le fonctionnement détaillé sera précisé à partir des composantes que le client choisira de retenir.",
+    operatingPrinciple: [
+      productLabel ? `Type de réalisation : ${productLabel}.` : "",
+      domainNames.length ? `Domaines couverts : ${domainNames.join(" + ")}.` : "",
+      context ? `Contexte de fonctionnement : ${context}.` : "",
+      profile ? `Navigation envisagée : ${profile.navigationStyle.replace(/_/g, " ")} ; identité visuelle : ${profile.brandingMode.replace(/_/g, " ")}.` : "",
+    ].filter(Boolean).join(" ") || "Le fonctionnement détaillé sera précisé à partir des composantes que le client choisira de retenir.",
     architectures: [{
       id: "recommended-architecture",
-      title: isDigital ? "Plateforme numérique centralisée" : "Solution organisée autour de l'activité",
+      title: productLabel
+        ? `Architecture adaptée — ${productLabel}`
+        : isDigital ? "Architecture numérique à préciser" : "Solution organisée autour de l'activité",
       description: isDigital
-        ? "Un produit numérique cohérent rassemble les fonctions retenues et les adapte aux profils et aux opérations réellement décrits."
+        ? "Le type de produit et les domaines choisis déterminent les espaces, la navigation et les fonctions. Les modules métier sont composés sans confondre leurs règles."
         : "Une solution structurée autour des opérations, des personnes et des moyens explicitement décrits, sans présumer qu'une application est nécessaire.",
       recommended: true,
-      tradeOffs: isDigital
-        ? ["Un point de pilotage cohérent", "Les espaces et droits restent à préciser selon les profils validés"]
-        : ["Respecte l'organisation réelle de l'activité", "Les outils matériels ou numériques ne sont ajoutés que s'ils sont justifiés"],
+      tradeOffs: [
+        productType ? `Structure de départ propre à « ${productType.label} ».` : "Structure construite à partir des informations confirmées.",
+        domainComposition?.isHybrid ? "Les domaines sont assemblés dans une architecture commune, avec leurs règles et responsabilités séparées." : "Les fonctions restent rattachées au domaine choisi.",
+        "L'espace du propriétaire administrateur est séparé des espaces des utilisateurs finaux.",
+      ],
     }],
     components,
     coherenceNotes,
     unresolvedPoints,
+    productProfile: profile,
+    domainComposition,
     version: 1,
     updatedAt: now(),
   };
