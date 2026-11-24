@@ -270,13 +270,29 @@ La fondation est acceptable lorsque :
 11. Les cas Aéro Service, WALL Trade, Ginesse de Paris Center Work, Student Vision et architecture peuvent servir de scénarios de régression.
 12. Les tests, le typecheck et le build passent sans modification de données Supabase.
 
-## 13. Étapes suivantes
+## 13. Avancement et étapes suivantes
 
-1. Implémenter et tester le modèle d'offre et les règles de publication.
-2. Implémenter et tester le moteur de configuration et les dépendances.
-3. Implémenter la politique de personnalisation incluse, les demandes d'évolution et l'instantané.
-4. Vérifier l'intégration au référentiel existant et les scénarios métier.
-5. Construire ensuite les pages Catalogue et les configurateurs spécialisés.
-6. Concevoir séparément la persistance Supabase et le moteur de devis complet avant toute migration.
+### 13.1 Réalisé dans la première tranche
 
-**Règle de livraison :** chaque étape est isolée, testée et relue. La PR #75 reste intacte ; aucune fusion ou mise en production n'est autorisée par cette conception.
+- Le référentiel canonique existant est réutilisé : 10 types de produits et 15 domaines métier.
+- Le Catalogue présente les types de produits et les domaines séparément, avec leurs fonctions de référence.
+- Le modèle TypeScript des offres versionnées et les statuts commerciaux sont définis.
+- La validation vérifie les références produit, domaine et module.
+- Le moteur de configuration vérifie les sélections, les options déclarées, les dépendances et conserve les suggestions IA comme suggestions.
+- L'instantané de commande conserve les références de l'offre, la configuration, les options et les champs de personnalisation autorisés.
+- Les scénarios de régression couvrent Aéro Service, WALL Trade, Ginesse de Paris Center Work, Student Vision et un espace de conception architecturale.
+- Le document et les tests sont conservés dans cette branche de travail.
+
+### 13.2 À construire ensuite
+
+1. Renforcer les contrats de validation (données incomplètes, doublons, versions, devises et valeurs reçues à l'exécution).
+2. Construire les six premiers configurateurs spécialisés : e-commerce, réservation, gestion, éducation, numérisation et jeux.
+3. Créer le parcours de configuration client avec aperçu, résumé des inclusions, options et exclusions.
+4. Construire l'interface d'administration des offres, versions, options et règles tarifaires.
+5. Ajouter le moteur de devis administré : prix fixes, règles explicites et devis soumis à validation humaine.
+6. Relier les commandes au dossier projet partagé et aux parcours Catalogue, IDP et DRT.
+7. Concevoir séparément la persistance Supabase et les migrations nécessaires, sans les exécuter avant autorisation.
+
+Le périmètre « all » signifie que tous les identifiants déjà connus sont reconnus et que l'architecture peut s'étendre à tous les domaines. Il ne signifie pas que les 15 domaines disposent déjà chacun d'un configurateur complet.
+
+**Règle de livraison :** chaque étape est isolée, testée et relue. La PR #75 reste intacte ; aucune fusion ou mise en production n'est autorisée sans autorisation explicite.
