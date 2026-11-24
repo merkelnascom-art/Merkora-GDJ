@@ -11,12 +11,6 @@ import {
   type UnderstandingSession,
 } from "../../src/lib/merkora-core/situation-intake-engine";
 
-const examples = [
-  { icon: "✦", label: "Éducation", text: "Améliorer la gestion de mon établissement" },
-  { icon: "◈", label: "Commerce", text: "Mieux suivre les ventes de mon activité" },
-  { icon: "⌁", label: "Une idée", text: "J'ai une idée à développer" },
-];
-
 const SESSION_KEY = "merkora-v2-understanding-session";
 const DRAFT_KEY = "merkora-v2-first-message";
 const ANSWER_DRAFT_KEY = "merkora-v2-answer-draft";
@@ -29,7 +23,7 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
     <div
       className={`mk-orb-scene mk-orb-text mk-orb-state-${state} mk-orb-activity-${activity}`}
       role="img"
-      aria-label="Sphère intelligente MerKora"
+      aria-label="Sphère intelligente MerKora GDJ"
     >
       <div className="mk-orb-halo" />
       <div className="mk-orb-ring mk-orb-ring-a" />
@@ -45,7 +39,7 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
       <span className="mk-orb-star mk-orb-star-a">✦</span>
       <span className="mk-orb-star mk-orb-star-b">✧</span>
       <span className="mk-orb-star mk-orb-star-c">·</span>
-      <span className="mk-orb-sr">Les ondes de MerKora</span>
+      <span className="mk-orb-sr">Les ondes de MerKora GDJ</span>
     </div>
   );
 }
@@ -295,9 +289,9 @@ export default function ConversationPage() {
     <main className="mk-v2-page mk-conversation-page">
       <div className="mk-v2-noise" aria-hidden="true" />
       <header className="mk-header">
-        <a className="mk-brand" href="/" aria-label="Retour à l'accueil MerKora">
+        <a className="mk-brand" href="/" aria-label="Retour à l'accueil MerKora GDJ">
           <span className="mk-brand-mark">M</span>
-          <span><strong>MerKora</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
+          <span><strong>MerKora GDJ</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
         </a>
         <a className="mk-back-link" href="/">← Retour</a>
       </header>
@@ -330,33 +324,20 @@ export default function ConversationPage() {
           {!session && !isProcessing && (
             <>
               <p className="mk-conversation-intro">
-                Qu'aimerais-tu créer, améliorer, organiser ou résoudre ? Tu peux commencer par ce qui te préoccupe, même si ton idée n'est pas encore très claire.
+                On va avancer simplement : je te pose une question, tu réponds, puis je passe à la suivante.
               </p>
-              <label className="mk-input-label" htmlFor="mk-first-message">DÉCRIS CE QUE TU SOUHAITES IMAGINER</label>
+              <label className="mk-input-label" htmlFor="mk-first-message">UNE PREMIÈRE QUESTION</label>
               <textarea
                 id="mk-first-message"
                 className="mk-first-message"
                 value={message}
                 onChange={(event) => updateMessageDraft(event.target.value)}
-                placeholder="En ce moment, ce qui me pose problème, c'est…"
-                rows={5}
+                placeholder="En quelques mots, que souhaites-tu améliorer ou créer ?"
+                rows={3}
               />
               <div className="mk-input-footer">
-                <span>Tu peux écrire librement, sans vocabulaire technique.</span>
-                <span>{message.length} caractères</span>
+                <span>Réponds naturellement. Tu n'as pas besoin de termes techniques.</span>
               </div>
-              <div className="mk-example-heading">
-                <strong>Quelques points de départ, si tu en as besoin</strong>
-                <span>FACULTATIFS</span>
-              </div>
-              <div className="mk-example-list">
-                {examples.map((example) => (
-                  <button key={example.label} type="button" className="mk-example-chip" onClick={() => setMessage(example.text)}>
-                    <span>{example.icon}</span><small>{example.label}</small><b>{example.text}</b><i>＋</i>
-                  </button>
-                ))}
-              </div>
-              <p className="mk-free-note">Tu peux aussi raconter ton besoin librement. Aucun domaine ni type de projet n'est imposé.</p>
               <button type="button" className="mk-continue-button" onClick={startJourney} disabled={!message.trim() || isProcessing}>
                 Commencer notre compréhension <span>→</span>
               </button>
@@ -366,47 +347,21 @@ export default function ConversationPage() {
 
           {session && (
             <>
-              <section aria-label="Dossier de compréhension en construction" style={{margin:"1.25rem 0",padding:"1rem",border:"1px solid rgba(196,164,104,.35)",borderRadius:"18px",background:"rgba(12,17,38,.72)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"1rem",marginBottom:".8rem"}}>
-                  <div><span className="mk-summary-kicker">DÉCRYPTAGE EN DIRECT</span><h2 style={{margin:".25rem 0",fontSize:"1.15rem"}}>Ce que j'ai recueilli</h2></div>
-                  <strong>{session.evidence.length} éléments</strong>
-                </div>
-                <p style={{fontSize:".88rem",opacity:.78,marginTop:0}}>Chaque élément reste relié au message qui l'a fourni. Les informations exprimées ne sont pas confondues avec des hypothèses.</p>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:".65rem"}}>
-                  {(["project_scope","problem","audience","actor","goal","preference","activity","feature","context","resource","constraint","cause"] as const).map((dimension)=> {
-                    const items=session.evidence.filter((item)=>item.dimension===dimension);
-                    if(!items.length)return null;
-                    const labels:Record<string,string>={project_scope:"Identité du projet",problem:"Situation / problème",audience:"Public concerné",actor:"Personnes et rôles",goal:"Objectifs",preference:"Solution imaginée",activity:"Activités concernées",feature:"Fonctionnement",context:"Cadre",resource:"Données / ressources",constraint:"Contraintes",cause:"Causes évoquées"};
-                    return <div key={dimension} style={{padding:".75rem",borderRadius:"12px",background:"rgba(255,255,255,.045)",border:"1px solid rgba(255,255,255,.08)"}}>
-                      <strong style={{fontSize:".82rem"}}>{labels[dimension]}</strong>
-                      {items.map((item)=><div key={item.id} style={{fontSize:".82rem",lineHeight:1.5,marginTop:".4rem",overflowWrap:"anywhere"}}>{item.value}<div style={{fontSize:".68rem",opacity:.65}}>{item.status==="validated"?"Validé par toi":item.status==="hypothesis"?"Hypothèse à vérifier":item.status==="inferred"?"Déduit par le moteur":"Exprimé par toi"}</div><div style={{fontSize:".66rem",opacity:.5}}>Origine : {Math.max(1,session.messages.findIndex((message)=>message.id===item.sourceMessageId)+1)}ᵉ message de ton récit</div></div>)}
-                    </div>;
-                  })}
-                </div>
-                {session.situationGraph.relations.length > 0 && (
-                  <div style={{marginTop:".9rem",paddingTop:".8rem",borderTop:"1px solid rgba(255,255,255,.1)"}}>
-                    <strong style={{fontSize:".82rem"}}>Relations repérées entre les éléments</strong>
-                    <div style={{display:"grid",gap:".4rem",marginTop:".55rem"}}>
-                      {session.situationGraph.relations.slice(0,6).map((relation)=> {
-                        const from=session.situationGraph.entities.find((entity)=>entity.id===relation.fromEntityId);
-                        const to=session.situationGraph.entities.find((entity)=>entity.id===relation.toEntityId);
-                        const verbs:Record<string,string>={imagines:"imagine",intended_for:"s'adresse à",aims_at:"vise",experiences:"rencontre / vit"};
-                        return <div key={relation.id} style={{fontSize:".78rem",opacity:.88}}>
-                          <b>{from?.label ?? "Élément non identifié"}</b> — {verbs[relation.predicate] ?? relation.predicate} — <b>{to?.label ?? "Élément non identifié"}</b>
-                        </div>;
-                      })}
-                    </div>
+              {session.messages.length > 2 && (
+                <details className="mk-conversation-history">
+                  <summary>Voir notre échange précédent ({session.messages.length - 2})</summary>
+                  <div className="mk-dialogue" aria-label="Historique précédent">
+                    {session.messages.slice(0, -2).map((item) => (
+                      <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
+                        <span>{item.role === "visitor" ? "TOI" : "MERKORA"}</span>
+                        <p>{item.content}</p>
+                      </article>
+                    ))}
                   </div>
-                )}
-                {session.situationGraph.unresolvedRelations.length > 0 && (
-                  <p style={{marginBottom:0,fontSize:".75rem",opacity:.7}}>
-                    {session.situationGraph.unresolvedRelations.length} lien(s) restent à éclaircir ; aucun élément manquant n'est inventé.
-                  </p>
-                )}
-                {session.stage==="clarification"&&session.pendingQuestion&&<p style={{marginBottom:0,fontSize:".85rem",color:"#d9bd83"}}>Prochaine précision utile : {session.pendingQuestion.rationale}</p>}
-              </section>
-              <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Historique de notre conversation">
-                {(pendingMessage && session.messages.some((item) => item.role === "visitor" && item.content === pendingMessage) ? session.messages.slice(0, -2) : session.messages).map((item) => (
+                </details>
+              )}
+              <div className="mk-dialogue" role="log" aria-live="polite" aria-label="Derniers messages">
+                {(pendingMessage && session.messages.some((item) => item.role === "visitor" && item.content === pendingMessage) ? session.messages.slice(-4, -2) : session.messages.slice(-2)).map((item) => (
                   <article key={item.id} className={`mk-dialogue-message mk-dialogue-${item.role}`}>
                     <span>{item.role === "visitor" ? "TOI" : "MERKORA"}</span>
                     <p>{item.content}</p>
@@ -475,7 +430,7 @@ export default function ConversationPage() {
                 </section>
               )}
 
-              <p className="mk-privacy-note">Le moteur actuel utilise des règles explicites, des indices de langage et quelques contrôles limités de cohérence. Il ne prétend pas comprendre automatiquement tout texte ni deviner tes intentions. Rien n'est validé sans ton accord.</p>
+              <p className="mk-privacy-note">Tu gardes le contrôle : rien n'est validé sans ton accord.</p>
             </>
           )}
           {!session && isProcessing && (

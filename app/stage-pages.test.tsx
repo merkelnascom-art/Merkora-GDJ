@@ -2,15 +2,19 @@ import React from "react";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import UnderstandingPage from "./understanding/page";
+import ConversationPage from "./conversation/page";
 import DiagnosticPage from "./diagnostic/page";
 import ProductDefinitionPage from "./product-definition/page";
+import SolutionProposalPage from "./solution-proposal/page";
+import WorkspaceDesignPage from "./workspace-design/page";
 
 describe("MerKora screen 03 — project understanding", () => {
-  it("presents the universal understanding stage without a sector selector", () => {
+  it("keeps the first view short and puts the detailed dossier behind a disclosure", () => {
     const html = renderToStaticMarkup(<UnderstandingPage />);
     expect(html).toContain("Vérifions-le ensemble");
-    expect(html).toContain("activité, idée, situation");
-    expect(html).toContain("Ce qui reste inconnu ne sera pas inventé");
+    expect(html).toContain("Voici les quelques repères que j&#x27;ai retenus");
+    expect(html).not.toContain("Repères du référentiel universel");
+    expect(html).not.toContain("Cartographie métier et fonctionnelle");
     expect(html).not.toContain("Choisis ton secteur");
   });
 });
@@ -38,5 +42,38 @@ describe("MerKora screen 05 — adaptive product definition", () => {
     expect(html).toContain("Passer pour le moment");
     expect(html).toContain("Réponses déjà données");
     expect(html).not.toContain("Questionnaire complet");
+  });
+});
+
+
+describe("MerKora screen 02 — conversation", () => {
+  it("keeps the initial request short and avoids showing the internal dossier as a form", () => {
+    const html = renderToStaticMarkup(<ConversationPage />);
+    expect(html).toContain("je te pose une question, tu réponds, puis je passe à la suivante");
+    expect(html).toContain("En quelques mots, que souhaites-tu améliorer ou créer ?");
+    expect(html).not.toContain("DÉCRYPTAGE EN DIRECT");
+    expect(html).not.toContain("Quelques points de départ, si tu en as besoin");
+  });
+});
+
+describe("MerKora screen 06 — solution proposal", () => {
+  it("introduces product framing and keeps the visual mockup as the next distinct stage", () => {
+    const html = renderToStaticMarkup(<SolutionProposalPage />);
+    expect(html).toContain("Construisons la structure");
+    expect(html).toContain("ÉTAPE 06 · ARCHITECTURE ET COMPOSITION");
+    expect(html).toContain("identifier le produit et son domaine");
+    expect(html).toContain("07 · Espaces");
+    expect(html).not.toContain("Questionnaire complet");
+  });
+});
+
+
+describe("MerKora screen 07 — workspace design", () => {
+  it("renders the screen 07 entry point and explains the client's control", () => {
+    const html = renderToStaticMarkup(<WorkspaceDesignPage />);
+    expect(html).toContain("Organisons les espaces");
+    expect(html).toContain("ÉTAPE 07 · ORGANISATION ET EXPÉRIENCE DU PRODUIT");
+    expect(html).toContain("Rien n&#x27;est figé sans ta validation.");
+    expect(html).toContain("Préparation des espaces du produit");
   });
 });

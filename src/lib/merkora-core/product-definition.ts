@@ -30,6 +30,8 @@ export interface ProductDefinitionQuestion {
   purpose: string;
   answerType: ProductDefinitionAnswerType;
   options?: string[];
+  /** Optional, contextual suggestions shown as checkboxes beside free text. */
+  suggestedOptions?: string[];
   allowDetail: boolean;
   evidenceIds: string[];
   suggestedIndicators?: string[];
@@ -105,7 +107,7 @@ function makeQuestion(
   evidenceIds: string[],
   answerType: ProductDefinitionAnswerType = "text",
   options?: string[],
-  extra: Partial<Pick<ProductDefinitionQuestion, "domainFamilyId" | "suggestedIndicators" | "suggestedFunctions">> = {},
+  extra: Partial<Pick<ProductDefinitionQuestion, "domainFamilyId" | "suggestedIndicators" | "suggestedFunctions" | "suggestedOptions">> = {},
 ): ProductDefinitionQuestion {
   return {
     id,
@@ -202,6 +204,26 @@ export function getNextProductDefinitionQuestion(
   const explicitProductNature = solutionEvidence.length > 0 || /\b(application|app|plateforme|site web|site internet|logiciel|portail|prototype|équipement|ouvrage|protocole|service|produit physique)\b/i.test(normalizedText);
   const roleMatches = [...normalizedText.matchAll(/\b(administrateur|administratrice|gestionnaire|responsable|enseignant|enseignante|apprenant|élève|client|vendeur|fournisseur|arbitre|joueur|agent|technicien|médecin|infirmier|conducteur|opérateur|superviseur|membre|bénéficiaire)\b/gi)].map((match) => match[0]);
   const roleSignals = roleMatches.length > 0;
+  const roleSuggestions = /pâtiss|boulanger|gâteau|sucr|confiser|restaur|traiteur|commerce|vente|boutique|commande/i.test(normalizedText)
+    ? ["Responsable / administrateur", "Personnel de préparation", "Vendeur / gestionnaire des commandes", "Livreur", "Client"]
+    : /formation|école|cours|apprenant|étudiant|enseignant/i.test(normalizedText)
+      ? ["Administrateur / direction", "Responsable pédagogique", "Formateur / enseignant", "Apprenant / étudiant", "Parent / tuteur"]
+      : /santé|patient|clinique|hôpital|soin|médical/i.test(normalizedText)
+        ? ["Administrateur / direction", "Professionnel de santé", "Agent d'accueil", "Patient / bénéficiaire", "Responsable de suivi"]
+        : /agricul|élevage|culture|récolte|ferme/i.test(normalizedText)
+          ? ["Exploitant / responsable", "Ouvrier / agent de terrain", "Technicien / conseiller", "Fournisseur", "Acheteur / client"]
+          : ["Responsable / administrateur", "Personnel / collaborateur", "Client / bénéficiaire", "Partenaire / fournisseur", "Autre profil"];
+  const knownRolePatterns: Array<[string, RegExp]> = [
+    ["Responsable / administrateur", /\b(administrateur|administratrice|responsable|gérant|gérante|directeur|directrice|propriétaire)\b/i],
+    ["Personnel de préparation", /(pâtiss|boulanger|préparat|cuisinier|cuisinière|production)/i],
+    ["Vendeur / gestionnaire des commandes", /\b(vendeur|vendeuse|commercial|caissier|caissière|prise de commande)\b/i],
+    ["Livreur", /\b(livreur|livraison|coursier)\b/i],
+    ["Client", /\b(client|acheteur|consommateur|bénéficiaire)\b/i],
+  ];
+  const filteredRoleSuggestions = roleSuggestions.filter((suggestion) => {
+    const knownPattern = knownRolePatterns.find(([label]) => label === suggestion)?.[1];
+    return !knownPattern?.test(normalizedText);
+  });
   const financeSignals = /\b(prix|paiement|paiements|vente|ventes|chiffre d'affaires|recette|recettes|dépense|dépenses|budget|facture|facturation|commission|cotisation|abonnement|caisse|comptabilité|trésorerie|crédit|assurance|investissement)\b/i.test(normalizedText);
   const securitySignals = /\b(donnée personnelle|données personnelles|santé|patient|mineur|enfant|confidentiel|confidentialité|paiement|identifiant|mot de passe|accès|autorisation|validation|sécurité|secret professionnel)\b/i.test(normalizedText);
   const integrationSignals = /\b(whatsapp|sms|email|e-mail|qr code|code qr|api|synchronis|connecter|intégrer|gps|capteur|biométr|imprimante|scanner|terminal|mobile money|mtn|moov|celtis|canal\+)\b/i.test(normalizedText);
@@ -232,6 +254,9 @@ export function getNextProductDefinitionQuestion(
         : "Quels profils utiliseront ce produit, et que devra pouvoir faire chacun d'eux ?",
       "Transformer les personnes déjà identifiées en profils d'utilisation et responsabilités, sans inventer de droits.",
       [...activityEvidence, ...actorsEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: filteredRoleSuggestions },
     ));
   }
 
@@ -285,6 +310,9 @@ export function getNextProductDefinitionQuestion(
       "Lorsqu'une action est réalisée, quelle réaction le produit doit-il déclencher : confirmation, notification, alerte, validation ou autre ?",
       "Préciser les réactions attendues et les validations humaines nécessaires.",
       [...operationsEvidence, ...actorsEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["Confirmation à l'écran", "Notification à une personne concernée", "Alerte en cas de problème", "Validation par un responsable", "Mise à jour automatique", "Aucune réaction particulière"] },
     ));
   }
 
@@ -294,6 +322,9 @@ export function getNextProductDefinitionQuestion(
       "Quelles informations faut-il recueillir, conserver, consulter ou retrouver plus tard dans ce projet ?",
       "Définir les données réellement nécessaires à l'activité et éviter toute collecte superflue.",
       [...activityEvidence, ...operationsEvidence, ...resourcesEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["Informations sur les personnes", "Produits ou services", "Commandes et opérations", "Paiements et reçus", "Stocks et ressources", "Documents et historique", "Résultats et statistiques"] },
     ));
   }
 
@@ -303,6 +334,9 @@ export function getNextProductDefinitionQuestion(
       "Quels outils, appareils, services ou moyens de paiement doivent fonctionner avec ce produit ?",
       "Identifier uniquement les intégrations et équipements utiles au fonctionnement réel.",
       resourcesEvidence.map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["WhatsApp", "SMS", "E-mail", "Paiement mobile", "Imprimante / scanner", "Lecteur QR ou code-barres", "GPS / géolocalisation", "Aucun outil externe pour le moment"] },
     ));
   }
 
@@ -312,6 +346,9 @@ export function getNextProductDefinitionQuestion(
       "Quelles informations ou actions doivent être protégées, et qui doit être autorisé à les consulter ou les valider ?",
       "Définir les protections et contrôles adaptés aux personnes, aux données et aux risques du projet.",
       [...actorsEvidence, ...operationsEvidence, ...resourcesEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["Accès différents selon le profil", "Validation des actions sensibles", "Historique des actions importantes", "Protection des informations confidentielles", "Double vérification pour certaines opérations"] },
     ));
   }
 
@@ -321,6 +358,9 @@ export function getNextProductDefinitionQuestion(
       "Quels flux financiers ou règles de calcul le produit doit-il prendre en charge ?",
       "Préciser les prix, paiements, recettes, dépenses ou contrôles financiers réellement concernés.",
       [...activityEvidence, ...operationsEvidence, ...resourcesEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["Prix et tarifs", "Encaissements et paiements", "Recettes et dépenses", "Factures et reçus", "Commissions et marges", "Suivi du budget"] },
     ));
   }
 
@@ -354,6 +394,9 @@ export function getNextProductDefinitionQuestion(
       "Après la mise en service, qui devra faire fonctionner, administrer et suivre ce produit au quotidien ?",
       "Anticiper l'exploitation réelle, les responsabilités, l'assistance et les besoins de maintenance.",
       [...actorsEvidence, ...operationsEvidence].map((item) => item.id),
+      "text",
+      undefined,
+      { suggestedOptions: ["Une personne responsable en interne", "Une équipe dédiée", "Le prestataire qui a réalisé le produit", "Un administrateur désigné par le client", "À organiser plus tard"] },
     ));
   }
 
