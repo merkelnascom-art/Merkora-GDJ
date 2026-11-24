@@ -44,10 +44,11 @@ describe("MerKora screen 05 — adaptive product definition", () => {
 
 
 describe("MerKora screen 06 — solution proposal", () => {
-  it("introduces a concrete proposal and keeps the visual mockup as the next distinct stage", () => {
+  it("introduces product framing and keeps the visual mockup as the next distinct stage", () => {
     const html = renderToStaticMarkup(<SolutionProposalPage />);
-    expect(html).toContain("Voici la solution");
-    expect(html).toContain("PROPOSITION ET COMPOSITION");
+    expect(html).toContain("Construisons la structure");
+    expect(html).toContain("ÉTAPE 06 · ARCHITECTURE ET COMPOSITION");
+    expect(html).toContain("identifier le produit et son domaine");
     expect(html).toContain("07 · Maquette");
     expect(html).not.toContain("Questionnaire complet");
   });
