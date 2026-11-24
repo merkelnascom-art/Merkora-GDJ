@@ -254,197 +254,222 @@ export default function UnderstandingPage() {
 
         {sourceAvailable && dossier && (
           <>
-            <section className="mk-original-narrative">
-              <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
-              <p>{dossier.originalDescription}</p>
+            <section className="mk-understanding-quick">
+              <span className="mk-summary-kicker">TON PROJET · PREMIÈRE SYNTHÈSE</span>
+              <h2>Ton projet, en quelques repères</h2>
+              <p>Voici les éléments principaux que j'ai retenus. Tu peux les vérifier maintenant ou ouvrir les détails si tu en as besoin.</p>
+              {activeItems.length > 0 ? (
+                <ul>
+                  {activeItems.slice(0, 4).map((item) => (
+                    <li key={item.id}>
+                      <span>{item.dimension.replaceAll("_", " ")}</span>
+                      <strong>{item.value}</strong>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Ton récit est bien conservé. Nous préciserons les premiers repères au fil du diagnostic.</p>
+              )}
+              <div className="mk-understanding-quick-footer">
+                <span>{activeItems.length} repères conservés</span>
+                <span>{activeItems.filter((item) => item.status === "validated").length} confirmés</span>
+              </div>
             </section>
-            {dossier.situationGraph.entities.length > 0 && <section className="mk-understanding-section mk-knowledge-section">
-              <div className="mk-understanding-section-heading">
-                <div>
-                  <h2>Repères du référentiel universel</h2>
-                  <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les métiers et compétences peuvent être recherchés dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
+            <details className="mk-understanding-details">
+              <summary>Voir les détails de compréhension</summary>
+              <section className="mk-original-narrative">
+                <span className="mk-summary-kicker">TON EXPRESSION INITIALE · CONSERVÉE INTÉGRALEMENT</span>
+                <p>{dossier.originalDescription}</p>
+              </section>
+              {dossier.situationGraph.entities.length > 0 && <section className="mk-understanding-section mk-knowledge-section">
+                <div className="mk-understanding-section-heading">
+                  <div>
+                    <h2>Repères du référentiel universel</h2>
+                    <p>MerKora relie les éléments du récit à une cartographie ouverte de {UNIVERSAL_DOMAIN_FAMILY_COUNT} familles, {UNIVERSAL_DOMAIN_COUNT} domaines et {UNIVERSAL_SPECIALIZATION_COUNT} spécialisations initiales. Les métiers et compétences peuvent être recherchés dans ESCO ; aucune correspondance n'est imposée automatiquement.</p>
+                  </div>
+                  <span>{dossier.situationGraph.entities.length}</span>
                 </div>
-                <span>{dossier.situationGraph.entities.length}</span>
-              </div>
-              <div className="mk-item-meta">
-                <label htmlFor="esco-language">Langue de recherche ESCO</label>
-                <select id="esco-language" value={escoLanguage} onChange={(event) => changeKnowledgeLanguage(event.target.value)}>
-                  {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
-                </select>
-                <label htmlFor="esco-type">Catalogue à consulter</label>
-                <select id="esco-type" value={escoSearchType} onChange={(event) => { setEscoSearchType(event.target.value as "occupation" | "skill"); setEscoSuggestions({}); }}>
-                  <option value="occupation">Métiers et professions</option>
-                  <option value="skill">Compétences et spécialisations</option>
-                </select>
-              </div>
-              <div className="mk-understanding-items">
-                {dossier.situationGraph.entities.map((entity) => (
-                  <article className="mk-understanding-item" key={"knowledge-" + entity.id}>
-                    <p><strong>{entity.label}</strong></p>
-                    <div className="mk-item-meta">
-                      {entity.knowledge?.typeConceptLabel
-                        ? <span>Type universel : {entity.knowledge.typeConceptLabel}</span>
-                        : <span>Type ouvert : {entity.kind}</span>}
-                      {entity.knowledge?.matchStatus === "matched" && entity.knowledge.conceptLabel
-                        ? <span>Concept rapproché : {entity.knowledge.conceptLabel}</span>
-                        : entity.knowledge?.matchStatus === "ambiguous"
-                          ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
-                          : <span>Terme conservé sans correspondance forcée.</span>}
-                    </div>
-                    {entity.knowledge?.classificationPath && entity.knowledge.classificationPath.length > 0 && (
-                      <small>Classement : {entity.knowledge.classificationPath.map((item) => item.label).join(" → ")}</small>
-                    )}
-                    {entity.knowledge?.matchStatus === "ambiguous" && entity.knowledge.candidateConceptIds && (
+                <div className="mk-item-meta">
+                  <label htmlFor="esco-language">Langue de recherche ESCO</label>
+                  <select id="esco-language" value={escoLanguage} onChange={(event) => changeKnowledgeLanguage(event.target.value)}>
+                    {ESCO_API_LANGUAGE_CODES.map((language) => <option key={language} value={language}>{language.toUpperCase()}</option>)}
+                  </select>
+                  <label htmlFor="esco-type">Catalogue à consulter</label>
+                  <select id="esco-type" value={escoSearchType} onChange={(event) => { setEscoSearchType(event.target.value as "occupation" | "skill"); setEscoSuggestions({}); }}>
+                    <option value="occupation">Métiers et professions</option>
+                    <option value="skill">Compétences et spécialisations</option>
+                  </select>
+                </div>
+                <div className="mk-understanding-items">
+                  {dossier.situationGraph.entities.map((entity) => (
+                    <article className="mk-understanding-item" key={"knowledge-" + entity.id}>
+                      <p><strong>{entity.label}</strong></p>
                       <div className="mk-item-meta">
-                        <span>Correspondances à départager :</span>
-                        {entity.knowledge.candidateConceptIds.map((id) => {
-                          const candidate = getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id);
-                          const label = candidate?.definitions.find((item) => item.language === "fr")?.label ?? candidate?.definitions[0]?.label ?? id;
-                          return <span key={id}>{label}</span>;
-                        })}
+                        {entity.knowledge?.typeConceptLabel
+                          ? <span>Type universel : {entity.knowledge.typeConceptLabel}</span>
+                          : <span>Type ouvert : {entity.kind}</span>}
+                        {entity.knowledge?.matchStatus === "matched" && entity.knowledge.conceptLabel
+                          ? <span>Concept rapproché : {entity.knowledge.conceptLabel}</span>
+                          : entity.knowledge?.matchStatus === "ambiguous"
+                            ? <span>Plusieurs correspondances possibles ; aucune n'est choisie.</span>
+                            : <span>Terme conservé sans correspondance forcée.</span>}
                       </div>
-                    )}
-                    {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
-                      <>
-                        <div className="mk-inline-actions">
-                          <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
-                            Proposer comme nouveau concept
-                          </button>
-                          {(entity.kind === "activity" || entity.kind === "actor") && (
-                            <button className="mk-small-action" type="button" onClick={() => searchESCO(entity)} disabled={escoLoadingId === entity.id}>
-                              {escoLoadingId === entity.id ? "Recherche…" : escoSearchType === "occupation" ? "Chercher un métier dans ESCO" : "Chercher une compétence dans ESCO"}
-                            </button>
-                          )}
+                      {entity.knowledge?.classificationPath && entity.knowledge.classificationPath.length > 0 && (
+                        <small>Classement : {entity.knowledge.classificationPath.map((item) => item.label).join(" → ")}</small>
+                      )}
+                      {entity.knowledge?.matchStatus === "ambiguous" && entity.knowledge.candidateConceptIds && (
+                        <div className="mk-item-meta">
+                          <span>Correspondances à départager :</span>
+                          {entity.knowledge.candidateConceptIds.map((id) => {
+                            const candidate = getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id);
+                            const label = candidate?.definitions.find((item) => item.language === "fr")?.label ?? candidate?.definitions[0]?.label ?? id;
+                            return <span key={id}>{label}</span>;
+                          })}
                         </div>
-                        {(escoSuggestions[entity.id] ?? []).length > 0 && (
-                          <div className="mk-knowledge-proposals">
-                            <small>Suggestions externes ESCO — à vérifier, aucune n'est sélectionnée automatiquement.</small>
-                            {(escoSuggestions[entity.id] ?? []).map((suggestion) => (
-                              <article className="mk-understanding-item" key={suggestion.uri}>
-                                <p><strong>{suggestion.label}</strong></p>
-                                {suggestion.description && <small>{suggestion.description}</small>}
-                                {suggestion.alternativeLabels.length > 0 && <small>Autres appellations : {suggestion.alternativeLabels.join(", ")}</small>}
-                                <div className="mk-inline-actions">
-                                  <a className="mk-small-action" href={suggestion.uri} target="_blank" rel="noreferrer">Consulter la fiche ESCO</a>
-                                  <button className="mk-small-action mk-small-action-gold" type="button" onClick={() => proposeUnknownConcept(entity, suggestion)}>Proposer ce rapprochement</button>
-                                </div>
-                              </article>
-                            ))}
+                      )}
+                      {entity.knowledge?.matchStatus === "unmatched" && entity.evidence.length > 0 && (
+                        <>
+                          <div className="mk-inline-actions">
+                            <button className="mk-small-action" type="button" onClick={() => proposeUnknownConcept(entity)}>
+                              Proposer comme nouveau concept
+                            </button>
+                            {(entity.kind === "activity" || entity.kind === "actor") && (
+                              <button className="mk-small-action" type="button" onClick={() => searchESCO(entity)} disabled={escoLoadingId === entity.id}>
+                                {escoLoadingId === entity.id ? "Recherche…" : escoSearchType === "occupation" ? "Chercher un métier dans ESCO" : "Chercher une compétence dans ESCO"}
+                              </button>
+                            )}
                           </div>
-                        )}
-                      </>
-                    )}
-                  </article>
-                ))}
-              </div>
-              <small>Ces repères organisent les connaissances ; ils ne constituent pas de nouvelles déclarations de ta part.</small>
-              {(dossier.knowledgeProposals ?? []).length > 0 && (
-                <div className="mk-knowledge-proposals">
-                  <h3>Propositions privées de ce projet</h3>
-                  {(dossier.knowledgeProposals ?? []).map((proposal) => (
-                    <article className="mk-understanding-item" key={proposal.id}>
-                      <p><strong>{proposal.label}</strong></p>
-                      <div className="mk-item-meta">
-                        <span>{proposal.status === "proposed" ? "Proposition privée" : proposal.status === "under_review" ? "En revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
-                        <span>{proposal.externalReference ? `Langue de la référence : ${proposal.externalReference.language.toUpperCase()}` : "Langue non déterminée"}</span>
-                      </div>
-                      <small>{proposal.sourceQuote}</small>
-                      {proposal.externalReference && <small>Référence externe proposée : {proposal.externalReference.label} · {proposal.externalReference.language.toUpperCase()} · {proposal.externalReference.system} · {proposal.externalReference.datasetVersion}</small>}
-                      {(proposal.possibleDuplicateConceptIds ?? []).length > 0 && <small>Concept(s) proche(s) déjà présent(s) : {(proposal.possibleDuplicateConceptIds ?? []).map((id) => getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id)?.definitions.find((item) => item.language === "fr")?.label ?? id).join(", ")}. Une revue doit décider s’il s’agit d’un synonyme ou d’un concept distinct.</small>}
+                          {(escoSuggestions[entity.id] ?? []).length > 0 && (
+                            <div className="mk-knowledge-proposals">
+                              <small>Suggestions externes ESCO — à vérifier, aucune n'est sélectionnée automatiquement.</small>
+                              {(escoSuggestions[entity.id] ?? []).map((suggestion) => (
+                                <article className="mk-understanding-item" key={suggestion.uri}>
+                                  <p><strong>{suggestion.label}</strong></p>
+                                  {suggestion.description && <small>{suggestion.description}</small>}
+                                  {suggestion.alternativeLabels.length > 0 && <small>Autres appellations : {suggestion.alternativeLabels.join(", ")}</small>}
+                                  <div className="mk-inline-actions">
+                                    <a className="mk-small-action" href={suggestion.uri} target="_blank" rel="noreferrer">Consulter la fiche ESCO</a>
+                                    <button className="mk-small-action mk-small-action-gold" type="button" onClick={() => proposeUnknownConcept(entity, suggestion)}>Proposer ce rapprochement</button>
+                                  </div>
+                                </article>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </article>
                   ))}
-                  <small>Ces propositions restent attachées à ce projet. Elles ne modifient pas le référentiel commun sans revue explicite.</small>
                 </div>
+                <small>Ces repères organisent les connaissances ; ils ne constituent pas de nouvelles déclarations de ta part.</small>
+                {(dossier.knowledgeProposals ?? []).length > 0 && (
+                  <div className="mk-knowledge-proposals">
+                    <h3>Propositions privées de ce projet</h3>
+                    {(dossier.knowledgeProposals ?? []).map((proposal) => (
+                      <article className="mk-understanding-item" key={proposal.id}>
+                        <p><strong>{proposal.label}</strong></p>
+                        <div className="mk-item-meta">
+                          <span>{proposal.status === "proposed" ? "Proposition privée" : proposal.status === "under_review" ? "En revue" : proposal.status === "approved" ? "Validée" : "Refusée"}</span>
+                          <span>{proposal.externalReference ? `Langue de la référence : ${proposal.externalReference.language.toUpperCase()}` : "Langue non déterminée"}</span>
+                        </div>
+                        <small>{proposal.sourceQuote}</small>
+                        {proposal.externalReference && <small>Référence externe proposée : {proposal.externalReference.label} · {proposal.externalReference.language.toUpperCase()} · {proposal.externalReference.system} · {proposal.externalReference.datasetVersion}</small>}
+                        {(proposal.possibleDuplicateConceptIds ?? []).length > 0 && <small>Concept(s) proche(s) déjà présent(s) : {(proposal.possibleDuplicateConceptIds ?? []).map((id) => getKnowledgeConcept(SCREEN_03_KNOWLEDGE, id)?.definitions.find((item) => item.language === "fr")?.label ?? id).join(", ")}. Une revue doit décider s’il s’agit d’un synonyme ou d’un concept distinct.</small>}
+                      </article>
+                    ))}
+                    <small>Ces propositions restent attachées à ce projet. Elles ne modifient pas le référentiel commun sans revue explicite.</small>
+                  </div>
+                )}
+              </section>}
+              {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
+                <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
+                <div className="mk-relation-list">{dossier.situationGraph.relations.slice(0, 8).map((relation) => {
+                  const from = dossier.situationGraph.entities.find((entity) => entity.id === relation.fromEntityId);
+                  const to = dossier.situationGraph.entities.find((entity) => entity.id === relation.toEntityId);
+                  return <p key={relation.id}><strong>{from?.label ?? "Élément non identifié"}</strong><span>{relation.predicate.replaceAll("_", " ")}</span><strong>{to?.label ?? "Élément non identifié"}</strong></p>;
+                })}</div>
+                {dossier.situationGraph.unresolvedRelations.length > 0 && <small className="mk-unresolved-count">{dossier.situationGraph.unresolvedRelations.length} relation(s) restent à préciser.</small>}
+              </section>}
+              {dossier.contradictions.length > 0 && <section className="mk-understanding-section mk-contradictions">
+                <div className="mk-understanding-section-heading"><div><h2>Points à clarifier</h2><p>Des indications semblent différentes ou incompatibles. Aucune n'est écartée automatiquement.</p></div><span>{dossier.contradictions.filter((item) => item.status !== "resolved").length}</span></div>
+                {dossier.contradictions.map((item) => <article className="mk-contradiction-item" key={item.id}>
+                  <span className={"mk-status " + (item.status === "resolved" ? "mk-status-validated" : "mk-status-inferred")}>{item.status === "resolved" ? "Clarifié" : item.status === "deferred" ? "À reprendre" : "À éclaircir"}</span>
+                  <p><strong>Première indication :</strong> {item.statementA}</p>
+                  <p><strong>Autre indication :</strong> {item.statementB}</p>
+                  {item.status !== "resolved" && <small>Question proposée : {item.question}</small>}
+                </article>)}
+              </section>}
+              {dossier.unresolvedQuestions.length > 0 && <section className="mk-understanding-section"><h2>Références à préciser</h2><ul className="mk-unresolved-list">{dossier.unresolvedQuestions.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
+              {dossier.privacyConsiderations.length > 0 && <section className="mk-understanding-section"><h2>Précautions de confidentialité repérées</h2><ul className="mk-unresolved-list">{dossier.privacyConsiderations.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
+  
+              <div className="mk-stage-overview">
+                <div><strong>{activeItems.length}</strong><span>déclarations utiles, sans doublons</span></div>
+                <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>confirmées</span></div>
+                <div><strong>{activeItems.filter((item) => item.status !== "validated").length}</strong><span>à vérifier</span></div>
+                <div><strong>{evidenceView.notApplicable.length}</strong><span>non applicables</span></div>
+                <div><strong>{evidenceView.unknown.length}</strong><span>sans réponse connue</span></div>
+              </div>
+              {evidenceView.duplicates.length > 0 && <p className="mk-unresolved-count">{evidenceView.duplicates.length} répétition(s) regroupée(s) à l’écran. Toutes les déclarations et leurs sources originales restent conservées dans le dossier.</p>}
+              {evidenceView.notApplicable.length > 0 && <section className="mk-understanding-section"><h2>Non applicable au projet</h2><p>Ces réponses explicites sont conservées séparément. Elles ne sont comptées ni comme faits du projet ni comme informations inconnues.</p>{evidenceView.notApplicable.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Source conservée : {item.sourceQuote}</small></article>)}</section>}
+              {evidenceView.conversationOnly.length > 0 && <section className="mk-understanding-section"><h2>Réactions de conversation</h2><p>Ces messages restent dans l’historique, mais ne sont pas présentés comme des objectifs, résultats ou faits du projet.</p>{evidenceView.conversationOnly.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Message conservé hors des éléments métier.</small></article>)}</section>}
+              {evidenceView.unknown.length > 0 && <section className="mk-understanding-section"><h2>Informations encore inconnues</h2><p>Ces réponses restent visibles, mais ne remplissent pas une dimension du projet.</p>{evidenceView.unknown.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Statut : à préciser</small></article>)}</section>}
+  
+              {screen03KnowledgeMap && (screen03KnowledgeMap.familyCandidates.length > 0 || screen03KnowledgeMap.unresolved.length > 0) && (
+                <section className="mk-knowledge-map" aria-label="Cartographie métier et fonctionnelle">
+                  <div className="mk-knowledge-map-heading">
+                    <span className="mk-summary-kicker">FONDATION A · 20 FAMILLES · 100 DOMAINES CANONIQUES</span>
+                    <strong>Raccordements métier proposés</strong>
+                    <p>MerKora relie les activités, problèmes, processus, ressources, fonctions et indicateurs identifiés. Les correspondances non validées restent des suggestions.</p>
+                  </div>
+                  {screen03KnowledgeMap.familyCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Familles et secteurs repérés</span><div className="mk-knowledge-chips">{screen03KnowledgeMap.familyCandidates.slice(0,5).map((family)=><span key={family.familyId}>{family.labelFr}</span>)}</div></div>}
+                  {screen03KnowledgeMap.solutionCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Fonctions reliées aux problèmes</span><ul>{screen03KnowledgeMap.solutionCandidates.slice(0,6).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                  {screen03KnowledgeMap.processCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Processus liés</span><ul>{screen03KnowledgeMap.processCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                  {screen03KnowledgeMap.resourceCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Ressources liées</span><ul>{screen03KnowledgeMap.resourceCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                  {screen03KnowledgeMap.indicatorCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Indicateurs à définir</span><ul>{screen03KnowledgeMap.indicatorCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
+                  {screen03KnowledgeMap.unresolved.length > 0 && <p className="mk-knowledge-map-footnote">{screen03KnowledgeMap.unresolved.length} élément(s) restent inconnus, non classés ou à clarifier.</p>}
+                </section>
               )}
-            </section>}
-            {dossier.situationGraph.relations.length > 0 && <section className="mk-understanding-section">
-              <div className="mk-understanding-section-heading"><div><h2>Relations repérées dans ton récit</h2><p>Ces liens proviennent des éléments exprimés ; ils ne constituent pas automatiquement des relations de cause à effet.</p></div><span>{dossier.situationGraph.relations.length}</span></div>
-              <div className="mk-relation-list">{dossier.situationGraph.relations.slice(0, 8).map((relation) => {
-                const from = dossier.situationGraph.entities.find((entity) => entity.id === relation.fromEntityId);
-                const to = dossier.situationGraph.entities.find((entity) => entity.id === relation.toEntityId);
-                return <p key={relation.id}><strong>{from?.label ?? "Élément non identifié"}</strong><span>{relation.predicate.replaceAll("_", " ")}</span><strong>{to?.label ?? "Élément non identifié"}</strong></p>;
-              })}</div>
-              {dossier.situationGraph.unresolvedRelations.length > 0 && <small className="mk-unresolved-count">{dossier.situationGraph.unresolvedRelations.length} relation(s) restent à préciser.</small>}
-            </section>}
-            {dossier.contradictions.length > 0 && <section className="mk-understanding-section mk-contradictions">
-              <div className="mk-understanding-section-heading"><div><h2>Points à clarifier</h2><p>Des indications semblent différentes ou incompatibles. Aucune n'est écartée automatiquement.</p></div><span>{dossier.contradictions.filter((item) => item.status !== "resolved").length}</span></div>
-              {dossier.contradictions.map((item) => <article className="mk-contradiction-item" key={item.id}>
-                <span className={"mk-status " + (item.status === "resolved" ? "mk-status-validated" : "mk-status-inferred")}>{item.status === "resolved" ? "Clarifié" : item.status === "deferred" ? "À reprendre" : "À éclaircir"}</span>
-                <p><strong>Première indication :</strong> {item.statementA}</p>
-                <p><strong>Autre indication :</strong> {item.statementB}</p>
-                {item.status !== "resolved" && <small>Question proposée : {item.question}</small>}
-              </article>)}
-            </section>}
-            {dossier.unresolvedQuestions.length > 0 && <section className="mk-understanding-section"><h2>Références à préciser</h2><ul className="mk-unresolved-list">{dossier.unresolvedQuestions.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
-            {dossier.privacyConsiderations.length > 0 && <section className="mk-understanding-section"><h2>Précautions de confidentialité repérées</h2><ul className="mk-unresolved-list">{dossier.privacyConsiderations.map((item, index) => <li key={index}>{item}</li>)}</ul></section>}
-
-            <div className="mk-stage-overview">
-              <div><strong>{activeItems.length}</strong><span>déclarations utiles, sans doublons</span></div>
-              <div><strong>{activeItems.filter((item) => item.status === "validated").length}</strong><span>confirmées</span></div>
-              <div><strong>{activeItems.filter((item) => item.status !== "validated").length}</strong><span>à vérifier</span></div>
-              <div><strong>{evidenceView.notApplicable.length}</strong><span>non applicables</span></div>
-              <div><strong>{evidenceView.unknown.length}</strong><span>sans réponse connue</span></div>
-            </div>
-            {evidenceView.duplicates.length > 0 && <p className="mk-unresolved-count">{evidenceView.duplicates.length} répétition(s) regroupée(s) à l’écran. Toutes les déclarations et leurs sources originales restent conservées dans le dossier.</p>}
-            {evidenceView.notApplicable.length > 0 && <section className="mk-understanding-section"><h2>Non applicable au projet</h2><p>Ces réponses explicites sont conservées séparément. Elles ne sont comptées ni comme faits du projet ni comme informations inconnues.</p>{evidenceView.notApplicable.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Source conservée : {item.sourceQuote}</small></article>)}</section>}
-            {evidenceView.conversationOnly.length > 0 && <section className="mk-understanding-section"><h2>Réactions de conversation</h2><p>Ces messages restent dans l’historique, mais ne sont pas présentés comme des objectifs, résultats ou faits du projet.</p>{evidenceView.conversationOnly.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Message conservé hors des éléments métier.</small></article>)}</section>}
-            {evidenceView.unknown.length > 0 && <section className="mk-understanding-section"><h2>Informations encore inconnues</h2><p>Ces réponses restent visibles, mais ne remplissent pas une dimension du projet.</p>{evidenceView.unknown.map((item) => <article className="mk-understanding-item" key={item.id}><p>{item.value}</p><small>Statut : à préciser</small></article>)}</section>}
-
-            {screen03KnowledgeMap && (screen03KnowledgeMap.familyCandidates.length > 0 || screen03KnowledgeMap.unresolved.length > 0) && (
-              <section className="mk-knowledge-map" aria-label="Cartographie métier et fonctionnelle">
-                <div className="mk-knowledge-map-heading">
-                  <span className="mk-summary-kicker">FONDATION A · 20 FAMILLES · 100 DOMAINES CANONIQUES</span>
-                  <strong>Raccordements métier proposés</strong>
-                  <p>MerKora relie les activités, problèmes, processus, ressources, fonctions et indicateurs identifiés. Les correspondances non validées restent des suggestions.</p>
-                </div>
-                {screen03KnowledgeMap.familyCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Familles et secteurs repérés</span><div className="mk-knowledge-chips">{screen03KnowledgeMap.familyCandidates.slice(0,5).map((family)=><span key={family.familyId}>{family.labelFr}</span>)}</div></div>}
-                {screen03KnowledgeMap.solutionCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Fonctions reliées aux problèmes</span><ul>{screen03KnowledgeMap.solutionCandidates.slice(0,6).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
-                {screen03KnowledgeMap.processCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Processus liés</span><ul>{screen03KnowledgeMap.processCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
-                {screen03KnowledgeMap.resourceCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Ressources liées</span><ul>{screen03KnowledgeMap.resourceCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
-                {screen03KnowledgeMap.indicatorCandidates.length > 0 && <div className="mk-knowledge-map-group"><span>Indicateurs à définir</span><ul>{screen03KnowledgeMap.indicatorCandidates.slice(0,5).map((candidate)=><li key={candidate.conceptId}>{candidate.labelFr}</li>)}</ul></div>}
-                {screen03KnowledgeMap.unresolved.length > 0 && <p className="mk-knowledge-map-footnote">{screen03KnowledgeMap.unresolved.length} élément(s) restent inconnus, non classés ou à clarifier.</p>}
-              </section>
-            )}
-            <div className="mk-understanding-sections">
-              {populatedSections.length === 0 && <p className="mk-section-empty">Aucun élément structuré n'a encore été extrait. Ton récit initial reste conservé intégralement ; le diagnostic pourra commencer par clarifier l'activité ou l'idée.</p>}
-              {populatedSections.map((section) => {
-                const items = activeItems.filter((item) => item.dimension === section.id);
-                return (
-                  <section className="mk-understanding-section" key={section.id}>
-                    <div className="mk-understanding-section-heading">
-                      <div><h2>{section.title}</h2><p>{section.description}</p></div>
-                      <span>{items.length}</span>
-                    </div>
-                    <div className="mk-understanding-items">
-                      {items.map((item) => (
-                          <article className="mk-understanding-item" key={item.id}>
-                            {editingId === item.id ? (
-                              <div className="mk-edit-item">
-                                <label htmlFor={"edit-" + item.id}>Corriger cet élément</label>
-                                <textarea id={"edit-" + item.id} value={editValue} onChange={(event) => { setEditValue(event.target.value); try { window.sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ itemId: item.id, value: event.target.value })); } catch { /* Le champ reste éditable. */ } }} rows={3} />
-                                <div className="mk-inline-actions"><button type="button" className="mk-continue-button" onClick={saveEdit} disabled={!editValue.trim()}>Enregistrer la correction</button><button type="button" className="mk-tertiary-button" onClick={() => { setEditingId(null); try { window.sessionStorage.removeItem(EDIT_DRAFT_KEY); } catch { /* Rien à nettoyer. */ } }}>Annuler</button></div>
-                              </div>
-                            ) : (
-                              <>
-                                <p>{item.value}</p>
-                                <div className="mk-item-meta"><span className={"mk-status mk-status-" + item.status}>{statusLabel(item.status)}</span><span>Source : {item.source === "conversation" ? "ton récit" : item.source === "user_correction" ? "ta correction" : "ta réponse au diagnostic"}</span></div>
-                                <details><summary>Voir l'origine et l'historique</summary><p>{item.sourceQuote}</p><small>Référence : {item.sourceMessageId ?? item.sourceReferenceId ?? "source conservée"}</small>{item.supersedesId && <p><strong>Version précédente :</strong> {dossier.items.find((previous) => previous.id === item.supersedesId)?.value ?? "Version antérieure conservée."}</p>}</details>
-                                <div className="mk-inline-actions">
-                                  <button type="button" className="mk-small-action" onClick={() => startEdit(item)}>Modifier</button>
-                                  {item.status !== "validated" && <button type="button" className="mk-small-action mk-small-action-gold" onClick={() => validateItem(item.id)}>Confirmer cet élément</button>}
-                                  {(item.status === "hypothesis" || item.status === "inferred") && <button type="button" className="mk-small-action" onClick={() => rejectItem(item.id)}>Écarter cette interprétation</button>}
+              <div className="mk-understanding-sections">
+                {populatedSections.length === 0 && <p className="mk-section-empty">Aucun élément structuré n'a encore été extrait. Ton récit initial reste conservé intégralement ; le diagnostic pourra commencer par clarifier l'activité ou l'idée.</p>}
+                {populatedSections.map((section) => {
+                  const items = activeItems.filter((item) => item.dimension === section.id);
+                  return (
+                    <section className="mk-understanding-section" key={section.id}>
+                      <div className="mk-understanding-section-heading">
+                        <div><h2>{section.title}</h2><p>{section.description}</p></div>
+                        <span>{items.length}</span>
+                      </div>
+                      <div className="mk-understanding-items">
+                        {items.map((item) => (
+                            <article className="mk-understanding-item" key={item.id}>
+                              {editingId === item.id ? (
+                                <div className="mk-edit-item">
+                                  <label htmlFor={"edit-" + item.id}>Corriger cet élément</label>
+                                  <textarea id={"edit-" + item.id} value={editValue} onChange={(event) => { setEditValue(event.target.value); try { window.sessionStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ itemId: item.id, value: event.target.value })); } catch { /* Le champ reste éditable. */ } }} rows={3} />
+                                  <div className="mk-inline-actions"><button type="button" className="mk-continue-button" onClick={saveEdit} disabled={!editValue.trim()}>Enregistrer la correction</button><button type="button" className="mk-tertiary-button" onClick={() => { setEditingId(null); try { window.sessionStorage.removeItem(EDIT_DRAFT_KEY); } catch { /* Rien à nettoyer. */ } }}>Annuler</button></div>
                                 </div>
-                              </>
-                            )}
-                          </article>
-                        ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-            {missingSections.length > 0 && <details className="mk-missing-sections"><summary>Voir les {missingSections.length} dimensions non encore identifiées</summary><ul>{missingSections.map((section) => <li key={section.id}><strong>{section.title}</strong><span>{section.description}</span></li>)}</ul><p>Ces dimensions ne sont pas des champs obligatoires. MerKora les explorera seulement si elles deviennent utiles au projet.</p></details>}
-
+                              ) : (
+                                <>
+                                  <p>{item.value}</p>
+                                  <div className="mk-item-meta"><span className={"mk-status mk-status-" + item.status}>{statusLabel(item.status)}</span><span>Source : {item.source === "conversation" ? "ton récit" : item.source === "user_correction" ? "ta correction" : "ta réponse au diagnostic"}</span></div>
+                                  <details><summary>Voir l'origine et l'historique</summary><p>{item.sourceQuote}</p><small>Référence : {item.sourceMessageId ?? item.sourceReferenceId ?? "source conservée"}</small>{item.supersedesId && <p><strong>Version précédente :</strong> {dossier.items.find((previous) => previous.id === item.supersedesId)?.value ?? "Version antérieure conservée."}</p>}</details>
+                                  <div className="mk-inline-actions">
+                                    <button type="button" className="mk-small-action" onClick={() => startEdit(item)}>Modifier</button>
+                                    {item.status !== "validated" && <button type="button" className="mk-small-action mk-small-action-gold" onClick={() => validateItem(item.id)}>Confirmer cet élément</button>}
+                                    {(item.status === "hypothesis" || item.status === "inferred") && <button type="button" className="mk-small-action" onClick={() => rejectItem(item.id)}>Écarter cette interprétation</button>}
+                                  </div>
+                                </>
+                              )}
+                            </article>
+                          ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+              {missingSections.length > 0 && <details className="mk-missing-sections"><summary>Voir les {missingSections.length} dimensions non encore identifiées</summary><ul>{missingSections.map((section) => <li key={section.id}><strong>{section.title}</strong><span>{section.description}</span></li>)}</ul><p>Ces dimensions ne sont pas des champs obligatoires. MerKora les explorera seulement si elles deviennent utiles au projet.</p></details>}
+  
+  
+            </details>
             <section className="mk-stage-next">
               <div><span className="mk-summary-kicker">PROCHAINE ÉTAPE</span><h2>Approfondir ce qui doit encore être compris</h2><p>La validation confirme les informations que tu as exprimées. Les hypothèses restent des hypothèses. Le diagnostic pourra préciser les éléments manquants, un par un.</p></div>
               <button type="button" className="mk-continue-button" onClick={continueToDiagnostic}>Valider et passer au diagnostic <span>→</span></button>
