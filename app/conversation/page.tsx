@@ -23,7 +23,7 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
     <div
       className={`mk-orb-scene mk-orb-text mk-orb-state-${state} mk-orb-activity-${activity}`}
       role="img"
-      aria-label="Sphère intelligente MerKora"
+      aria-label="Sphère intelligente MerKora GDJ"
     >
       <div className="mk-orb-halo" />
       <div className="mk-orb-ring mk-orb-ring-a" />
@@ -39,7 +39,7 @@ function MerKoraOrb({ state, activity }: { state: "idle" | "clarification" | "su
       <span className="mk-orb-star mk-orb-star-a">✦</span>
       <span className="mk-orb-star mk-orb-star-b">✧</span>
       <span className="mk-orb-star mk-orb-star-c">·</span>
-      <span className="mk-orb-sr">Les ondes de MerKora</span>
+      <span className="mk-orb-sr">Les ondes de MerKora GDJ</span>
     </div>
   );
 }
@@ -289,9 +289,9 @@ export default function ConversationPage() {
     <main className="mk-v2-page mk-conversation-page">
       <div className="mk-v2-noise" aria-hidden="true" />
       <header className="mk-header">
-        <a className="mk-brand" href="/" aria-label="Retour à l'accueil MerKora">
+        <a className="mk-brand" href="/" aria-label="Retour à l'accueil MerKora GDJ">
           <span className="mk-brand-mark">M</span>
-          <span><strong>MerKora</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
+          <span><strong>MerKora GDJ</strong><small>GUIDED DIGITAL JOURNEY · V2</small></span>
         </a>
         <a className="mk-back-link" href="/">← Retour</a>
       </header>
