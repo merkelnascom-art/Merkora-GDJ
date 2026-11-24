@@ -68,14 +68,12 @@ describe("MerKora screen 06 — solution proposal", () => {
 });
 
 
-describe("MerKora screen 07 — workspaces, simulation and launch", () => {
-  it("introduces editable role spaces and a client-controlled launch path", () => {
+describe("MerKora screen 07 — workspace design", () => {
+  it("renders the screen 07 entry point and explains the client's control", () => {
     const html = renderToStaticMarkup(<WorkspaceDesignPage />);
     expect(html).toContain("Organisons les espaces");
-    expect(html).toContain("LIBERTÉ DE CONSTRUCTION");
-    expect(html).toContain("SIMULER LES INTERACTIONS");
-    expect(html).toContain("Tu gardes la main sur le lancement.");
-    expect(html).toContain("Confirmer ma demande de mise en service");
-    expect(html).not.toContain("Déployer maintenant");
+    expect(html).toContain("ÉTAPE 07 · ORGANISATION ET EXPÉRIENCE DU PRODUIT");
+    expect(html).toContain("Rien n&#x27;est figé sans ta validation.");
+    expect(html).toContain("Préparation des espaces du produit");
   });
 });
