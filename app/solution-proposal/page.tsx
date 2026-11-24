@@ -129,9 +129,11 @@ export default function SolutionProposalPage() {
   }
 
   function completeProductProfile() {
-    if (!dossier || !definition || !profileDraft.projectName.trim() || !profileDraft.productTypeId) return;
+    const productTypeId = profileDraft.productTypeId;
+    if (!dossier || !definition || !profileDraft.projectName.trim() || !productTypeId) return;
     const profile: SolutionProductProfile = {
       ...profileDraft,
+      productTypeId,
       projectName: profileDraft.projectName.trim(),
     };
     const next = buildSolutionProposal(dossier, definition, profile);
