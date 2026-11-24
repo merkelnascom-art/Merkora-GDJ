@@ -241,7 +241,7 @@ export default function UnderstandingPage() {
           <div className="mk-stage-steps"><span className="done">01 · Entrée</span><span className="done">02 · Conversation</span><span className="active">03 · Compréhension</span><span>04 · Diagnostic</span></div>
           <span className="mk-eyebrow"><span /> ÉTAPE 03 · MIROIR DU PROJET</span>
           <h1>Voici ce que j'ai compris.<br /><em>Vérifions-le ensemble.</em></h1>
-          <p>Je rassemble tes mots et les informations déjà exprimées : activité, idée, situation, personnes, objectifs et contraintes. Tu peux corriger chaque élément. Ce qui reste inconnu ne sera pas inventé.</p>
+          <p>Voici les quelques repères que j'ai retenus. Vérifie-les simplement ; les détails restent disponibles si tu souhaites les consulter.</p>
         </div>
 
         {!sourceAvailable && (
