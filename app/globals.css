@@ -473,3 +473,24 @@
  .mk-understanding-quick{padding:16px;margin-bottom:12px}
  .mk-understanding-quick h2{font-size:18px}
 }
+
+
+/* Écran 06 : cadrage en cinq questions successives. */
+.mk-solution-wizard{max-width:760px;margin:0 auto;padding:24px}
+.mk-solution-wizard .mk-solution-profile-heading{margin-bottom:22px}
+.mk-solution-wizard .mk-solution-profile-heading h2{font-size:clamp(22px,3vw,30px);line-height:1.2;margin:13px 0 8px}
+.mk-solution-wizard .mk-solution-profile-heading p{max-width:620px}
+.mk-solution-wizard-progress{display:flex;gap:7px;margin-top:14px}
+.mk-solution-wizard-progress span{height:4px;flex:1;border-radius:9px;background:#ffffff20}
+.mk-solution-wizard-progress span.active{background:linear-gradient(90deg,#a98af0,#e7c98f)}
+.mk-solution-wizard .mk-solution-type-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mk-solution-wizard .mk-solution-domain-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mk-solution-wizard-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:24px;padding-top:17px;border-top:1px solid #ffffff18}
+.mk-solution-wizard-actions .mk-continue-button,.mk-solution-wizard-actions .mk-secondary-button{min-width:140px}
+.mk-solution-skip{display:block;margin:12px auto 0}
+.mk-solution-wizard-note{margin:16px 0 0;text-align:center;color:#9f98b2;font-size:10px;line-height:1.6}
+@media(max-width:680px){
+ .mk-solution-wizard{padding:17px}
+ .mk-solution-wizard .mk-solution-type-grid,.mk-solution-wizard .mk-solution-domain-grid{grid-template-columns:1fr}
+ .mk-solution-wizard-actions .mk-continue-button,.mk-solution-wizard-actions .mk-secondary-button{min-width:0;flex:1}
+}
