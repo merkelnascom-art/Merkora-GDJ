@@ -19,7 +19,7 @@
 | Lot | Contenu | État |
 |---|---|---|
 | 0 | Conception métier, architecture et règles de protection | Réalisé |
-| 1 | Réutilisation du catalogue canonique (10 produits, 15 domaines) | Réalisé |
+| 1 | Réutilisation du catalogue canonique (10 produits, 16 domaines) | Réalisé |
 | 2 | Première page Catalogue : produits, domaines, fonctions et accès au parcours sur mesure | Réalisé |
 | 3 | Contrat TypeScript d'offre versionnée et validation des références | Réalisé |
 | 4 | Évaluation des sélections, options, dépendances et suggestions IA non validées | Réalisé |
