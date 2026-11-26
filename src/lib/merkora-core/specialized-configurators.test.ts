@@ -3,6 +3,7 @@ import {
   getSpecializedConfigurator,
   validateSpecializedConfiguratorAnswers,
 } from "./specialized-configurators";
+import { getDomainCatalogs } from "./solution-catalog";
 
 describe("specialized configurators", () => {
   it("gives e-commerce its own sales, stock, checkout and fulfilment decisions", () => {
