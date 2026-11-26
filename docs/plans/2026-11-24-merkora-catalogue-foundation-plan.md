@@ -26,7 +26,7 @@
 | 5 | Instantané de commande et classification de la personnalisation incluse | Réalisé |
 | 6 | Scénarios de régression métier et vérifications CI | Réalisé |
 | 7 | Durcissement des validations d'entrée et des contrats de version | À faire |
-| 8 | Configurateurs spécialisés initiaux | À faire |
+| 8 | Configurateurs spécialisés initiaux | En cours — six définitions métier initiales et validations dédiées ajoutées ; parcours UI et règles conditionnelles approfondies à poursuivre |
 | 9 | Parcours client de configuration et récapitulatif | À faire |
 | 10 | Administration des offres, versions et options | À faire |
 | 11 | Moteur de devis administré et validation humaine | À faire |
@@ -55,7 +55,7 @@ Créer une interface commune de configurateur, puis des définitions métier sé
 5. Numérisation : réception, scan, OCR, classement, métadonnées, recherche et archivage.
 6. Jeux : modes, règles, joueurs, équipes, sessions, scores et progression.
 
-Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation.
+Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation. Le premier socle couvre désormais six parcours distincts : e-commerce, réservation, gestion d’activité, éducation/orientation, numérisation documentaire et jeux. Chaque parcours possède ses propres étapes, questions, options, explications et modules référencés. Le domaine numérisation/archivage et les capacités d’orientation professionnelle sont ajoutés au catalogue canonique. Cette première livraison reste une définition métier testable ; elle ne prétend pas encore constituer les écrans client finaux.
 
 **Critère de sortie :** chaque configurateur pose des questions pertinentes à son produit, applique ses règles métier et produit un résultat compatible avec le socle commun.
 
