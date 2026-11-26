@@ -17,6 +17,7 @@ export interface SpecializedConfiguratorStep {
   required: boolean;
   options?: string[];
   min?: number;
+  showWhen?: { stepId: string; includes?: string[]; excludes?: string[] };
 }
 
 export interface SpecializedConfigurator {
@@ -49,7 +50,7 @@ const configurators: SpecializedConfigurator[] = [
     steps: [
       { id: "selling_model", title: "Modèle de vente", question: "Que vendra la boutique et comment les clients passeront-ils commande ?", guidance: "Distinguer produits physiques, produits numériques et prestations ; préciser vente directe, sur commande ou les deux.", input: "multiple", required: true, options: ["physical_products", "digital_products", "services", "made_to_order", "retail", "wholesale"] },
       { id: "catalogue", title: "Catalogue et fiches", question: "Comment les articles doivent-ils être présentés ?", guidance: "Préciser catégories, photos, descriptions, variantes (taille, couleur, format), prix, promotions et disponibilité.", input: "multiple", required: true, options: ["categories", "photos", "descriptions", "variants", "multiple_prices", "promotions", "digital_downloads"] },
-      { id: "inventory", title: "Stock et disponibilité", question: "Comment la disponibilité des articles sera-t-elle gérée ?", guidance: "Le stock peut être suivi par article, variante, dépôt ou fournisseur ; certains produits peuvent être vendus sans stock physique.", input: "single", required: true, options: ["no_stock_tracking", "manual_stock", "automatic_stock", "multiple_locations", "made_to_order"] },
+      { id: "inventory", title: "Stock et disponibilité", question: "Comment la disponibilité des articles sera-t-elle gérée ?", guidance: "Le stock peut être suivi par article, variante, dépôt ou fournisseur ; les produits uniquement numériques ou les prestations sans stock n’ont pas besoin de ce suivi.", input: "single", required: true, options: ["no_stock_tracking", "manual_stock", "automatic_stock", "multiple_locations", "made_to_order"], showWhen: { stepId: "selling_model", includes: ["physical_products", "made_to_order", "retail", "wholesale"] } },
       { id: "checkout", title: "Commande et paiement", question: "Comment le client validera-t-il et réglera-t-il sa commande ?", guidance: "Définir les coordonnées demandées, les étapes de validation, les paiements acceptés et le traitement des paiements non confirmés.", input: "multiple", required: true, options: ["cash_on_delivery", "mobile_money", "bank_card", "bank_transfer", "pay_on_pickup", "manual_confirmation"] },
       { id: "fulfilment", title: "Livraison et retrait", question: "Comment les commandes seront-elles remises aux clients ?", guidance: "Préciser zones, frais, délais, livraison par vos équipes ou partenaire, retrait sur place et preuve de remise.", input: "multiple", required: true, options: ["home_delivery", "pickup_point", "store_pickup", "third_party_carrier", "digital_delivery", "delivery_zones"] },
       { id: "after_sales", title: "Après-vente", question: "Que doit-il se passer après la livraison ou la remise ?", guidance: "Définir retours, échanges, remboursements, réclamations, garanties et suivi de satisfaction.", input: "multiple", required: true, options: ["returns", "exchanges", "refunds", "warranty", "complaints", "customer_support"] },
@@ -92,7 +93,7 @@ const configurators: SpecializedConfigurator[] = [
     steps: [
       { id: "education_model", title: "Nature du projet", question: "Quel type d'expérience éducative voulez-vous proposer ?", guidance: "Une plateforme d'orientation comme Student Vision peut analyser des réponses et proposer des pistes sans gérer une école, des classes ou une direction.", input: "single", required: true, options: ["school_management", "career_orientation", "training", "online_learning", "assessment_platform", "educational_content"] },
       { id: "audience", title: "Public concerné", question: "À qui la plateforme s'adresse-t-elle ?", guidance: "Préciser les profils, tranches de niveau, accompagnateurs et éventuels responsables légaux.", input: "multiple", required: true, options: ["children", "students", "job_seekers", "employees", "trainers", "parents", "career_counsellors", "general_public"] },
-      { id: "learning_content", title: "Contenus et activités", question: "Quels contenus ou activités seront proposés ?", guidance: "Choisir cours, leçons, ressources, exercices, parcours, vidéos ou activités de découverte.", input: "multiple", required: true, options: ["courses", "lessons", "videos", "documents", "exercises", "guided_pathways", "career_discovery"] },
+      { id: "learning_content", title: "Contenus et activités", question: "Quels contenus ou activités seront proposés ?", guidance: "Cette étape concerne les projets qui diffusent des cours ou des ressources. Une plateforme d’orientation centrée sur les tests et recommandations peut la passer.", input: "multiple", required: true, options: ["courses", "lessons", "videos", "documents", "exercises", "guided_pathways", "career_discovery"], showWhen: { stepId: "education_model", includes: ["school_management", "training", "online_learning", "educational_content"] } },
       { id: "assessment", title: "Tests et évaluations", question: "Comment les connaissances, aptitudes ou intérêts seront-ils explorés ?", guidance: "Décrire les quiz, mises en situation, devinettes, tests, critères de correction, tentatives et interprétation des résultats.", input: "multiple", required: true, options: ["multiple_choice", "open_questions", "quizzes", "riddles", "skills_tests", "interest_tests", "practical_tasks", "human_review"] },
       { id: "progression", title: "Résultats et progression", question: "Que doit recevoir la personne à la fin de son parcours ?", guidance: "Les propositions d'orientation doivent être expliquées à partir des réponses et critères utilisés, avec limites et possibilité d'accompagnement humain.", input: "multiple", required: true, options: ["scores", "progress_tracking", "recommendations", "career_suggestions", "certificates", "feedback", "advisor_follow_up"] },
     ],
@@ -136,8 +137,25 @@ export function getSpecializedConfigurator(id: string): SpecializedConfigurator 
     steps: configurator.steps.map((step) => ({
       ...step,
       options: step.options ? [...step.options] : undefined,
+      showWhen: step.showWhen ? { ...step.showWhen, includes: step.showWhen.includes ? [...step.showWhen.includes] : undefined, excludes: step.showWhen.excludes ? [...step.showWhen.excludes] : undefined } : undefined,
     })),
   } : undefined;
+}
+
+export function getVisibleConfiguratorSteps(
+  id: string,
+  answers: Record<string, ConfiguratorAnswer>,
+): SpecializedConfiguratorStep[] {
+  const configurator = getSpecializedConfigurator(id);
+  if (!configurator) return [];
+  return configurator.steps.filter((step) => {
+    if (!step.showWhen) return true;
+    const dependency = answers[step.showWhen.stepId];
+    const selected = Array.isArray(dependency) ? dependency : dependency === undefined ? [] : [dependency];
+    if (step.showWhen.includes?.length && !step.showWhen.includes.some((value) => selected.includes(value))) return false;
+    if (step.showWhen.excludes?.some((value) => selected.includes(value))) return false;
+    return true;
+  });
 }
 
 export function getSpecializedConfigurators(): SpecializedConfigurator[] {
@@ -162,7 +180,7 @@ export function validateSpecializedConfiguratorAnswers(
     }
   });
 
-  configurator.steps.forEach((step) => {
+  getVisibleConfiguratorSteps(id, answers).forEach((step) => {
     const answer = answers[step.id];
     if (answer === undefined || answer === null || answer === "") {
       if (step.required) issues.push({ code: "missing_answer", path: step.id, message: "Une réponse est nécessaire pour continuer." });
