@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildSpecializedProjectDossier } from "./specialized-project-dossier";
+import {
+  buildSpecializedProjectDossier,
+  formatSpecializedProjectDossierForConversation,
+} from "./specialized-project-dossier";
 
 describe("specialized project dossier", () => {
   it("preserves explicit choices and client notes as unreviewed source evidence", () => {
@@ -74,6 +77,30 @@ describe("specialized project dossier", () => {
     expect(dossier?.skippedStepIds).toContain("inventory");
     expect(dossier?.interpretation.deductions).toEqual([]);
     expect(dossier?.interpretation.hypotheses).toEqual([]);
+  });
+
+
+  it("creates an editable DRT hand-off from explicit answers without adding conclusions", () => {
+    const dossier = buildSpecializedProjectDossier({
+      id: "orientation-handoff",
+      configuratorId: "education",
+      answers: {
+        education_model: "career_orientation",
+        audience: ["students"],
+        assessment: ["quizzes", "interest_tests"],
+        progression: ["career_suggestions"],
+      },
+      notes: { assessment: "Expliquer chaque recommandation." },
+    });
+    if (!dossier) throw new Error("Expected a valid education dossier");
+
+    const prompt = formatSpecializedProjectDossierForConversation(dossier);
+    expect(prompt).toContain("MES CHOIX EXPLICITES");
+    expect(prompt).toContain("Nature du projet : career orientation");
+    expect(prompt).toContain("Ma précision (assessment) : Expliquer chaque recommandation.");
+    expect(prompt).toContain("ne pas les transformer en faits confirmés");
+    expect(dossier.interpretation.deductions).toEqual([]);
+    expect(dossier.interpretation.hypotheses).toEqual([]);
   });
 
   it("returns no dossier for an unknown configurator", () => {
