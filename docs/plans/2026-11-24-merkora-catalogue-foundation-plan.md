@@ -27,7 +27,7 @@
 | 6 | Scénarios de régression métier et vérifications CI | Réalisé |
 | 7 | Durcissement des validations d'entrée et des contrats de version | Réalisé — métadonnées, devise, statuts, domaines/modules dupliqués, disponibilité et champs personnalisables contrôlés ; instantanés revalidés et gelés |
 | 8 | Configurateurs spécialisés initiaux | En cours — six définitions métier, parcours adaptatifs, écran une question à la fois, précisions libres, reprise locale et récapitulatif ajoutés ; règles conditionnelles plus fines à poursuivre |
-| 9 | Parcours client de configuration et récapitulatif | En cours — six entrées Catalogue vers les configurateurs ; synthèse éditable et sauvegarde locale du brouillon ; connexion au dossier client et transmission serveur à concevoir |
+| 9 | Parcours client de configuration et dossier structuré | En cours — six entrées Catalogue ; synthèse éditable ; dossier typé local-first avec provenance des réponses, questions non répondues et étapes conditionnelles ignorées ; transfert éditable vers DRT ; aucune transmission serveur |
 | 10 | Administration des offres, versions et options | À faire |
 | 11 | Moteur de devis administré et validation humaine | À faire |
 | 12 | Persistance Supabase et intégration aux commandes partagées | À concevoir séparément, avec autorisation |
@@ -55,7 +55,7 @@ Créer une interface commune de configurateur, puis des définitions métier sé
 5. Numérisation : réception, scan, OCR, classement, métadonnées, recherche et archivage.
 6. Jeux : modes, règles, joueurs, équipes, sessions, scores et progression.
 
-Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation. Le premier socle couvre six parcours distincts : e-commerce, réservation, gestion d’activité, éducation/orientation, numérisation documentaire et jeux. Chaque parcours possède ses propres étapes, questions, options, explications et modules référencés. Les parcours conditionnels évitent notamment de demander une gestion de stock pour une boutique uniquement numérique et évitent d’imposer la gestion des cours à un projet d’orientation professionnelle. L’interface commune affiche une question par écran, permet les sélections adaptées, une précision libre à chaque étape, le retour aux réponses précédentes et un récapitulatif éditable. Le brouillon peut être enregistré localement dans le navigateur. Cette sauvegarde locale n’envoie pas encore les données à l’équipe et ne remplace pas la persistance dans le dossier client.
+Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation. Le premier socle couvre six parcours distincts : e-commerce, réservation, gestion d’activité, éducation/orientation, numérisation documentaire et jeux. Chaque parcours possède ses propres étapes, questions, options, explications et modules référencés. Les parcours conditionnels évitent notamment de demander une gestion de stock pour une boutique uniquement numérique et évitent d’imposer la gestion des cours à un projet d’orientation professionnelle. L’interface commune affiche une question par écran, permet les sélections adaptées, une précision libre à chaque étape, le retour aux réponses précédentes et un récapitulatif éditable. Le brouillon peut être enregistré localement dans le navigateur. Cette sauvegarde locale n’envoie pas les données à l’équipe. Le dossier provisoire distingue les sélections explicites, les précisions écrites, les questions restées sans réponse et les étapes écartées par le parcours conditionnel. Les faits, déductions et hypothèses restent vides tant qu'aucune analyse/revue ne les a établis. Un transfert vers DRT prépare un message modifiable à partir de ces seules données source ; il ne confirme pas le dossier et ne crée ni devis ni commande.
 
 **Critère de sortie :** chaque configurateur pose des questions pertinentes à son produit, applique ses règles métier et produit un résultat compatible avec le socle commun.
 
@@ -68,8 +68,12 @@ Les autres domaines restent reconnus par le référentiel, sans être artificiel
 - Aperçu et récapitulatif lisible.
 - Demande de devis ou commande selon le statut de l'offre.
 - Historique des choix et versions.
+- Convertir les réponses des six configurateurs en dossier provisoire typé, sans déductions automatiques.
+- Conserver l'origine, la version du configurateur, les réponses explicites, les précisions libres, les étapes non répondues et les étapes conditionnelles ignorées.
+- Enregistrer le dossier dans le stockage local partagé avec les autres dossiers du navigateur.
+- Permettre de reprendre le besoin dans DRT via un message prérempli et modifiable, sans écraser une conversation existante.
 
-**Critère de sortie :** le client comprend précisément ce qu'il demande et ce qui reste hors périmètre.
+**Critère de sortie :** le client comprend précisément ce qu'il demande et ce qui reste hors périmètre ; le dossier peut être repris dans DRT sans perte des éléments explicitement fournis.
 
 ### Lot 10 — Administration catalogue
 
