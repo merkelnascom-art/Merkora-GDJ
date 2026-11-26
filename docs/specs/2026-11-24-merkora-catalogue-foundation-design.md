@@ -69,7 +69,7 @@ Un même projet peut combiner plusieurs domaines métier, mais son type de produ
 
 ### 4.2 Domaines métier déjà présents
 
-`attendance`, `reservation`, `finance`, `education`, `architecture`, `social_network`, `game`, `code_generation`, `commerce`, `business_management`, `telecommunications`, `health`, `agriculture`, `transport`, `media`.
+`attendance`, `reservation`, `finance`, `education`, `architecture`, `social_network`, `game`, `code_generation`, `commerce`, `business_management`, `telecommunications`, `health`, `agriculture`, `transport`, `media`, `digitization`.
 
 Cette liste est un socle initial extensible, pas une liste exhaustive de tous les métiers possibles. Les nouveaux domaines seront ajoutés après définition de leur vocabulaire, rôles, modules, dépendances et précautions.
 
