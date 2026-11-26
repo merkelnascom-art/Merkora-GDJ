@@ -26,8 +26,8 @@
 | 5 | Instantané de commande et classification de la personnalisation incluse | Réalisé |
 | 6 | Scénarios de régression métier et vérifications CI | Réalisé |
 | 7 | Durcissement des validations d'entrée et des contrats de version | À faire |
-| 8 | Configurateurs spécialisés initiaux | En cours — six définitions métier initiales et validations dédiées ajoutées ; parcours UI et règles conditionnelles approfondies à poursuivre |
-| 9 | Parcours client de configuration et récapitulatif | À faire |
+| 8 | Configurateurs spécialisés initiaux | En cours — six définitions métier, parcours adaptatifs, écran une question à la fois, précisions libres, reprise locale et récapitulatif ajoutés ; règles conditionnelles plus fines à poursuivre |
+| 9 | Parcours client de configuration et récapitulatif | En cours — six entrées Catalogue vers les configurateurs ; synthèse éditable et sauvegarde locale du brouillon ; connexion au dossier client et transmission serveur à concevoir |
 | 10 | Administration des offres, versions et options | À faire |
 | 11 | Moteur de devis administré et validation humaine | À faire |
 | 12 | Persistance Supabase et intégration aux commandes partagées | À concevoir séparément, avec autorisation |
@@ -55,7 +55,7 @@ Créer une interface commune de configurateur, puis des définitions métier sé
 5. Numérisation : réception, scan, OCR, classement, métadonnées, recherche et archivage.
 6. Jeux : modes, règles, joueurs, équipes, sessions, scores et progression.
 
-Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation. Le premier socle couvre désormais six parcours distincts : e-commerce, réservation, gestion d’activité, éducation/orientation, numérisation documentaire et jeux. Chaque parcours possède ses propres étapes, questions, options, explications et modules référencés. Le domaine numérisation/archivage et les capacités d’orientation professionnelle sont ajoutés au catalogue canonique. Cette première livraison reste une définition métier testable ; elle ne prétend pas encore constituer les écrans client finaux.
+Les autres domaines restent reconnus par le référentiel, sans être artificiellement déclarés « configurés » avant leur réalisation. Le premier socle couvre six parcours distincts : e-commerce, réservation, gestion d’activité, éducation/orientation, numérisation documentaire et jeux. Chaque parcours possède ses propres étapes, questions, options, explications et modules référencés. Les parcours conditionnels évitent notamment de demander une gestion de stock pour une boutique uniquement numérique et évitent d’imposer la gestion des cours à un projet d’orientation professionnelle. L’interface commune affiche une question par écran, permet les sélections adaptées, une précision libre à chaque étape, le retour aux réponses précédentes et un récapitulatif éditable. Le brouillon peut être enregistré localement dans le navigateur. Cette sauvegarde locale n’envoie pas encore les données à l’équipe et ne remplace pas la persistance dans le dossier client.
 
 **Critère de sortie :** chaque configurateur pose des questions pertinentes à son produit, applique ses règles métier et produit un résultat compatible avec le socle commun.
 
