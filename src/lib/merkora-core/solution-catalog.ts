@@ -245,6 +245,18 @@ const domainCatalogs: SolutionDomainCatalog[] = [
     ],
   },
   {
+    id: "digitization", label: "Numérisation et archivage documentaire", description: "Recevoir, numériser, reconnaître, classer, rechercher et conserver des documents.",
+    roles: [{ id: "document_operator", label: "Agent de numérisation", scope: "operational", description: "Réceptionne, numérise et contrôle la qualité des documents." }, { id: "archive_manager", label: "Responsable des archives", scope: "operational", description: "Définit le classement, les accès et les règles de conservation." }],
+    modules: [
+      { id: "document_intake", label: "Réception des documents", description: "Dépôt, import, lots, formats acceptés et traçabilité de réception.", domainIds: ["digitization"] },
+      { id: "document_capture", label: "Numérisation et capture", description: "Scan, capture mobile, traitement d'image et contrôle qualité.", domainIds: ["digitization"] },
+      { id: "document_ocr", label: "OCR et extraction", description: "Reconnaissance optique, extraction de texte et vérification humaine.", domainIds: ["digitization"] },
+      { id: "document_classification", label: "Classement et métadonnées", description: "Catégories, dossiers, tags, index et niveaux de confidentialité.", domainIds: ["digitization"] },
+      { id: "document_search", label: "Recherche documentaire", description: "Recherche plein texte, filtres et accès selon permissions.", domainIds: ["digitization"] },
+      { id: "document_archive", label: "Archivage et conservation", description: "Durées de conservation, sauvegardes, exports et élimination autorisée.", domainIds: ["digitization"] },
+    ],
+  },
+  {
     id: "media", label: "Médias et marketing", description: "Créer, organiser, publier et mesurer des contenus et campagnes.",
     roles: [{ id: "content_editor", label: "Créateur / éditeur", scope: "operational", description: "Prépare les contenus et valide leur publication." }],
     modules: [
