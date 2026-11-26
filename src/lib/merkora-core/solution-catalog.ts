@@ -25,7 +25,8 @@ export type SolutionDomainId =
   | "health"
   | "agriculture"
   | "transport"
-  | "media";
+  | "media"
+  | "digitization";
 
 export type SolutionNavigationStyle = "sidebar" | "topbar" | "bottom_tabs" | "contextual" | "not_applicable";
 export type SolutionBrandingMode = "existing_logo" | "create_logo" | "to_define";
@@ -142,6 +143,7 @@ const domainCatalogs: SolutionDomainCatalog[] = [
       { id: "learning_schedule", label: "Emploi du temps et cours", description: "Cours, salles, enseignants, horaires et changements.", domainIds: ["education"] },
       { id: "pedagogical_tracking", label: "Suivi pédagogique", description: "Notes, compétences, progression, observations et bilans.", domainIds: ["education"] },
       { id: "quizzes_assessments", label: "Tests, quiz et évaluations", description: "Questionnaires, exercices, scores et historique des tentatives.", domainIds: ["education"] },
+      { id: "career_orientation", label: "Orientation et recommandations de parcours", description: "Analyser les réponses, intérêts et aptitudes pour proposer des pistes argumentées sans imposer une gestion scolaire.", domainIds: ["education"] },
     ],
   },
   {
@@ -191,6 +193,7 @@ const domainCatalogs: SolutionDomainCatalog[] = [
       { id: "product_catalog", label: "Catalogue de produits et services", description: "Fiches, variantes, prix et disponibilité.", domainIds: ["commerce"] },
       { id: "inventory_movements", label: "Stock et mouvements", description: "Entrées, sorties, seuils et inventaires.", domainIds: ["commerce"] },
       { id: "order_management", label: "Commandes et ventes", description: "Commandes, statuts, retours et suivi commercial.", domainIds: ["commerce"] },
+      { id: "returns_management", label: "Retours et remboursements", description: "Demandes de retour, échanges, remboursements, motifs et décisions traçables.", domainIds: ["commerce"] },
       { id: "delivery_tracking", label: "Livraison et retrait", description: "Zones, frais, affectation et preuve de livraison.", domainIds: ["commerce", "transport"] },
     ],
   },
@@ -258,8 +261,8 @@ const moduleLabels: Record<string, string> = {
   mobile_navigation: "Navigation mobile", push_notifications: "Notifications mobiles", device_permissions: "Autorisations de l'appareil", offline_ready_states: "Mode hors connexion à préciser",
   application_workspace: "Espace applicatif", data_forms: "Formulaires métier", search_and_filters: "Recherche et filtres", operation_history: "Historique des opérations",
   availability_calendar: "Calendrier des disponibilités", booking_lifecycle: "Cycle de réservation", confirmation_messages: "Confirmations", booking_admin: "Gestion des réservations",
-  product_catalog: "Catalogue produits", shopping_cart: "Panier", order_management: "Gestion des commandes", checkout: "Paiement et validation de commande",
-  game_lobby: "Salle de jeu", game_rules: "Règles du jeu", player_sessions: "Sessions joueurs", score_progression: "Scores et progression",
+  product_catalog: "Catalogue produits", shopping_cart: "Panier", order_management: "Gestion des commandes", returns_management: "Retours et remboursements", checkout: "Paiement et validation de commande",
+  game_lobby: "Salle de jeu", game_rules: "Règles du jeu", player_sessions: "Sessions joueurs", score_progression: "Scores et progression", career_orientation: "Orientation et recommandations",
   input_builder: "Paramètres de création", generation_engine: "Moteur de génération", preview_output: "Aperçu du résultat", export_history: "Export et historique",
   project_canvas: "Espace de conception", file_library: "Bibliothèque de fichiers", revision_history: "Historique des versions", approval_workflow: "Circuit de validation",
   operations_register: "Registre des opérations", resource_planning: "Planification des ressources", task_follow_up: "Suivi des tâches", evidence_log: "Journal de preuves",
