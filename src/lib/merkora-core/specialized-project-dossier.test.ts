@@ -98,7 +98,7 @@ describe("specialized project dossier", () => {
     expect(prompt).toContain("MES CHOIX EXPLICITES");
     expect(prompt).toContain("Nature du projet : career orientation");
     expect(prompt).toContain("Ma précision (assessment) : Expliquer chaque recommandation.");
-    expect(prompt).toContain("ne pas les transformer en faits confirmés");
+    expect(prompt).toContain("sans les transformer en faits confirmés");
     expect(dossier.interpretation.deductions).toEqual([]);
     expect(dossier.interpretation.hypotheses).toEqual([]);
   });
