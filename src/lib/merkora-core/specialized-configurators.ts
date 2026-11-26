@@ -45,7 +45,7 @@ const configurators: SpecializedConfigurator[] = [
     title: "Commerce et vente en ligne",
     purpose: "Décrire comment les produits ou services sont présentés, vendus, payés, préparés, livrés et suivis après la vente.",
     domainIds: ["commerce"],
-    moduleIds: ["product_catalog", "inventory_movements", "order_management", "delivery_tracking"],
+    moduleIds: ["product_catalog", "inventory_movements", "order_management", "delivery_tracking", "returns_management"],
     steps: [
       { id: "selling_model", title: "Modèle de vente", question: "Que vendra la boutique et comment les clients passeront-ils commande ?", guidance: "Distinguer produits physiques, produits numériques et prestations ; préciser vente directe, sur commande ou les deux.", input: "multiple", required: true, options: ["physical_products", "digital_products", "services", "made_to_order", "retail", "wholesale"] },
       { id: "catalogue", title: "Catalogue et fiches", question: "Comment les articles doivent-ils être présentés ?", guidance: "Préciser catégories, photos, descriptions, variantes (taille, couleur, format), prix, promotions et disponibilité.", input: "multiple", required: true, options: ["categories", "photos", "descriptions", "variants", "multiple_prices", "promotions", "digital_downloads"] },
