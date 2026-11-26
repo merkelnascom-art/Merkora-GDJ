@@ -11,7 +11,7 @@ describe("specialized configurator flow", () => {
     const html = renderToStaticMarkup(<SpecializedConfiguratorFlow configurator={configurator} />);
     expect(html).toContain("Modèle de vente");
     expect(html).toContain("Que vendra la boutique");
-    expect(html).toContain("Précision avec vos propres mots");
+    expect(html).toContain("Précision avec tes propres mots");
     expect(html).toContain("Continuer");
     expect(html).not.toContain("Catalogue et fiches");
   });
