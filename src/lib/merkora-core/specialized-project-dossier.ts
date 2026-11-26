@@ -91,27 +91,28 @@ export function buildSpecializedProjectDossier(
     const value = input.answers[step.id];
     if (!hasAnswer(value)) {
       unansweredStepIds.push(step.id);
-      return;
+    } else {
+      const copiedValue = cloneAnswer(value);
+      answers.push({
+        stepId: step.id,
+        title: step.title,
+        question: step.question,
+        input: step.input,
+        required: step.required,
+        value: copiedValue,
+      });
+      evidence.push({
+        id: `answer:${step.id}`,
+        stepId: step.id,
+        kind: "explicit_selection",
+        content: cloneAnswer(value),
+        classification: "user_provided",
+        reviewStatus: "unreviewed",
+      });
     }
 
-    const copiedValue = cloneAnswer(value);
-    answers.push({
-      stepId: step.id,
-      title: step.title,
-      question: step.question,
-      input: step.input,
-      required: step.required,
-      value: copiedValue,
-    });
-    evidence.push({
-      id: `answer:${step.id}`,
-      stepId: step.id,
-      kind: "explicit_selection",
-      content: cloneAnswer(value),
-      classification: "user_provided",
-      reviewStatus: "unreviewed",
-    });
-
+    // A free-text note is independent evidence: retain it even if the
+    // customer has not selected an answer for this visible question yet.
     const note = input.notes?.[step.id]?.trim();
     if (note) {
       evidence.push({
