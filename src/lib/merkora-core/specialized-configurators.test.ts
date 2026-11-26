@@ -58,6 +58,25 @@ describe("specialized configurators", () => {
     expect(configurator?.moduleIds).toContain("game_rules_engine");
   });
 
+
+  it("maps every specialized configurator to registered domains and real catalogue modules", () => {
+    const domains = new Map(getDomainCatalogs().map((domain) => [domain.id, domain]));
+    const configurators = ["ecommerce", "reservation", "business_management", "education", "digitization", "games"];
+    configurators.forEach((id) => {
+      const configurator = getSpecializedConfigurator(id);
+      expect(configurator).toBeDefined();
+      configurator?.domainIds.forEach((domainId) => {
+        expect(domains.has(domainId)).toBe(true);
+      });
+      const registeredModules = new Set(
+        configurator?.domainIds.flatMap((domainId) => domains.get(domainId)?.modules.map((module) => module.id) ?? []),
+      );
+      configurator?.moduleIds.forEach((moduleId) => {
+        expect(registeredModules.has(moduleId)).toBe(true);
+      });
+    });
+  });
+
   it("rejects answers that do not belong to the selected configurator", () => {
     const result = validateSpecializedConfiguratorAnswers("ecommerce", {
       selling_model: "retail",
