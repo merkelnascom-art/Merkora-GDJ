@@ -142,4 +142,34 @@ describe("catalogue foundation — order scope and personalization", () => {
       acceptedAt: "2026-11-24T12:00:00.000Z",
     })).toThrow(/configuration/i);
   });
+  it("revalidates the selected modules instead of trusting a forged accepted result", () => {
+    const forged = {
+      accepted: true,
+      selectedModuleIds: ["delivery_tracking"],
+      suggestedModuleIds: [],
+      availableModuleIds: [],
+      issues: [],
+    };
+    expect(() => createCatalogOrderSnapshot({
+      offer: offer(),
+      configuration: forged,
+      optionIds: [],
+      acceptedAt: "2026-11-24T12:00:00.000Z",
+    })).toThrow(/selection/i);
+  });
+
+  it("freezes the accepted snapshot and its nested scope collections", () => {
+    const snapshot = createCatalogOrderSnapshot({
+      offer: offer(),
+      configuration: acceptedConfiguration(),
+      optionIds: [],
+      acceptedAt: "2026-11-24T12:00:00.000Z",
+    });
+    expect(Object.isFrozen(snapshot)).toBe(true);
+    expect(Object.isFrozen(snapshot.domainIds)).toBe(true);
+    expect(Object.isFrozen(snapshot.moduleIds)).toBe(true);
+    expect(Object.isFrozen(snapshot.personalizationFieldsByModule)).toBe(true);
+    expect(Object.isFrozen(snapshot.personalizationFieldsByModule.product_catalog)).toBe(true);
+  });
+
 });
