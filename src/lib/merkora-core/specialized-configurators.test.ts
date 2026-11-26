@@ -90,8 +90,8 @@ describe("specialized configurators", () => {
 
   it("rejects unsupported options rather than silently accepting malformed configuration", () => {
     const result = validateSpecializedConfiguratorAnswers("reservation", {
-      bookable_resource: "appointment",
-      availability: "whenever",
+      bookable_resource: ["appointment"],
+      availability: ["whenever"],
     });
     expect(result.valid).toBe(false);
     expect(result.issues).toEqual(expect.arrayContaining([
