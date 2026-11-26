@@ -1,6 +1,6 @@
 import type { SolutionDomainId, SolutionProductTypeId } from "./solution-catalog";
 import type { CatalogOffer, CatalogPricingMode } from "./catalog-offers";
-import type { CatalogConfigurationResult } from "./catalog-configuration";
+import { evaluateCatalogConfiguration, type CatalogConfigurationResult } from "./catalog-configuration";
 
 export interface CatalogOrderSnapshot {
   readonly offerId: string;
@@ -39,9 +39,9 @@ export interface CatalogChangeDecision {
 }
 
 /**
- * Creates a detached snapshot of the accepted commercial and functional scope.
- * It refuses rejected configurations and never shares mutable arrays with
- * the offer or configuration objects supplied by the caller.
+ * Creates a detached, frozen snapshot of the accepted commercial and
+ * functional scope. The offer must be published and the selection is
+ * re-evaluated rather than trusting a client-provided "accepted" flag.
  */
 export function createCatalogOrderSnapshot(
   input: CreateCatalogOrderSnapshotInput,
@@ -51,30 +51,40 @@ export function createCatalogOrderSnapshot(
   if (!configuration.accepted) {
     throw new Error("Cannot create an order snapshot from a rejected configuration.");
   }
+  if (offer.status !== "published") {
+    throw new Error("Cannot create an order snapshot from an unpublished offer.");
+  }
 
-  const selectedModuleIds = [...configuration.selectedModuleIds];
+  const verifiedSelection = evaluateCatalogConfiguration(offer, {
+    selectedModuleIds: configuration.selectedModuleIds,
+  });
+  if (!verifiedSelection.accepted) {
+    throw new Error("Cannot create an order snapshot from an invalid selection.");
+  }
+
+  const selectedModuleIds = [...verifiedSelection.selectedModuleIds];
   const selectedSet = new Set(selectedModuleIds);
-  const personalizationFieldsByModule = Object.fromEntries(
+  const personalizationFieldsByModule = Object.freeze(Object.fromEntries(
     offer.modules
       .filter((module) => selectedSet.has(module.moduleId))
       .map((module) => [
         module.moduleId,
-        [...(module.includedPersonalizationFields ?? [])],
+        Object.freeze([...new Set(module.includedPersonalizationFields ?? [])]),
       ]),
-  );
+  ));
 
-  return {
+  return Object.freeze({
     offerId: offer.id,
     offerVersion: offer.version,
     productTypeId: offer.productTypeId,
-    domainIds: [...offer.domainIds],
-    moduleIds: selectedModuleIds,
-    optionIds: [...input.optionIds],
+    domainIds: Object.freeze([...offer.domainIds]),
+    moduleIds: Object.freeze(selectedModuleIds),
+    optionIds: Object.freeze([...input.optionIds]),
     pricingMode: offer.pricing.mode,
     currency: offer.pricing.currency,
     acceptedAt: input.acceptedAt,
     personalizationFieldsByModule,
-  };
+  });
 }
 
 /** Classifies a post-order change against the exact scope accepted by the client. */
