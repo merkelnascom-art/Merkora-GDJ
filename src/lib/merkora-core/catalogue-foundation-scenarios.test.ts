@@ -109,6 +109,6 @@ describe("catalogue foundation — universal business scenarios", () => {
 
   it("keeps every currently registered product type and business domain addressable", () => {
     expect(getProductTypeCatalog()).toHaveLength(10);
-    expect(getDomainCatalogs()).toHaveLength(15);
+    expect(getDomainCatalogs()).toHaveLength(16);
   });
 });
