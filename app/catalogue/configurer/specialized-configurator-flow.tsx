@@ -8,6 +8,11 @@ import {
   type SpecializedConfigurator,
   type SpecializedConfiguratorStep,
 } from "../../../src/lib/merkora-core/specialized-configurators";
+import {
+  buildSpecializedProjectDossier,
+  formatSpecializedProjectDossierForConversation,
+} from "../../../src/lib/merkora-core/specialized-project-dossier";
+import { browserDossierStorage, saveLocalDossier } from "../../../src/lib/dossiers/local-dossiers";
 
 const optionLabels: Record<string, string> = {
   physical_products: "Produits physiques", digital_products: "Produits numériques", services: "Prestations de services",
@@ -88,6 +93,7 @@ type Draft = {
   answers: Record<string, ConfiguratorAnswer>;
   notes: Record<string, string>;
   savedAt: string;
+  dossierId?: string;
 };
 
 function readDraft(id: string): Draft | null {
@@ -162,6 +168,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
   const [restored, setRestored] = useState(false);
   const [review, setReview] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [dossierId, setDossierId] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
 
   useEffect(() => {
@@ -170,7 +177,10 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
       setAnswers(draft.answers);
       setNotes(draft.notes);
       setSavedAt(draft.savedAt);
+      setDossierId(draft.dossierId ?? `specialized-${configurator.id}-${Date.now()}`);
       setRestored(true);
+    } else {
+      setDossierId(`specialized-${configurator.id}-${Date.now()}`);
     }
   }, [configurator.id]);
 
@@ -186,14 +196,59 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
     }
   }, [currentIndex, visibleSteps.length]);
 
+  function activeDossierId() {
+    const id = dossierId || `specialized-${configurator.id}-${Date.now()}`;
+    if (!dossierId) setDossierId(id);
+    return id;
+  }
+
   function saveDraft() {
     const saved = new Date().toISOString();
+    const id = activeDossierId();
     try {
-      window.localStorage.setItem(storageKey(configurator.id), JSON.stringify({ answers, notes, savedAt: saved } satisfies Draft));
+      window.localStorage.setItem(storageKey(configurator.id), JSON.stringify({ answers, notes, savedAt: saved, dossierId: id } satisfies Draft));
       setSavedAt(saved);
       setValidationMessage("Ton avancement est enregistré sur cet appareil.");
     } catch {
       setValidationMessage("Le navigateur n'a pas permis l'enregistrement local. Garde cette page ouverte pour conserver tes réponses.");
+    }
+  }
+
+  function saveStructuredDossier() {
+    const id = activeDossierId();
+    const dossier = buildSpecializedProjectDossier({
+      id,
+      configuratorId: configurator.id,
+      answers,
+      notes,
+    });
+    if (!dossier) return null;
+    const storage = browserDossierStorage();
+    if (storage) {
+      try {
+        saveLocalDossier(storage, {
+          id: dossier.id,
+          title: dossier.title,
+          payload: dossier,
+          version: 1,
+          updatedAt: dossier.createdAt,
+        });
+      } catch {
+        setValidationMessage("Le dossier a été préparé, mais le navigateur n'a pas permis de l'enregistrer dans tes projets locaux.");
+      }
+    }
+    return dossier;
+  }
+
+  function continueInDrt() {
+    const dossier = saveStructuredDossier();
+    if (!dossier) return;
+    try {
+      window.sessionStorage.setItem("merkora-v2-new-journey", "true");
+      window.sessionStorage.setItem("merkora-v2-first-message", formatSpecializedProjectDossierForConversation(dossier));
+      window.location.assign("/conversation");
+    } catch {
+      setValidationMessage("Le navigateur a bloqué le transfert vers la conception intelligente. Tu peux toujours conserver le dossier local et réessayer.");
     }
   }
 
@@ -220,6 +275,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
       setValidationMessage(result.issues[0]?.message ?? "Certaines réponses doivent être vérifiées.");
       return;
     }
+    saveStructuredDossier();
     setReview(true);
     setValidationMessage("");
     saveDraft();
@@ -304,10 +360,11 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
               );
             })}
             <div className="mk-configurator-review-footer">
-              <p>Tes réponses seront regroupées pour préparer la suite du projet. Un membre de l'équipe pourra examiner les besoins particuliers avant toute proposition commerciale.</p>
+              <p>Ton dossier provisoire est conservé dans tes projets locaux sur cet appareil. Il pourra être repris dans la conception intelligente pour approfondir le besoin. Aucune donnée n'est envoyée à l'équipe et aucun devis ni commande n'est créé.</p>
               <div className="mk-configurator-actions">
                 <button className="mk-config-button mk-config-button-quiet" type="button" onClick={() => setReview(false)}>← Revenir aux questions</button>
-                <button className="mk-config-button mk-config-button-primary" type="button" onClick={saveDraft}>Enregistrer cette configuration</button>
+                <button className="mk-config-button mk-config-button-save" type="button" onClick={() => { saveDraft(); saveStructuredDossier(); }}>Enregistrer cette configuration</button>
+                <button className="mk-config-button mk-config-button-primary" type="button" onClick={continueInDrt}>Poursuivre dans la conception intelligente →</button>
               </div>
               {validationMessage && <p className="mk-configurator-feedback" role="status">{validationMessage}</p>}
             </div>
