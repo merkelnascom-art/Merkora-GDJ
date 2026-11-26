@@ -834,3 +834,70 @@
  .mk2-catalogue-product-card,.mk2-catalogue-domain-card{min-height:0}
  .mk2-catalogue-principle{padding:19px}
 }
+
+
+/* MerKora GDJ — specialized configurator journeys */
+.mk-configurator-page{padding-bottom:60px}
+.mk-configurator-shell{width:min(920px,100%);margin:54px auto 0;padding-bottom:40px}
+.mk-configurator-heading{max-width:760px;margin:0 auto 30px;text-align:center}
+.mk-configurator-heading h1{font-size:clamp(32px,4.5vw,52px);line-height:1.08;letter-spacing:-1.8px;margin:18px 0 12px}
+.mk-configurator-heading>p{max-width:700px;margin:0 auto;color:#c9c2d8;line-height:1.7;font-size:14px}
+.mk-configurator-heading .mk-eyebrow{justify-content:center}
+.mk-configurator-progress{max-width:760px;margin:0 auto 18px;padding:0 4px}
+.mk-configurator-progress>div:first-child{display:flex;justify-content:space-between;color:#c7bfd8;font-size:11px;margin-bottom:9px}
+.mk-configurator-progress strong{color:var(--mk-gold)}
+.mk-configurator-progress-track{height:5px;border-radius:9px;background:#ffffff1b;overflow:hidden}
+.mk-configurator-progress-track i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#9e83eb,#e7c98f);transition:width .2s ease}
+.mk-configurator-card{max-width:760px;margin:0 auto;padding:clamp(22px,4vw,38px);border:1px solid #b59be744;border-radius:22px;background:linear-gradient(145deg,#191a31f2,#111426f5);box-shadow:0 25px 80px #0004}
+.mk-configurator-step-meta{display:flex;justify-content:space-between;gap:10px;color:#b9a8dc;font-size:9px;font-weight:800;letter-spacing:1.4px}
+.mk-configurator-step-meta span+span{color:#c5bfae;letter-spacing:.4px;font-weight:600}
+.mk-configurator-card h2{font-size:clamp(23px,3vw,31px);letter-spacing:-.8px;margin:19px 0 8px}
+.mk-configurator-card h3{font-size:17px;line-height:1.45;margin:0 0 9px;color:#f1eafc}
+.mk-configurator-guidance{font-size:12px;line-height:1.7;color:#b9b2ca;margin:0 0 23px}
+.mk-config-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mk-config-option{position:relative;display:flex;align-items:center;gap:11px;min-height:54px;padding:12px;border:1px solid #ffffff20;border-radius:12px;background:#ffffff08;color:#e6e0ef;font-size:12px;line-height:1.45;cursor:pointer;transition:border-color .15s,background .15s}
+.mk-config-option:hover,.mk-config-option.is-selected{border-color:#c7a9f1a6;background:#30284b}
+.mk-config-option input{position:absolute;opacity:0;pointer-events:none}
+.mk-config-option-check{display:grid;place-items:center;flex:0 0 19px;width:19px;height:19px;border:1px solid #8e81a8;border-radius:5px;color:#171326;background:transparent;font-size:12px;font-weight:900}
+.mk-config-option.is-selected .mk-config-option-check{background:#e7c98f;border-color:#e7c98f}
+.mk-config-option:has(input[type=radio]) .mk-config-option-check{border-radius:50%}
+.mk-config-text-input,.mk-configurator-note textarea{width:100%;border:1px solid #ffffff28;border-radius:11px;background:#0e1020;color:#f8f4ff;padding:13px 14px;outline:none;resize:vertical;line-height:1.6}
+.mk-config-text-input:focus,.mk-configurator-note textarea:focus{border-color:#b99be9;box-shadow:0 0 0 3px #a98af022}
+.mk-configurator-note{display:block;margin-top:24px}
+.mk-configurator-note>span{display:block;color:#e8dfef;font-size:11px;font-weight:700;margin-bottom:9px}
+.mk-configurator-note small{color:#a69bb9;font-weight:400}
+.mk-configurator-note textarea{font-size:12px}
+.mk-configurator-note textarea::placeholder{color:#827b96}
+.mk-configurator-actions{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-top:25px;flex-wrap:wrap}
+.mk-config-button{border:1px solid transparent;border-radius:10px;padding:12px 15px;font-size:11px;font-weight:800;cursor:pointer;transition:transform .15s,border-color .15s}
+.mk-config-button:hover{transform:translateY(-1px)}
+.mk-config-button-quiet{background:transparent;border-color:#ffffff28;color:#d1c9dc}
+.mk-config-button-save{background:#ffffff0b;border-color:#c6a4e14a;color:#e3d2fa}
+.mk-config-button-primary{background:linear-gradient(120deg,#e7c98f,#c9a8ed);color:#1a1725}
+.mk-configurator-feedback{margin:15px 0 0;padding:11px 13px;border:1px solid #e9b87966;border-radius:10px;background:#8b5d241f;color:#f3d5a9;font-size:11px;line-height:1.5}
+.mk-configurator-saved{margin:12px 0 0;color:#9fd7b9;font-size:10px}
+.mk-configurator-privacy{max-width:760px;margin:17px auto 0;text-align:center;color:#928aa6;font-size:10px;line-height:1.6}
+.mk-configurator-review .mk-eyebrow{margin-bottom:10px}
+.mk-configurator-review-row{padding:17px 0;border-top:1px solid #ffffff19}
+.mk-configurator-review-row>div>span{color:#b9a8dc;font-size:8px;font-weight:800;letter-spacing:1.3px}
+.mk-configurator-review-row h3{font-size:14px;margin:5px 0}
+.mk-configurator-review-row>p{font-size:12px;color:#e4dced;line-height:1.65;margin:7px 0}
+.mk-configurator-review-row blockquote{margin:8px 0;padding:9px 12px;border-left:2px solid #b99be9;background:#ffffff08;color:#bdb3d1;font-size:11px;line-height:1.6}
+.mk-configurator-review-row button{border:0;background:transparent;padding:4px 0;color:#d7bd8b;font-size:10px;font-weight:700}
+.mk-configurator-review-footer{border-top:1px solid #ffffff19;padding-top:18px}
+.mk-configurator-review-footer>p{color:#bdb5cb;font-size:11px;line-height:1.7}
+.mk2-configurator-catalogue-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mk2-configurator-catalogue-card{display:flex;flex-direction:column;align-items:flex-start}
+.mk2-configurator-step-count{display:inline-flex;margin-top:8px;color:#8b7ac5;font-size:10px;font-weight:700}
+.mk2-configurator-start{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-top:auto;padding-top:18px;color:#6852c8;font-size:11px;font-weight:800}
+.mk2-configurator-start span{font-size:18px}
+@media(max-width:760px){
+  .mk-configurator-shell{margin-top:35px}
+  .mk-configurator-heading{text-align:left}
+  .mk-configurator-heading .mk-eyebrow{justify-content:flex-start}
+  .mk-config-options{grid-template-columns:1fr}
+  .mk-configurator-card{padding:21px;border-radius:16px}
+  .mk-configurator-actions{align-items:stretch;flex-direction:column}
+  .mk-config-button{width:100%}
+  .mk2-configurator-catalogue-grid{grid-template-columns:1fr}
+}
