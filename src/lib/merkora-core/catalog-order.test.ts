@@ -172,4 +172,15 @@ describe("catalogue foundation — order scope and personalization", () => {
     expect(Object.isFrozen(snapshot.personalizationFieldsByModule.product_catalog)).toBe(true);
   });
 
+  it("refuses to create an order snapshot from an unpublished offer", () => {
+    const draft = offer({ status: "draft" });
+    const result = evaluateCatalogConfiguration(draft, { selectedModuleIds: ["product_catalog"] });
+    expect(() => createCatalogOrderSnapshot({
+      offer: draft,
+      configuration: result,
+      optionIds: [],
+      acceptedAt: "2026-11-24T12:00:00.000Z",
+    })).toThrow(/unpublished/i);
+  });
+
 });
