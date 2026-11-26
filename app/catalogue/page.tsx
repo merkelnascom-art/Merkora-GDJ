@@ -4,10 +4,12 @@ import {
   getDomainCatalogs,
   getProductTypeCatalog,
 } from "../../src/lib/merkora-core/solution-catalog";
+import { getSpecializedConfigurators } from "../../src/lib/merkora-core/specialized-configurators";
 
 export default function CataloguePage() {
   const productTypes = getProductTypeCatalog();
   const domains = getDomainCatalogs();
+  const configurators = getSpecializedConfigurators();
 
   return (
     <main className="mk2-space-page mk2-catalogue-page">
@@ -83,6 +85,31 @@ export default function CataloguePage() {
                     <li key={module.id}>{module.label}</li>
                   ))}
                 </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+
+        <section className="mk2-catalogue-section" id="specialized-configurators">
+          <div className="mk2-catalogue-section-heading">
+            <div>
+              <span className="mk2-catalogue-kicker">03 · CONFIGURATION MÉTIER</span>
+              <h2>Choisis le parcours qui correspond à ton activité.</h2>
+              <p>Chaque parcours pose des questions propres à son métier. Tu avances une question à la fois, tu peux ajouter tes précisions et revenir sur tes réponses.</p>
+            </div>
+            <span className="mk2-catalogue-count">{configurators.length} parcours spécialisés</span>
+          </div>
+          <div className="mk2-catalogue-grid mk2-configurator-catalogue-grid">
+            {configurators.map((configurator, index) => (
+              <article className="mk2-catalogue-card mk2-configurator-catalogue-card" key={configurator.id}>
+                <span className="mk2-catalogue-card-index">{String(index + 1).padStart(2, "0")}</span>
+                <h3>{configurator.title}</h3>
+                <p>{configurator.purpose}</p>
+                <span className="mk2-configurator-step-count">{configurator.steps.length} étapes métier de départ</span>
+                <Link className="mk2-configurator-start" href={`/catalogue/configurer/${configurator.id}`}>
+                  Configurer ce type de projet <span>→</span>
+                </Link>
               </article>
             ))}
           </div>
