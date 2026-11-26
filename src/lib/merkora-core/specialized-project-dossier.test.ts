@@ -111,4 +111,23 @@ describe("specialized project dossier", () => {
       notes: {},
     })).toBeUndefined();
   });
+  it("preserves a client's note even when the corresponding visible question is unanswered", () => {
+    const dossier = buildSpecializedProjectDossier({
+      id: "shop-incomplete-draft",
+      configuratorId: "ecommerce",
+      answers: { selling_model: ["physical_products"] },
+      notes: { inventory: "Le stock sera suivi dans un dépôt central." },
+      generatedAt: "2026-11-26T18:30:00.000Z",
+    });
+
+    expect(dossier?.unansweredStepIds).toContain("inventory");
+    expect(dossier?.evidence).toContainEqual(expect.objectContaining({
+      stepId: "inventory",
+      kind: "client_note",
+      content: "Le stock sera suivi dans un dépôt central.",
+      classification: "user_provided",
+      reviewStatus: "unreviewed",
+    }));
+  });
+
 });
