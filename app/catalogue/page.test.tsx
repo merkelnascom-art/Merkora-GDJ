@@ -28,6 +28,10 @@ describe("MerKora GDJ Catalogue foundation screen", () => {
   it("does not invent published offers or imply that checkout is already available", () => {
     const html = renderToStaticMarkup(<CataloguePage />);
     expect(html).toContain("Les offres commerciales seront publiées ici");
+    expect(html).toContain("Choisis le parcours qui correspond à ton activité.");
+    expect(html).toContain("/catalogue/configurer/ecommerce");
+    expect(html).toContain("/catalogue/configurer/education");
+    expect(html).toContain("Numérisation et archivage documentaire");
     expect(html).not.toContain("Commander maintenant");
     expect(html).not.toContain("Offre publiée");
   });
