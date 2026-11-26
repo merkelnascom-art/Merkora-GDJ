@@ -248,6 +248,8 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
           <p>{configurator.purpose}</p>
         </div>
 
+        <p className="mk-configurator-intro-note">Tes réponses seront regroupées dans une synthèse que tu pourras relire et corriger avant de poursuivre.</p>
+
         <div className="mk-configurator-progress" aria-label={`Progression : ${review ? visibleSteps.length : currentIndex + 1} sur ${visibleSteps.length}`}>
           <div><span>{review ? "Récapitulatif" : `Étape ${currentIndex + 1} sur ${visibleSteps.length}`}</span><strong>{Math.round((review ? 1 : (currentIndex + 1) / Math.max(visibleSteps.length, 1)) * 100)}%</strong></div>
           <div className="mk-configurator-progress-track"><i style={{ width: `${review ? 100 : (currentIndex + 1) / Math.max(visibleSteps.length, 1) * 100}%` }} /></div>
