@@ -168,7 +168,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
   const [restored, setRestored] = useState(false);
   const [review, setReview] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useState(() => `specialized-${configurator.id}-${Date.now()}`);
   const [validationMessage, setValidationMessage] = useState("");
 
   useEffect(() => {
@@ -177,10 +177,8 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
       setAnswers(draft.answers);
       setNotes(draft.notes);
       setSavedAt(draft.savedAt);
-      setDossierId(draft.dossierId ?? `specialized-${configurator.id}-${Date.now()}`);
+      if (draft.dossierId) setDossierId(draft.dossierId);
       setRestored(true);
-    } else {
-      setDossierId(`specialized-${configurator.id}-${Date.now()}`);
     }
   }, [configurator.id]);
 
@@ -197,9 +195,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
   }, [currentIndex, visibleSteps.length]);
 
   function activeDossierId() {
-    const id = dossierId || `specialized-${configurator.id}-${Date.now()}`;
-    if (!dossierId) setDossierId(id);
-    return id;
+    return dossierId;
   }
 
   function saveDraft() {
