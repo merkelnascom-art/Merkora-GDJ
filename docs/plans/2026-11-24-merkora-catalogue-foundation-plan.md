@@ -25,7 +25,7 @@
 | 4 | Évaluation des sélections, options, dépendances et suggestions IA non validées | Réalisé |
 | 5 | Instantané de commande et classification de la personnalisation incluse | Réalisé |
 | 6 | Scénarios de régression métier et vérifications CI | Réalisé |
-| 7 | Durcissement des validations d'entrée et des contrats de version | À faire |
+| 7 | Durcissement des validations d'entrée et des contrats de version | Réalisé — métadonnées, devise, statuts, domaines/modules dupliqués, disponibilité et champs personnalisables contrôlés ; instantanés revalidés et gelés |
 | 8 | Configurateurs spécialisés initiaux | En cours — six définitions métier, parcours adaptatifs, écran une question à la fois, précisions libres, reprise locale et récapitulatif ajoutés ; règles conditionnelles plus fines à poursuivre |
 | 9 | Parcours client de configuration et récapitulatif | En cours — six entrées Catalogue vers les configurateurs ; synthèse éditable et sauvegarde locale du brouillon ; connexion au dossier client et transmission serveur à concevoir |
 | 10 | Administration des offres, versions et options | À faire |
