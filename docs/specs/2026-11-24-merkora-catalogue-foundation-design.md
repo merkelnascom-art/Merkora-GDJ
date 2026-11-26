@@ -296,3 +296,18 @@ La fondation est acceptable lorsque :
 Le périmètre « all » signifie que tous les identifiants déjà connus sont reconnus et que l'architecture peut s'étendre à tous les domaines. Il ne signifie pas que les 15 domaines disposent déjà chacun d'un configurateur complet.
 
 **Règle de livraison :** chaque étape est isolée, testée et relue. La PR #75 reste intacte ; aucune fusion ou mise en production n'est autorisée sans autorisation explicite.
+
+
+## Avancement complémentaire — configurateurs spécialisés (26 novembre 2026)
+
+Une première couche métier distincte a été ajoutée pour six configurateurs :
+- **E-commerce** : modèle de vente, catalogue et variantes, stock, commande/paiement, livraison/retrait et après-vente.
+- **Réservation** : ressource réservable, disponibilités, capacité, règles de réservation et notifications/accueil.
+- **Gestion d'activité** : organisation, rôles et responsabilités, processus, contrôles financiers et rapports.
+- **Éducation / orientation** : modèle (dont orientation professionnelle indépendante d'une gestion scolaire), public, contenus, tests et recommandations.
+- **Numérisation / archivage** : réception, capture/scan, OCR et extraction, classement, recherche et conservation.
+- **Jeux** : format, joueurs/équipes, règles, déroulement des sessions et progression.
+
+Chaque configurateur expose ses propres étapes, formulations, aides, types de réponses, choix autorisés et références de modules. Un validateur refuse les réponses inconnues ou les options non prévues. Les modules du catalogue canonique ont été enrichis pour les retours commerciaux, l'orientation et la chaîne documentaire.
+
+**Limite actuelle :** cette couche constitue le contrat métier et le moteur de validation initial. Les écrans interactifs, questions conditionnelles avancées, dépendances entre réponses, génération de prévisualisation et branchement au parcours de commande restent des étapes suivantes. Les configurateurs ne doivent pas être présentés comme entièrement finalisés avant ces étapes et les tests de bout en bout.
