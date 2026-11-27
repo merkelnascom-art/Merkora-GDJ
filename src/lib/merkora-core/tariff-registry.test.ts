@@ -51,6 +51,19 @@ describe("tariff registry", () => {
     if (result.status === "resolved") expect(result.rule.unitPriceXof).toBe(75000);
   });
 
+  it("rejects impossible calendar dates in tariff configuration", () => {
+    expect(validateTariffRule(rule({ validFrom: "2026-02-30" })).some((issue) => issue.field === "validFrom")).toBe(true);
+  });
+
+  it("rejects an invalid date used for resolution", () => {
+    const result = resolveTariffRule(
+      { domainId: "commerce", moduleId: "public-site", capabilityId: "website-showcase" },
+      [rule()],
+      "2026-02-30",
+    );
+    expect(result.status).toBe("invalid_date");
+  });
+
   it("does not resolve a tariff outside its validity period", () => {
     const result = resolveTariffRule(
       { domainId: "commerce", moduleId: "public-site", capabilityId: "website-showcase" },
