@@ -46,7 +46,7 @@ describe("PCTD automatic quote engine", () => {
       quoteId: "quote-2",
       journey: "catalogue",
       tariffVersion: "2026-11",
-      items: [item({ billingTreatment: "included", tariffRuleId: undefined })],
+      items: [item({ billingTreatment: "included" })],
       tariffRules: [],
     });
 
