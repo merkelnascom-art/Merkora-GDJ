@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "./server";
-import { MERKORA_ADMIN_EMAIL } from "./admin-auth-actions";
+import { MERKORA_ADMIN_EMAIL } from "./admin-constants";
 export async function requireMerkoraAdmin() {
   const supabase = await getSupabaseServerClient();
   if (!supabase) redirect("/admin/login?status=unconfigured");
