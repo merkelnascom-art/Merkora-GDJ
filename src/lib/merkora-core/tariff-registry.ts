@@ -49,13 +49,13 @@ export function validateTariffRule(rule: ManagedTariffRule): TariffValidationIss
     issues.push({ field: "unitPriceXof", message: "Le prix doit être un montant FCFA entier positif ou nul." });
   }
   if (!rule.unitLabel.trim()) issues.push({ field: "unitLabel", message: "L'unité de facturation est obligatoire." });
-  if (!ISO_DATE.test(rule.updatedAt.slice(0, 10))) {
+  if (!isValidIsoDate(rule.updatedAt.slice(0, 10))) {
     issues.push({ field: "updatedAt", message: "La date de mise à jour doit être une date valide." });
   }
-  if (rule.validFrom && !ISO_DATE.test(rule.validFrom)) {
+  if (rule.validFrom && !isValidIsoDate(rule.validFrom)) {
     issues.push({ field: "validFrom", message: "La date de début doit être au format AAAA-MM-JJ." });
   }
-  if (rule.validUntil && !ISO_DATE.test(rule.validUntil)) {
+  if (rule.validUntil && !isValidIsoDate(rule.validUntil)) {
     issues.push({ field: "validUntil", message: "La date de fin doit être au format AAAA-MM-JJ." });
   }
   if (rule.validFrom && rule.validUntil && rule.validFrom > rule.validUntil) {
