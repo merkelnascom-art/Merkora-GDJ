@@ -229,3 +229,19 @@ All service operations must verify identity server-side with the authenticated u
 7. Whether an IDP dossier can be exported/shared before client validation.
 
 These decisions do not block the pure PCTD engine or isolated IDP state-machine implementation, but they must be settled before production release.
+
+
+## 11. Implemented tariff registry foundation
+
+The branch now contains `src/lib/merkora-core/tariff-registry.ts`, a pure domain module with no database or browser dependency.
+
+It provides:
+- Admin-authored tariff metadata: capability, domain/module scope, billing mode, XOF unit price, unit label, complexity coefficients, status, validity dates and version.
+- Validation for required identifiers, safe integer XOF prices, positive coefficients, included-price consistency, duplicate IDs and real calendar dates.
+- Deterministic resolution for one active tariff on a requested date.
+- Explicit `missing`, `ambiguous` and `invalid_date` outcomes. The resolver never selects a cheapest, newest or first match silently.
+- Draft and archived rules are excluded from quote resolution.
+
+The corresponding `tariff-registry.test.ts` covers valid rules, invalid amounts, included-price rules, duplicate IDs, exact matching, validity periods, ambiguity, explicit rule selection, inactive rules and invalid dates.
+
+This is deliberately a domain foundation, not a completed admin screen or persistent tariff catalogue. No tariff values are seeded as official MerKora prices. The next integration step is to map a validated resolved rule into the existing quote engine, then add authenticated persistence and a protected admin interface after the additive migration and RLS design are approved.
