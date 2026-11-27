@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "./server";
-export const MERKORA_ADMIN_EMAIL = "merkora-gdj@gmail.com";
+import { MERKORA_ADMIN_EMAIL } from "./admin-constants";
 export type AdminAuthResult = { ok: true; message?: string } | { ok: false; error: string };
 export async function requestAdminOtp(emailValue: string): Promise<AdminAuthResult> {
   const email = emailValue.trim().toLowerCase();
