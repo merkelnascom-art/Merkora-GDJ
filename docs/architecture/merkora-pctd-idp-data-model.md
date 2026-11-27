@@ -262,3 +262,36 @@ The application and database authorization paths were inspected without changing
 Do not build or expose the tariff-management UI against this mixed authorization state. Do not copy either email allowlist into a new application helper. Before the admin console or tariff writes are enabled, define one canonical, server-verified admin authorization source (prefer a protected database role/claim in `app_metadata`, not user-editable `user_metadata`), migrate all relevant RLS policies consistently, and verify server routes with `auth.getUser()` plus that canonical authorization check. Keep all tariff mutations behind server-side operations and retain RLS as the database boundary.
 
 This review is observational only. No auth users, functions, policies, tables, grants, application files, or data were changed. The tariff registry remains a pure in-branch domain module; no persistent tariff rules or official prices have been created.
+
+
+## 13. Single administrator account and email OTP entry (2026-11-27)
+
+The product decision is now explicit: the only MerKora administrator identity is `merkora-gdj@gmail.com`. Former email allowlists are not accepted by the application gate.
+
+### Implemented in the application branch
+
+- `/admin/login` is a dedicated passwordless entry point. It starts with the canonical email and requests a six-digit email OTP.
+- The server action accepts only the canonical email and calls Supabase Auth `signInWithOtp` with `shouldCreateUser: false`; it cannot create a new privileged identity.
+- OTP verification uses `verifyOtp` with type `email`, then independently calls `auth.getUser()` and checks the verified account email before granting the application session access.
+- `/admin` is protected by a server-side layout guard that calls `auth.getUser()` and compares the verified email with the one canonical identity. A client role, a user-editable metadata field, or a supplied form value cannot grant admin access.
+- The authenticated-context helper reports this canonical identity as `superadmin` for application display. The profile row is not used to grant the privilege.
+- Admin logout signs out the Supabase session and returns to `/admin/login`.
+- A small initial dashboard shell exists; the operational modules remain clearly marked as in preparation.
+
+### Supabase project configuration still required
+
+- The canonical Auth user must already exist and be confirmed; OTP login explicitly disables automatic sign-up.
+- The Auth email template must render the numeric token using `{{ .Token }}` (rather than only a confirmation URL) so the administrator receives a code to type.
+- Email delivery must be configured for the project. Supabase's default SMTP has recipient restrictions; a production deployment should use a verified custom SMTP provider and test delivery to the canonical mailbox.
+- Configure the correct production Site URL and allowed redirect URLs. The current OTP flow itself does not rely on a redirect link.
+
+### Database authorization remains a separate release gate
+
+This code protects the Next.js admin routes, but it does not rewrite production RLS. The current database helper and direct-email policies still contain the legacy/inconsistent email checks recorded in section 12. Before connecting admin modules to database records, prepare and review a migration that makes every admin policy consistently use one canonical database authorization predicate and test both the canonical identity and non-admin identities. No database change is included or applied by this branch update.
+
+### Operational security
+
+- Use Supabase's OTP expiry and rate limits; do not log or persist OTP values.
+- Keep the OTP code single-use and do not create a fallback password or browser-only admin flag.
+- Admin server actions that mutate data must call the same server-side admin guard; a protected page layout alone is not sufficient to secure independent route handlers or server actions.
+- Never expose a Supabase service-role/secret key to the browser.
