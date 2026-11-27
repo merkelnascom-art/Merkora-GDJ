@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildAutomaticQuote } from "./quote-engine";
 import {
   resolveTariffRule,
   toQuoteBillingTreatment,
@@ -37,6 +38,29 @@ describe("tariff registry", () => {
     expect(toQuoteBillingTreatment(configured)).toBe("billable");
     expect(toQuoteBillingTreatment(rule({ billingMode: "included", unitPriceXof: 0 }))).toBe("included");
     expect(toQuoteBillingTreatment(rule({ billingMode: "manual_review" }))).toBe("manual_review");
+  });
+
+  it("feeds a resolved tariff into the quote engine without inventing a price", () => {
+    const configured = rule();
+    const quote = buildAutomaticQuote({
+      quoteId: "quote-test",
+      journey: "drt",
+      tariffVersion: "tariffs-v1",
+      items: [{
+        id: "scope-site",
+        label: "Site vitrine",
+        domainId: "commerce",
+        moduleId: "public-site",
+        billingTreatment: toQuoteBillingTreatment(configured),
+        tariffRuleId: configured.id,
+        quantity: 1,
+        complexity: "standard",
+      }],
+      tariffRules: [toQuoteTariffRule(configured)],
+    });
+    expect(quote.status).toBe("ready");
+    expect(quote.totalXof).toBe(75000);
+    expect(quote.customerCanAccept).toBe(true);
   });
 
   it("accepts a valid administrator tariff", () => {
