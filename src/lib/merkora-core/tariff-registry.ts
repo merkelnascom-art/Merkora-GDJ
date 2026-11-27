@@ -25,6 +25,7 @@ export interface TariffRuleCandidate {
 
 export type TariffResolution =
   | { status: "resolved"; rule: ManagedTariffRule }
+  | { status: "invalid_date"; reason: string }
   | { status: "missing"; reason: string }
   | { status: "ambiguous"; ruleIds: string[]; reason: string };
 
@@ -102,6 +103,10 @@ export function resolveTariffRule(
   rules: readonly ManagedTariffRule[],
   onDate: string,
 ): TariffResolution {
+  if (!isValidIsoDate(onDate)) {
+    return { status: "invalid_date", reason: "La date de calcul doit être une date valide au format AAAA-MM-JJ." };
+  }
+
   const matching = rules.filter((rule) => {
     if (rule.status !== "active") return false;
     if (validateTariffRule(rule).length > 0) return false;
