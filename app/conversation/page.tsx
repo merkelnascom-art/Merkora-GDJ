@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { browserDossierStorage, getLatestLocalDossier, readLocalDossiers, saveLocalDossier } from "../../src/lib/dossiers/local-dossiers";
+import { isDrtUnderstandingSessionPayload } from "../../src/lib/merkora-core/journey-boundaries";
 import {
   answerUnderstanding,
   beginUnderstanding,
@@ -93,19 +94,15 @@ function readStoredSession(): UnderstandingSession | null {
   if (!parsed) {
     try {
       const storage = browserDossierStorage();
-      const local = storage ? getLatestLocalDossier<UnderstandingSession>(storage) : null;
+      const local = storage ? getLatestLocalDossier<UnderstandingSession>(storage, (dossier) =>
+        (dossier.journey === "drt" || dossier.journey === undefined) && isDrtUnderstandingSessionPayload(dossier.payload),
+      ) : null;
       parsed = local?.payload as Partial<UnderstandingSession> | undefined;
     } catch {
       // Le dossier local peut être indisponible sur un navigateur en mode privé.
     }
   }
-  if (
-    parsed &&
-    typeof parsed.originalDescription === "string" &&
-    Array.isArray(parsed.messages) &&
-    Array.isArray(parsed.evidence) &&
-    typeof parsed.stage === "string"
-  ) {
+  if (isDrtUnderstandingSessionPayload(parsed)) {
     return {
       ...parsed,
       situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
@@ -149,6 +146,7 @@ export default function ConversationPage() {
         saveLocalDossier(localStorage, {
           id: next.id,
           title: next.originalDescription.slice(0, 120) || "Nouveau projet",
+          journey: "drt",
           payload: next,
           version: next.version,
           syncedVersion: existing?.syncedVersion,
