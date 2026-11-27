@@ -103,9 +103,10 @@ function readStoredSession(): UnderstandingSession | null {
     }
   }
   if (isDrtUnderstandingSessionPayload(parsed)) {
+    const restored = parsed as Partial<UnderstandingSession>;
     return {
-      ...parsed,
-      situationGraph: parsed.situationGraph ?? rebuildSituationGraph(parsed.messages as UnderstandingSession["messages"]),
+      ...restored,
+      situationGraph: restored.situationGraph ?? rebuildSituationGraph(restored.messages as UnderstandingSession["messages"]),
     } as UnderstandingSession;
   }
   return null;
