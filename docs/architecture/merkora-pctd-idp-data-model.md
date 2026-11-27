@@ -245,3 +245,20 @@ It provides:
 The corresponding `tariff-registry.test.ts` covers valid rules, invalid amounts, included-price rules, duplicate IDs, exact matching, validity periods, ambiguity, explicit rule selection, inactive rules and invalid dates.
 
 This is deliberately a domain foundation, not a completed admin screen or persistent tariff catalogue. No tariff values are seeded as official MerKora prices. The next integration step is to map a validated resolved rule into the existing quote engine, then add authenticated persistence and a protected admin interface after the additive migration and RLS design are approved.
+
+
+## 12. Read-only admin authorization review (2026-11-27)
+
+The application and database authorization paths were inspected without changing the project:
+
+- `proxy.ts` refreshes the Supabase session with `auth.getUser()`, but it does not reject unauthenticated requests or enforce an admin role. Session refresh is not route authorization.
+- `src/lib/supabase/server.ts` creates a cookie-aware server client with the publishable key. This is appropriate as a user-scoped client, but it does not itself establish admin authority.
+- No `app/admin/page.tsx` or `app/admin/layout.tsx` was present at the inspected branch paths. The public home page exposes the customer Catalogue, IDP and DRT routes; it does not expose a protected tariff console.
+- The database currently has two different email-based admin authorization patterns. The `public.is_merkora_admin()` function returns true only when the JWT email equals `merkelnascom@gmail.com`. Separately, 14 RLS policies across 8 tables compare the JWT email directly and include both `merkelnascom@gmail.com` and `wdesk87@gmail.com` in some financial/payment rules; other quote/request policies accept only the first address.
+- In the inspected policy set, 29 policies across 16 tables call `is_merkora_admin()`, while 14 policies across 8 tables use direct email comparisons. This creates inconsistent authorization: an identity accepted by some payment/invoice policies may not be accepted by quote/request policies or by the shared helper.
+
+### Security decision
+
+Do not build or expose the tariff-management UI against this mixed authorization state. Do not copy either email allowlist into a new application helper. Before the admin console or tariff writes are enabled, define one canonical, server-verified admin authorization source (prefer a protected database role/claim in `app_metadata`, not user-editable `user_metadata`), migrate all relevant RLS policies consistently, and verify server routes with `auth.getUser()` plus that canonical authorization check. Keep all tariff mutations behind server-side operations and retain RLS as the database boundary.
+
+This review is observational only. No auth users, functions, policies, tables, grants, application files, or data were changed. The tariff registry remains a pure in-branch domain module; no persistent tariff rules or official prices have been created.
