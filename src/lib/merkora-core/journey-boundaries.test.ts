@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canTransitionJourney, type JourneyTransitionRequest } from "./journey-boundaries";
+import { canTransitionJourney, isDrtUnderstandingSessionPayload, type JourneyTransitionRequest } from "./journey-boundaries";
 
 describe("customer journey boundaries", () => {
   it.each([
@@ -18,4 +18,29 @@ describe("customer journey boundaries", () => {
       expect(canTransitionJourney(request)).toBe(expected);
     },
   );
+});
+
+describe("DRT session provenance", () => {
+  it("recognizes an understanding session", () => {
+    expect(isDrtUnderstandingSessionPayload({
+      originalDescription: "Créer une plateforme",
+      messages: [],
+      evidence: [],
+      stage: "clarification",
+    })).toBe(true);
+  });
+
+  it("does not mistake a Catalogue dossier for a DRT session", () => {
+    expect(isDrtUnderstandingSessionPayload({
+      schemaVersion: 1,
+      source: { journey: "catalogue_specialized_configurator" },
+      answers: [],
+      evidence: [],
+    })).toBe(false);
+  });
+
+  it("rejects null and malformed payloads", () => {
+    expect(isDrtUnderstandingSessionPayload(null)).toBe(false);
+    expect(isDrtUnderstandingSessionPayload({ originalDescription: "Projet", messages: [], evidence: [] })).toBe(false);
+  });
 });
