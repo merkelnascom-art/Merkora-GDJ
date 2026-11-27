@@ -1,11 +1,11 @@
 "use server";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "./server";
-import { MERKORA_ADMIN_EMAIL } from "./admin-constants";
+import { isMerkoraAdminEmail, MERKORA_ADMIN_EMAIL } from "./admin-constants";
 export type AdminAuthResult = { ok: true; message?: string } | { ok: false; error: string };
 export async function requestAdminOtp(emailValue: string): Promise<AdminAuthResult> {
   const email = emailValue.trim().toLowerCase();
-  if (email !== MERKORA_ADMIN_EMAIL) return { ok: false, error: "Cette adresse n'est pas autorisée pour l'administration MerKora." };
+  if (!isMerkoraAdminEmail(email)) return { ok: false, error: "Cette adresse n'est pas autorisée pour l'administration MerKora." };
   const supabase = await getSupabaseServerClient();
   if (!supabase) return { ok: false, error: "Le service de connexion sécurisée n'est pas configuré." };
   const { error } = await supabase.auth.signInWithOtp({ email: MERKORA_ADMIN_EMAIL, options: { shouldCreateUser: false } });
