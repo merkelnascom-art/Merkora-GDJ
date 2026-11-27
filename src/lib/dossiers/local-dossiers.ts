@@ -1,6 +1,7 @@
 export type LocalDossier<T = unknown> = {
   id: string;
   title: string;
+  journey?: "catalogue" | "idp" | "drt";
   payload: T;
   version: number;
   /** Last cloud version successfully observed for this local dossier. */
@@ -41,8 +42,12 @@ export function saveLocalDossier<T>(storage: StorageLike, dossier: LocalDossier<
   return next;
 }
 
-export function getLatestLocalDossier<T = unknown>(storage: StorageLike): LocalDossier<T> | null {
-  return readLocalDossiers<T>(storage)[0] ?? null;
+export function getLatestLocalDossier<T = unknown>(
+  storage: StorageLike,
+  matches?: (dossier: LocalDossier<T>) => boolean,
+): LocalDossier<T> | null {
+  const dossiers = readLocalDossiers<T>(storage);
+  return (matches ? dossiers.find(matches) : dossiers[0]) ?? null;
 }
 
 export function browserDossierStorage(): StorageLike | null {
