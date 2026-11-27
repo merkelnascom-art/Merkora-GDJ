@@ -131,3 +131,22 @@ export function resolveTariffRule(
   }
   return { status: "resolved", rule: matching[0] };
 }
+
+
+/** Adapts a managed rule to the existing deterministic quote engine contract. */
+export function toQuoteTariffRule(rule: ManagedTariffRule): QuoteTariffRule {
+  return {
+    id: rule.id,
+    domainIds: rule.domainIds,
+    moduleIds: rule.moduleIds,
+    unitPriceXof: rule.unitPriceXof,
+    complexityMultipliers: rule.complexityMultipliers,
+  };
+}
+
+/** Keeps tariff administration terminology separate from quote-engine billing semantics. */
+export function toQuoteBillingTreatment(rule: ManagedTariffRule): "included" | "billable" | "manual_review" {
+  if (rule.billingMode === "included") return "included";
+  if (rule.billingMode === "manual_review") return "manual_review";
+  return "billable";
+}
