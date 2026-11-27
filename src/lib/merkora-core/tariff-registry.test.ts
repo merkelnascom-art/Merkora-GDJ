@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   resolveTariffRule,
+  toQuoteBillingTreatment,
+  toQuoteTariffRule,
   validateTariffCatalog,
   validateTariffRule,
   type ManagedTariffRule,
@@ -23,6 +25,20 @@ const rule = (overrides: Partial<ManagedTariffRule> = {}): ManagedTariffRule => 
 });
 
 describe("tariff registry", () => {
+  it("adapts managed tariffs to the existing quote engine", () => {
+    const configured = rule();
+    expect(toQuoteTariffRule(configured)).toEqual({
+      id: "site-vitrine",
+      domainIds: ["commerce"],
+      moduleIds: ["public-site"],
+      unitPriceXof: 75000,
+      complexityMultipliers: configured.complexityMultipliers,
+    });
+    expect(toQuoteBillingTreatment(configured)).toBe("billable");
+    expect(toQuoteBillingTreatment(rule({ billingMode: "included", unitPriceXof: 0 }))).toBe("included");
+    expect(toQuoteBillingTreatment(rule({ billingMode: "manual_review" }))).toBe("manual_review");
+  });
+
   it("accepts a valid administrator tariff", () => {
     expect(validateTariffRule(rule())).toEqual([]);
   });
