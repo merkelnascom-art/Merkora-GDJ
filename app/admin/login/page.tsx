@@ -2,7 +2,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { requestAdminOtp, verifyAdminOtp } from "@/lib/supabase/admin-auth-actions";
-const ADMIN_EMAIL = "merkora-gdj@gmail.com";
+const ADMIN_EMAIL = "merkoragdj@gmail.com";
 export default function AdminLoginPage() {
   const [email, setEmail] = useState(ADMIN_EMAIL);
   const [code, setCode] = useState("");
