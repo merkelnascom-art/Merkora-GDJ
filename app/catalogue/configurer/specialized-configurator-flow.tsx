@@ -13,6 +13,7 @@ import {
   formatSpecializedProjectDossierForConversation,
 } from "../../../src/lib/merkora-core/specialized-project-dossier";
 import { browserDossierStorage, saveLocalDossier } from "../../../src/lib/dossiers/local-dossiers";
+import { canTransitionJourney } from "../../../src/lib/merkora-core/journey-boundaries";
 
 const optionLabels: Record<string, string> = {
   physical_products: "Produits physiques", digital_products: "Produits numériques", services: "Prestations de services",
@@ -238,6 +239,8 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
   }
 
   function continueInDrt() {
+    // The explicit button click is the customer consent for this optional hand-off.
+    if (!canTransitionJourney({ from: "catalogue", to: "drt", customerRequested: true })) return;
     const dossier = saveStructuredDossier();
     if (!dossier) return;
     try {
