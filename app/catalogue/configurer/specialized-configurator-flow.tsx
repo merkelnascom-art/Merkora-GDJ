@@ -13,6 +13,7 @@ import {
   formatSpecializedProjectDossierForConversation,
 } from "../../../src/lib/merkora-core/specialized-project-dossier";
 import { browserDossierStorage, saveLocalDossier } from "../../../src/lib/dossiers/local-dossiers";
+import { canTransitionJourney } from "../../../src/lib/merkora-core/journey-boundaries";
 
 const optionLabels: Record<string, string> = {
   physical_products: "Produits physiques", digital_products: "Produits numériques", services: "Prestations de services",
@@ -225,6 +226,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
         saveLocalDossier(storage, {
           id: dossier.id,
           title: dossier.title,
+          journey: "catalogue",
           payload: dossier,
           version: 1,
           updatedAt: dossier.createdAt,
@@ -237,6 +239,8 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
   }
 
   function continueInDrt() {
+    // The explicit button click is the customer consent for this optional hand-off.
+    if (!canTransitionJourney({ from: "catalogue", to: "drt", customerRequested: true })) return;
     const dossier = saveStructuredDossier();
     if (!dossier) return;
     try {
@@ -342,7 +346,7 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
           <section className="mk-configurator-card mk-configurator-review">
             <span className="mk-eyebrow"><span /> SYNTHÈSE DE TA CONFIGURATION</span>
             <h2>Voici les choix que tu as exprimés.</h2>
-            <p className="mk-configurator-guidance">Cette synthèse sert à préparer l'analyse de ton besoin. Elle ne constitue pas encore un devis ni une commande.</p>
+            <p className="mk-configurator-guidance">Cette synthèse conserve ta configuration Catalogue. Elle ne constitue pas encore une commande ni un devis.</p>
             {visibleSteps.map((step, index) => {
               const answer = answers[step.id];
               const values = Array.isArray(answer) ? answer : answer === undefined ? [] : [answer];
@@ -356,11 +360,11 @@ export default function SpecializedConfiguratorFlow({ configurator }: { configur
               );
             })}
             <div className="mk-configurator-review-footer">
-              <p>Ton dossier provisoire est conservé dans tes projets locaux sur cet appareil. Il pourra être repris dans la conception intelligente pour approfondir le besoin. Aucune donnée n'est envoyée à l'équipe et aucun devis ni commande n'est créé.</p>
+              <p>Ta configuration Catalogue reste dans ce parcours et peut être commandée sans passer par DRT. Si tu souhaites réellement une conception sur mesure, tu peux choisir explicitement cette autre voie. Aucune donnée n'est envoyée à l'équipe et aucun devis ni commande n'est créé à cette étape.</p>
               <div className="mk-configurator-actions">
                 <button className="mk-config-button mk-config-button-quiet" type="button" onClick={() => setReview(false)}>← Revenir aux questions</button>
                 <button className="mk-config-button mk-config-button-save" type="button" onClick={() => { saveDraft(); saveStructuredDossier(); }}>Enregistrer cette configuration</button>
-                <button className="mk-config-button mk-config-button-primary" type="button" onClick={continueInDrt}>Poursuivre dans la conception intelligente →</button>
+                <button className="mk-config-button mk-config-button-primary" type="button" onClick={continueInDrt}>Passer volontairement en conception sur mesure →</button>
               </div>
               {validationMessage && <p className="mk-configurator-feedback" role="status">{validationMessage}</p>}
             </div>

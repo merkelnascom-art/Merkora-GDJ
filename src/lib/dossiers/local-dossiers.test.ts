@@ -38,6 +38,15 @@ describe("local-first project dossiers", () => {
     expect(readLocalDossiers(storage)).toEqual([]);
   });
 
+  it("finds the latest dossier matching a journey instead of being blocked by another journey", () => {
+    const storage = memoryStorage();
+    const drt = { id: "drt-1", title: "Projet DRT", journey: "drt" as const, payload: { journey: "drt" }, version: 1, updatedAt: "2026-11-15T10:00:00.000Z" };
+    const catalogue = { id: "catalogue-1", title: "Commande Catalogue", journey: "catalogue" as const, payload: { journey: "catalogue" }, version: 1, updatedAt: "2026-11-15T11:00:00.000Z" };
+    saveLocalDossier(storage, drt);
+    saveLocalDossier(storage, catalogue);
+    expect(getLatestLocalDossier(storage, item => item.journey === "drt")).toEqual(drt);
+  });
+
   it("retains the last synchronized cloud version for conflict-safe updates", () => {
     const storage = memoryStorage();
     saveLocalDossier(storage, { id: "dossier-1", title: "Projet", payload: {}, version: 4, syncedVersion: 2, updatedAt: "2026-11-15T12:00:00.000Z" });
